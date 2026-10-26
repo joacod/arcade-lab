@@ -1,71 +1,95 @@
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
+import { validateContent } from './content-validation.ts';
+import { releaseChoice, selectUpgrade } from './progression.ts';
 import { createHost } from './browser/host.ts';
 import { bindInput } from './browser/input.ts';
 import { createClock, FIXED_STEP } from './browser/clock.ts';
 import { createPresentation } from './presentation.ts';
 import { createUI, type Screen, type MenuAction } from './ui.ts';
 
-/** Owns one browser session. Each restart replaces only the run and its presentation. */
+/** One browser session owns input, timing and disposal. Restart replaces the run. */
 export function mountClearing(container: HTMLElement): { dispose(): void } {
-  const host = createHost(container);
-  const clock = createClock();
+  const errors = validateContent();
+  if (errors.length) {
+    const message = document.createElement('pre'); message.setAttribute('role', 'alert');
+    message.textContent = `Cannot start Last Light Clearing:\n${errors.join('\n')}`;
+    container.append(message);
+    return { dispose: () => message.remove() };
+  }
+  const host = createHost(container), clock = createClock();
   const presentation = createPresentation(host.ctx);
-  let run = createRun();
-  let screen: Screen = 'title';
-  let disposed = false;
-  const input = bindInput(host.canvas, () => host.viewport,
-    () => screen === 'playing', host.signal);
-  const ui = createUI(host.root, host.canvas, act, host.signal);
+  let run = createRun(), screen: Screen = 'title', disposed = false, suspendedChoice = false;
+  const confirmations = new Set<string>(), pointers = new Set<number>();
+  const input = bindInput(host.canvas, () => host.viewport, () => screen === 'playing', host.signal);
+  const ui = createUI(host.root, host.canvas, act, choose, host.signal);
 
   function transition(next: Screen, focus = true) {
-    input.clear();
-    clock.reset();
-    screen = next;
-    pauseRun(run, next !== 'playing');
+    input.clear(); clock.reset(); screen = next;
     ui.show(screen, focus);
+  }
+  function syncScreen(focus = true) {
+    const next = run.outcome ?? (run.status === 'choosing' ? 'choosing' : run.status === 'paused' ? 'paused' : 'playing');
+    if (next !== screen) transition(next, focus);
+  }
+  function choose(id: string) {
+    if (disposed || screen !== 'choosing' || document.hidden || !document.hasFocus()) return;
+    if (selectUpgrade(run, id)) { input.clear(); clock.reset(); ui.update(run); }
   }
   function act(action: MenuAction) {
     if (disposed) return;
     if (action === 'start' || action === 'restart') {
       if (document.hidden || !document.hasFocus()) return;
-      run = createRun(); presentation.reset(); transition('playing');
-    } else if (action === 'pause' && screen === 'playing') transition('paused');
-    else if (action === 'resume' && screen === 'paused') {
-      if (!document.hidden && document.hasFocus()) transition('playing');
+      run = createRun(); suspendedChoice = false;
+      presentation.reset(); transition('playing');
+    } else if (action === 'pause' && screen === 'playing') {
+      pauseRun(run, true); syncScreen();
+    } else if (action === 'resume' && screen === 'paused') {
+      if (!document.hidden && document.hasFocus()) { pauseRun(run, false); syncScreen(); }
     } else if (action === 'title') {
-      run = createRun(); presentation.reset(); transition('title');
+      run = createRun(); pauseRun(run, true); suspendedChoice = false;
+      presentation.reset(); transition('title');
     }
   }
   function suspend() {
-    input.clear(); clock.reset();
-    if (screen === 'playing') transition('paused', false);
+    input.clear(); clock.reset(); confirmations.clear(); pointers.clear();
+    if (screen === 'choosing') suspendedChoice = true;
+    else if (screen === 'playing') { pauseRun(run, true); syncScreen(false); }
   }
   window.addEventListener('blur', suspend, { signal: host.signal });
   window.addEventListener('pagehide', suspend, { signal: host.signal });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) suspend();
-    else clock.reset();
+    if (document.hidden) suspend(); else clock.reset();
   }, { signal: host.signal });
   host.root.addEventListener('focusout', () => {
     input.clear();
-    // Hiding a menu button can briefly clear focus before the canvas receives it.
     queueMicrotask(() => {
-      if (!disposed && document.activeElement !== host.canvas) suspend();
+      if (!disposed && (screen === 'playing' ? document.activeElement !== host.canvas : !host.root.contains(document.activeElement))) suspend();
     });
   }, { signal: host.signal });
   host.root.addEventListener('keydown', event => {
+    if (event.code === 'Enter' || event.code === 'Space') confirmations.add(event.code);
+  }, { signal: host.signal, capture: true });
+  window.addEventListener('keyup', event => confirmations.delete(event.code), { signal: host.signal });
+  host.root.addEventListener('pointerdown', event => pointers.add(event.pointerId), { signal: host.signal, capture: true });
+  for (const name of ['pointerup', 'pointercancel'] as const) window.addEventListener(name, event => pointers.delete(event.pointerId), { signal: host.signal });
+  host.root.addEventListener('keydown', event => {
     if (event.repeat || (event.code !== 'Escape' && event.code !== 'KeyP')) return;
-    if (screen !== 'playing' && screen !== 'paused') return;
+    if (screen !== 'playing' && screen !== 'paused' && screen !== 'choosing') return;
     event.preventDefault();
-    act(screen === 'playing' ? 'pause' : 'resume');
+    if (screen !== 'choosing') act(screen === 'playing' ? 'pause' : 'resume');
   }, { signal: host.signal });
-  transition('title', false);
+  pauseRun(run, true); transition('title', false);
   host.start(now => {
+    if (screen === 'choosing' && run.progression.confirming && !confirmations.size && !pointers.size
+      && !document.hidden && document.hasFocus() && host.root.contains(document.activeElement)) {
+      releaseChoice(run);
+      if (run.status === 'active' && suspendedChoice) { pauseRun(run, true); suspendedChoice = false; }
+      input.clear(); clock.reset(); syncScreen();
+    }
     if (screen === 'playing') {
-      const steps = clock.advance(now);
-      const move = input.read();
-      for (let i = 0; i < steps && !run.outcome; i++) stepRun(run, move, FIXED_STEP);
-      if (run.outcome) transition(run.outcome);
+      const steps = clock.advance(now), move = input.read();
+      for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, move, FIXED_STEP);
+      syncScreen();
     }
     presentation.consume(takeEvents(run));
     presentation.draw(run, host.viewport, host.width, host.height, host.ratio, input.stick);
@@ -74,9 +98,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   return {
     dispose() {
       if (disposed) return;
-      disposed = true;
-      input.clear();
-      host.dispose();
+      disposed = true; input.clear(); host.dispose();
     },
   };
 }
