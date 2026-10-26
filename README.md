@@ -14,11 +14,19 @@ pnpm dev
 Open the printed local URL. `pnpm build` produces `dist/`; `pnpm preview` serves that build.
 
 ```sh
-pnpm exec playwright install chromium
 pnpm check
 ```
 
-`check` runs strict type checking, three focused Node invariant tests, the production build, and two Chromium session tests. The one CI job runs the same command after installing Chromium and its system dependencies. Browser tests cover lifecycle and input together, without screenshot or browser matrices.
+`check` runs strict type checking, three focused Node invariant tests, and the production build locally. There are no CI workflows.
+
+Browser checks are optional. Run them when changing input or lifecycle behavior:
+
+```sh
+pnpm exec playwright install chromium
+pnpm check:browser
+```
+
+The two Chromium session tests cover lifecycle and input together, without screenshot or browser matrices.
 
 ## Play
 
