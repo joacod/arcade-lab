@@ -1,0 +1,71 @@
+:root { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; color: #e6e7d9; background: #111b1b; font-synthesis: none; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid #4a5750; background: #20332c; border-radius: 5px; padding: 12px 18px; }
+button:hover { background: #31483c; border-color: #95a087; }
+button:focus-visible, a:focus-visible { outline: 2px solid #f5d58b; outline-offset: 4px; }
+[hidden] { display: none !important; }
+.clearing-app { max-width: 1380px; padding: 0 5%; margin: auto; }
+.masthead { height: 94px; border-bottom: 1px solid #ffffff12; display: flex; align-items: center; justify-content: space-between; }
+.brand { color: #e6e7d9; text-decoration: none; display: flex; align-items: center; gap: 12px; font-size: 18px; letter-spacing: -.5px; }
+.brand-mark { background: #e6c783; color: #1b2c26; width: 28px; height: 28px; display: grid; place-items: center; font-weight: bold; border-radius: 6px 6px 6px 0; }
+.brand-divider { color: #53615a; padding: 0 9px; }
+.brand-note { color: #89968c; font-size: 12px; letter-spacing: .2px; }
+.edition, .eyebrow { font: 10px/1.4 ui-monospace, monospace; letter-spacing: 2px; color: #a0af99; }
+.introduction { display: flex; align-items: end; justify-content: space-between; padding: 38px 0 28px; gap: 20px; }
+.eyebrow { margin: 0 0 12px; color: #d8bf86; }
+h1 { font: 500 clamp(28px, 3.4vw, 46px)/1.1 Georgia, serif; letter-spacing: -1.3px; margin: 0; }
+h1 span { color: #e6c783; }
+.intro-note { font-size: 13px; color: #9da99e; line-height: 1.6; margin: 0 0 1px; }
+.game-shell { border: 1px solid #46594b; border-radius: 9px; overflow: hidden; background: #182621; box-shadow: 0 20px 80px #0002; }
+.hud { height: 57px; padding: 0 23px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #46594b55; gap: 10px; }
+.hud-identity, .hud-actions { display: flex; align-items: center; gap: 15px; }
+.hud strong { font: 10px ui-monospace, monospace; letter-spacing: 1.5px; color: #c5cebc; }
+.live-dot, .footer-dot { width: 5px; height: 5px; display: inline-block; background: #c9cf9c; border-radius: 50%; }
+.status { font-size: 11px; color: #8d9f90; padding-left: 15px; border-left: 1px solid #46594b; }
+.timer { color: #c0cbb8; font: 12px ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.pause-button { padding: 6px 9px; background: transparent; font-size: 11px; }
+kbd { border: 1px solid #536454; border-radius: 3px; padding: 3px 5px; color: #bbc8b6; font: 10px ui-monospace, monospace; }
+.pause-button kbd { margin-left: 5px; padding: 1px 3px; font-size: 9px; }
+.stage { position: relative; height: clamp(310px, 54vw, 650px); isolation: isolate; background: #101c1c; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+canvas:focus-visible { outline: 2px solid #d9c28c; outline-offset: -4px; }
+.menu-layer { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; background: #0b171950; backdrop-filter: blur(3px); }
+.menu { width: min(370px, 100%); text-align: center; padding: 26px 24px 22px; border: 1px solid #6c79584d; border-radius: 8px; background: #14241fed; box-shadow: 0 15px 70px #0003; }
+.menu-kicker { font-size: 9px; letter-spacing: 2.5px; }
+.lantern { font-size: 39px; color: #f5d58b; line-height: 1.4; text-shadow: 0 0 28px #e8cc7350; }
+h2 { font: 500 29px/1.15 Georgia, serif; margin: 12px 0; letter-spacing: -.5px; }
+.menu-description { color: #aab7a8; font-size: 12px; line-height: 1.8; margin: 0 0 23px; }
+.menu-actions { display: grid; gap: 9px; }
+.menu-actions button { font-size: 12px; }
+button.primary { background: #e6ca8b; color: #203129; border-color: #e6ca8b; font-weight: 600; }
+button.primary:hover { background: #f7dca0; }
+.primary span { float: right; }
+.menu-footnote { color: #7d9483; font-size: 9px; margin: 20px 0 0; }
+.controls { min-height: 53px; padding: 12px 23px; display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #93a58f; font-size: 11px; }
+.controls > span { display: flex; align-items: center; gap: 4px; }
+.control-copy { margin-left: 8px; }
+.touch-hint { gap: 9px !important; }
+.touch-hint > span { font-size: 18px; }
+footer { display: flex; justify-content: space-between; color: #74877a; font: 10px/1.5 ui-monospace, monospace; padding: 17px 0 24px; gap: 16px; }
+footer p { margin: 0; }
+.footer-dot { background: #7f977a; margin-right: 8px; }
+.footer-divider { padding: 0 10px; color: #405449; }
+@media (max-width: 600px) {
+  .clearing-app { padding: 0 14px; }
+  .masthead { height: 66px; }
+  .brand-note, .brand-divider, .intro-note, .edition, .status { display: none; }
+  .introduction { padding: 27px 0 22px; }
+  .hud { padding: 0 12px; }
+  .hud-identity, .hud-actions { gap: 9px; }
+  .stage { height: 420px; }
+  .menu { padding: 23px 19px; }
+  .controls { padding: 12px; flex-wrap: wrap; font-size: 10px; }
+  footer { font-size: 9px; flex-wrap: wrap; }
+}
+@media (max-height: 550px) and (min-width: 601px) {
+  .masthead { height: 55px; }
+  .introduction { padding: 16px 0; }
+  .stage { height: 380px; }
+}
