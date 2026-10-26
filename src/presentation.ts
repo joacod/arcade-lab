@@ -1,9 +1,10 @@
 import { clearing } from './content.ts';
-import type { RunState } from './game.ts';
+import type { GameEvent, RunState } from './game.ts';
 import type { Stick } from './browser/input.ts';
 import type { Viewport } from './browser/viewport.ts';
 
 export function createPresentation(ctx: CanvasRenderingContext2D) {
+  let effects: Exclude<GameEvent, { type: 'outcome' }>[] = [];
   let facing = -Math.PI / 2;
   let lastX = clearing.arena.width / 2;
   let lastY = clearing.arena.height / 2;
@@ -18,7 +19,10 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
   }
 
   return {
-    reset() { facing = -Math.PI / 2; lastX = width / 2; lastY = height / 2; },
+    reset() { effects = []; facing = -Math.PI / 2; lastX = width / 2; lastY = height / 2; },
+    consume(events: readonly GameEvent[]) {
+      for (const event of events) if (event.type !== 'outcome') effects.push(event);
+    },
     draw(run: Readonly<RunState>, view: Viewport, cssWidth: number, cssHeight: number,
       ratio: number, stick: Stick | undefined) {
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -65,6 +69,55 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
         circle(-25, y, 12, '#284039'); circle(width + 25, height - y, 13, '#263d35');
       }
 
+      // Warnings are simulation-owned pending entries, not hittable enemies.
+      for (const entry of run.entries) {
+        const progress = 1 - entry.remaining / clearing.round.entryWarning;
+        ctx.strokeStyle = '#f1b37d'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(entry.x, entry.y, 19 + progress * 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(entry.x - 8, entry.y); ctx.lineTo(entry.x + 8, entry.y);
+        ctx.moveTo(entry.x, entry.y - 8); ctx.lineTo(entry.x, entry.y + 8); ctx.stroke();
+      }
+      effects = effects.filter(effect => run.elapsed - effect.at < clearing.presentation.defeatEffect);
+      for (const enemy of run.enemies) {
+        const hit = effects.some(effect => effect.type === 'enemy-hit'
+          && run.elapsed - effect.at < clearing.presentation.hitFlash
+          && effect.enemyId === enemy.id);
+        const angle = Math.atan2(run.player.y - enemy.y, run.player.x - enemy.x);
+        ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(angle);
+        circle(0, 4, 13, '#07151266');
+        ctx.strokeStyle = hit ? '#ffe5cc' : '#c98c81'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (const side of [-1, 1]) {
+          ctx.moveTo(-8, side * 7); ctx.lineTo(-13, side * 13); ctx.lineTo(-2, side * 11);
+          ctx.moveTo(4, side * 6); ctx.lineTo(10, side * 12);
+        }
+        ctx.stroke(); circle(0, 0, 10, hit ? '#ffe5cc' : '#b37870');
+        circle(5, -3, 2, '#382a2c'); circle(5, 3, 2, '#382a2c');
+        ctx.restore();
+        if (enemy.health < clearing.crawler.maxHealth) {
+          ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - 11, enemy.y - 20, 22, 3);
+          ctx.fillStyle = '#e6a091'; ctx.fillRect(enemy.x - 11, enemy.y - 20, 22 * enemy.health / clearing.crawler.maxHealth, 3);
+        }
+      }
+      for (const projectile of run.projectiles) {
+        ctx.strokeStyle = '#99dcf0'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(projectile.x - projectile.dx * 12, projectile.y - projectile.dy * 12);
+        ctx.lineTo(projectile.x, projectile.y); ctx.stroke();
+        circle(projectile.x, projectile.y, clearing.spark.radius, '#c3f1ff');
+      }
+      for (const effect of effects) {
+        const age = run.elapsed - effect.at;
+        const duration = effect.type === 'enemy-defeated' ? clearing.presentation.defeatEffect
+          : effect.type === 'shot' ? clearing.presentation.shotFlash : clearing.presentation.hitFlash;
+        if (age >= duration) continue;
+        ctx.save(); ctx.globalAlpha = 1 - age / duration;
+        ctx.strokeStyle = effect.type === 'player-hit' ? '#ff8a82'
+          : effect.type === 'enemy-defeated' ? '#efbb9f' : '#c3f1ff';
+        ctx.lineWidth = effect.type === 'player-hit' ? 4 : 2;
+        ctx.beginPath(); ctx.arc(effect.x, effect.y, 8 + age / duration * 21, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+
       const { x, y } = run.player;
       if (x !== lastX || y !== lastY) facing = Math.atan2(y - lastY, x - lastX);
       lastX = x; lastY = y;
@@ -76,7 +129,8 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
       ctx.translate(x, y); ctx.rotate(facing);
       ctx.fillStyle = '#b6b899';
       ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-7, -10); ctx.lineTo(-7, 10); ctx.closePath(); ctx.fill();
-      circle(0, 0, clearing.keeper.radius, palette.light);
+      circle(0, 0, clearing.keeper.radius, effects.some(effect => effect.type === 'player-hit'
+        && run.elapsed - effect.at < clearing.presentation.hitFlash) ? '#ffffff' : palette.light);
       circle(3, 0, 4, '#fff0c0');
       ctx.restore();
 

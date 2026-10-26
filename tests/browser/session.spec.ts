@@ -30,7 +30,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await expect(page.getByRole('heading', { name: 'A quiet beginning.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Keep the light alive.' })).toBeVisible();
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
   const start = await keeper(page);
@@ -51,7 +51,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.clock.fastForward(60000);
   expect(await keeper(page)).toEqual(frozen);
   await expect(page.locator('.timer')).toHaveText(time!);
-  await page.getByRole('button', { name: 'Resume exploring' }).click();
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
   await page.clock.runFor(50);
   expect(await keeper(page)).toEqual(frozen);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -72,14 +72,14 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
     await page.getByRole('button', { name: 'Restart', exact: true }).click();
     await page.clock.runFor(50);
     expect(Math.abs((await keeper(page)).x - 480)).toBeLessThan(5);
-    await expect(page.locator('.timer')).toHaveText('00:00');
+    await expect(page.locator('.timer')).toHaveText('00:00 / 03:00');
   }
   await page.keyboard.down('d');
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await page.clock.fastForward(60000);
-  await expect(page.getByRole('button', { name: 'Resume exploring' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
   await page.keyboard.up('d');
-  await page.getByRole('button', { name: 'Resume exploring' }).click();
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
   await page.clock.runFor(500);
   const resumed = await keeper(page);
   expect(Math.abs(resumed.x - 480)).toBeLessThan(5);
@@ -92,12 +92,12 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
     delete (document as unknown as { hidden?: boolean }).hidden;
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(page.getByRole('button', { name: 'Resume exploring' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
   await page.getByRole('button', { name: 'Return to title' }).click();
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
   await page.locator('.brand').focus();
-  await expect(page.getByRole('button', { name: 'Resume exploring' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
   const prevented = await page.locator('.brand').evaluate(link => !link.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true })));
   expect(prevented).toBe(false);
   expect(errors).toEqual([]);
