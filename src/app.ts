@@ -1,4 +1,4 @@
-import { createRun, stepRun } from './game.ts';
+import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
 import { createHost } from './browser/host.ts';
 import { bindInput } from './browser/input.ts';
 import { createClock, FIXED_STEP } from './browser/clock.ts';
@@ -21,6 +21,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     input.clear();
     clock.reset();
     screen = next;
+    pauseRun(run, next !== 'playing');
     ui.show(screen, focus);
   }
   function act(action: MenuAction) {
@@ -54,19 +55,21 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   }, { signal: host.signal });
   host.root.addEventListener('keydown', event => {
     if (event.repeat || (event.code !== 'Escape' && event.code !== 'KeyP')) return;
-    if (screen === 'title') return;
+    if (screen !== 'playing' && screen !== 'paused') return;
     event.preventDefault();
     act(screen === 'playing' ? 'pause' : 'resume');
   }, { signal: host.signal });
-  ui.show(screen, false);
+  transition('title', false);
   host.start(now => {
     if (screen === 'playing') {
       const steps = clock.advance(now);
       const move = input.read();
-      for (let i = 0; i < steps; i++) stepRun(run, move, FIXED_STEP);
+      for (let i = 0; i < steps && !run.outcome; i++) stepRun(run, move, FIXED_STEP);
+      if (run.outcome) transition(run.outcome);
     }
+    presentation.consume(takeEvents(run));
     presentation.draw(run, host.viewport, host.width, host.height, host.ratio, input.stick);
-    ui.updateTime(run.elapsed);
+    ui.update(run);
   });
   return {
     dispose() {

@@ -10,13 +10,15 @@ test('normalized movement, analog strength, collision radius, and independent ru
   const fresh = createRun();
   stepRun(run, { x: 1, y: -1 }, 1);
   assert.ok(Math.abs(Math.hypot(run.player.x - 480, run.player.y - 320) - 150) < 1e-9);
-  assert.deepEqual(fresh, { player: { x: 480, y: 320 }, elapsed: 0 });
+  assert.deepEqual(fresh.player, { x: 480, y: 320, health: 100, invulnerability: 0 });
+  assert.equal(fresh.elapsed, 0);
+  assert.notEqual(run.enemies, fresh.enemies);
   const analog = createRun();
   stepRun(analog, { x: 0.5, y: 0 }, 1);
   assert.equal(analog.player.x, 555);
   for (const direction of [-1, 1]) {
     stepRun(run, { x: direction, y: direction }, 100);
-    assert.deepEqual(run.player, direction < 0 ? { x: 10, y: 10 } : { x: 950, y: 630 });
+    assert.deepEqual({ x: run.player.x, y: run.player.y }, direction < 0 ? { x: 10, y: 10 } : { x: 950, y: 630 });
   }
   assert.equal(clearing.keeper.radius, 10);
 });
