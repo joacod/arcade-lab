@@ -1,8 +1,8 @@
-import { clearing, enemies, evolution, upgrades, weapons } from './content.ts';
+import { clearing, enemies, evolution, upgrades, weapons, type RoundDefinition } from './content.ts';
 
 export const content = { clearing, enemies, evolution, upgrades, weapons };
 /** Small checks for this game's authored data; diagnostics name the field to repair. */
-export function validateContent(data = content): string[] {
+export function validateContent(data: Omit<typeof content, 'clearing'> & { clearing: Omit<typeof clearing, 'round'> & { round: RoundDefinition } } = content): string[] {
   const errors: string[] = [];
   const positive = (value: number, path: string, integer = false) => {
     if (!Number.isFinite(value) || value <= 0 || (integer && !Number.isSafeInteger(value))) errors.push(`${path}: expected a positive ${integer ? 'integer' : 'finite number'}`);

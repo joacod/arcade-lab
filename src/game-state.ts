@@ -1,4 +1,4 @@
-import type { EnemyId, EquippedId, WeaponId } from './content.ts';
+import type { EnemyId, EquippedId, WeaponId, RoundDefinition } from './content.ts';
 
 export interface MoveAction { readonly x: number; readonly y: number }
 export interface Point { x: number; y: number }
@@ -19,8 +19,11 @@ export type GameEvent =
   | { type: 'pulse'; x: number; y: number; radius: number; at: number }
   | { type: 'enemy-hit' | 'enemy-defeated'; x: number; y: number; enemyId: number; at: number }
   | { type: 'evolution'; at: number }
+  | { type: 'pickup'; x: number; y: number; at: number }
+  | { type: 'upgrade'; at: number }
   | { type: 'outcome'; outcome: Outcome; at: number };
 export interface RunState {
+  readonly round: RoundDefinition;
   player: Point & { health: number; shield: number; invulnerability: number };
   enemies: Enemy[];
   projectiles: Projectile[];
