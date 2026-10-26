@@ -23,8 +23,10 @@ export function createHost(container: HTMLElement) {
     width = Math.max(1, rect.width);
     height = Math.max(1, rect.height);
     ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
+    const backingWidth = Math.round(width * ratio), backingHeight = Math.round(height * ratio);
+    // resize + ResizeObserver may report the same size. Reassignment clears a painted frame.
+    if (canvas.width !== backingWidth) canvas.width = backingWidth;
+    if (canvas.height !== backingHeight) canvas.height = backingHeight;
     viewport = createViewport(width, height);
   }
   const observer = new ResizeObserver(resize);

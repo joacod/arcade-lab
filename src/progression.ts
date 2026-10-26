@@ -76,6 +76,7 @@ export function selectUpgrade(run: RunState, id: string): boolean {
     run.events.push({ type: 'evolution', at: run.elapsed });
   }
   run.stats.upgrades++;
+  run.events.push({ type: 'upgrade', at: run.elapsed });
   run.progression.pending--;
   run.progression.choices = [];
   run.progression.confirming = true;
@@ -103,5 +104,6 @@ export function advanceGems(run: RunState, dt: number): void {
     return true;
   });
   // Batch this tick's collections so entering a choice never loses sibling gems or XP.
+  if (collected) run.events.push({ type: 'pickup', x: run.player.x, y: run.player.y, at: run.elapsed });
   grantXP(run, collected);
 }

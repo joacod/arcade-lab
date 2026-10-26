@@ -26,21 +26,25 @@ pnpm exec playwright install chromium
 pnpm check:browser
 ```
 
-The Chromium checks combine input/lifecycle coverage with one complete playable round. There are no per-weapon browser suites or browser matrices.
+The three Chromium checks exercise input/lifecycle and a short representative flow through choices, outcomes and Retry for both configurations. Only that flow uses shortened test-only content served by Playwright; the production profiles and complete three-minute combat route are covered by fast simulation tests. There are no per-effect suites, full-round browser waits, or browser matrices.
 
 ## Play
 
 Enter the clearing to start a **three-minute survival round** as the Keeper. **Spark fires automatically** at the nearest living crawler. Collect the green XP gems, choose upgrades, and keep moving until dawn. Other weapons unlock through level choices. A larger elite crawler arrives at two minutes.
 
-Move with **WASD / arrows**, or press and drag inside the arena with a finger, pen, or mouse. The floating movement control has a dead zone and proportional strength. Release or cancel the pointer to stop. Diagonal movement is normalized.
+Move with **WASD / arrows**, or press and drag inside the arena with a finger, pen, or mouse. The floating movement control uses a 6-CSS-pixel dead zone and proportional strength up to a 42-CSS-pixel drag, with the same gesture size after resizing. Release or cancel the pointer to stop. Diagonal movement is normalized.
 
 Choose an upgrade with a click/tap, **arrows then Enter/Space**, or normal Tab focus. Choices pause all gameplay. Each earned level offers three distinct effective choices. Multiple earned choices queue in order, preserving excess XP. Release confirmation before the next choice or gameplay can resume. Manual pause is available after resolving choices.
 
 **Escape / P** or **Pause** opens the pause menu. Resume, restart with a fresh Keeper, or return to the title. Victory and defeat show active survival time, health, level, kills, elite kills and combat statistics, with Retry and Return to title. Focus loss, leaving the application, and page hiding stop gameplay and clear held input. Resume is deliberate, including after completing a choice interrupted by focus loss. Keyboard movement belongs to the focused canvas; touch gesture suppression belongs to the canvas. Menus use HTML buttons and keyboard focus.
 
-## Step 3 of 4
+## Step 4 of 4
 
-The complete reference gameplay is implemented with typed content and small TypeScript weapon functions. Step 2's rank-1-only weapon and no-XP/ordinary-only simplifications are removed. There are no runtime dependencies, saves, meta-progression, shops, extra objectives or score economy. The fuller presentation/audio pass remains Step 4.
+The complete reference gameplay now has a native Canvas 2D presentation, original local SVG actor sheets, HTML menus and procedural Web Audio cues. The default **Until dawn** configuration retains the accepted three-minute rules. There are no runtime dependencies, saves, meta-progression, shops, extra objectives or score economy.
+
+On the title screen, choose **Artwork → Moonglass** for a cool crystalline clearing instead of the default **Lanternwood** grove. Theme selection changes palettes, scenery motifs and actor frames only. Independently choose **Round → Brief dusk** for 90 seconds, a 40-crawler cap, an elite at 60 seconds, and spawn intervals of 1.3/0.9/0.6 seconds at 0/30/60 seconds. It uses the same movement, combat, progression, pause, result and retry implementation. Selections survive retries and title transitions within the session, and reset on reload.
+
+Sound activation is attempted directly in Start, Retry and Resume. Use **Mute** and **Volume** below the arena. Focusing a control during play pauses the round; Resume returns focus to the arena. If audio is unavailable, a status message appears and play continues silently. There is no separate activation screen.
 
 Tuning lives in `src/content.ts`. The [pinned upstream design](https://github.com/joacod/godot-games/blob/2fc1de05248537b21cf9b9eed656ce877d3e1561/survivors/docs/DESIGN.md) remains the detailed gameplay reference. The adaptation includes:
 
@@ -58,9 +62,9 @@ Intentional adaptation choices and reference details resolved from code:
 - **Halo is an orbiting body:** its 36-unit orbit has an 8-unit collision radius and a three-second revolution, as defined by `orbit_attack.gd` and its scene. It is not a continuous damaging ring. Pulse samples its 72-unit activation circle once, including enemy body radii, as in `pulse_attack.gd`.
 - **Warning safety:** upstream `enemy.gd` can report the entering elite as alive while health/collision is disabled. Here it is explicitly excluded from targeting as well as damage and contact until the warning ends, so no projectile is consumed against an invulnerable entry.
 - **Tick boundaries:** the browser retains Step 2's swept projectile-radius collision and movement limited to remaining projectile lifetime. Upstream combines a center ray with cached area overlaps and expires before movement on its last tick. Drops/collections are resolved synchronously in the browser simulation, batching all same-tick gem XP before offering choices. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
-- Original modest Canvas shapes show gems, orbit, radial pulses, projectiles, warnings and the labeled elite. There is no audio or imported art. Touch verification uses Chromium pointer input and touch emulation, not a physical device.
+- Original local SVG frames show the Keeper and crawlers, with Canvas silhouettes as a loading/failure fallback. Canvas scenery, shield/light halos, hit/death rings, pickup flashes, weapon colors/shapes and entry warnings support the authoritative HTML health/XP/loadout HUD. The elite keeps its label and health bar. Touch verification uses Chromium pointer input and touch emulation, not a physical device.
 
-`pnpm check` covers movement/clock foundations, combat, spawn pressure, elite warning safety, queued progression and confirmation release, offered-only upgrade application, both evolution acquisition orders, repeatable modifiers/shield, distinct attacks, gem attraction, complete simulation wins/losses, immutable definitions and clean reset. Content validation reports field-specific invalid values and relationships before a run starts. The optional Chromium checks cover the session lifetime and a complete three-minute route through upgrades, evolution, the elite, results and Retry.
+`pnpm check` covers movement/clock foundations, combat, spawn pressure, elite warning safety, queued progression and confirmation release, offered-only upgrade application, both evolution acquisition orders, repeatable modifiers/shield, distinct attacks, gem attraction, complete simulation wins/losses, immutable definitions and clean reset. Content validation reports field-specific invalid values and relationships before a run starts. Additional fast checks cover both round profiles, art frame validation, stale asset completion, sound activation/voice limits/pause/mute/reset/disposal, and silent audio failure. The optional Chromium checks cover the session lifetime plus representative choices, results, theme/profile selection, failed artwork and Retry.
 
 ## Responsibilities
 
@@ -74,13 +78,26 @@ Intentional adaptation choices and reference details resolved from code:
 | `src/progression.ts` | Gem attraction/collection, XP, queued choices, eligibility, upgrade application, evolution and confirmation-release state |
 | `src/combat.ts`, `src/weapons.ts`, `src/weapons/` | Shared hits/targeting/projectile collision, cadence dispatch, and separately located Spark/Halo/Pulse/Shard behaviors |
 | `src/content-validation.ts` | Small field and content-relationship checks before Start |
-| `src/presentation.ts` | Clearing/actors/projectiles/warnings, facing and short effects; reads gameplay state and consumes explicit occurrences once |
+| `src/presentation.ts` | Canvas clearing, actors, weapons and warnings; read-only run consumption, facing and at most 128 short effects |
+| `src/themes.ts`, `src/art/` | Replaceable local art IDs/sources, frame rectangles, anchors, scales, palettes, motifs and cosmetic timing; [art provenance](src/art/README.md) |
+| `src/assets.ts` | One replaceable image request per session, loaded-frame validation, failure status and stale-completion/disposal guard |
+| `src/sound.ts` | Presentation-owned Web Audio context, immediate coalesced cues, 12-voice cap, gain ramps, mute/volume, suspension and disposal |
 | `src/ui.ts`, `src/style.css` | HTML title/pause/result menus, focus targets, authoritative-state HUD, controls, responsive presentation |
-| `src/content.ts` | Readonly typed weapon/enemy/upgrade definitions, evolution recipe, run tuning and presentation definitions |
+| `src/content.ts` | Readonly weapon/enemy/upgrade definitions, collision radii, evolution recipe, default tuning and named round configurations |
 | `src/app.ts` | Composition, screen transitions, run replacement, suspension, session disposal |
 | `src/main.ts` | Mount into `#app` and dispose on Vite hot reload |
 
-`mountClearing(container)` returns an idempotent `dispose()`. Each mount owns its root, listeners through an AbortController, ResizeObserver, pointer capture, and animation scheduling. Dispose removes those resources and only its own root. Restart replaces run and presentation state while retaining the browser session, clearing objects, cooldowns, spawn schedule, held input and pending notifications. The simulation owns active, paused, choosing and finished status; the UI consumes the offered IDs and submits a selection. Composition translates physical confirmation release into a separate game action and clears movement between panels. Composition drains the simulation event list once per frame (across all fixed steps) and hands it to presentation. Effects age in active simulation time and draw calls never create gameplay occurrences. Paused or hidden time never becomes simulation catch-up time.
+`mountClearing(container)` returns an idempotent `dispose()`. Each mount owns its root, listeners through an AbortController, ResizeObserver, pointer capture, and animation scheduling. Dispose removes those resources and only its own root. Restart replaces run and presentation state while retaining the browser session, clearing objects, cooldowns, spawn schedule, held input and pending notifications. The simulation owns active, paused, choosing and finished status; the UI consumes the offered IDs and submits a selection. Composition translates physical confirmation release into a separate game action and clears movement between panels. Composition drains the simulation event list once per frame (across all fixed steps) and hands the same notifications to visuals and sound. Batched pickups and accepted upgrades now emit explicit notifications as well. Sound and drawing never advance rules. Effects age in active simulation time and draw calls never create gameplay occurrences. Paused or hidden time never becomes simulation catch-up time.
+
+The specific boundary adjustments are a readonly round definition passed into each new run and separate presentation theme definitions. Simulation imports typed content and behavior only. Browser host/input/clock remain independent of the round selection and artwork. Presentation reads simulation state and shares pure orbit geometry; it never writes gameplay state. UI emits selections; composition supplies the selected round at run construction. Change mechanics in `game.ts`, `combat.ts`, `progression.ts` or `weapons/`; balance in `content.ts`; artwork and draw parameters in `themes.ts`/`art/`; world visuals in `presentation.ts`; menus/HUD/layout in `ui.ts`/`style.css`; sound in `sound.ts`.
+
+SVG frame dimensions and transparent padding never define physical bodies. Lanternwood's 64-pixel and Moonglass's 80-pixel frames use different scales; Keeper/crawler/elite collision radii remain 10/11/18 world units. Loaded frame bounds, anchors and scales are checked against image dimensions. Failed sheets produce a visible explanation and body silhouettes. Asset selection invalidates old requests, and disposal detaches pending handlers. No callbacks or effects accumulate over retries.
+
+Sound uses short oscillator/gain envelopes without recordings, timers or a playback queue. Repeated same-frame cues coalesce. Pause/focus loss/mute/retry cancel voices; session disposal disconnects nodes and closes the single lazy context. Events received while silent or before activation are discarded. Upgrade/outcome cues can finish over their menus. No ambient music is included.
+
+### Verification limits
+
+Chromium pointer input/touch emulation and narrow viewport checks do not establish physical mobile-device behavior. Automated checks verify audio graph lifecycle and gesture activation, not subjective loudness, listening quality, or device speakers. Native audio policy can vary by browser/device. The full arena remains visible with letterboxing, so actors are smaller on narrow portrait screens. Canvas is visual; keyboard-accessible HTML controls and HUD do not provide a nonvisual equivalent of the game world.
 
 ## Gameplay reference
 

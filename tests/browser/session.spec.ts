@@ -2,26 +2,32 @@ import { test, expect, type Page } from '@playwright/test';
 
 // Read the Keeper's body from actual Canvas output, in world units.
 async function keeper(page: Page) {
-  return page.locator('canvas').evaluate(canvas => {
-    const ctx = canvas.getContext('2d')!;
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let x = 0, y = 0, count = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-      if ((pixels[i] === 255 && pixels[i + 1] === 240 && pixels[i + 2] === 192)
-        || (pixels[i] === 245 && pixels[i + 1] === 213 && pixels[i + 2] === 139)) {
-        const pixel = i / 4;
-        x += pixel % canvas.width; y += Math.floor(pixel / canvas.width); count++;
+  // A real ResizeObserver can run after a fake-clock batch. Wait for its next painted frame.
+  for (let frame = 0; frame < 3; frame++) {
+    const position = await page.locator('canvas').evaluate(canvas => {
+      const ctx = canvas.getContext('2d')!;
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let x = 0, y = 0, count = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if ((Math.abs(pixels[i]! - 245) < 8 && Math.abs(pixels[i + 1]! - 213) < 8 && Math.abs(pixels[i + 2]! - 139) < 8)
+          || (pixels[i]! > 247 && Math.abs(pixels[i + 1]! - 240) < 8 && Math.abs(pixels[i + 2]! - 192) < 8)) {
+          const pixel = i / 4;
+          x += pixel % canvas.width; y += Math.floor(pixel / canvas.width); count++;
+        }
       }
-    }
-    if (!count) throw new Error('Keeper was not drawn');
-    const rect = canvas.getBoundingClientRect();
-    const ratio = canvas.width / rect.width;
-    const scale = Math.min(rect.width / 1056, rect.height / 736);
-    return {
-      x: (x / count / ratio - (rect.width - 960 * scale) / 2) / scale,
-      y: (y / count / ratio - (rect.height - 640 * scale) / 2) / scale,
-    };
-  });
+      if (!count) return null;
+      const rect = canvas.getBoundingClientRect();
+      const ratio = canvas.width / rect.width;
+      const scale = Math.min(rect.width / 1056, rect.height / 736);
+      return {
+        x: (x / count / ratio - (rect.width - 960 * scale) / 2) / scale,
+        y: (y / count / ratio - (rect.height - 640 * scale) / 2) / scale,
+      };
+    });
+    if (position) return position;
+    await page.clock.runFor(20);
+  }
+  throw new Error('Keeper was not drawn');
 }
 
 test('movement, resize, pause, repeated restart, suspension and scoped keys', async ({ page }) => {
@@ -59,7 +65,8 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   const resized = await keeper(page);
   expect(Math.abs(resized.x - frozen.x)).toBeLessThan(5);
   await page.keyboard.down('s'); await page.clock.runFor(1000); await page.keyboard.up('s');
-  expect((await keeper(page)).y - resized.y).toBeCloseTo(150, -1);
+  // Tiny rasterized sprites change centroid with facing; allow under three CSS pixels here.
+  expect(Math.abs((await keeper(page)).y - resized.y - 150)).toBeLessThan(8);
   await page.keyboard.down('s'); await page.keyboard.down('d');
   await page.clock.runFor(10000);
   await page.keyboard.up('s'); await page.keyboard.up('d');
@@ -142,6 +149,15 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await page.mouse.up();
   await page.clock.runFor(500);
   expect(await keeper(page)).toEqual(touchCancelled);
+  // A half-strength drag stays 21 CSS pixels on a narrow viewport too.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.runFor(100);
+  const narrow = (await canvas.boundingBox())!, beforeDrag = await keeper(page);
+  await page.mouse.move(narrow.x + narrow.width / 2, narrow.y + narrow.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(narrow.x + narrow.width / 2 + 21, narrow.y + narrow.height / 2);
+  await page.clock.runFor(1000); await page.mouse.up();
+  expect(Math.abs((await keeper(page)).x - beforeDrag.x - 75)).toBeLessThan(8);
   await page.getByRole('button', { name: 'Pause', exact: false }).click();
   await page.getByRole('button', { name: 'Restart', exact: true }).click();
   await page.clock.runFor(500);
@@ -183,70 +199,119 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   expect(errors).toEqual([]);
 });
 
-test('play a complete round through upgrades, release-gated confirmation, evolution, elite and fresh retry', async ({ page }) => {
-  test.setTimeout(180000); // This scenario renders all 180 active seconds through the real frame loop.
+// Exercise real composition with shortened authored deadlines, without rendering full rounds.
+// Simulation invariants cover the production profiles and complete three-minute combat route.
+test('themes, both configurations, upgrade confirmation, outcomes, retry and asset fallback', async ({ page }) => {
+  let lethal = false;
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    const Original = window.AudioContext;
+    const evidence = { created: 0, gestures: [] as boolean[], contexts: [] as AudioContext[] };
+    (window as unknown as { audioEvidence: typeof evidence }).audioEvidence = evidence;
+    window.AudioContext = class extends Original {
+      constructor(options?: AudioContextOptions) { super(options); evidence.created++; evidence.contexts.push(this); }
+      override resume() { evidence.gestures.push(navigator.userActivation.isActive); return super.resume(); }
+    };
+  });
+  await page.route('**/src/content.ts', async route => {
+    const response = await route.fetch();
+    const body = `${await response.text()}
+      clearing.round.duration = 4; clearing.round.eliteAt = 2.5;
+      clearing.round.phases = [{ start: 0, interval: 1 }];
+      clearing.initialEnemy.x = 500; clearing.progression.firstCost = 5;
+      configurations.dusk.round.duration = 3; configurations.dusk.round.eliteAt = 2;
+      configurations.dusk.round.phases = [{ start: 0, interval: 1.3 }];
+      ${lethal ? 'clearing.keeper.maxHealth = 10;' : ''}
+    `;
+    await route.fulfill({ response, body });
+  });
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await expect(page.locator('.asset-status')).toBeHidden();
+  for (const [configuration, theme] of [['clearing', 'woodland'], ['dusk', 'moonglass']]) {
+    await page.getByLabel('Round configuration').selectOption(configuration!);
+    await page.getByLabel('Visual theme').selectOption(theme!);
+    await expect(page.locator('.asset-status')).toBeHidden();
+    await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', theme!);
+    await page.getByRole('button', { name: 'Enter the clearing' }).click();
+    await page.clock.runFor(1700);
+    await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'choosing');
+    const time = await page.locator('.timer').textContent();
+    await page.locator('.upgrade-choices button').first().focus();
+    await page.keyboard.down('Enter');
+    await page.clock.runFor(500);
+    await expect(page.locator('.timer')).toHaveText(time!);
+    await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
+    await page.keyboard.up('Enter');
+    await page.clock.runFor(50);
+    for (let i = 0; i < 12 && await page.locator('.clearing-app').getAttribute('data-screen') !== 'victory'; i++) {
+      if (await page.locator('.clearing-app').getAttribute('data-screen') === 'choosing') await page.locator('.upgrade-choices button').first().click();
+      await page.clock.runFor(500);
+    }
+    await expect(page.getByRole('heading', { name: 'Dawn finds you standing.' })).toBeVisible();
+    const result = await page.locator('.menu-description').textContent();
+    await page.clock.runFor(2000);
+    await expect(page.locator('.menu-description')).toHaveText(result!);
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await page.clock.runFor(50);
+    await expect(page.locator('.progress')).toHaveText('Level 1 · XP 0 / 5');
+    await expect(page.locator('.loadout')).toHaveText('Spark 1');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Mute', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Unmute' })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Unmute' }).click();
+    await page.getByRole('button', { name: 'Resume surviving' }).click();
+    await page.clock.runFor(100);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Return to title' }).click();
+  }
+  const audio = await page.evaluate(() => {
+    const value = (window as unknown as { audioEvidence: { created: number; gestures: boolean[]; contexts: AudioContext[] } }).audioEvidence;
+    return { created: value.created, firstGesture: value.gestures[0] };
+  });
+  expect(audio).toEqual({ created: 1, firstGesture: true });
+
+  const closed = await page.evaluate(async () => {
+    const path = '/src/app.ts';
+    const { mountClearing } = await import(path);
+    const container = document.createElement('div'); document.body.append(container);
+    const session = mountClearing(container);
+    container.querySelector<HTMLButtonElement>('[data-action="start"]')!.click();
+    session.dispose(); session.dispose();
+    const contexts = (window as unknown as { audioEvidence: { contexts: AudioContext[] } }).audioEvidence.contexts;
+    container.remove(); return contexts.at(-1)!.state;
+  });
+  expect(closed).toBe('closed');
+
+  lethal = true;
+  await page.reload();
+  for (const configuration of ['clearing', 'dusk']) {
+    await page.getByLabel('Round configuration').selectOption(configuration);
+    await page.getByRole('button', { name: 'Enter the clearing' }).click();
+    await page.clock.runFor(100);
+    await expect(page.getByRole('heading', { name: 'Your light fades.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Return to title' }).click();
+  }
+
+  lethal = false;
+  // Vite may inline the sheets, so replace the source with a failed local reference.
+  await page.route('**/src/themes.ts', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}\nthemes.woodland.source = '/missing-art.svg';` });
+  });
+  await page.route('**/missing-art.svg', route => route.abort());
+  await page.addInitScript(() => {
+    window.AudioContext = class { constructor() { throw new Error('Audio unavailable for this check'); } } as unknown as typeof AudioContext;
+  });
+  await page.reload();
+  await expect(page.locator('.asset-status')).toContainText('Using clear shape silhouettes');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
-  const canvas = page.locator('canvas'), app = page.locator('.clearing-app');
-  const box = (await canvas.boundingBox())!;
-  const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  const points = [[760, 200], [760, 440], [200, 440], [200, 200]];
-  let next = 0, choices = 0, heldCheck = false;
-  for (let iteration = 0; iteration < 300; iteration++) {
-    const screen = await app.getAttribute('data-screen');
-    if (screen === 'victory' || screen === 'defeat') break;
-    if (screen === 'choosing') {
-      const options = page.locator('.upgrade-choices button');
-      await expect(options).toHaveCount(3);
-      choices++;
-      if (!heldCheck) {
-        heldCheck = true;
-        await page.screenshot({ path: 'test-results/step3-choice.png' });
-        const time = await page.locator('.timer').textContent();
-        await options.first().focus();
-        await page.keyboard.down('Enter');
-        await page.clock.runFor(1000);
-        await expect(app).toHaveAttribute('data-screen', 'choosing');
-        await expect(page.locator('.timer')).toHaveText(time!);
-        await page.keyboard.down('Enter'); // Repeat cannot apply a second upgrade.
-        await page.clock.runFor(100);
-        await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
-        await page.keyboard.up('Enter');
-      } else await options.first().click();
-      await page.clock.runFor(50);
-      continue;
-    }
-    expect(screen).toBe('playing');
-    const at = await keeper(page);
-    let [x, y] = points[next]!;
-    if (Math.hypot(x! - at.x, y! - at.y) < 6) { next = (next + 1) % points.length; [x, y] = points[next]!; }
-    const dx = x! - at.x, dy = y! - at.y, length = Math.hypot(dx, dy);
-    await page.mouse.move(center.x, center.y);
-    await page.mouse.down();
-    await page.mouse.move(center.x + dx / length * 90, center.y + dy / length * 90);
-    await page.clock.runFor(Math.min(1000, Math.max(20, Math.round(length / 150 * 1000))));
-    await page.mouse.up();
-  }
-  await expect(page.getByRole('heading', { name: 'Dawn finds you standing.' })).toBeVisible();
-  await expect(page.locator('.timer')).toHaveText('03:00 / 03:00');
-  await expect(page.locator('.loadout')).toContainText('Arc Spark 3');
-  await expect(page.locator('.menu-description')).toContainText('1 elite defeated');
-  expect(choices).toBeGreaterThan(5);
-  await page.screenshot({ path: 'test-results/step3-victory.png' });
-  const result = await page.locator('.menu-description').textContent();
-  await page.clock.runFor(5000);
-  await expect(page.locator('.menu-description')).toHaveText(result!);
-  await page.getByRole('button', { name: 'Retry', exact: true }).click();
-  await page.clock.runFor(50);
-  await expect(page.locator('.progress')).toHaveText('Level 1 · XP 0 / 10');
-  await expect(page.locator('.loadout')).toHaveText('Spark 1');
-  await expect(page.locator('.health-value')).toHaveText('100 / 100 HP');
-  await expect(page.locator('.modifiers')).toHaveText('Shield 0 · Power +0% · Pickup 48');
-  await expect(page.locator('.timer')).toHaveText('00:00 / 03:00');
+  await expect(page.locator('.sound-status')).toContainText('Sound unavailable');
+  expect(Math.abs((await keeper(page)).x - 480)).toBeLessThan(5);
   expect(errors).toEqual([]);
 });

@@ -1,6 +1,11 @@
 export type WeaponId = 'spark' | 'halo' | 'pulse' | 'shard';
 export type EquippedId = WeaponId | 'arc_spark';
 export type EnemyId = 'crawler' | 'elite_crawler';
+export interface RoundDefinition {
+  readonly duration: number; readonly ordinaryCap: number; readonly eliteAt: number;
+  readonly entryWarning: number; readonly entryInset: number; readonly entryMinDistance: number;
+  readonly edgeDivisions: number; readonly phases: readonly { readonly start: number; readonly interval: number }[];
+}
 export interface WeaponDefinition {
   readonly name: string;
   readonly behavior: 'nearest-shot' | 'orbit' | 'pulse' | 'cardinal-burst';
@@ -57,8 +62,13 @@ export const clearing = {
     entryMinDistance: 160, edgeDivisions: 10,
     phases: [{ start: 0, interval: 1 }, { start: 60, interval: 0.65 }, { start: 120, interval: 0.4 }],
   },
-  presentation: {
-    margin: 48, hitFlash: 0.16, defeatEffect: 0.35, shotFlash: 0.1, pulseFlash: 0.3,
-    palette: { background: '#101c1c', floor: '#203a33', boundary: '#69806b', light: '#f5d58b' },
-  },
 } as const;
+
+export const configurations = {
+  clearing: { name: 'Until dawn', description: 'The original clearing · 3 minutes', round: clearing.round },
+  dusk: { name: 'Brief dusk', description: 'A gentler opening · 90 seconds · elite at 60s', round: {
+    ...clearing.round, duration: 90, eliteAt: 60, ordinaryCap: 40,
+    phases: [{ start: 0, interval: 1.3 }, { start: 30, interval: 0.9 }, { start: 60, interval: 0.6 }],
+  } },
+} as const satisfies Record<string, { name: string; description: string; round: RoundDefinition }>;
+export type ConfigurationId = keyof typeof configurations;

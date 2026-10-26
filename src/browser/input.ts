@@ -12,6 +12,7 @@ const directions: Record<string, MoveAction> = {
 export interface Stick {
   origin: { x: number; y: number };
   tip: { x: number; y: number };
+  radius: number;
 }
 
 export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
@@ -46,7 +47,7 @@ export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
     canvas.focus({ preventScroll: true });
     held.clear();
     pointerId = event.pointerId;
-    stick = { origin, tip: origin };
+    stick = { origin, tip: origin, radius: 42 / viewport().scale };
     canvas.setPointerCapture(pointerId);
   }, { signal });
   canvas.addEventListener('pointermove', event => {
@@ -64,11 +65,13 @@ export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
     get stick() { return stick; },
     read(): MoveAction {
       if (stick) {
+        // Gesture size is in CSS pixels, independent of full-arena letterboxing.
+        stick.radius = 42 / viewport().scale;
         const dx = stick.tip.x - stick.origin.x;
         const dy = stick.tip.y - stick.origin.y;
         const distance = Math.hypot(dx, dy);
-        if (distance < 6) return { x: 0, y: 0 };
-        const divisor = Math.max(42, distance);
+        if (distance < stick.radius / 7) return { x: 0, y: 0 };
+        const divisor = Math.max(stick.radius, distance);
         return { x: dx / divisor, y: dy / divisor };
       }
       // Opposite directions cancel; aliases cannot double movement strength.
