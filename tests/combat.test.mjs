@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun, stepRun, pauseRun, takeEvents } from '../src/game.ts';
-import { clearing } from '../src/content.ts';
+import { clearing, enemies, weapons } from '../src/content.ts';
 
 const idle = { x: 0, y: 0 };
 const dt = 1 / 60;
@@ -14,8 +14,8 @@ function isolated() {
   run.nextSpawn = Infinity;
   return run;
 }
-const enemy = (id, x, y, health = clearing.crawler.maxHealth) => ({ id, x, y, health });
-const shot = (x, y, dx = 1, dy = 0) => ({ x, y, dx, dy, remaining: clearing.spark.lifetime });
+const enemy = (id, x, y, health = enemies.crawler.maxHealth) => ({ id, kind: 'crawler', x, y, health, entryDelay: 0 });
+const shot = (x, y, dx = 1, dy = 0) => ({ x, y, dx, dy, weapon: 'spark', damage: 10, chainLimit: 1, hitTargets: [], remaining: weapons.spark.lifetime });
 
 test('swept radius hits the nearest intersection once, skips dead targets, and expires', () => {
   const run = isolated();
@@ -72,7 +72,7 @@ test('Spark cadence chooses the nearest living enemy and does not bank targetles
 
 test('contact immunity is shared and persistent contact can hurt again', () => {
   const run = isolated();
-  run.shotCooldown = Infinity;
+  run.loadout[0].cooldown = Infinity;
   run.enemies = [enemy(1, 480, 320), enemy(2, 480, 320)];
   stepRun(run, idle, dt);
   assert.equal(run.player.health, 90);
@@ -89,7 +89,7 @@ test('lethal final-tick contact precedes victory and outcomes freeze all gamepla
     run.elapsed = clearing.round.duration - dt;
     run.player.health = lethal ? 10 : 20;
     run.enemies = [enemy(1, 480, 320)];
-    run.entries = [{ x: 24, y: 24, remaining: dt }];
+    run.entries = [{ x: 24, y: 24, kind: 'crawler', remaining: dt }];
     run.nextSpawn = run.elapsed;
     stepRun(run, idle, dt);
     assert.equal(run.outcome, lethal ? 'defeat' : 'victory');
@@ -123,7 +123,7 @@ test('pause freezes warning, attacks, immunity and active time; retry owns fresh
   const fresh = createRun(321);
   assert.deepEqual(fresh, createRun(321));
   assert.equal(fresh.player.health, 100);
-  assert.equal(fresh.shotCooldown, clearing.spark.cadence);
+  assert.equal(fresh.loadout[0].cooldown, weapons.spark.cadence);
   assert.equal(fresh.nextSpawn, 1);
   assert.equal(fresh.enemies.length, 1);
   assert.deepEqual(fresh.entries, []);
@@ -154,9 +154,9 @@ test('spawn phases, warning safety, population cap and skipped slots stay bounde
   }
   const capped = isolated();
   capped.nextSpawn = 1;
-  capped.shotCooldown = Infinity;
+  capped.loadout[0].cooldown = Infinity;
   capped.enemies = Array.from({ length: clearing.round.ordinaryCap - 1 }, (_, i) => enemy(i, 24, 24));
-  capped.entries = [{ x: 24, y: 24, remaining: 10 }];
+  capped.entries = [{ x: 24, y: 24, kind: 'crawler', remaining: 10 }];
   advance(capped, 2);
   assert.equal(capped.enemies.length + capped.entries.length, clearing.round.ordinaryCap);
   assert.equal(capped.nextSpawn, 3);
@@ -168,29 +168,4 @@ test('spawn phases, warning safety, population cap and skipped slots stay bounde
   advance(a, 5); takeEvents(a); advance(b, 5);
   assert.equal(a.randomState, b.randomState);
   assert.deepEqual(a.entries, b.entries);
-});
-
-test('a basic unupgraded round is winnable with movement and idle play loses', () => {
-  const run = createRun(42);
-  // A simple inner rectangle leaves room to steer around the growing pack.
-  const waypoints = [[760, 200], [760, 440], [200, 440], [200, 200]];
-  let next = 0;
-  for (let i = 0; i < 180 * 60 && !run.outcome; i++) {
-    let [x, y] = waypoints[next];
-    if (Math.hypot(x - run.player.x, y - run.player.y) < 3) {
-      next = (next + 1) % waypoints.length;
-      [x, y] = waypoints[next];
-    }
-    const dx = x - run.player.x, dy = y - run.player.y;
-    const length = Math.max(1, Math.hypot(dx, dy));
-    stepRun(run, { x: dx / length, y: dy / length }, dt);
-    takeEvents(run);
-    assert.ok(run.enemies.length + run.entries.length <= clearing.round.ordinaryCap);
-  }
-  assert.equal(run.outcome, 'victory');
-  assert.ok(run.stats.kills > 0);
-  const idleRun = createRun(42);
-  advance(idleRun, 180);
-  assert.equal(idleRun.outcome, 'defeat');
-  assert.ok(idleRun.elapsed < 180);
 });

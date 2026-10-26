@@ -33,7 +33,7 @@ export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
   function clear() { held.clear(); releasePointer(); }
 
   canvas.addEventListener('keydown', event => {
-    if (!active() || !directions[event.code]) return;
+    if (!active() || !directions[event.code] || (event.repeat && !held.has(event.code))) return;
     event.preventDefault();
     held.add(event.code);
   }, { signal });

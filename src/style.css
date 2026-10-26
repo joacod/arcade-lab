@@ -90,3 +90,12 @@ footer p { margin: 0; }
   .menu-description { margin-bottom: 16px; }
   .menu-footnote { margin-top: 14px; }
 }
+.progress-hud { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 9px 23px; border-bottom: 1px solid #46594b55; color: #a9bba7; font: 11px ui-monospace, monospace; }
+.upgrade-choices { display: grid; gap: 8px; }
+.upgrade-choices button { text-align: left; padding: 12px; }
+.upgrade-choices strong, .upgrade-choices span { display: block; }
+.upgrade-choices strong { color: #f5d58b; font-size: 12px; margin-bottom: 5px; }
+.upgrade-choices span { font-size: 11px; line-height: 1.4; color: #aab7a8; }
+[data-screen='choosing'] .lantern, [data-screen='choosing'] .menu-kicker, [data-screen='choosing'] .menu-footnote { display: none; }
+[data-screen='choosing'] .menu-description { margin-bottom: 12px; }
+@media (max-width: 600px) { .progress-hud { padding: 8px 12px; font-size: 10px; } }

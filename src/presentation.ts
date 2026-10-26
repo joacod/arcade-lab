@@ -1,10 +1,11 @@
-import { clearing } from './content.ts';
+import { clearing, enemies, weapons } from './content.ts';
 import type { GameEvent, RunState } from './game.ts';
 import type { Stick } from './browser/input.ts';
+import { orbitPosition } from './weapons/halo.ts';
 import type { Viewport } from './browser/viewport.ts';
 
 export function createPresentation(ctx: CanvasRenderingContext2D) {
-  let effects: Exclude<GameEvent, { type: 'outcome' }>[] = [];
+  let effects: Extract<GameEvent, { x: number }>[] = [];
   let facing = -Math.PI / 2;
   let lastX = clearing.arena.width / 2;
   let lastY = clearing.arena.height / 2;
@@ -21,7 +22,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
   return {
     reset() { effects = []; facing = -Math.PI / 2; lastX = width / 2; lastY = height / 2; },
     consume(events: readonly GameEvent[]) {
-      for (const event of events) if (event.type !== 'outcome') effects.push(event);
+      for (const event of events) if ('x' in event) effects.push(event);
     },
     draw(run: Readonly<RunState>, view: Viewport, cssWidth: number, cssHeight: number,
       ratio: number, stick: Stick | undefined) {
@@ -70,7 +71,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
       }
 
       // Warnings are simulation-owned pending entries, not hittable enemies.
-      for (const entry of run.entries) {
+      for (const entry of [...run.entries, ...run.enemies.filter(enemy => enemy.entryDelay > 0).map(enemy => ({ ...enemy, remaining: enemy.entryDelay }))]) {
         const progress = 1 - entry.remaining / clearing.round.entryWarning;
         ctx.strokeStyle = '#f1b37d'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(entry.x, entry.y, 19 + progress * 5, 0, Math.PI * 2); ctx.stroke();
@@ -82,8 +83,11 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
         const hit = effects.some(effect => effect.type === 'enemy-hit'
           && run.elapsed - effect.at < clearing.presentation.hitFlash
           && effect.enemyId === enemy.id);
+        const data = enemies[enemy.kind];
         const angle = Math.atan2(run.player.y - enemy.y, run.player.x - enemy.x);
         ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(angle);
+        if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
+        if (data.elite) ctx.scale(1.7, 1.7);
         circle(0, 4, 13, '#07151266');
         ctx.strokeStyle = hit ? '#ffe5cc' : '#c98c81'; ctx.lineWidth = 2;
         ctx.beginPath();
@@ -94,27 +98,43 @@ export function createPresentation(ctx: CanvasRenderingContext2D) {
         ctx.stroke(); circle(0, 0, 10, hit ? '#ffe5cc' : '#b37870');
         circle(5, -3, 2, '#382a2c'); circle(5, 3, 2, '#382a2c');
         ctx.restore();
-        if (enemy.health < clearing.crawler.maxHealth) {
+        if (data.elite) {
+          ctx.fillStyle = '#f1b37d'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(data.name, enemy.x, enemy.y - 32);
+        }
+        if (enemy.health < data.maxHealth) {
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - 11, enemy.y - 20, 22, 3);
-          ctx.fillStyle = '#e6a091'; ctx.fillRect(enemy.x - 11, enemy.y - 20, 22 * enemy.health / clearing.crawler.maxHealth, 3);
+          ctx.fillStyle = '#e6a091'; ctx.fillRect(enemy.x - 11, enemy.y - 20, 22 * enemy.health / data.maxHealth, 3);
         }
       }
+      for (const gem of run.gems) {
+        ctx.save(); ctx.translate(gem.x, gem.y); ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = gem.amount > enemies.crawler.xp ? '#e6b1ff' : '#8cdbab';
+        ctx.fillRect(-4, -4, 8, 8); ctx.restore();
+      }
+      for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
+        const at = orbitPosition(run, slot);
+        ctx.strokeStyle = '#efdb8b55'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
+        circle(at.x, at.y, weapons[slot.base].hitRadius, '#efdb8b');
+      }
       for (const projectile of run.projectiles) {
-        ctx.strokeStyle = '#99dcf0'; ctx.lineWidth = 3;
+        ctx.strokeStyle = projectile.weapon === 'shard' ? '#c9b6ff' : '#99dcf0'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(projectile.x - projectile.dx * 12, projectile.y - projectile.dy * 12);
         ctx.lineTo(projectile.x, projectile.y); ctx.stroke();
-        circle(projectile.x, projectile.y, clearing.spark.radius, '#c3f1ff');
+        circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, projectile.chainLimit > 1 ? '#73f6ff' : projectile.weapon === 'shard' ? '#c9b6ff' : '#c3f1ff');
       }
       for (const effect of effects) {
         const age = run.elapsed - effect.at;
         const duration = effect.type === 'enemy-defeated' ? clearing.presentation.defeatEffect
+          : effect.type === 'pulse' ? clearing.presentation.pulseFlash
           : effect.type === 'shot' ? clearing.presentation.shotFlash : clearing.presentation.hitFlash;
         if (age >= duration) continue;
         ctx.save(); ctx.globalAlpha = 1 - age / duration;
         ctx.strokeStyle = effect.type === 'player-hit' ? '#ff8a82'
           : effect.type === 'enemy-defeated' ? '#efbb9f' : '#c3f1ff';
         ctx.lineWidth = effect.type === 'player-hit' ? 4 : 2;
-        ctx.beginPath(); ctx.arc(effect.x, effect.y, 8 + age / duration * 21, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(effect.x, effect.y, effect.type === 'pulse' ? effect.radius : 8 + age / duration * 21, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
       }
 
