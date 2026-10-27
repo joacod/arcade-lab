@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "audiobits": {
+      "source": "joacod/audiobits",
+      "sourceType": "github",
+      "skillPath": "skills/audiobits/SKILL.md",
+      "computedHash": "9e4ac7307ad92b61cfe156938fb100e9c2ba6ad32075cc53be58da16924ef8e7"
+    }
+  }
+}
