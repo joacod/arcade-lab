@@ -41,13 +41,14 @@ test.beforeEach(async ({ page }) => {
 async function fixture(page: import('@playwright/test').Page) {
   await page.goto('/');
   await page.evaluate(async () => {
-    const ownerPath = '/src/browser/audio.ts', clearingPath = '/src/sound-recipes.ts', skyPath = '/src/skybreak/sound-recipes.ts', hollowPath = '/src/platformer/sound-recipes.ts';
-    const [{ createGameAudio }, { clearingRecipes }, { skybreakRecipes }, { hollowRecipes }] = await Promise.all([import(ownerPath), import(clearingPath), import(skyPath), import(hollowPath)]);
+    const ownerPath = '/src/browser/audio.ts', clearingPath = '/src/sound-recipes.ts', skyPath = '/src/skybreak/sound-recipes.ts', hollowPath = '/src/platformer/sound-recipes.ts', circuitPath = '/src/brawler/sound-recipes.ts';
+    const [{ createGameAudio }, { clearingRecipes }, { skybreakRecipes }, { hollowRecipes }, { circuitRecipes }] = await Promise.all([import(ownerPath), import(clearingPath), import(skyPath), import(hollowPath), import(circuitPath)]);
     const w = window as any;
     w.recipes = Object.fromEntries([
       ...Object.entries(clearingRecipes).map(([cue, recipe]) => [`clearing/${cue}`, recipe]),
       ...Object.entries(skybreakRecipes).map(([cue, recipe]) => [`skybreak/${cue}`, recipe]),
       ...Object.entries(hollowRecipes).map(([cue, recipe]) => [`hollow/${cue}`, recipe]),
+      ...Object.entries(circuitRecipes).map(([cue, recipe]) => [`circuit/${cue}`, recipe]),
     ]);
     w.messages = [];
     w.owner = createGameAudio(w.recipes, (message: string) => w.messages.push(message));
@@ -70,7 +71,7 @@ test('AudioBits recipes produce finite signal, bound burst resources and cancel 
   const signals = await page.evaluate(async () => {
     const w = window as any, result = [];
     for (const cue of Object.keys(w.recipes)) {
-      const variants = cue === 'clearing/pickup' ? [{ cluster: 0 }, { cluster: 1 }] : cue === 'hollow/land' ? [{ strength: 0 }, { strength: 1 }] : [undefined];
+      const variants = cue === 'clearing/pickup' ? [{ cluster: 0 }, { cluster: 1 }] : cue === 'hollow/land' || /^circuit\/(hit|heavy|finisher|air|damage)$/.test(cue) ? [{ strength: 0 }, { strength: 1 }] : [undefined];
       for (const parameters of variants) {
         w.owner.reset();
         const played = w.owner.play(cue, { seed: 42, parameters });
@@ -124,10 +125,10 @@ test('AudioBits recipes produce finite signal, bound burst resources and cancel 
   await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.every((c: AudioContext) => c.state === 'closed'))).toBe(true);
   // Exercise the real adapters: one onset per frame, throttling, and milestone preemption.
   await page.evaluate(async () => {
-    const clearingPath = '/src/sound.ts', skyPath = '/src/skybreak/sound.ts', hollowPath = '/src/platformer/sound.ts';
-    const [clearing, sky, hollow] = await Promise.all([import(clearingPath), import(skyPath), import(hollowPath)]);
+    const clearingPath = '/src/sound.ts', skyPath = '/src/skybreak/sound.ts', hollowPath = '/src/platformer/sound.ts', circuitPath = '/src/brawler/sound.ts';
+    const [clearing, sky, hollow, circuit] = await Promise.all([import(clearingPath), import(skyPath), import(hollowPath), import(circuitPath)]);
     const w = window as any;
-    w.cueAdapters = [clearing.createSound(() => {}), sky.createSound(() => {}), hollow.createSound(() => {})];
+    w.cueAdapters = [clearing.createSound(() => {}), sky.createSound(() => {}), hollow.createSound(() => {}), circuit.createSound(() => {})];
     const button = document.createElement('button'); button.textContent = 'Activate adapters';
     button.onclick = () => w.cueAdapters.forEach((adapter: any) => adapter.activate()); document.body.append(button);
   });
@@ -135,16 +136,16 @@ test('AudioBits recipes produce finite signal, bound burst resources and cancel 
   const coalescing = await page.evaluate(() => {
     const w = window as any;
     return w.cueAdapters.map((adapter: any, i: number) => {
-      const event = i === 2 ? { type: 'jump', x: 100, y: 650, strength: 1 } : i ? { type: 'shot', x: 240, y: 660 } : { type: 'shot', weapon: 'spark', x: 480, y: 320, at: 0 };
+      const event = i === 3 ? { type: 'hit', x: 100, lane: 90, strength: .8, attack: 'jab', player: false } : i === 2 ? { type: 'jump', x: 100, y: 650, strength: 1 } : i ? { type: 'shot', x: 240, y: 660 } : { type: 'shot', weapon: 'spark', x: 480, y: 320, at: 0 };
       const before = w.audioProbe.starts;
       adapter.consume(Array(200).fill(event)); const first = w.audioProbe.starts - before;
       adapter.consume([event]); const repeat = w.audioProbe.starts - before - first;
-      adapter.consume([event, i === 2 ? { type: 'complete', x: 4280, y: 610, strength: 1 } : i ? { type: 'victory', x: 240, y: 660 } : { type: 'outcome', outcome: 'victory', at: 0 }]);
+      adapter.consume([event, i === 3 ? { type: 'victory', x: 100, lane: 90, strength: 1, player: true } : i === 2 ? { type: 'complete', x: 4280, y: 610, strength: 1 } : i ? { type: 'victory', x: 240, y: 660 } : { type: 'outcome', outcome: 'victory', at: 0 }]);
       const milestoneSources = w.audioProbe.live.size;
       adapter.dispose(); return { first, repeat, milestoneSources };
     });
   });
-  expect(coalescing).toEqual(Array(3).fill({ first: 2, repeat: 0, milestoneSources: 3 }));
+  expect(coalescing).toEqual([...Array(3).fill({ first: 2, repeat: 0, milestoneSources: 3 }), { first: 3, repeat: 0, milestoneSources: 2 }]);
   await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.every((c: AudioContext) => c.state === 'closed'))).toBe(true);
   expect(errors).toEqual([]);
 });

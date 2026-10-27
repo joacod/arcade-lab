@@ -17,6 +17,9 @@ async function selectGame(id: GameId) {
     if (id === 'skybreak') {
       const { mountSkybreak } = await import('./skybreak/app.ts');
       if (!disposed && request === generation) application.mount({ mount: host => mountSkybreak(host, showSelection) });
+    } else if (id === 'circuit') {
+      const { mountCircuit } = await import('./brawler/app.ts');
+      if (!disposed && request === generation) application.mount({ mount: host => mountCircuit(host, showSelection) });
     } else if (id === 'hollow') {
       const { mountHollow } = await import('./platformer/app.ts');
       if (!disposed && request === generation) application.mount({ mount: host => mountHollow(host, showSelection) });
