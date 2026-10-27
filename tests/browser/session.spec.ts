@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // Read the Keeper's body from actual Canvas output, in world units.
-async function keeper(page: Page) {
+async function keeper(page: Page, screenSpace = false) {
   // A real ResizeObserver can run after a fake-clock batch. Wait for its next painted frame.
   for (let frame = 0; frame < 3; frame++) {
-    const position = await page.locator('canvas').evaluate(canvas => {
+    const position = await page.locator('canvas').evaluate(async (canvas, screenSpace) => {
       const ctx = canvas.getContext('2d')!;
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       let x = 0, y = 0, count = 0;
@@ -18,12 +18,17 @@ async function keeper(page: Page) {
       if (!count) return null;
       const rect = canvas.getBoundingClientRect();
       const ratio = canvas.width / rect.width;
-      const scale = Math.min(rect.width / 1056, rect.height / 736);
+      if (screenSpace) return { x: x / count / ratio, y: y / count / ratio };
+      // Existing world-displacement checks deliberately choose Whole arena.
+      const modulePath = '/src/view.ts';
+      const { createViewport } = await import(modulePath);
+      const view = createViewport({ width: 960, height: 640 }, rect, { x: 480, y: 320 }, 'arena');
+      const scale = view.scale;
       return {
-        x: (x / count / ratio - (rect.width - 960 * scale) / 2) / scale,
-        y: (y / count / ratio - (rect.height - 640 * scale) / 2) / scale,
+        x: (x / count / ratio - view.x) / scale,
+        y: (y / count / ratio - view.y) / scale,
       };
-    });
+    }, screenSpace);
     if (position) return position;
     await page.clock.runFor(20);
   }
@@ -36,6 +41,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.getByRole('heading', { name: 'Keep the light alive.' })).toBeVisible();
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
@@ -62,6 +68,9 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   expect(await keeper(page)).toEqual(frozen);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(50);
   const resized = await keeper(page);
   expect(Math.abs(resized.x - frozen.x)).toBeLessThan(5);
   await page.keyboard.down('s'); await page.clock.runFor(1000); await page.keyboard.up('s');
@@ -116,6 +125,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByLabel('View', { exact: true }).selectOption('arena');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
   const canvas = page.locator('canvas');
@@ -152,6 +162,8 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   // A half-strength drag stays 21 CSS pixels on a narrow viewport too.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(50);
   const narrow = (await canvas.boundingBox())!, beforeDrag = await keeper(page);
   await page.mouse.move(narrow.x + narrow.width / 2, narrow.y + narrow.height / 2);
   await page.mouse.down();
@@ -229,6 +241,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toBeHidden();
   for (const [configuration, theme] of [['clearing', 'woodland'], ['dusk', 'moonglass']]) {
     await page.getByLabel('Round configuration').selectOption(configuration!);
@@ -244,8 +257,15 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await page.clock.runFor(500);
     await expect(page.locator('.timer')).toHaveText(time!);
     await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
+    if (configuration === 'clearing') await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     await page.keyboard.up('Enter');
     await page.clock.runFor(50);
+    if (configuration === 'clearing') {
+      await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+      await page.getByRole('button', { name: 'Resume surviving' }).click();
+    }
     for (let i = 0; i < 12 && await page.locator('.clearing-app').getAttribute('data-screen') !== 'victory'; i++) {
       if (await page.locator('.clearing-app').getAttribute('data-screen') === 'choosing') await page.locator('.upgrade-choices button').first().click();
       await page.clock.runFor(500);
@@ -308,10 +328,86 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     window.AudioContext = class { constructor() { throw new Error('Audio unavailable for this check'); } } as unknown as typeof AudioContext;
   });
   await page.reload();
+  await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toContainText('Using clear shape silhouettes');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
   await expect(page.locator('.sound-status')).toContainText('Sound unavailable');
   expect(Math.abs((await keeper(page)).x - 480)).toBeLessThan(5);
   expect(errors).toEqual([]);
+});
+
+test('Close camera preserves a held CSS drag; layout and fullscreen require deliberate resume', async ({ page }) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
+  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await page.clock.runFor(50);
+  const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
+  const start = await keeper(page, true);
+  await page.mouse.move(box.x + 100, box.y + 150); await page.mouse.down();
+  await page.mouse.move(box.x + 121, box.y + 150);
+  await page.clock.runFor(1000);
+  // Following the player keeps its screen X fixed while the world moves.
+  expect(Math.abs((await keeper(page, true)).x - start.x)).toBeLessThan(3);
+  await page.mouse.up();
+  await page.keyboard.press('Escape');
+  await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(50);
+  expect(Math.abs((await keeper(page)).x - 555)).toBeLessThan(8);
+
+  const surface = (await canvas.boundingBox())!;
+  await page.mouse.move(surface.x + 100, surface.y + 150); await page.mouse.down();
+  await page.mouse.move(surface.x + 121, surface.y + 150);
+  await page.clock.runFor(300);
+  await page.setViewportSize({ width: 480, height: 740 });
+  await page.clock.runFor(100);
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  const resizedFrozen = await keeper(page);
+  await page.mouse.move(surface.x + 180, surface.y + 150); await page.mouse.up();
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(500);
+  expect(await keeper(page)).toEqual(resizedFrozen);
+
+  // A rejected browser request leaves the viewport playable and reports the failure.
+  await page.evaluate(() => {
+    const root = document.querySelector<HTMLElement>('.clearing-app')!;
+    root.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied for this check'));
+  });
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect(page.locator('.display-status')).toContainText('Fullscreen could not open');
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await page.evaluate(() => { delete (document.querySelector('.clearing-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(50);
+
+  // Real native fullscreen, including the HUD/menu container and fullscreenchange state.
+  await page.keyboard.down('d');
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await page.keyboard.up('d');
+  await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible();
+  expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('clearing-app');
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await page.evaluate(() => document.exitFullscreen());
+  await page.clock.runFor(100);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  const fullscreenFrozen = await keeper(page);
+  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.clock.runFor(500);
+  expect(await keeper(page)).toEqual(fullscreenFrozen);
+
+  await page.keyboard.press('Escape');
+  await page.getByLabel('View', { exact: true }).selectOption('close');
+  await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await page.clock.runFor(50);
+  expect(Math.abs((await keeper(page, true)).x - 240)).toBeLessThan(3);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Return to title' }).click();
+  await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
 });

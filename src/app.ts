@@ -6,10 +6,11 @@ import { bindInput } from './browser/input.ts';
 import { createClock, FIXED_STEP } from './browser/clock.ts';
 import { createPresentation } from './presentation.ts';
 import { createUI, type Screen, type MenuAction } from './ui.ts';
-import { configurations, type ConfigurationId } from './content.ts';
+import { clearing, configurations, type ConfigurationId } from './content.ts';
 import { themes, type ThemeId } from './themes.ts';
 import { createAssets } from './assets.ts';
 import { createSound } from './sound.ts';
+import { createViewport, type ViewMode } from './view.ts';
 
 /** One browser session owns input, timing and disposal. Restart replaces the run. */
 export function mountClearing(container: HTMLElement): { dispose(): void } {
@@ -20,24 +21,35 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     container.append(message);
     return { dispose: () => message.remove() };
   }
-  const host = createHost(container), clock = createClock();
+  const host = createHost(container, { onDisplayChange: suspend,
+    onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) }), clock = createClock();
+  let viewMode: ViewMode = 'close';
   const presentation = createPresentation(host.ctx, themes.woodland);
   let configuration: ConfigurationId = 'clearing';
   const newRun = () => createRun(undefined, configurations[configuration].round);
   let run = newRun(), screen: Screen = 'title', disposed = false, suspendedChoice = false;
   const confirmations = new Set<string>(), pointers = new Set<number>();
-  const input = bindInput(host.canvas, () => host.viewport, () => screen === 'playing', host.signal);
+  const input = bindInput(host.canvas, () => screen === 'playing', host.signal);
   const sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
   const assets = createAssets((image, message) => {
     if (disposed) return;
     presentation.setImage(image); ui.assetStatus(message);
   });
-  const ui = createUI(host.root, host.canvas, act, choose, host.signal, id => {
-    if (screen !== 'title') return;
-    configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(); ui.update(run);
-  }, selectTheme, value => sound.setMuted(value), value => sound.setVolume(value));
+  const ui = createUI(host.root, host.canvas, {
+    signal: host.signal, onAction: act, onChoose: choose,
+    onConfiguration(id) {
+      if (screen !== 'title') return;
+      configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(); ui.update(run);
+    },
+    onTheme: selectTheme, onMute: value => sound.setMuted(value), onVolume: value => sound.setVolume(value),
+    onView(mode) { suspend(); viewMode = mode; },
+    onFullscreen() {
+      void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
+    },
+  });
+  ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
   function selectTheme(id: ThemeId) {
-    if (screen !== 'title') return;
+    if (screen !== 'title' && screen !== 'paused') return;
     host.root.dataset.theme = id;
     presentation.setTheme(themes[id]); assets.load(themes[id]);
   }
@@ -46,7 +58,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   function transition(next: Screen, focus = true) {
     input.clear(); clock.reset(); screen = next;
     if (next === 'paused' || next === 'title') sound.pause();
-    ui.show(screen, focus);
+    ui.show(screen, focus); ui.update(run);
   }
   function syncScreen(focus = true) {
     const next = run.outcome ?? (run.status === 'choosing' ? 'choosing' : run.status === 'paused' ? 'paused' : 'playing');
@@ -73,6 +85,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     }
   }
   function suspend() {
+    if (disposed) return;
     sound.pause();
     input.clear(); clock.reset(); confirmations.clear(); pointers.clear();
     if (screen === 'choosing') suspendedChoice = true;
@@ -98,8 +111,9 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   host.root.addEventListener('keydown', event => {
     if (event.repeat || (event.code !== 'Escape' && event.code !== 'KeyP')) return;
     if (screen !== 'playing' && screen !== 'paused' && screen !== 'choosing') return;
-    event.preventDefault();
-    if (screen !== 'choosing') act(screen === 'playing' ? 'pause' : 'resume');
+    // Native fullscreen owns Escape; it may exit without dispatching a key event.
+    if (event.code !== 'Escape' || !host.fullscreen) event.preventDefault();
+    if (screen === 'playing') act('pause');
   }, { signal: host.signal });
   pauseRun(run, true); transition('title', false);
   host.start(now => {
@@ -116,7 +130,8 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     }
     const events = takeEvents(run);
     presentation.consume(events); sound.consume(events);
-    presentation.draw(run, host.viewport, host.width, host.height, host.ratio, input.stick);
+    const view = createViewport(clearing.arena, host, run.player, viewMode);
+    presentation.draw(run, view, host.width, host.height, host.ratio, input.stick);
     ui.update(run);
   });
   return {

@@ -56,7 +56,7 @@ function requestEntry(run: RunState, kind: EnemyId): void {
       { x, y: inset }, { x, y: clearing.arena.height - inset });
   }
   const safe = candidates.filter(point => distanceSquared(point, run.player) >= entryMinDistance ** 2);
-  // All edges are visible. Preserve the existing farthest-edge fallback and seeded tie breaking.
+  // Choose safe world edges independently of the camera. Presentation cues mark offscreen entries.
   const farthest = Math.max(...safe.map(point => distanceSquared(point, run.player)));
   const choices = safe.filter(point => Math.abs(distanceSquared(point, run.player) - farthest) < 1e-9);
   const at = choices[Math.floor(random(run) * choices.length)]!;
