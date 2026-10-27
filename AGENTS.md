@@ -1,6 +1,5 @@
 # Project guidance
 
-- Use `<type>/<short-description>` branches. Add `codex/` only when requested.
 - Keep one private application/package and zero runtime dependencies unless explicitly changed by a later task. Do not add speculative packages, publishing/release infrastructure, or architecture.
 - Simulation owns world state and rules, depending on typed content and action-level input, never browser APIs or presentation. Keep game-specific behavior specific until actual reuse justifies extraction. Use typed data for content and TypeScript for behavior.
 - Browser sessions own DOM measurement, backing resolution, browser APIs, listeners, scheduling, and disposal. Runs own mutable gameplay state. Restart replaces a run. HMR must dispose the session.
