@@ -49,7 +49,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     else if (art.orientation === 'mirror' && Math.cos(observation.angle) < -0.01) ctx.scale(-1, 1);
     if (!Object.keys(images).length) {
       circle(0, 0, fallbackRadius, color);
-      circle(fallbackRadius * 0.4, 0, 3, color === theme.palette.light ? '#fff0c0' : '#301c32');
+      circle(fallbackRadius * 0.4, 0, 3, theme.palette.hit);
     } else stamp({ ...art, clip }, age);
     ctx.restore();
   }
@@ -173,7 +173,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       // Warnings are simulation-owned pending entries, not hittable enemies.
       for (const entry of [...run.entries, ...run.enemies.filter(enemy => enemy.entryDelay > 0).map(enemy => ({ ...enemy, remaining: enemy.entryDelay }))]) {
         const progress = 1 - entry.remaining / run.round.entryWarning;
-        ctx.strokeStyle = '#f1b37d'; ctx.lineWidth = 2;
+        ctx.strokeStyle = palette.elite; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(entry.x, entry.y, 19 + progress * 5, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(entry.x - 8, entry.y); ctx.lineTo(entry.x + 8, entry.y);
         ctx.moveTo(entry.x, entry.y - 8); ctx.lineTo(entry.x, entry.y + 8); ctx.stroke();
@@ -187,12 +187,12 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         circle(enemy.x, enemy.y + data.radius * 0.65, artPack.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
         ctx.save(); ctx.translate(enemy.x, enemy.y);
         if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
-        sprite(data.elite ? 'elite' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? '#b75466' : '#ae676e',
+        sprite(data.elite ? 'elite' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? palette.elite : palette.enemy,
           effects.findLast(effect => effect.type === 'enemy-hit' && effect.enemyId === enemy.id)?.at);
-        if (hit) { ctx.globalAlpha = 0.85; ring(0, 0, data.radius + 2, '#fff4d9', 2); }
+        if (hit) { ctx.globalAlpha = 0.85; ring(0, 0, data.radius + 2, palette.hit, 2); }
         ctx.restore();
         if (data.elite) {
-          ctx.fillStyle = '#f1b37d'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillStyle = palette.elite; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
           const art = artPack.actors.elite;
           ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art.footprint[1] * art.anchor[1] + 8));
         }
@@ -200,22 +200,22 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           const art = artPack.actors[data.elite ? 'elite' : 'crawler'];
           const barY = enemy.y - Math.max(data.radius + 8, art.footprint[1] * art.anchor[1] + 3);
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2, 3);
-          ctx.fillStyle = '#e6a091'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
+          ctx.fillStyle = palette.damage; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
         }
       }
       for (const gem of run.gems) {
         ctx.save(); ctx.translate(gem.x, gem.y); ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = gem.amount > enemies.crawler.xp ? '#e6b1ff' : palette.gem;
+        ctx.fillStyle = palette.gem;
         ctx.strokeStyle = '#182b34'; ctx.lineWidth = 2;
         ctx.fillRect(-5, -5, 10, 10); ctx.strokeRect(-5, -5, 10, 10);
-        ctx.fillStyle = '#ecfff1'; ctx.fillRect(-3, -3, 3, 3); ctx.restore();
+        ctx.fillStyle = palette.hit; ctx.fillRect(-3, -3, 3, 3); ctx.restore();
       }
       for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
         const at = orbitPosition(run, slot);
-        ctx.strokeStyle = '#efdb8b55'; ctx.lineWidth = 1;
+        ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
         circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
-        circle(at.x, at.y, weapons[slot.base].hitRadius, palette.light);
+        circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
       }
       for (const projectile of run.projectiles) {
         if (projectile.weapon === 'shard') {
@@ -227,7 +227,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         ctx.strokeStyle = palette.spark; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(projectile.x - projectile.dx * 12, projectile.y - projectile.dy * 12);
         ctx.lineTo(projectile.x, projectile.y); ctx.stroke();
-        circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, projectile.chainLimit > 1 ? '#73f6ff' : palette.spark);
+        circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, palette.spark);
       }
       for (const effect of effects) {
         const age = run.elapsed - effect.at;
@@ -236,8 +236,8 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           : effect.type === 'shot' ? visualTiming.shot : visualTiming.hit;
         if (age >= duration) continue;
         ctx.save(); ctx.globalAlpha = 1 - age / duration;
-        ctx.strokeStyle = effect.type === 'player-hit' ? '#ff8a82'
-          : effect.type === 'enemy-defeated' ? '#efbb9f' : effect.type === 'pickup' ? palette.gem : effect.type === 'pulse' ? palette.pulse : palette.spark;
+        ctx.strokeStyle = effect.type === 'player-hit' ? palette.damage
+          : effect.type === 'enemy-defeated' ? palette.enemy : effect.type === 'pickup' ? palette.gem : effect.type === 'pulse' ? palette.pulse : palette.spark;
         ctx.lineWidth = effect.type === 'player-hit' ? 4 : 2;
         ctx.beginPath(); ctx.arc(effect.x, effect.y, effect.type === 'pulse' ? effect.radius : 8 + age / duration * 21, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
@@ -256,12 +256,12 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       sprite('keeper', 'keeper', run.elapsed, clearing.keeper.radius, palette.light,
         effects.findLast(effect => effect.type === 'player-hit')?.at, effects.findLast(effect => effect.type === 'shot')?.at);
       if (effects.some(effect => effect.type === 'player-hit' && run.elapsed - effect.at < visualTiming.hit)) {
-        ring(0, 0, 16, '#ffffff', 3);
+        ring(0, 0, 16, palette.hit, 3);
       }
       ctx.restore();
 
       // A steady lantern core remains readable at narrow viewport scales.
-      if (artPack.sampling === 'smooth') circle(x, y, 5, '#fff0c0');
+      if (artPack.sampling === 'smooth') circle(x, y, 5, palette.light);
     },
   };
 }

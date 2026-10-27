@@ -9,6 +9,6 @@ export interface WorldPresentation {
   observe(run: Readonly<RunState>): void;
   reset(run: Readonly<RunState>): void;
   consume(events: readonly GameEvent[]): void;
-  draw(run: Readonly<RunState>, view: Viewport): void;
+  draw(run: Readonly<RunState>, view: Viewport, frame?: { readonly titleTime: number }): void;
   dispose(): void;
 }

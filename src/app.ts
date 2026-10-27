@@ -66,16 +66,22 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     ui.assetStatus(`Preparing ${theme.name}…`);
     let next: WorldPresentation | undefined, bundle: PreparedAssets | undefined;
     try {
-      if (theme.presentation !== 'prism') bundle = await prepareAssets(theme.art!, controller.signal);
+      if (theme.art) bundle = await prepareAssets(theme.art, controller.signal);
       if (controller.signal.aborted) return;
-      if (theme.presentation) {
+      if (theme.presentation === 'abyss') {
+        const { createBloom } = await import('./vgpu/bloom.ts');
+        if (controller.signal.aborted) return;
+        next = await createBloom(theme, controller.signal, () => {
+          if (presentation === next) graphicsFailure();
+        });
+      } else if (theme.presentation) {
         const { createGarden } = await import('./three/garden.ts');
         if (controller.signal.aborted) return;
         next = createGarden(theme, bundle?.images ?? {}, () => {
           if (presentation === next) graphicsFailure();
         });
       } else next = createPresentation(theme, bundle!.images);
-      if (disposed || request !== generation) return;
+      if (disposed || request !== generation || controller.signal.aborted) return;
       // Prepare and paint against the CURRENT run, including a retry made during loading.
       next.reset(run); next.resize(host);
       next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
@@ -87,7 +93,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
       old.dispose(); oldAssets?.dispose();
     } catch (error) {
       if (!disposed && request === generation) {
-        ui.assetStatus(`Artwork unavailable (${error instanceof Error ? error.message : 'graphics initialization failed'}). Keeping current appearance. Using clear shape silhouettes if artwork is unavailable.`);
+        ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'graphics initialization failed'}). Keeping current appearance and run.`);
         ui.appearance(appearance);
       }
     } finally {
@@ -197,7 +203,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     const events = takeEvents(run);
     presentation.consume(events); sound.consume(events);
     const view = createViewport(clearing.arena, host, run.player, viewMode);
-    try { presentation.resize(host); presentation.draw(run, view); } catch { graphicsFailure(); }
+    try { presentation.resize(host); presentation.draw(run, view, screen === 'title' ? { titleTime: now / 1000 } : undefined); } catch { graphicsFailure(); }
     overlay.draw(run, view, host, input.stick);
     ui.update(run);
   });

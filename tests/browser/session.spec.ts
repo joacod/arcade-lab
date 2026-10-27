@@ -501,7 +501,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   });
   await page.reload();
   await page.getByLabel('View', { exact: true }).selectOption('arena');
-  await expect(page.locator('.asset-status')).toContainText('Using clear shape silhouettes');
+  await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
   await expect(page.locator('.sound-status')).toContainText('Sound unavailable');
