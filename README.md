@@ -23,7 +23,7 @@ Play **Last Light Clearing** (survival), **Skybreak** (aerial arcade), **Clockwo
 
 Built with TypeScript and Vite, using Canvas 2D, Three.js and vgpu/WebGPU for graphics. [AudioBits](https://github.com/joacod/audiobits) powers procedural game sound, with shared session lifecycle handling and original recipes for each game.
 
-- [Architecture](docs/architecture.md): shared engine ownership and local verification.
+- [Architecture](docs/architecture.md): repository layout, shared engine ownership and local verification.
 - [Development guidance](AGENTS.md): contributor and agent instructions.
 
 Code is available under the [MIT license](LICENSE).

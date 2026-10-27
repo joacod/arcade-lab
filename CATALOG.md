@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 ## Last Light Clearing
 
-![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/images/last-light-clearing.png)
+![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/games/last-light-clearing/last-light-clearing.png)
 
 **Fullscreen** includes the arena, HUD and menus when supported by the browser.
 
@@ -21,11 +21,11 @@ Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances w
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [game rules and implementation](docs/last-light-clearing.md) and [art setup and provenance](src/art/README.md), including the optional development-only Mosslight appearance.
+See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md), including the optional development-only Mosslight appearance.
 
 ## Skybreak
 
-![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/images/skybreak.png)
+![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
 Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Original procedural Canvas artwork and synthesized sound require no downloaded art or audio.
 
@@ -37,11 +37,11 @@ Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, 
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
 | Escape / Pause | Pause; use Resume flight to continue |
 
-The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/skybreak.md) for pickups, boss patterns, tuning and source ownership.
+The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and source ownership.
 
 ## Clockwork Hollow
 
-![Clockwork Hollow: a brass keeper explores mossy aqueducts and glowing machinery](docs/images/clockwork-hollow.png)
+![Clockwork Hollow: a brass keeper explores mossy aqueducts and glowing machinery](docs/games/clockwork-hollow/clockwork-hollow.png)
 
 Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** and **The Starlit Belfry**. Three authored districts progress from mossy spans to pressure-powered machinery and moonlit climbs. Leap over copper thorns, stomp wind-up beetles, read vent warnings, collect optional motes and wake all three bells. The intended first-play pace is 3–6 minutes. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
 
@@ -53,11 +53,11 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | Escape / P / Pause | Pause; use Resume journey to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/clockwork-hollow.md).
+Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 
-![Midnight Circuit: Rook fights security enforcers in a rain-soaked neon street](docs/images/midnight-circuit.png)
+![Midnight Circuit: Rook fights security enforcers in a rain-soaked neon street](docs/games/midnight-circuit/midnight-circuit.png)
 
 The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstreets** and **The Power Station**, then break the blackout by defeating the **Circuit Warden**. Align in the ground-depth lane, chain a three-hit combo, clear crowds with a heavy strike and jump into a flying kick. Authored encounters mix fast Strikers and committed Bruisers before the Warden's charge and ground-impact patterns. Three lives, repair cells and a station health refill support the roughly 4–6 minute first-run pace.
 
@@ -71,11 +71,11 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | Escape / P / Pause | Pause; use Resume fight to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay, source ownership and the fourth-genre architecture evaluation](docs/midnight-circuit.md).
+Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay, source ownership and the fourth-genre architecture evaluation](docs/games/midnight-circuit/README.md).
 
 ## Obsidian Duel
 
-![Obsidian Duel: Nera and Kael trade strikes on the storm-lit terrace of the Tempest Citadel](docs/images/obsidian-duel.png)
+![Obsidian Duel: Nera and Kael trade strikes on the storm-lit terrace of the Tempest Citadel](docs/games/obsidian-duel/obsidian-duel.png)
 
 Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
 
@@ -91,11 +91,11 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Escape / P / Pause | Pause; use Resume duel to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules, source ownership and the fifth-genre architecture review](docs/obsidian-duel.md).
+Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules, source ownership and the fifth-genre architecture review](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 
-![Blastline: Nova opens a firing lane through an occupied industrial station](docs/images/blastline.png)
+![Blastline: Nova opens a firing lane through an occupied industrial station](docs/games/blastline/blastline.png)
 
 Make an entrance. Catch the last ride out. Run, jump and blast through **Border Station** and **Foundry Run**, breaking cover, dropping elevated defenses and setting off explosive barrel chains. Start with **Nova** and her automatic rifle, rescue **Bolt** to unlock a slower rocket launcher, then swap between both weapon styles. Disable power relays, break the fortified **Bastion** and extract before each facility collapses. The intended first-play pace is 3–5 minutes.
 
@@ -111,8 +111,8 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Escape / P / Pause | Pause; use Resume operation to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay, source ownership and the sixth-genre architecture assessment](docs/blastline.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay, source ownership and the sixth-genre architecture assessment](docs/games/blastline/README.md).
 
-See the [three-game architecture review](docs/three-game-review.md) for shared-system decisions.
+See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 
 See [README](README.md) for local setup.
