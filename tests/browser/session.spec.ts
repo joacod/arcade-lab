@@ -4,7 +4,9 @@ import { test, expect, type Page } from '@playwright/test';
 async function keeper(page: Page, screenSpace = false) {
   // A real ResizeObserver can run after a fake-clock batch. Wait for its next painted frame.
   for (let frame = 0; frame < 3; frame++) {
-    const position = await page.locator('canvas').evaluate(async (canvas, screenSpace) => {
+    const position = await page.locator('.world-canvas').evaluate(async (canvas, screenSpace) => {
+      const rect = canvas.getBoundingClientRect();
+      if (Math.abs(canvas.width / rect.width - canvas.height / rect.height) > 0.02) return null;
       const ctx = canvas.getContext('2d')!;
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       let x = 0, y = 0, count = 0;
@@ -16,7 +18,6 @@ async function keeper(page: Page, screenSpace = false) {
         }
       }
       if (!count) return null;
-      const rect = canvas.getBoundingClientRect();
       const ratio = canvas.width / rect.width;
       if (screenSpace) return { x: x / count / ratio, y: y / count / ratio };
       // Existing world-displacement checks deliberately choose Whole arena.
@@ -128,7 +129,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await page.getByLabel('View', { exact: true }).selectOption('arena');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
-  const canvas = page.locator('canvas');
+  const canvas = page.locator('.play-surface');
   const box = (await canvas.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
@@ -238,6 +239,36 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     `;
     await route.fulfill({ response, body });
   });
+  const fetched: string[] = [];
+  page.on('request', request => fetched.push(request.url()));
+  // Observe the actual camera, atlas UVs and GPU lifetime without a production debug API.
+  await page.route(/\/src\/three\/garden\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    const body = (await response.text())
+      .replace('const scene = new THREE.Scene();', `
+        window.gardenLifetimes ??= { created: 0, disposed: 0, resources: 0, released: 0 };
+        const scene = new THREE.Scene();`)
+      .replaceAll('geometries.add(value);', "geometries.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
+      .replaceAll('materials.add(value);', "materials.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
+      .replaceAll('textures.add(value);', "textures.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
+      .replace("renderer.outputColorSpace =", "window.gardenLifetimes.created++; renderer.outputColorSpace =")
+      .replace('renderer?.dispose();', 'if (renderer) window.gardenLifetimes.disposed++; renderer?.dispose();')
+      .replace('renderer.render(scene, camera);', `
+        renderer.render(scene, camera);
+        const projected = new THREE.Vector3(run.player.x, -run.player.y, 0).project(camera);
+        window.gardenEvidence = {
+          projected: { x: (projected.x + 1) * size.width / 2, y: (1 - projected.y) * size.height / 2 },
+          expected: { x: view.x + run.player.x * view.scale, y: view.y + run.player.y * view.scale },
+          geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
+          calls: renderer.info.render.calls,
+          probes: [[0, 0], [960, 640], [123, 456]].map(([x, y]) => {
+            const p = new THREE.Vector3(x, -y, 0).project(camera);
+            return { actual: [(p.x + 1) * size.width / 2, (1 - p.y) * size.height / 2], expected: [view.x + x * view.scale, view.y + y * view.scale] };
+          }),
+          uv: keeper.card ? [...keeper.card.geometry.getAttribute('uv').array] : null,
+        };`);
+    await route.fulfill({ response, body });
+  });
   // Test-only access to the actual run, without a production debug API.
   await page.route(/\/src\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
@@ -281,6 +312,21 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
         w.retainedRun = w.runEvidence;
       });
       const retained = await snapshot();
+      const surfaceIdentity = await page.locator('.play-surface').evaluate(surface => {
+        (window as unknown as { retainedSurface: Element }).retainedSurface = surface; return true;
+      });
+      expect(surfaceIdentity).toBe(true);
+      await page.evaluate(() => {
+        const request = window.requestAnimationFrame.bind(window), cancel = window.cancelAnimationFrame.bind(window);
+        const pending = new Set<number>();
+        (window as unknown as { pendingFrames: () => number }).pendingFrames = () => pending.size;
+        window.requestAnimationFrame = callback => {
+          const id = request(now => { pending.delete(id); callback(now); });
+          pending.add(id); return id;
+        };
+        window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
+      });
+      expect(fetched.some(url => url.includes('/three/') || url.includes('/three.js'))).toBe(false);
       const shell = page.locator('.clearing-app');
       await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
       await expect(shell).toHaveAttribute('data-theme', 'ember');
@@ -289,6 +335,73 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await page.getByLabel('Interface accent').selectOption('violet');
       await expect(shell).toHaveAttribute('data-skin', 'glass');
       await expect(shell).toHaveAttribute('data-accent', 'violet');
+      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await expect(shell).toHaveAttribute('data-theme', 'prism');
+      await page.clock.runFor(20);
+      expect(await snapshot()).toBe(retained);
+      await expect(shell).toHaveAttribute('data-skin', 'glass');
+      await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'garden');
+      const projection = await page.evaluate(() => (window as unknown as { gardenEvidence: { projected: { x: number; y: number }; expected: { x: number; y: number }; calls: number } }).gardenEvidence);
+      expect(projection.calls).toBeGreaterThan(20);
+      expect(projection.projected.x).toBeCloseTo(projection.expected.x, 8);
+      expect(projection.projected.y).toBeCloseTo(projection.expected.y, 8);
+      await page.getByLabel('View', { exact: true }).selectOption('close');
+      await page.setViewportSize({ width: 780, height: 900 });
+      await page.clock.runFor(60);
+      const probes = await page.evaluate(() => (window as unknown as { gardenEvidence: { probes: { actual: number[]; expected: number[] }[] } }).gardenEvidence.probes);
+      for (const probe of probes) for (let i = 0; i < 2; i++) expect(probe.actual[i]).toBeCloseTo(probe.expected[i]!, 8);
+      await page.getByLabel('View', { exact: true }).selectOption('arena');
+      await page.setViewportSize({ width: 1280, height: 1000 });
+      await page.clock.runFor(60);
+      await page.getByRole('button', { name: 'Resume surviving' }).click();
+      await page.keyboard.down('d'); await page.clock.runFor(150); await page.keyboard.up('d');
+      await page.keyboard.press('Escape');
+      const progressed = await snapshot();
+      expect(progressed).not.toBe(retained);
+      // Pixel actors share their manifest, animation and pivots with Ember Ruins.
+      await page.getByLabel('Appearance', { exact: true }).selectOption('ember-garden');
+      await expect(shell).toHaveAttribute('data-theme', 'ember-garden');
+      await page.clock.runFor(20);
+      const uv = await page.evaluate(() => (window as unknown as { gardenEvidence: { uv: number[] } }).gardenEvidence.uv);
+      expect(uv).toHaveLength(8);
+      expect(uv[2]! - uv[0]!).toBeCloseTo(16 / 512, 8);
+      expect(uv[1]! - uv[5]!).toBeCloseTo(28 / 512, 8);
+      expect(await snapshot()).toBe(progressed);
+      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await expect(shell).toHaveAttribute('data-theme', 'prism');
+      await page.clock.runFor(20);
+      // Real GPU loss restores a separate 2D canvas and preserves the paused run.
+      await page.locator('.world-canvas').evaluate(canvas => canvas.getContext('webgl2')!.getExtension('WEBGL_lose_context')!.loseContext());
+      await expect(shell).toHaveAttribute('data-theme', 'woodland');
+      await expect(page.locator('.asset-status')).toContainText('Restored Lanternwood');
+      expect(await snapshot()).toBe(progressed);
+      await expect(shell).toHaveAttribute('data-screen', 'paused');
+      // A renderer construction failure keeps the working Canvas presentation in place.
+      await page.evaluate(() => {
+        const original = HTMLCanvasElement.prototype.getContext;
+        (window as unknown as { restoreContext: () => void }).restoreContext = () => { HTMLCanvasElement.prototype.getContext = original; };
+        HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+          if (type === 'webgl2') return null;
+          return original.call(this, type, ...args);
+        } as typeof original;
+      });
+      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
+      await page.evaluate(() => (window as unknown as { restoreContext: () => void }).restoreContext());
+      await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
+      expect(await snapshot()).toBe(progressed);
+      // Supersede an in-flight lazy appearance without committing or retaining its resources.
+      await page.getByLabel('Appearance', { exact: true }).evaluate(select => {
+        for (const value of ['prism', 'ember']) { select.value = value; select.dispatchEvent(new Event('change')); }
+      });
+      await expect(shell).toHaveAttribute('data-theme', 'ember');
+      await expect(page.locator('.play-surface canvas')).toHaveCount(2);
+      expect(await page.locator('.play-surface').evaluate(surface => surface === (window as unknown as { retainedSurface: Element }).retainedSurface)).toBe(true);
+      const lifetimes = await page.evaluate(() => (window as unknown as { gardenLifetimes: { created: number; disposed: number; resources: number; released: number } }).gardenLifetimes);
+      expect(lifetimes.created).toBe(lifetimes.disposed);
+      expect(lifetimes.resources).toBe(lifetimes.released);
+      await page.clock.runFor(40);
+      expect(await page.evaluate(() => (window as unknown as { pendingFrames: () => number }).pendingFrames())).toBe(1);
       await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
       await expect(shell).toHaveAttribute('data-theme', 'moonglass');
       await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
@@ -297,7 +410,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await page.getByLabel('Interface', { exact: true }).selectOption('match');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
       await page.clock.fastForward(60000);
-      expect(await snapshot()).toBe(retained);
+      expect(await snapshot()).toBe(progressed);
       expect(await page.evaluate(() => {
         const w = window as unknown as { runEvidence: unknown; retainedRun: unknown };
         return w.runEvidence === w.retainedRun;
@@ -318,6 +431,16 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await page.clock.runFor(50);
     await expect(page.locator('.progress')).toHaveText('Level 1 · XP 0 / 5');
     await expect(page.locator('.loadout')).toHaveText('Spark 1');
+    if (configuration === 'clearing') {
+      await page.keyboard.press('Escape');
+      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'prism');
+      await page.clock.runFor(20);
+      await page.getByLabel('Appearance', { exact: true }).selectOption('woodland');
+      await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'woodland');
+      await expect(page.locator('.play-surface canvas')).toHaveCount(2);
+      await page.getByRole('button', { name: 'Resume surviving' }).click();
+    }
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Mute', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Unmute' })).toHaveAttribute('aria-pressed', 'true');
@@ -338,6 +461,15 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     const { mountClearing } = await import(path);
     const container = document.createElement('div'); document.body.append(container);
     const session = mountClearing(container);
+    await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
+    // Initial preparation uses detached images, so wait for its status mutation.
+    await new Promise<void>(resolve => {
+      if (!container.querySelector<HTMLButtonElement>('[data-action="start"]')!.disabled) { resolve(); return; }
+      const observer = new MutationObserver(() => {
+        if (!container.querySelector<HTMLButtonElement>('[data-action="start"]')!.disabled) { observer.disconnect(); resolve(); }
+      });
+      observer.observe(container, { attributes: true, subtree: true });
+    });
     container.querySelector<HTMLButtonElement>('[data-action="start"]')!.click();
     session.dispose(); session.dispose();
     const contexts = (window as unknown as { audioEvidence: { contexts: AudioContext[] } }).audioEvidence.contexts;
@@ -385,7 +517,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
   await page.clock.runFor(50);
-  const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
+  const canvas = page.locator('.play-surface'), box = (await canvas.boundingBox())!;
   const start = await keeper(page, true);
   await page.mouse.move(box.x + 100, box.y + 150); await page.mouse.down();
   await page.mouse.move(box.x + 121, box.y + 150);

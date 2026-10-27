@@ -58,3 +58,7 @@ export default { mosslight: createMosslight({
 4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Mosslight is absent from the menu. Production builds always use the empty `src/local-appearances.ts`, including on a machine with local artwork installed. Previewing a production build therefore offers Lanternwood, Moonglass, and Ember Ruins.
 
 This is a local typed-definition workflow. There is no runtime store connection, downloader, ZIP parser, upload editor, or asset auto-detection.
+
+## Renderer reuse
+
+Ember Conservatory consumes the same `emberRuins.art` manifest as Ember Ruins. The garden implementation uploads its decoded sheet once, shares nearest-filtered atlas materials, and updates each actor slot's UVs independently. Both renderers use `actorAnimation`/`clipFrame`, the authored pivots, footprints and orientation. Prism Garden has procedural actors and needs no image bundle. Art sizes remain cosmetic in both presentations.

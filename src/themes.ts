@@ -3,9 +3,10 @@ import type { InterfaceSkin } from './interface.ts';
 import localAppearances from './local-appearances.ts';
 /** Named visual presets combine art/environment, effects and a default interface. */
 export interface Theme {
+  readonly presentation?: 'prism' | 'pixel-garden';
   readonly name: string;
   readonly motif: 'grove' | 'crystal' | 'ruins';
-  readonly art: ArtPack;
+  readonly art?: ArtPack;
   readonly interface: InterfaceSkin;
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
@@ -62,6 +63,12 @@ export const themes: Readonly<Record<string, Theme>> = {
       ground: '#a8b9ef40', canopy: '#30345a', spark: '#b9f6ff', shard: '#ffb8df', pulse: '#bca7ff', gem: '#8eeadf' },
   },
   ember: emberRuins,
+  prism: {
+    name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass',
+    palette: { background: '#080f22', floor: '#18283a', boundary: '#6198ad', light: '#a9fcff',
+      ground: '#52788c', canopy: '#324c70', spark: '#fcf0af', shard: '#c8a6ff', pulse: '#7bdcff', gem: '#73ffc7' },
+  },
+  'ember-garden': { ...emberRuins, name: 'Ember Conservatory', presentation: 'pixel-garden', interface: 'glass' },
   ...localAppearances,
 };
 export type ThemeId = string;

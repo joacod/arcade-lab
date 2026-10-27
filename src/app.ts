@@ -9,7 +9,9 @@ import { createUI, type Screen, type MenuAction } from './ui.ts';
 import { clearing, configurations, type ConfigurationId } from './content.ts';
 import { themes, type ThemeId } from './themes.ts';
 import { resolvedSkin, type InterfaceChoice, type Accent } from './interface.ts';
-import { createAssets } from './assets.ts';
+import { prepareAssets, type PreparedAssets } from './assets.ts';
+import type { WorldPresentation } from './world-presentation.ts';
+import { createScreenOverlay } from './screen-overlay.ts';
 import { createSound } from './sound.ts';
 import { createViewport, type ViewMode } from './view.ts';
 
@@ -25,26 +27,18 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   const host = createHost(container, { onDisplayChange: suspend,
     onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) }), clock = createClock();
   let viewMode: ViewMode = 'close';
-  const presentation = createPresentation(host.ctx, themes.woodland!);
+  let presentation: WorldPresentation = createPresentation(themes.woodland!);
+  let activeAssets: PreparedAssets | undefined;
+  let preparation: AbortController | undefined;
+  let generation = 0, preparing = false;
   let appearance: ThemeId = 'woodland', interfaceChoice: InterfaceChoice = 'match', accent: Accent = 'default';
   let configuration: ConfigurationId = 'clearing';
   const newRun = () => createRun(undefined, configurations[configuration].round);
   let run = newRun(), screen: Screen = 'title', disposed = false, suspendedChoice = false;
   const confirmations = new Set<string>(), pointers = new Set<number>();
-  const input = bindInput(host.canvas, () => screen === 'playing', host.signal);
+  const input = bindInput(host.surface, () => screen === 'playing', host.signal);
   const sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-  const assets = createAssets((ready, message) => {
-    if (disposed) return;
-    if (ready) {
-      appearance = ready.id;
-      presentation.setAppearance(ready.theme, ready.images);
-      host.root.dataset.theme = appearance;
-      applyInterface();
-    }
-    ui.assetStatus(message);
-    if (message.startsWith('Artwork unavailable')) ui.appearance(appearance);
-  });
-  const ui = createUI(host.root, host.canvas, {
+  const ui = createUI(host.root, host.surface, {
     signal: host.signal, onAction: act, onChoose: choose,
     onConfiguration(id) {
       if (screen !== 'title') return;
@@ -59,11 +53,61 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
       void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
     },
   });
+  host.surface.prepend(presentation.canvas);
+  const overlay = createScreenOverlay(host.surface);
   ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
-  function selectTheme(id: ThemeId) {
+  async function selectTheme(id: ThemeId) {
     if (screen !== 'title' && screen !== 'paused') return;
     const theme = themes[id];
-    if (theme) assets.load(id, theme);
+    if (!theme) return;
+    preparation?.abort();
+    const request = ++generation, controller = new AbortController();
+    preparation = controller; preparing = true; ui.preparing(true);
+    ui.assetStatus(`Preparing ${theme.name}…`);
+    let next: WorldPresentation | undefined, bundle: PreparedAssets | undefined;
+    try {
+      if (theme.presentation !== 'prism') bundle = await prepareAssets(theme.art!, controller.signal);
+      if (controller.signal.aborted) return;
+      if (theme.presentation) {
+        const { createGarden } = await import('./three/garden.ts');
+        if (controller.signal.aborted) return;
+        next = createGarden(theme, bundle?.images ?? {}, () => {
+          if (presentation === next) graphicsFailure();
+        });
+      } else next = createPresentation(theme, bundle!.images);
+      if (disposed || request !== generation) return;
+      // Prepare and paint against the CURRENT run, including a retry made during loading.
+      next.reset(run); next.resize(host);
+      next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
+      const old = presentation, oldAssets = activeAssets;
+      presentation = next; activeAssets = bundle;
+      old.canvas.replaceWith(next.canvas);
+      appearance = id; host.root.dataset.theme = id; applyInterface();
+      ui.appearance(id); ui.assetStatus('');
+      old.dispose(); oldAssets?.dispose();
+    } catch (error) {
+      if (!disposed && request === generation) {
+        ui.assetStatus(`Artwork unavailable (${error instanceof Error ? error.message : 'graphics initialization failed'}). Keeping current appearance. Using clear shape silhouettes if artwork is unavailable.`);
+        ui.appearance(appearance);
+      }
+    } finally {
+      if (next !== presentation) next?.dispose();
+      if (bundle !== activeAssets) bundle?.dispose();
+      if (!disposed && request === generation) { preparing = false; ui.preparing(false); }
+    }
+  }
+  function graphicsFailure() {
+    if (disposed) return;
+    suspend(); preparation?.abort(); generation++; preparing = false; ui.preparing(false);
+    // A fresh 2D canvas is immediately usable, without requiring a lost GPU context.
+    const fallback = createPresentation(themes.woodland!);
+    fallback.reset(run); fallback.resize(host);
+    fallback.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
+    const old = presentation;
+    old.canvas.replaceWith(fallback.canvas); presentation = fallback;
+    old.dispose(); activeAssets?.dispose(); activeAssets = undefined;
+    appearance = 'woodland'; host.root.dataset.theme = appearance; applyInterface(); ui.appearance(appearance);
+    ui.assetStatus('Graphics unavailable. Restored Lanternwood silhouettes. Your run is safe; use Resume when ready.');
   }
   function applyInterface() {
     host.root.dataset.skin = resolvedSkin(interfaceChoice, themes[appearance]!.interface);
@@ -89,6 +133,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   }
   function act(action: MenuAction) {
     if (disposed) return;
+    if (preparing && ['start', 'restart', 'resume'].includes(action)) return;
     if (action === 'start' || action === 'restart') {
       if (document.hidden || !document.hasFocus()) return;
       sound.activate(); sound.reset();
@@ -118,7 +163,7 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   host.root.addEventListener('focusout', () => {
     input.clear();
     queueMicrotask(() => {
-      if (!disposed && (screen === 'playing' ? document.activeElement !== host.canvas : !host.root.contains(document.activeElement))) suspend();
+      if (!disposed && (screen === 'playing' ? document.activeElement !== host.surface : !host.root.contains(document.activeElement))) suspend();
     });
   }, { signal: host.signal });
   host.root.addEventListener('keydown', event => {
@@ -152,13 +197,14 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     const events = takeEvents(run);
     presentation.consume(events); sound.consume(events);
     const view = createViewport(clearing.arena, host, run.player, viewMode);
-    presentation.draw(run, view, host.width, host.height, host.ratio, input.stick);
+    try { presentation.resize(host); presentation.draw(run, view); } catch { graphicsFailure(); }
+    overlay.draw(run, view, host, input.stick);
     ui.update(run);
   });
   return {
     dispose() {
       if (disposed) return;
-      disposed = true; input.clear(); assets.dispose(); sound.dispose(); host.dispose();
+      disposed = true; preparation?.abort(); generation++; input.clear(); presentation.dispose(); activeAssets?.dispose(); overlay.dispose(); sound.dispose(); host.dispose();
     },
   };
 }

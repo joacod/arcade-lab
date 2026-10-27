@@ -7,7 +7,7 @@ import { themes } from '../src/themes.ts';
 import { validateArtPack, clipFrame, row } from '../src/art-pack.ts';
 import { createAnimationObservations, actorClip } from '../src/animation.ts';
 import { resolvedSkin } from '../src/interface.ts';
-import { createAssets } from '../src/assets.ts';
+import { prepareAssets } from '../src/assets.ts';
 import { createSound, MAX_VOICES } from '../src/sound.ts';
 
 const idle = { x: 0, y: 0 };
@@ -75,8 +75,8 @@ test('animation uses active time and step observations, retaining motion between
   assert.equal(resolvedSkin('match', 'rune'), 'rune');
 });
 
-test('bundles replace atomically, retain working art on failure and release stale, replaced and disposed images', () => {
-  const images = [], updates = [];
+test('prepared bundles validate bounds and release failed, cancelled and disposed images', async () => {
+  const images = [];
   class ImageStub {
     naturalWidth = 512; naturalHeight = 512; released = false;
     constructor() { images.push(this); }
@@ -84,26 +84,24 @@ test('bundles replace atomically, retain working art on failure and release stal
   }
   const original = globalThis.Image; globalThis.Image = ImageStub;
   try {
-    const assets = createAssets((ready, message) => updates.push({ ready, message }));
-    assets.load('woodland', themes.woodland); const stale = images[0].onload;
-    assets.load('moonglass', themes.moonglass); const count = updates.length;
-    stale(); assert.equal(updates.length, count); assert.equal(images[0].released, true);
-    images[1].onload(); assert.equal(updates.at(-1).ready.images.actors, images[1]);
-    const bundle = { ...themes.ember, art: { ...themes.ember.art, images: { dungeon: 'sheet.png', extra: 'extra.png' } } };
-    assets.load('bundle', bundle);
-    images[2].onload(); assert.equal(updates.at(-1).ready, undefined);
-    assert.equal(images[1].released, false);
-    images[3].onload(); assert.equal(updates.at(-1).ready.images.extra, images[3]);
-    assert.equal(images[1].released, true);
-    assets.load('invalid', themes.woodland); images[4].naturalWidth = 1; images[4].onload();
-    assert.match(updates.at(-1).message, /invalid frame.*Keeping current/);
-    assert.equal(images[2].released, false); assert.equal(images[4].released, true);
-    assets.load('woodland', themes.woodland); images[5].onerror();
-    assert.match(updates.at(-1).message, /Keeping current/);
-    assets.load('woodland', themes.woodland); const late = images[6].onload;
-    assets.dispose(); const before = updates.length; late(); assets.dispose();
-    assert.equal(updates.length, before); assert.equal(images[6].onload, null);
-    assert.equal(images[2].released, true); assert.equal(images[3].released, true);
+    const stale = new AbortController();
+    const cancelled = prepareAssets(themes.woodland.art, stale.signal);
+    const late = images[0].onload; stale.abort();
+    await assert.rejects(cancelled, /cancelled/); late(); assert.equal(images[0].released, true);
+    const controller = new AbortController();
+    const prepared = prepareAssets(themes.ember.art, controller.signal);
+    images[1].onload(); const bundle = await prepared;
+    assert.equal(bundle.images.dungeon, images[1]);
+    // Successful images outlive the preparation signal; only their owner disposes them.
+    controller.abort(); assert.equal(images[1].released, false);
+    const invalid = prepareAssets(themes.woodland.art, new AbortController().signal);
+    images[2].naturalWidth = 1; images[2].onload();
+    await assert.rejects(invalid, /invalid frame/); assert.equal(images[2].released, true);
+    const failed = prepareAssets(themes.woodland.art, new AbortController().signal);
+    images[3].onerror(); await assert.rejects(failed, /could not load/);
+    assert.equal(images[3].released, true);
+    bundle.dispose(); bundle.dispose(); assert.equal(images[1].released, true);
+    assert.equal(images[1].onload, null);
   } finally { globalThis.Image = original; }
 });
 

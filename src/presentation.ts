@@ -1,15 +1,24 @@
 import { clearing, enemies, weapons } from './content.ts';
 import type { GameEvent, RunState } from './game.ts';
-import type { Stick } from './browser/input.ts';
 import { orbitPosition } from './weapons/halo.ts';
-import { edgeCue, type Viewport } from './view.ts';
+import type { Viewport } from './view.ts';
+import type { WorldPresentation, DisplaySize } from './world-presentation.ts';
 import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
 import { clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
-import { actorClip, createAnimationObservations } from './animation.ts';
+import { actorAnimation, createAnimationObservations } from './animation.ts';
 import type { ImageBundle } from './assets.ts';
 
-export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: Theme) {
-  let theme = initialTheme, images: ImageBundle = {};
+export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
+  const pack = theme.art;
+  if (!pack) throw new Error('Canvas appearance needs an art pack');
+  const artPack = pack;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'world-canvas';
+  canvas.dataset.renderer = 'canvas';
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas 2D is required to play.');
+  const ctx = context;
+  let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
   const observations = createAnimationObservations();
   let effects: Extract<GameEvent, { x: number }>[] = [];
   const { width, height } = clearing.arena;
@@ -33,11 +42,8 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
     ctx.drawImage(source, sx, sy, sw, sh, -ax * w, -ay * h, w, h);
   }
   function sprite(role: ActorRole, id: string | number, time: number, fallbackRadius: number, color: string, hitAt?: number, attackAt?: number) {
-    const art = theme.art.actors[role], observation = observations.get(id);
-    const hit = hitAt !== undefined && art.clips.hit && time - hitAt < art.clips.hit.frames.length * art.clips.hit.frameSeconds;
-    const attack = attackAt !== undefined && art.clips.attack && time - attackAt < art.clips.attack.frames.length * art.clips.attack.frameSeconds;
-    const clip = hit ? art.clips.hit! : attack ? art.clips.attack! : actorClip(art, observation);
-    const age = hit ? time - hitAt! : attack ? time - attackAt! : time - observation.since;
+    const art = artPack.actors[role], observation = observations.get(id);
+    const { clip, age } = actorAnimation(art, observation, time, hitAt, attackAt);
     ctx.save();
     if (art.orientation === 'rotate') ctx.rotate(observation.angle);
     else if (art.orientation === 'mirror' && Math.cos(observation.angle) < -0.01) ctx.scale(-1, 1);
@@ -48,7 +54,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
     ctx.restore();
   }
   function environment(time: number) {
-    const environment = theme.art.environment!;
+    const environment = artPack.environment!;
     const { tileSize, ground, perimeter } = environment;
     ctx.save();
     ctx.globalAlpha = environment.groundOpacity ?? 1;
@@ -83,17 +89,24 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
   }
 
   return {
-    setAppearance(next: Theme, bundle: ImageBundle) { theme = next; images = bundle; },
+    canvas,
+    resize(next: DisplaySize) {
+      size = { width: next.width, height: next.height, ratio: next.ratio };
+      const w = Math.round(size.width * size.ratio), h = Math.round(size.height * size.ratio);
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+    },
+    dispose() { canvas.remove(); canvas.width = canvas.height = 1; effects = []; },
     observe(run: Readonly<RunState>) { observations.observe(run); },
     reset(run: Readonly<RunState>) { effects = []; observations.reset(run); },
     consume(events: readonly GameEvent[]) {
       for (const event of events) if ('x' in event) effects.push(event);
       if (effects.length > MAX_EFFECTS) effects.splice(0, effects.length - MAX_EFFECTS);
     },
-    draw(run: Readonly<RunState>, view: Viewport, cssWidth: number, cssHeight: number,
-      ratio: number, stick: Stick | undefined) {
+    draw(run: Readonly<RunState>, view: Viewport) {
+      const { width: cssWidth, height: cssHeight, ratio } = size;
       const palette = theme.palette;
-      ctx.imageSmoothingEnabled = theme.art.sampling === 'smooth';
+      ctx.imageSmoothingEnabled = artPack.sampling === 'smooth';
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.fillStyle = palette.background;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
@@ -102,7 +115,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
       ctx.fillStyle = palette.floor;
       ctx.fillRect(0, 0, width, height);
 
-      if (theme.art.environment) environment(run.elapsed);
+      if (artPack.environment) environment(run.elapsed);
       else {
         const glow = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, 540);
         glow.addColorStop(0, palette.boundary + '25');
@@ -171,7 +184,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
           && run.elapsed - effect.at < visualTiming.hit
           && effect.enemyId === enemy.id);
         const data = enemies[enemy.kind];
-        circle(enemy.x, enemy.y + data.radius * 0.65, theme.art.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
+        circle(enemy.x, enemy.y + data.radius * 0.65, artPack.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
         ctx.save(); ctx.translate(enemy.x, enemy.y);
         if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
         sprite(data.elite ? 'elite' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? '#b75466' : '#ae676e',
@@ -180,11 +193,11 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
         ctx.restore();
         if (data.elite) {
           ctx.fillStyle = '#f1b37d'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-          const art = theme.art.actors.elite;
+          const art = artPack.actors.elite;
           ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art.footprint[1] * art.anchor[1] + 8));
         }
         if (enemy.health < data.maxHealth) {
-          const art = theme.art.actors[data.elite ? 'elite' : 'crawler'];
+          const art = artPack.actors[data.elite ? 'elite' : 'crawler'];
           const barY = enemy.y - Math.max(data.radius + 8, art.footprint[1] * art.anchor[1] + 3);
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2, 3);
           ctx.fillStyle = '#e6a091'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
@@ -248,31 +261,7 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
       ctx.restore();
 
       // A steady lantern core remains readable at narrow viewport scales.
-      if (theme.art.sampling === 'smooth') circle(x, y, 5, '#fff0c0');
-      // Screen overlays share CSS coordinates with movement gestures, never world zoom.
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      const warnings = [...run.entries, ...run.enemies.filter(enemy => enemy.entryDelay > 0 || enemies[enemy.kind].elite)];
-      for (const warning of warnings) {
-        const cue = edgeCue(view, { width: cssWidth, height: cssHeight }, warning);
-        if (!cue) continue;
-        const elite = enemies[warning.kind].elite;
-        ctx.save(); ctx.translate(cue.x, cue.y); ctx.rotate(cue.angle);
-        ctx.fillStyle = elite ? '#ffb4ac' : '#f1b37d';
-        ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill();
-        ctx.restore();
-        if (elite) {
-          ctx.fillStyle = '#ffcfbf'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('ELITE', Math.max(36, Math.min(cssWidth - 36, cue.x)), cue.y + 20);
-        }
-      }
-      if (stick) {
-        const dx = stick.tip.x - stick.origin.x;
-        const dy = stick.tip.y - stick.origin.y;
-        const divisor = Math.max(1, Math.hypot(dx, dy) / stick.radius);
-        ctx.strokeStyle = '#f5d58b88'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(stick.origin.x, stick.origin.y, stick.radius, 0, Math.PI * 2); ctx.stroke();
-        circle(stick.origin.x + dx / divisor, stick.origin.y + dy / divisor, stick.radius * 2 / 7, '#f5d58b99');
-      }
+      if (artPack.sampling === 'smooth') circle(x, y, 5, '#fff0c0');
     },
   };
 }

@@ -21,7 +21,7 @@ interface UIOptions {
   onView(mode: ViewMode): void;
   onFullscreen(): void;
 }
-export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: UIOptions) {
+export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOptions) {
   const { signal, onAction, onChoose, onConfiguration, onTheme, onMute, onVolume } = options;
   root.innerHTML = `
     <main class="game-shell">
@@ -104,7 +104,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
   const progress = root.querySelector<HTMLOutputElement>('.progress')!;
   const modifiers = root.querySelector<HTMLOutputElement>('.modifiers')!;
   const stage = root.querySelector<HTMLElement>('.stage')!;
-  stage.prepend(canvas);
+  stage.prepend(surface);
   const layer = root.querySelector<HTMLElement>('.menu-layer')!;
   const heading = root.querySelector<HTMLElement>('h1')!;
   const description = root.querySelector<HTMLElement>('.menu-description')!;
@@ -122,6 +122,9 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds as the Keeper.<br>Collect gems. Choose upgrades. Survive until dawn.`;
   return {
+    preparing(value: boolean) {
+      for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.action!)) button.disabled = value;
+    },
     appearance(id: ThemeId) { themeSelect.value = id; },
     fullscreen(available: boolean, active: boolean) {
       fullscreen.hidden = !available;
@@ -171,8 +174,8 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
       root.querySelector<HTMLElement>('.run-details')!.hidden = screen === 'title';
       layer.hidden = screen === 'playing';
       choices.hidden = screen !== 'choosing';
-      canvas.tabIndex = screen === 'playing' ? 0 : -1;
-      canvas.setAttribute('aria-hidden', String(screen !== 'playing'));
+      surface.tabIndex = screen === 'playing' ? 0 : -1;
+      surface.setAttribute('aria-hidden', String(screen !== 'playing'));
       heading.textContent = screen === 'victory' ? 'Dawn finds you standing.'
         : screen === 'defeat' ? 'Your light fades.' : screen === 'choosing' ? 'Choose an upgrade' : screen === 'paused' ? 'Take a breath.' : 'Keep the light alive.';
       description.innerHTML = screen === 'paused'
@@ -191,7 +194,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
         if (action === 'restart') button.textContent = screen === 'paused' ? 'Restart' : 'Retry';
       }
       if (focus) {
-        if (screen === 'playing') canvas.focus({ preventScroll: true });
+        if (screen === 'playing') surface.focus({ preventScroll: true });
         else if (screen === 'choosing') choices.querySelector('button')?.focus({ preventScroll: true });
         else buttons.find(button => !button.hidden)?.focus({ preventScroll: true });
       }

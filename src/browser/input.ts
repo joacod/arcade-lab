@@ -13,12 +13,12 @@ export interface Stick {
   radius: number;
 }
 
-export function bindInput(canvas: HTMLCanvasElement, active: () => boolean, signal: AbortSignal) {
+export function bindInput(surface: HTMLElement, active: () => boolean, signal: AbortSignal) {
   const held = new Set<string>();
   let pointerId: number | undefined;
   let stick: Stick | undefined;
   const point = (event: PointerEvent) => {
-    const rect = canvas.getBoundingClientRect();
+    const rect = surface.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
@@ -26,31 +26,31 @@ export function bindInput(canvas: HTMLCanvasElement, active: () => boolean, sign
     const id = pointerId;
     pointerId = undefined;
     stick = undefined;
-    if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+    if (id !== undefined && surface.hasPointerCapture(id)) surface.releasePointerCapture(id);
   }
   function clear() { held.clear(); releasePointer(); }
 
-  canvas.addEventListener('keydown', event => {
+  surface.addEventListener('keydown', event => {
     if (!active() || !directions[event.code] || (event.repeat && !held.has(event.code))) return;
     event.preventDefault();
     held.add(event.code);
   }, { signal });
   window.addEventListener('keyup', event => held.delete(event.code), { signal });
-  canvas.addEventListener('pointerdown', event => {
+  surface.addEventListener('pointerdown', event => {
     if (!active() || pointerId !== undefined || event.button !== 0) return;
     const origin = point(event);
     event.preventDefault();
-    canvas.focus({ preventScroll: true });
+    surface.focus({ preventScroll: true });
     held.clear();
     pointerId = event.pointerId;
     stick = { origin, tip: origin, radius: 42 };
-    canvas.setPointerCapture(pointerId);
+    surface.setPointerCapture(pointerId);
   }, { signal });
-  canvas.addEventListener('pointermove', event => {
+  surface.addEventListener('pointermove', event => {
     if (event.pointerId === pointerId && stick) stick.tip = point(event);
   }, { signal });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
-    canvas.addEventListener(name, event => {
+    surface.addEventListener(name, event => {
       if (event.pointerId === pointerId) releasePointer();
     }, { signal });
   }

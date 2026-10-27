@@ -33,3 +33,11 @@ export function actorClip(art: ActorArt, observation: ActorObservation): Clip {
   }
   return observation.moving ? clips.move : clips.idle;
 }
+
+/** Shared clip precedence and active-time origin for both artwork consumers. */
+export function actorAnimation(art: ActorArt, observation: ActorObservation, time: number, hitAt?: number, attackAt?: number) {
+  const hit = hitAt !== undefined && art.clips.hit && time - hitAt < art.clips.hit.frames.length * art.clips.hit.frameSeconds;
+  const attack = attackAt !== undefined && art.clips.attack && time - attackAt < art.clips.attack.frames.length * art.clips.attack.frameSeconds;
+  return { clip: hit ? art.clips.hit! : attack ? art.clips.attack! : actorClip(art, observation),
+    age: time - (hit ? hitAt! : attack ? attackAt! : observation.since) };
+}

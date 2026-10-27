@@ -29,7 +29,8 @@ html, body, #app { margin: 0; width: 100%; height: 100%; overflow: hidden; }
 button, select, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; cursor: pointer; min-height: 44px; border: var(--border-width, 1px) solid var(--border); background: var(--button); border-radius: var(--radius); padding: 10px 14px; }
-button:hover { background: var(--hover); border-color: var(--accent); }
+button:enabled:hover { background: var(--hover); border-color: var(--accent); }
+button:disabled { opacity: .55; cursor: wait; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .clearing-app { width: 100%; height: 100vh; height: 100dvh; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: var(--background); color: var(--text); font-family: var(--font); }
@@ -51,8 +52,10 @@ button:hover { background: var(--hover); border-color: var(--accent); }
 .xp-track { background: var(--background); }
 .xp-track span { display: block; height: 100%; width: 0; background: var(--xp); }
 .stage { position: relative; min-height: 0; isolation: isolate; overflow: hidden; }
-canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.play-surface { position: absolute; inset: 0; touch-action: none; outline: none; }
+.play-surface canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; }
+.screen-overlay { z-index: 1; }
+.play-surface:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 .menu-layer { position: absolute; inset: 0; display: flex; overflow-y: auto; overscroll-behavior: contain; padding: 16px; background: var(--veil); backdrop-filter: blur(3px); }
 .menu { flex: 0 0 auto; width: min(540px, 100%); margin: auto; text-align: center; padding: 22px; border: var(--border-width, 1px) solid var(--border); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
 .eyebrow { font-size: 12px; letter-spacing: 1px; color: var(--accent); margin: 0 0 8px; }
@@ -62,17 +65,31 @@ h1 { font: 500 30px/1.15 var(--heading-font); margin: 10px 0; }
 .menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .menu-actions .primary { grid-column: 1 / -1; }
 button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
-button.primary:hover { background: var(--accent); filter: brightness(1.12); }
+button.primary:enabled:hover { background: var(--accent); filter: brightness(1.12); }
 .primary span { float: right; }
 .settings { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; text-align: left; }
 .setup label, .display-settings label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-select { width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: var(--border-width, 1px) solid var(--border); border-radius: var(--radius); background: var(--button); color: var(--text); }
+/* Keep native keyboard/picker behavior, with consistent room for the decorative chevron. */
+select {
+  appearance: none; width: 100%; min-width: 0; min-height: 44px; padding: 10px 40px 10px 12px;
+  border: var(--border-width, 1px) solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer;
+  background-color: var(--button);
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 19px) center, calc(100% - 14px) center;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+select:hover { border-color: var(--accent); }
+select option { background: var(--surface); color: var(--text); }
+@media (forced-colors: active) {
+  select { appearance: auto; background-image: none; }
+}
 .setup select { max-width: 75%; }
 .configuration-note, .controls, .menu-footnote { color: var(--muted); font-size: 14px; line-height: 1.5; }
 .configuration-note { margin: 6px 0 12px; }
-.display-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.display-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .display-settings label { flex-direction: column; align-items: stretch; }
 .sound-controls { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.sound-controls .mute { flex: 0 0 96px; }
 .sound-controls label { display: flex; flex: 1; align-items: center; gap: 8px; }
 .sound-controls input { width: 100%; min-width: 0; min-height: 44px; accent-color: var(--accent); }
 .controls { margin: 10px 0 0; }
@@ -126,7 +143,6 @@ select { width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: var(
 [data-skin='glass'] .eyebrow { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
 [data-skin='glass'] .status { margin: 0; }
 @media (max-width: 420px) {
-  .display-settings { gap: 10px; }
-  .display-settings label { font-size: 13px; }
+  .display-settings { grid-template-columns: 1fr; gap: 12px; }
   [data-skin='glass'] .brand span { display: none; }
 }
