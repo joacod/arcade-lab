@@ -2,25 +2,50 @@ import { clearing, configurations, evolution, weapons, type ConfigurationId } fr
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
 import { themes, type ThemeId } from './themes.ts';
+import type { ViewMode } from './view.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
 export type MenuAction = 'start' | 'pause' | 'resume' | 'restart' | 'title';
 
-export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
-  onAction: (action: MenuAction) => void, onChoose: (id: string) => void, signal: AbortSignal,
-  onConfiguration: (id: ConfigurationId) => void, onTheme: (id: ThemeId) => void,
-  onMute: (value: boolean) => void, onVolume: (value: number) => void) {
+interface UIOptions {
+  signal: AbortSignal;
+  onAction(action: MenuAction): void;
+  onChoose(id: string): void;
+  onConfiguration(id: ConfigurationId): void;
+  onTheme(id: ThemeId): void;
+  onMute(value: boolean): void;
+  onVolume(value: number): void;
+  onView(mode: ViewMode): void;
+  onFullscreen(): void;
+}
+export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: UIOptions) {
+  const { signal, onAction, onChoose, onConfiguration, onTheme, onMute, onVolume } = options;
   root.innerHTML = `
-    <header class="masthead"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true">a</span> arcade lab<span class="brand-divider">/</span><span class="brand-note">Experiments in play</span></a><span class="edition">FIELD STUDY 001</span></header>
-    <main>
-      <div class="introduction"><div><p class="eyebrow">01 / A LIGHT IN THE WOODS</p><h1>Last Light Clearing<span>.</span></h1></div><p class="intro-note">Find your footing.<br>Keep a little light alive.</p></div>
-      <div class="setup"><label>ROUND <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><label>ARTWORK <select aria-label="Visual theme">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><p class="configuration-note">${configurations.clearing.description}</p></div>
-      <div class="game-shell">
-        <div class="hud"><div class="hud-identity"><span class="live-dot"></span><strong>THE CLEARING</strong><span class="status">Ready to survive</span></div><div class="hud-actions"><output class="timer" aria-label="Active time">00:00</output><button data-action="pause" class="pause-button" hidden>Pause <kbd>Esc</kbd></button></div></div>
-        <div class="combat-hud"><label>KEEPER <meter class="health-meter" min="0" max="100" value="100" aria-label="Keeper health"></meter><output class="health-value">100 / 100 HP</output></label><output class="loadout">Spark · Rank 1</output><output class="kills">0 defeated</output></div><div class="xp-track" aria-hidden="true"><span></span></div><div class="progress-hud"><output class="progress">Level 1 · XP 0 / 10</output><output class="modifiers">Pickup 48</output></div><div class="stage"><div class="menu-layer"><section class="menu" aria-labelledby="menu-heading"><p class="eyebrow menu-kicker">LAST LIGHT CLEARING</p><div class="lantern" aria-hidden="true">✦</div><h2 id="menu-heading">Keep the light alive.</h2><p class="menu-description">Survive three minutes as the Keeper.<br>Collect gems. Choose upgrades. Survive until dawn.</p><div class="upgrade-choices" hidden></div><div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button></div><p class="menu-footnote">Survival study · Movement is your only weapon control.</p></section></div></div>
-        <div class="controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span class="control-copy">or arrow keys to move</span></span><span class="touch-hint"><span aria-hidden="true">◎</span> Drag in the clearing to move</span><div class="sound-controls"><button class="mute" aria-pressed="false">Mute</button><label>Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label></div></div><p class="asset-status" role="status" hidden></p><p class="sound-status" role="status" hidden></p>
-      </div>
-      <footer><p><span class="footer-dot"></span> STEP 04 <span class="footer-divider">/</span> Light, shape & sound</p><p>Built for the browser. Room to grow.</p></footer>
+    <main class="game-shell">
+      <header class="hud">
+        <a class="brand" href="./" aria-label="Arcade Lab home">Last Light Clearing<span>arcade lab</span></a>
+        <div class="vitals"><meter class="health-meter" min="0" max="100" value="100" aria-label="Keeper health"></meter><output class="health-value">100 / 100 HP</output></div>
+        <output class="timer" aria-label="Active time">00:00</output>
+        <output class="progress">Level 1 · XP 0 / 10</output>
+        <div class="hud-actions"><button data-action="pause" hidden>Pause</button><button class="fullscreen" hidden>Fullscreen</button></div>
+      </header>
+      <div class="xp-track" aria-hidden="true"><span></span></div>
+      <div class="stage"><div class="menu-layer"><section class="menu" aria-labelledby="menu-heading">
+        <p class="eyebrow">LAST LIGHT CLEARING <span class="status">Ready to survive</span></p>
+        <h1 id="menu-heading">Keep the light alive.</h1>
+        <p class="menu-description">Collect gems. Choose upgrades. Survive until dawn.</p>
+        <div class="upgrade-choices" hidden></div>
+        <div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button></div>
+        <div class="settings">
+          <div class="setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="configuration-note">${configurations.clearing.description}</p></div>
+          <div class="display-settings"><label>Artwork <select aria-label="Visual theme">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div>
+          <div class="sound-controls"><button class="mute" aria-pressed="false">Mute</button><label>Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label></div>
+          <p class="controls">Move with WASD / arrows, or press and drag.<br>Weapons fire automatically. Escape / P pauses.<br>Focus loss and display changes pause. Use Resume to return.</p>
+        </div>
+        <div class="run-details" hidden><output class="loadout">Spark 1</output><output class="modifiers">Pickup 48</output><output class="kills">0 defeated</output></div>
+        <p class="menu-footnote">Movement is your only weapon control.</p>
+      </section></div></div>
+      <aside class="notices" aria-label="Game notices"><p class="asset-status" role="status" hidden></p><p class="sound-status" role="status" hidden></p><p class="display-status" role="status" hidden></p></aside>
     </main>`;
   let configuration: ConfigurationId = 'clearing', muted = false;
   const configurationSelect = root.querySelector<HTMLSelectElement>('[aria-label="Round configuration"]')!;
@@ -37,6 +62,11 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
   themeSelect.addEventListener('change', () => {
     if (themeSelect.value in themes) onTheme(themeSelect.value as ThemeId);
   }, { signal });
+  root.querySelector<HTMLSelectElement>('[aria-label="View"]')!.addEventListener('change', event => {
+    options.onView((event.target as HTMLSelectElement).value as ViewMode);
+  }, { signal });
+  const fullscreen = root.querySelector<HTMLButtonElement>('.fullscreen')!;
+  fullscreen.addEventListener('click', options.onFullscreen, { signal });
   const mute = root.querySelector<HTMLButtonElement>('.mute')!;
   mute.addEventListener('click', () => {
     muted = !muted; mute.setAttribute('aria-pressed', String(muted)); mute.textContent = muted ? 'Unmute' : 'Mute'; onMute(muted);
@@ -67,7 +97,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
   const stage = root.querySelector<HTMLElement>('.stage')!;
   stage.prepend(canvas);
   const layer = root.querySelector<HTMLElement>('.menu-layer')!;
-  const heading = root.querySelector<HTMLElement>('h2')!;
+  const heading = root.querySelector<HTMLElement>('h1')!;
   const description = root.querySelector<HTMLElement>('.menu-description')!;
   const status = root.querySelector<HTMLElement>('.status')!;
   const timer = root.querySelector<HTMLOutputElement>('.timer')!;
@@ -83,6 +113,12 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds as the Keeper.<br>Collect gems. Choose upgrades. Survive until dawn.`;
   return {
+    fullscreen(available: boolean, active: boolean) {
+      fullscreen.hidden = !available;
+      fullscreen.textContent = active ? 'Exit fullscreen' : 'Fullscreen';
+      fullscreen.setAttribute('aria-pressed', String(active));
+    },
+    displayStatus(message: string) { const element = root.querySelector<HTMLElement>('.display-status')!; element.hidden = !message; element.textContent = message; },
     assetStatus(message: string) { const element = root.querySelector<HTMLElement>('.asset-status')!; element.hidden = !message; element.textContent = message; },
     soundStatus(message: string) { const element = root.querySelector<HTMLElement>('.sound-status')!; element.hidden = !message; element.textContent = message; },
     update(run: Readonly<RunState>) {
@@ -121,6 +157,8 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
     show(screen: Screen, focus = true) {
       root.dataset.screen = screen;
       root.querySelector<HTMLElement>('.setup')!.hidden = screen !== 'title';
+      root.querySelector<HTMLElement>('.settings')!.hidden = screen !== 'title' && screen !== 'paused';
+      root.querySelector<HTMLElement>('.run-details')!.hidden = screen === 'title';
       layer.hidden = screen === 'playing';
       choices.hidden = screen !== 'choosing';
       canvas.tabIndex = screen === 'playing' ? 0 : -1;
@@ -131,7 +169,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement,
         ? 'Your light is safe here.<br>Return when you’re ready.'
         : roundDescription();
       footnote.textContent = screen === 'paused' ? 'Active time and combat are paused.'
-        : 'Survival study · Movement is your only weapon control.';
+        : 'Movement is your only weapon control.';
       status.textContent = screen === 'choosing' ? 'Choosing an upgrade' : screen === 'playing' ? 'Keeper · Surviving' : screen === 'paused' ? 'Paused'
         : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Ready to survive';
       for (const button of buttons) {

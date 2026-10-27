@@ -1,6 +1,4 @@
-import { clearing } from '../content.ts';
 import type { MoveAction } from '../game.ts';
-import { toWorld, type Viewport } from './viewport.ts';
 
 const directions: Record<string, MoveAction> = {
   KeyW: { x: 0, y: -1 }, ArrowUp: { x: 0, y: -1 },
@@ -15,14 +13,13 @@ export interface Stick {
   radius: number;
 }
 
-export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
-  active: () => boolean, signal: AbortSignal) {
+export function bindInput(canvas: HTMLCanvasElement, active: () => boolean, signal: AbortSignal) {
   const held = new Set<string>();
   let pointerId: number | undefined;
   let stick: Stick | undefined;
   const point = (event: PointerEvent) => {
     const rect = canvas.getBoundingClientRect();
-    return toWorld(viewport(), event.clientX - rect.left, event.clientY - rect.top);
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
   function releasePointer() {
@@ -42,12 +39,11 @@ export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
   canvas.addEventListener('pointerdown', event => {
     if (!active() || pointerId !== undefined || event.button !== 0) return;
     const origin = point(event);
-    if (origin.x < 0 || origin.y < 0 || origin.x > clearing.arena.width || origin.y > clearing.arena.height) return;
     event.preventDefault();
     canvas.focus({ preventScroll: true });
     held.clear();
     pointerId = event.pointerId;
-    stick = { origin, tip: origin, radius: 42 / viewport().scale };
+    stick = { origin, tip: origin, radius: 42 };
     canvas.setPointerCapture(pointerId);
   }, { signal });
   canvas.addEventListener('pointermove', event => {
@@ -65,8 +61,7 @@ export function bindInput(canvas: HTMLCanvasElement, viewport: () => Viewport,
     get stick() { return stick; },
     read(): MoveAction {
       if (stick) {
-        // Gesture size is in CSS pixels, independent of full-arena letterboxing.
-        stick.radius = 42 / viewport().scale;
+        // Gesture displacement stays in CSS pixels even while the camera follows.
         const dx = stick.tip.x - stick.origin.x;
         const dy = stick.tip.y - stick.origin.y;
         const distance = Math.hypot(dx, dy);

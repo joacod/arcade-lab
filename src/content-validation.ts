@@ -19,7 +19,7 @@ export function validateContent(data: Omit<typeof content, 'clearing'> & { clear
   if (rules.round.edgeDivisions < 2) errors.push('round.edgeDivisions: must provide edge candidates');
   if (rules.round.eliteAt >= rules.round.duration) errors.push('round.eliteAt: must be before duration');
   if (rules.round.entryInset * 2 >= Math.min(rules.arena.width, rules.arena.height)) errors.push('round.entryInset: must fit inside arena');
-  // Every Keeper location must have a safe far edge, even with the full-arena view.
+  // Every Keeper location must have a safe far world edge, independent of the view.
   const halfWidth = rules.arena.width / 2 - rules.round.entryInset;
   const halfHeight = rules.arena.height / 2 - rules.round.entryInset;
   const edgeFraction = 1 - 2 / rules.round.edgeDivisions;

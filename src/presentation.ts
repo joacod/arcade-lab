@@ -2,7 +2,7 @@ import { clearing, enemies, weapons } from './content.ts';
 import type { GameEvent, RunState } from './game.ts';
 import type { Stick } from './browser/input.ts';
 import { orbitPosition } from './weapons/halo.ts';
-import type { Viewport } from './browser/viewport.ts';
+import { edgeCue, type Viewport } from './view.ts';
 import { MAX_EFFECTS, visualTiming, type Theme, type SpriteDefinition } from './themes.ts';
 
 export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: Theme) {
@@ -191,6 +191,22 @@ export function createPresentation(ctx: CanvasRenderingContext2D, initialTheme: 
 
       // A steady lantern core remains readable at narrow viewport scales.
       circle(x, y, 5, '#fff0c0');
+      // Screen overlays share CSS coordinates with movement gestures, never world zoom.
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const warnings = [...run.entries, ...run.enemies.filter(enemy => enemy.entryDelay > 0 || enemies[enemy.kind].elite)];
+      for (const warning of warnings) {
+        const cue = edgeCue(view, { width: cssWidth, height: cssHeight }, warning);
+        if (!cue) continue;
+        const elite = enemies[warning.kind].elite;
+        ctx.save(); ctx.translate(cue.x, cue.y); ctx.rotate(cue.angle);
+        ctx.fillStyle = elite ? '#ffb4ac' : '#f1b37d';
+        ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        if (elite) {
+          ctx.fillStyle = '#ffcfbf'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('ELITE', Math.max(36, Math.min(cssWidth - 36, cue.x)), cue.y + 20);
+        }
+      }
       if (stick) {
         const dx = stick.tip.x - stick.origin.x;
         const dy = stick.tip.y - stick.origin.y;
