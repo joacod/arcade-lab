@@ -21,7 +21,7 @@ Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances w
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [Clearing gameplay and visual settings](docs/last-light-clearing.md) and [art setup and provenance](src/art/README.md), including the development-only CraftPix experiment.
+See [Clearing gameplay and visual settings](docs/last-light-clearing.md) and [art setup and provenance](src/art/README.md), including the optional development-only Mosslight appearance.
 
 ## Skybreak
 
