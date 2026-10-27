@@ -1,0 +1,152 @@
+# Live controls and sound controllers
+
+Keep a running voice for a sustained sound. After gesture activation, use
+`sound.play({ parameters, seed })`, retain its typed voice, and call `voice.set`
+only while `voice.state === "active"`. Clear that reference on Stop/end. Live
+updates change the existing voice rather than retriggering its attack.
+`voice.parameters` contains requested values, not measured native values.
+
+A sustained recipe does not require a controller. Install `thruster` through
+[catalog](catalog.md), then use this code in `src/integration.ts`:
+
+```ts
+import { createAudio } from "audiobits";
+import { thruster } from "./sounds/recipes/thruster/recipe";
+
+const audio = createAudio();
+const sound = audio.sound(thruster);
+let request = 0;
+let voice: ReturnType<typeof sound.play> | undefined;
+
+export async function play() {
+  const token = ++request;
+  await audio.start();
+  if (token !== request) return;
+  voice?.stop();
+  voice = sound.play({ parameters: { throttle: 0.2 }, seed: 42 });
+}
+export function update(throttle: number) {
+  if (Number.isFinite(throttle) && voice?.state === "active")
+    voice.set({ throttle: Math.max(0, Math.min(1, throttle)) });
+}
+export function release() {
+  request++;
+  voice?.stop();
+  voice = undefined;
+}
+export function stop() {
+  request++;
+  audio.stopAll({ tails: "cut" });
+  voice = undefined;
+}
+export async function dispose() {
+  stop();
+  await audio.dispose();
+}
+```
+
+Bound finite application input to the recipe's declared range. Rate-limit dense
+events with the application's existing update loop and use native parameter
+smoothing for audio ramps. Keep pointer handling, frame scheduling, canvas and
+3D in application presentation code. Use the host's elapsed time for state updates;
+schedule audible onsets against the audio clock as described below.
+
+## Coordinated sound behavior
+
+For layered live sound with accents, consult [catalog](catalog.md). Install only
+the selected item's recipes, controller and guide. Reactive Thruster's
+`createThruster(audio)` accepts throttle through `start(value)` and
+`setThrottle(value)`; its `pointer.ts` filename does not imply a pointer adapter.
+Energy Charge's `createEnergyCharge(audio)` takes progress through `start(value)`
+and `setCharge(value)`, in either direction, and holds until `release()` or Stop.
+
+For Lightsaber, install `lightsaber` and place this in `src/integration.ts`.
+Connect Play to the application's existing gesture, movement updates to its
+existing state, and Strike to a collision or action event after activation:
+
+```ts
+import { createAudio } from "audiobits";
+import { createLightsaber } from "./sounds/experiences/lightsaber/controller";
+
+const audio = createAudio();
+const blade = createLightsaber(audio);
+let request = 0;
+
+export async function play() {
+  const token = ++request;
+  await audio.start();
+  if (token !== request) return;
+  blade.ignite();
+}
+export function update(movement: number, elapsedMs = 16, direction = 0) {
+  blade.update(movement, elapsedMs, direction);
+}
+export function strike(strength = 0.8) {
+  return blade.clash(strength);
+}
+export function retract() {
+  request++;
+  blade.retract();
+}
+export function stop() {
+  request++;
+  blade.stop();
+}
+export async function dispose() {
+  stop();
+  blade.dispose();
+  await audio.dispose();
+}
+```
+
+Supply finite movement and strength in `[0, 1]`, direction in `[-1, 1]`, and
+elapsed milliseconds from the host's clock. The controller coordinates hum,
+ignition, swing, clash and retraction; it needs no stage, renderer or geometry.
+The installed README is the working example for each controller's exact API.
+
+## Scheduling, overlap and cancellation
+
+For scheduled voices, use `sound.play({ at })` with seconds from
+`audio.native.context.currentTime` after activation. Browser timers and animation
+frames can supply application events, but should not determine precise audio
+onsets. Keep handles to future voices so Stop can cancel them before onset.
+
+Choose what rapid interactions should do: overlap, replace older sound, or reject
+excess events. Budget scheduled voices, active voices and releasing effect tails,
+not just the current gesture. Prefer deliberate controller limits over relying
+on engine voice stealing to choose which acoustic detail survives.
+
+`voice.stop()` cancels a future onset, but an already sounding voice releases and
+allows effect tails. `voice.ended` settles after its graph is disconnected. Keep
+ownership until cleanup completes; an old completion must not clear a newer
+voice or restart cancelled work. If Stop must cut tails, a dedicated engine can
+use `stopAll({ tails: "cut" })`; a shared-engine controller can dispose its own
+sounds and recreate them when needed. Never cut unrelated voices.
+
+When presentation needs scheduled feedback, expose only the needed sound times
+and cancellation state. The host renders against that timeline and suppresses
+future feedback after cancellation. Do not use visual frames or completion
+callbacks as a precise audio scheduler or put rendering into the controller.
+Dispose owned sounds and subscriptions even if the audio clock is suspended.
+
+## Host ownership and verification
+
+Call `play()` directly from a browser-accepted gesture and surface rejected
+activation promises. Preparation and ownership follow
+[integration](integration.md); keep playback intent in the host. Bind `update`
+to existing application state and Stop to cancellation.
+On hide or blur, invalidate pending activation and stop; the engine owner
+suspends on hide. On route removal, call `dispose()`. Returning stays silent until
+a fresh gesture. Use the host pattern in [integration](integration.md) for
+visibility listeners and error reporting.
+
+These examples own dedicated engines. For a shared engine, stop/dispose only
+this integration's voice or controller; the existing owner suspends and disposes
+the engine. Do not use shared `stopAll` to cut other components' voices.
+
+Check silent load, direct gesture activation, live input extrema, fast Play/Stop,
+Stop before a scheduled onset and during tails, overlap limits, hide and repeated
+removal. Confirm owned resources return to baseline. Validate the actual consuming
+application's imports and browser lifecycle, not just recipe data. When adding visuals, use analyser
+data after activation and detach taps and caller-owned nodes on cleanup. Keep
+visual preferences and accessibility in the application.
