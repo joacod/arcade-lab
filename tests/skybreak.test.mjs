@@ -88,8 +88,10 @@ test('Skybreak fortress entrance, telegraphed patterns, phase change, and damage
   const attacks = new Set();
   for (let i = 0; i < 900; i++) { run.player.immunity = 10; stepRun(run, idle, dt); if (b.charge > 0) attacks.add(b.attack); takeEvents(run); }
   assert.deepEqual(attacks, new Set(['fan', 'aim', 'lanes'])); assert.equal(bossLanes(b).length, 3);
+  takeEvents(run);
   b.attack = 'aim'; b.charge = dt / 2; b.aimX = 0; b.aimY = 700; run.player.x = 450; run.bullets = [];
   stepRun(run, idle, dt);
+  assert.equal(takeEvents(run).filter(event => event.type === 'boss-shot').length, 1);
   assert.equal(run.bullets.length, 6); assert.ok(run.bullets.every(shot => shot.vx < 0)); // Target lock never follows a later player move.
   b.attack = 'aim'; b.charge = dt / 2; b.aimX = b.x; b.aimY = 40; run.bullets = [];
   stepRun(run, idle, dt); assert.ok(run.bullets.every(shot => shot.vy < 0)); // The warning remains accurate even above the fortress.

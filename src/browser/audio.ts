@@ -1,91 +1,98 @@
-export const MAX_VOICES = 12;
-export type CueDefinition = readonly [number, number, number, number, OscillatorType];
+import { createAudio, type AudioEngine, type Recipe, type Sound, type PlayOptions } from 'audiobits';
 
-/** Presentation-only, immediate cues. No timers, music transport or event queue. */
-export function createAudio<Cue extends string>(cues: Record<Cue, CueDefinition>, priority: readonly Cue[], onStatus: (message: string) => void) {
-  let context: AudioContext | undefined, master: GainNode | undefined;
-  let disposed = false, paused = true, muted = false, volume = 0.45;
-  const voices = new Set<{ oscillator: OscillatorNode; gain: GainNode }>();
+export const MAX_VOICES = 12;
+const unavailable = 'Sound unavailable. Play continues silently. Use Start, Retry or Resume to try again.';
+
+/** One session owns one lazy AudioBits engine. No game events, recipes or scheduling live here. */
+export function createGameAudio<Cue extends string>(recipes: Readonly<Record<Cue, Recipe>>, onStatus: (message: string) => void) {
+  let engine: AudioEngine | undefined;
+  const sounds = new Map<Cue, Sound>();
+  let disposed = false, paused = true, muted = false, volume = 0.45, ready = false;
+  let generation = 0, suspending: Promise<void> | undefined;
   const audible = () => !disposed && !paused && !muted && volume > 0;
+  const gainDb = () => Math.max(-60, 20 * Math.log10(volume));
+
   function cancel() {
-    if (!context) return;
-    const now = context.currentTime;
-    for (const voice of voices) {
-      voice.gain.gain.cancelScheduledValues(now);
-      voice.gain.gain.setValueAtTime(0, now);
-      voice.oscillator.onended = null;
-      voice.oscillator.stop(now);
-      voice.oscillator.disconnect(); voice.gain.disconnect();
-    }
-    // Suspended context time cannot finish a fade. Detach now so no old tail can resume.
-    voices.clear();
-  }
-  function level() {
-    if (!context || !master) return;
-    master.gain.cancelScheduledValues(context.currentTime);
-    master.gain.setTargetAtTime(audible() ? volume : 0, context.currentTime, 0.008);
+    // Sound.dispose cuts graphs immediately, even with a suspended clock or delay tails.
+    for (const sound of sounds.values()) sound.dispose();
+    sounds.clear();
   }
   function suspend() {
-    if (!context || context.state === 'closed') return;
-    const owned = context;
-    void owned.suspend().then(() => {
-      // A newer user gesture may have resumed while suspension was pending.
-      if (audible() && owned.state === 'suspended') void owned.resume().catch(() => {});
-    }).catch(() => {});
+    const owned = engine;
+    if (!owned || suspending || owned.state === 'closed') return;
+    const token = generation;
+    const pending = owned.suspend().catch(() => {
+      if (!disposed && token === generation) onStatus(unavailable);
+    }).finally(() => { if (suspending === pending) suspending = undefined; });
+    suspending = pending;
+  }
+  function silence() {
+    generation++; ready = false; cancel(); suspend();
+  }
+  function retire() {
+    cancel();
+    // AudioBits disconnects voices and initiates context.close synchronously.
+    if (engine) void engine.dispose().catch(() => {});
+    engine = undefined; suspending = undefined;
   }
   function activate() {
     if (disposed) return;
     paused = false;
+    const token = ++generation;
+    ready = false;
+    if (!audible()) return;
     try {
-      context ??= new AudioContext();
-      if (!master) { master = context.createGain(); master.gain.value = 0; master.connect(context.destination); }
-      // Called synchronously inside Start/Retry/Resume, before any loading or awaits.
-      const owned = context;
-      void owned.resume().then(() => {
-        if (disposed) return;
-        const running = owned.state === 'running';
-        if (!audible()) suspend();
-        onStatus(running ? '' : 'Sound unavailable. Play continues silently.');
-      }).catch(() => onStatus(disposed ? '' : 'Sound unavailable. Play continues silently.'));
-      level();
-    } catch { onStatus('Sound unavailable. Play continues silently.'); }
-  }
-  function play(cue: Cue) {
-    if (!audible() || !context || !master || context.state !== 'running' || voices.size >= MAX_VOICES) return;
-    const [from, to, duration, amplitude, type] = cues[cue], now = context.currentTime;
-    const oscillator = context.createOscillator(), gain = context.createGain();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(from, now);
-    oscillator.frequency.exponentialRampToValueAtTime(to, now + duration);
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(amplitude, now + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    oscillator.connect(gain); gain.connect(master);
-    const voice = { oscillator, gain }; voices.add(voice);
-    oscillator.onended = () => { voices.delete(voice); oscillator.disconnect(); gain.disconnect(); oscillator.onended = null; };
-    oscillator.start(now); oscillator.stop(now + duration + 0.01);
+      // A pending suspension/start cancellation cannot swallow the new gesture.
+      // Ordinary pauses retain the engine; only a race or terminal context replaces it.
+      if (suspending || engine?.state === 'closed') retire();
+      engine ??= createAudio({ maxVoices: MAX_VOICES, maxVoicesPerSound: 3, masterGainDb: gainDb() });
+      const owned = engine;
+      // Must execute in the Start/Retry/Resume handler, before any await.
+      void owned.start().then(() => {
+        if (token !== generation || !audible() || engine !== owned) return;
+        owned.master.setGainDb(gainDb());
+        owned.setMuted(false); ready = true; onStatus('');
+      }).catch(() => {
+        if (!disposed && token === generation) { ready = false; onStatus(unavailable); }
+      });
+    } catch { if (!disposed && token === generation) onStatus(unavailable); }
   }
   return {
     activate,
-    reset: cancel,
-    pause() { paused = true; level(); cancel(); suspend(); },
-    setMuted(value: boolean) { muted = value; level(); if (muted) { cancel(); suspend(); } else if (!paused) activate(); },
-    setVolume(value: number) { volume = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0; level(); if (!volume) cancel(); },
-    consume(events: readonly Cue[]) {
-      if (!audible()) return;
-      const frame = new Set(events);
+    /** Cancel a previous run, including its pending readiness. Never queue events. */
+    reset() {
+      if (disposed) return;
+      generation++; cancel();
+      if (engine?.state === 'starting') { ready = false; suspend(); }
+    },
+    pause() { if (!disposed) { paused = true; silence(); } },
+    setMuted(value: boolean) {
+      if (disposed) return;
+      muted = value;
+      if (muted) silence(); else if (!paused) activate();
+    },
+    setVolume(value: number) {
+      if (disposed) return;
+      volume = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+      if (!volume) silence();
+      else if (ready && engine) engine.master.setGainDb(gainDb());
+      else if (!paused) activate();
+    },
+    /** Audio time is presentation-only: adapters use it for cue throttling. */
+    get time() { return ready && engine?.state === 'running' ? engine.native.context.currentTime : 0; },
+    play(cue: Cue, options?: PlayOptions): boolean {
+      if (!audible() || !ready || !engine || engine.state !== 'running') return false;
+      // Include retiring/releasing voices. Drop excess instead of stealing an important cue.
+      if (engine.counts.active + engine.counts.retiring >= MAX_VOICES) return false;
       try {
-        for (const cue of priority) if (frame.has(cue)) play(cue);
-      } catch {
-        paused = true; level(); cancel(); suspend();
-        onStatus('Sound unavailable. Play continues silently.');
-      }
+        let sound = sounds.get(cue);
+        if (!sound) { sound = engine.sound(recipes[cue]); sounds.set(cue, sound); }
+        sound.play(options); return true;
+      } catch { silence(); onStatus(unavailable); return false; }
     },
     dispose() {
       if (disposed) return;
-      disposed = true; cancel();
-      master?.disconnect();
-      if (context && context.state !== 'closed') void context.close().catch(() => {});
+      disposed = true; generation++; ready = false; retire();
     },
   };
 }

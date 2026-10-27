@@ -18,7 +18,7 @@ The Keeper starts at (480, 320), with the initial crawler at (640, 320). Safe fa
 
 Projectile-radius collision uses a swept intersection, with movement limited to remaining projectile lifetime. Death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
 
-Pause/resume and confirmation release follow native browser focus and pointer lifetimes. Focus loss, hiding, and display transitions clear held input and require deliberate Resume, including after a suspended upgrade choice. Gameplay is visual; keyboard-accessible HTML menus and HUD do not provide a nonvisual equivalent of gameplay. Sound uses procedural cues without recordings or ambient music; see [audio integration status](architecture.md#sound).
+Pause/resume and confirmation release follow native browser focus and pointer lifetimes. Focus loss, hiding, and display transitions clear held input and require deliberate Resume, including after a suspended upgrade choice. Gameplay is visual; keyboard-accessible HTML menus and HUD do not provide a nonvisual equivalent of gameplay. Sound uses procedural cues without recordings or ambient music; see [shared audio ownership](architecture.md#sound).
 
 ## Close and whole-arena views
 
@@ -33,6 +33,12 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 ## Visual settings
 
 Appearance chooses an art bundle or procedural treatment, cosmetic environment, effect palette, and default interface. Classic, Rune, Glass and Abyss can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.
+
+## Sound identity
+
+`src/sound-recipes.ts` defines original AudioBits recipes: soft Spark glints, brighter Arc Spark partials, crystalline Shard transients, Halo contact rings, and a low Pulse bloom. Enemy impacts/dissolves stay subdued, clustered gems brighten a bounded pickup control, and player damage has a distinct low crack. Harmonic chords and restrained delay mark upgrades, evolution and dawn; a low dissonant omen announces the elite. Defeat closes with a falling minor-colored tone.
+
+`src/sound.ts` maps semantic events, coalesces repeated cues per frame and throttles dense contacts/pickups. Milestones replace combat tails. Simulation supplies projectile weapon identity, Halo contact and elite-entry notifications without knowing how they sound. Mute and volume remain session settings.
 
 ## Implementation ownership
 

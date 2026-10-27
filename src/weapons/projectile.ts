@@ -7,5 +7,5 @@ export function shoot(run: RunState, slot: WeaponInstance, dx: number, dy: numbe
     remaining: weapons[slot.base].lifetime, damage: weaponDamage(run, slot),
     chainLimit: slot.id === evolution.replacement ? evolution.chainLimit : 1, hitTargets: [] });
   run.stats.shots++;
-  run.events.push({ type: 'shot', x: run.player.x, y: run.player.y, at: run.elapsed });
+  run.events.push({ type: 'shot', weapon: slot.id, x: run.player.x, y: run.player.y, at: run.elapsed });
 }

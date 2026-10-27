@@ -12,7 +12,7 @@
 | Measurement, fullscreen, frame loop and lifetime signal | `src/browser/host.ts` |
 | Bounded fixed-step timing | `src/browser/clock.ts` |
 | Relative swept-circle intersection | `src/collision.ts` |
-| Current audio resource ownership | `src/browser/audio.ts` |
+| AudioBits session lifecycle and bounded playback | `src/browser/audio.ts` |
 
 ## Lifetimes and execution
 
@@ -26,9 +26,15 @@ The clock bounds fixed-step catch-up; transitions reset timing so suspended wall
 
 ## Sound
 
-AudioBits is required for all game sound. The dependency and [local skill](../.agents/skills/audiobits/SKILL.md) are installed; migration from the current handwritten synthesis in `src/browser/audio.ts` remains outstanding.
+All game sound uses the installed AudioBits public runtime and JSON-only recipes. Follow the [local skill](../.agents/skills/audiobits/SKILL.md) and installed package contracts when adding sound. There is no custom synthesis runtime, audio asset dependency, singleton or audio event bus.
 
-The audio owner provides gesture activation, mute/volume, bounded voices, cancellation, suspension and disposal. Game-owned adapters supply sound definitions and event mapping. Audio failure must leave play possible.
+`src/browser/audio.ts` owns a lazy AudioBits engine per game session. Mounting and importing stay silent and create no native context. Start/Retry/Resume call activation synchronously in their existing gesture handlers; playback waits for successful activation. The owner reports failures through the game's existing status UI, allows another gesture to retry, and drops events while unavailable without a backlog. Its generation guard prevents cancelled activation from making old work audible.
+
+The owner handles mute, normalized volume, overlap admission (including retiring/releasing voices), cancellation, suspension and disposal. AudioBits supplies graph construction, envelopes, seeded variation, filters, delay, per-sound limits and graph cleanup. Cancellation disposes the owned Sound instances immediately, including effect tails on a suspended clock; recipes are rebound lazily. Ordinary pauses retain the engine. A gesture racing an unfinished suspension or following a terminal context replaces it, disposing the old engine first. Muting or zero volume cancels and suspends; a fresh eligible gesture can restore sound. Disposal invalidates pending starts, disconnects all graphs and closes the native context.
+
+Browser composition owns hide, blur, focus, display and page-lifetime decisions alongside gameplay suspension. Returning from a hidden page never resumes audio automatically. Restart cancels the old run before gesture activation; game selection and HMR dispose the departing session. Simulation emits only semantic notifications and never imports AudioBits or reads the audio clock.
+
+Each game's sound adapter owns recipes, event mapping, batch coalescing, priority, cooldowns and expressive playback values. Important milestones replace combat tails; routine bursts are throttled and excess voices discarded. Audio time is used only for presentation throttling. A new game supplies recipes and an adapter, reuses this owner, and wires the same session lifecycle without introducing another lifecycle implementation.
 
 ## Local verification
 
