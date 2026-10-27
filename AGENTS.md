@@ -1,15 +1,27 @@
 # Project guidance
 
-- Keep one private application/package and only the existing Three.js and vgpu runtime graphics dependencies. Do not add speculative packages, publishing/release infrastructure, or architecture.
-- `application.ts` owns only the active game's mount point and disposal. A game entry mounts synchronously and returns its session cleanup; the game owns async preparation, UI, input, simulation, renderers, assets, and audio. Keep game styles scoped to their root.
-- Simulation owns world state and rules, depending on typed content and action-level input, never browser APIs or presentation. Keep game-specific behavior specific until actual reuse justifies extraction. Use typed data for content and TypeScript for behavior.
-- Browser sessions own DOM measurement, backing resolution, browser APIs, listeners, scheduling, and disposal. Runs own mutable gameplay state. Restart replaces a run. HMR must dispose the session.
-- Camera/view settings are presentation state. World rendering uses one authoritative uniform transform. Relative movement gestures use CSS pixels, independent of camera motion; layout transitions clear held input and reset timing.
-- Themes own local artwork metadata and cosmetic values. Artwork dimensions and display zoom do not define physical collision geometry; physical sizes stay in gameplay content. Visuals and sound consume notifications without advancing rules.
-- UI displays state and emits intents. Composition connects explicit owners, supplies the selected round to each new run and world/player information to the camera, and owns asset/audio disposal.
-- Shared host, clock, audio voices, and pure collision math contain no game content. Keep Clearing progression/cameras and Skybreak waves/weapons/boss behavior local.
-- Add compatibility only for persisted data, an external consumer, or an explicit requirement.
-- README describes the current project for newcomers. Durable internal decisions belong in linked documentation. Update relevant documentation when user-visible behavior changes.
-- Keep verification local, small, and meaningful. `pnpm check` runs types, invariant tests, and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices, or expand the browser/device matrix without explicit request.
+## Purpose and evolution
 
-See [README](README.md), [architecture](docs/architecture.md), and [Clearing gameplay](docs/last-light-clearing.md), and [Skybreak gameplay](docs/skybreak.md).
+- Build complete, enjoyable browser games and improve the internal engine that supports them. Maintain game-type foundations that coding agents can adapt from supplied themes, artwork, assets, stories and gameplay requirements. Gameplay quality and architecture quality are equal objectives. Keep one private application/package; this is not a library, SDK or general-purpose engine product.
+- For each new game or substantial feature, evaluate existing infrastructure, duplication, ownership and awkward abstractions. Refactor when concrete requirements make development simpler or more maintainable. Do not avoid a useful abstraction just to minimize code or wait for two identical implementations. Avoid speculative packages and architecture.
+- Reuse and improve applicable shared infrastructure. Keep fundamentally different game mechanics local. Read the relevant owners and [architecture](docs/architecture.md) before changing a system; keep those documents aligned with the resulting implementation.
+
+## Ownership
+
+- The application shell owns game selection, mounting and disposal. Game entries mount synchronously and return session cleanup, while owning their async preparation. Failed construction must release resources already created. Keep game styles scoped to their root.
+- Simulation owns world state and gameplay rules. It depends on typed content, pure math and action-level input, never browser APIs, rendering, UI or audio implementations. Use typed data for content/tuning and TypeScript for behavior. Rendering, animation and audio consume state and semantic events without advancing rules.
+- Browser sessions own browser APIs, listeners, scheduling and disposal. The shared host owns measurement, fullscreen and the single frame loop; renderers own backing buffers. Input translates physical controls into actions. Restart creates a fresh run. Session disposal and HMR must release resources and invalidate pending async work.
+- Presentation owns cameras and cosmetic state. Use one authoritative uniform world transform. Relative gestures use CSS pixels independently of camera motion. Display transitions clear held input and reset timing. Preserve the viewport-filling layout and fullscreen support.
+- Physical geometry belongs in gameplay content, independently of artwork dimensions, visual scale or camera zoom. UI displays state and emits intents. Composition connects explicit owners and manages their lifetimes. Shared infrastructure contains no game content.
+
+## Technologies
+
+- Canvas 2D, Three.js and vgpu/WebGPU are valid rendering choices. Each game uses the renderer or renderers its design needs. Keep unrelated games and graphics implementations behind appropriate loading boundaries.
+- Use [AudioBits](.agents/skills/audiobits/SKILL.md) for all game sound. Keep game-specific sound design and event mapping local, with explicit session ownership, activation, cancellation and disposal. Current integration status belongs in the architecture document.
+- Add dependencies when their capabilities improve quality or save substantial implementation work. Avoid unnecessary wrappers and large frameworks without a concrete benefit. Do not add publishing/release infrastructure or external API stability guarantees. Add compatibility only for persisted data, an actual external consumer or an explicit requirement.
+
+## Documentation and verification
+
+- Keep README a short, human-facing project introduction and usage guide. Link to [CATALOG.md](CATALOG.md) for game descriptions, screenshots and controls instead of growing README with each game.
+- Use CATALOG.md as the shared index for game-specific docs. Keep shared guidance independent of game names, inventories and implementation details. Document decisions where they are owned, avoid duplicating source constants or rules, and remove obsolete reports. Retain asset provenance and licenses.
+- Keep verification local, small and meaningful. `pnpm check` runs types, invariant tests and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices or expand the browser/device matrix without an explicit request.

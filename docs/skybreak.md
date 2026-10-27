@@ -1,6 +1,6 @@
 # Skybreak
 
-An original Canvas 2D vertical arcade shooter, loosely inspired by the accessible movement, forward fire, and temporary evasive protection of [1942](https://en.wikipedia.org/wiki/1942_(video_game)). The fictional aircraft, ocean, fortress, synthesized cues, formations, and sortie are original application code under the repository's MIT license. No external artwork or audio is used.
+An original Canvas 2D vertical arcade shooter. The fictional aircraft, ocean, fortress, synthesized cues, formations and sortie are original application code under the repository's MIT license. No external artwork or audio assets are used. See the [game catalog](../CATALOG.md) for controls.
 
 ## Operation Iron Tempest
 
@@ -34,7 +34,7 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 ## Browser ownership and presentation
 
-The session reuses the browser host, fixed-step clock, and bounded synthesized voice playback. Collision math is shared with Clearing. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
+The session reuses the browser host, fixed-step clock, and bounded synthesized voice playback. Collision math comes from the shared pure helper. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
 
 One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Pause, hidden pages, focus loss, and layout changes clear input and catch-up time. Only explicit Resume continues. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. No Three.js or vgpu code is needed by Skybreak.
 
@@ -42,10 +42,8 @@ Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating 
 
 Change balance, supply deadlines, collision sizes, and formations in `src/skybreak/content.ts`; explicit behavior and rules in `game.ts`; artwork/effects in `presentation.ts`; synthesized cue definitions in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input in `input.ts`; composition in `app.ts`.
 
-A GPU ocean distortion or large smoke field could be a later visual experiment. The bounded Canvas scene currently needs neither a second renderer nor a rendering framework.
-
 ## Local verification
 
-Focused invariants cover nearest swept hits, immunity/respawn, deterministic scheduling and object budgets, power caps and spread expiry, repairs, pause/fresh runs, protected boss entrance, all three attack cycles, phase change, kill-only victory, timeout defeat, and one-time result scoring. Shared collision checks cover relative motion, overlap, tangent/miss, zero travel, and endpoints. The existing Clearing checks exercise the same helper through its weapons.
+Focused invariants cover nearest swept hits, immunity/respawn, deterministic scheduling and object budgets, power caps and spread expiry, repairs, pause/fresh runs, protected boss entrance, all three attack cycles, phase change, kill-only victory, timeout defeat, and one-time result scoring. Shared collision checks cover relative motion, overlap, tangent/miss, zero travel, and endpoints.
 
-The representative Chromium flow covers keyboard and native touch, cancellation, two-touch roll, suspension/restart, pickup HUD, boss hull/results, audio failure, lazy graphics loading, and switching games with frame/audio disposal. Terminal fixtures shorten that regression; separate complete normal-control playthroughs inspect the authored timeline. See the [two-game review](two-game-review.md) for actual measurements and limitations.
+The representative Chromium flow covers keyboard and native touch, cancellation, two-touch roll, suspension/restart, pickup HUD, boss hull/results, audio failure, lazy graphics loading, and switching games with frame/audio disposal. Terminal fixtures shorten that regression. Chromium emulation does not establish physical-device behavior or subjective audio quality. See [architecture](architecture.md#local-verification) for commands and [sound](architecture.md#sound) for audio integration status.

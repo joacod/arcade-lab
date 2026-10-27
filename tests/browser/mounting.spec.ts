@@ -1,5 +1,56 @@
 import { test, expect } from '@playwright/test';
 
+for (const game of [
+  { name: 'Clearing', path: '/src/app.ts', entry: 'mountClearing', message: 'Canvas 2D is required to play.' },
+  { name: 'Skybreak', path: '/src/skybreak/app.ts', entry: 'mountSkybreak', message: 'Canvas 2D is unavailable.' },
+]) {
+  test(`${game.name} releases its host when initial presentation construction fails`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.route(/\/src\/browser\/host\.ts(?:\?.*)?$/, async route => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: `${await response.text()}
+        const original = createHost;
+        createHost = (...args) => { const host = original(...args); window.hostProbe = host; return host; };` });
+    });
+    await page.goto('/');
+    const result = await page.evaluate(async game => {
+      const { [game.entry]: mount } = await import(game.path);
+      const OriginalObserver = window.ResizeObserver, getContext = HTMLCanvasElement.prototype.getContext;
+      const observers = new Set<ResizeObserver>();
+      window.ResizeObserver = class extends OriginalObserver {
+        constructor(callback: ResizeObserverCallback) { super(callback); observers.add(this); }
+        disconnect() { observers.delete(this); super.disconnect(); }
+      };
+      const container = document.createElement('div'); document.body.append(container);
+      try {
+        HTMLCanvasElement.prototype.getContext = () => null;
+        let message = '';
+        try { mount(container, () => {}); }
+        catch (error) { message = (error as Error).message; }
+        const host = (window as any).hostProbe;
+        // Exercise the listeners that would otherwise outlive the failed mount.
+        window.dispatchEvent(new Event('resize'));
+        document.dispatchEvent(new Event('fullscreenchange'));
+        return { message, aborted: host.signal.aborted, attached: host.root.isConnected,
+          children: container.childElementCount, observers: observers.size };
+      } finally {
+        HTMLCanvasElement.prototype.getContext = getContext;
+        window.ResizeObserver = OriginalObserver;
+        (window as any).hostProbe?.dispose(); container.remove();
+      }
+    }, game);
+    expect(result).toEqual({ message: game.message, aborted: true, attached: false, children: 0, observers: 0 });
+    expect(errors).toEqual([]);
+    // The failed attempt must not prevent a fresh, working session.
+    await page.getByRole('button', { name: game.name === 'Clearing' ? 'Play Last Light Clearing' : 'Play Skybreak', exact: true }).click();
+    await expect(page.locator(game.name === 'Clearing' ? '.world-canvas' : '.skybreak-canvas')).toBeVisible();
+    await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+    await expect(page.locator('canvas')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+}
+
 test('browser host owns one loop and cannot schedule work after disposal', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();

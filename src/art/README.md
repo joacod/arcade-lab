@@ -29,7 +29,7 @@ Classic retains the original interface treatment. Rune uses warm frames, square 
 
 ## Optional local Mosslight appearance
 
-The inspected source is [Free Island Adventure Pixel Top-Down Minigame Kit](https://craftpix.net/freebies/free-island-adventure-pixel-top-down-minigame-kit/) by CraftPix, downloaded through the signed-in browser on 2026-10-27. Archive: `craftpix-net-351300-free-island-adventure-pixel-top-down-minigame-kit.zip`, SHA-256 `0b436bf4193dd116bb1b16c084f4df5bcaa4d284d33655e49b98e8fffeb3d59b`.
+The source is [Free Island Adventure Pixel Top-Down Minigame Kit](https://craftpix.net/freebies/free-island-adventure-pixel-top-down-minigame-kit/) by CraftPix. Archive: `craftpix-net-351300-free-island-adventure-pixel-top-down-minigame-kit.zip`, SHA-256 `0b436bf4193dd116bb1b16c084f4df5bcaa4d284d33655e49b98e8fffeb3d59b`.
 
 The [CraftPix license](https://craftpix.net/file-licenses/) permits use in games but restricts redistribution of usable artwork. Raw redistribution permission for this repository has not been confirmed. Images and the local activation manifest stay in ignored `local-art/`, outside the public source and production bundle. Do not copy the archive, images, or PSD files into `src/art/` or `public/`.
 
@@ -55,7 +55,7 @@ export default { mosslight: createMosslight({
 }) };
 ```
 
-4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Mosslight is absent from the menu. Production builds always use the empty `src/local-appearances.ts`, including on a machine with local artwork installed. Previewing a production build therefore offers Lanternwood, Moonglass, and Ember Ruins.
+4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Mosslight is absent from the menu. Production builds always use the empty `src/local-appearances.ts`, including on a machine with local artwork installed. Production omits Mosslight while retaining all bundled appearances.
 
 This is a local typed-definition workflow. There is no runtime store connection, downloader, ZIP parser, upload editor, or asset auto-detection.
 

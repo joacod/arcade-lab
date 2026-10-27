@@ -1,52 +1,10 @@
 # Arcade Lab
 
-A playground for building small browser games and discovering useful reusable parts through complete games. Each game is a reason to explore an idea, play it, and find out which pieces deserve to grow.
-
-**Last Light Clearing** is a little light, a crowded forest, and a survival round that lasts until dawn. **Skybreak** is a fast vertical shooter over an open ocean. Choose either game from the collection screen, and return to **Game selection** from its title, pause, or result menu. Each visit starts an independent session.
-
-![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/images/last-light-clearing.png)
-
-## Fly Skybreak
-
-![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/images/skybreak.png)
-
-Take a small aircraft through a 2–3 minute ocean sortie. Fifteen formations build from straight wings and diagonal crossings to swooping bombers and fast interceptors. Collect gold **Power** chevrons for stronger forward guns, violet **Spread** arrows for 24 seconds of diagonal fire, and green **Repair** crosses for hull. Three lives and a rechargeable roll carry you to **Iron Tempest**, an armored flying fortress with glowing reactors and three telegraphed attack patterns. Destroy it before 2:48 to win, then bring your surviving aircraft home for a score bonus.
-
-| Control | Action |
-| --- | --- |
-| WASD / arrow keys | Steer |
-| Space / J | Hold to fire |
-| Shift / K / Roll button | Evade with 0.65 seconds of immunity; recharges in 5.5 seconds |
-| Hold and drag on the playfield | Steer and fire using touch, mouse, or pen |
-| Escape / Pause | Pause; use Resume flight to continue |
-
-The portrait playfield scales uniformly and stays centered on desktop. Touch steering uses a relative drag: hold near a comfortable spot, then drag in the direction you want to move. Release or cancel to stop steering and shooting. Roll is reachable below the playfield and supports a second touch while steering. Damage briefly protects the aircraft; losing a life restores its hull at the starting position with extra protection. Focus loss and display changes pause and clear held input. Restart creates a fresh sortie. Original procedural Canvas artwork and synthesized sound require no downloaded art or audio. Sound can be muted, and unavailable audio never prevents play.
-
-See the [Skybreak gameplay and ownership notes](docs/skybreak.md) for tuning and implementation details.
-
-## Play the clearing
-
-Move the Keeper, collect green XP gems, and choose upgrades while weapons fire automatically. Spark starts your loadout; Halo, Pulse, and Shard bring different ways to hold back the crawlers. Combine the right upgrades to evolve Spark. A larger elite arrives late in the round.
-
-Choose **Until dawn** for the original three-minute round or **Brief dusk** for a shorter 90-second challenge. **Lanternwood**, **Moonglass**, and the animated pixel-art **Ember Ruins** offer distinct appearances with the same physical rules. **Prism Garden** brings a sculpted stone arena, faceted creatures, and luminous crystals. **Ember Conservatory** puts the Ember pixel actors in the same lit garden. **Abyssal Bloom** turns the clearing into a living bioluminescent world, rendered procedurally with vgpu/WebGPU. Energy currents react to movement and combat, spectral organisms replace sprites, and the elite forms an unstable eclipse. Choose Classic, Rune, Glass, or Abyss interface styling independently, with an optional accent color. The locally installed CraftPix experiment **Mosslight** is available in development only; see [art setup and provenance](src/art/README.md). Procedural sound has mute and volume controls, and play continues with silhouettes or silence if artwork or audio cannot load.
-
-The game fills the browser viewport. **Close view** follows the Keeper with larger characters and screen-edge warnings for distant entries and the elite. **Whole arena** fits the entire clearing. Change appearance, interface, accent, view, and sound in the title or pause menu; choose the round at the title. Selections last through retries and title transitions until reload. Visual changes preserve a paused run and require explicit Resume. The current scene stays visible while the new appearance prepares. If graphics fail, the game keeps a working appearance or restores Lanternwood silhouettes on the same paused run. “Match appearance” follows its default interface; an explicit interface choice survives appearance changes.
-
-**Fullscreen** includes the arena, HUD, and menus when the browser supports it. Display changes and focus loss pause the action and clear held movement. Use **Resume** when ready. On short screens, scroll inside the menu to reach its settings; the game page stays fixed.
-
-| Control | Action |
-| --- | --- |
-| WASD / arrow keys | Move while the arena has focus |
-| Press and drag in the arena | Move with mouse, touch, or pen; release to stop |
-| Escape / P / Pause | Pause; use Resume to continue |
-| Click / tap an upgrade | Choose, then release to continue |
-| Arrows + Enter / Space | Navigate and confirm an upgrade |
-| Tab / Shift+Tab | Focus menu controls |
-| Fullscreen / Exit fullscreen | Change display mode; browser Escape can exit |
+A personal workshop for creating small, beautiful, fun browser games with our own evolving browser-native game engine. Each complete game helps us improve both the collection and the foundations for future games.
 
 ## Run locally
 
-Use **Node 24.x** (developed with **24.22.1**, recorded in `.node-version`) and **pnpm 12.15.0** (recorded in `package.json`).
+Use **Node 24.x** (see `.node-version`) and **pnpm 12.15.0**.
 
 ```sh
 git clone https://github.com/joacod/arcade-lab.git
@@ -55,47 +13,17 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL printed by Vite. `pnpm build` creates `dist/`; `pnpm preview` serves the production build. `pnpm check` runs TypeScript, focused invariant tests, and the build.
+Open the local URL printed by Vite, then choose a game. **Game selection** in the game's menus returns to the collection. Games fill the browser viewport, with fullscreen available where supported.
 
-For changes to input or browser lifecycle, also run the existing Chromium check:
+See the [game catalog](CATALOG.md) for the available games, screenshots and controls.
 
-```sh
-pnpm exec playwright install chromium
-pnpm check:browser
-```
+`pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
 
-This is one private application/package. **Three.js and vgpu are its two runtime graphics dependencies**, loaded only when their appearances are selected. The other appearances use Canvas 2D. Abyssal Bloom needs WebGPU; if it cannot prepare, the current appearance stays playable. Device loss pauses the same run and restores Canvas. TypeScript, Vite, Playwright, Three.js types, and the matching WGSL build loader are development tools.
+## Learn more
 
-## Where to change things
+Built with TypeScript and Vite, using Canvas 2D, Three.js and vgpu/WebGPU for graphics. [AudioBits](https://github.com/joacod/audiobits) is the selected library for all game sound; integration is pending.
 
-| Area | Location |
-| --- | --- |
-| Gameplay and progression | `src/game.ts`, `src/combat.ts`, `src/progression.ts`, `src/weapons/` |
-| Balance and round configurations | `src/content.ts` |
-| Artwork and cosmetic values | `src/themes.ts`, `src/art-pack.ts`, `src/art/` |
-| Camera and rendering | `src/view.ts`, `src/world-presentation.ts`, `src/presentation.ts`, `src/three/garden.ts`, `src/vgpu/` |
-| Menus, HUD, interface skins | `src/ui.ts`, `src/interface.ts`, `src/style.css` |
-| Application mounting | `src/application.ts`; lazy selection and HMR cleanup in `src/main.ts`; collection UI in `src/selection.ts` |
-| Skybreak gameplay and authored waves | `src/skybreak/game.ts`, `src/skybreak/content.ts` |
-| Skybreak session, controls, visuals and sound | `src/skybreak/app.ts`, `input.ts`, `presentation.ts`, `ui.ts`, `sound.ts`, `style.css` |
-| Shared facilities | `src/browser/host.ts`, `clock.ts`, `audio.ts`; pure swept-circle math in `src/collision.ts` |
-| Clearing browser integration | `src/browser/`; game composition in `src/app.ts` |
-| Shared browser voice playback / Clearing cues | `src/browser/audio.ts` / `src/sound.ts` |
+- [Architecture](docs/architecture.md): shared engine ownership and local verification.
+- [Development guidance](AGENTS.md): contributor and agent instructions.
 
-Abyssal Bloom's semantic colors live in `themes.abyss.palette` in `src/themes.ts`. Its field speed, vein brightness, glow, resolution limits, and effect budgets live in `bloomTuning` in `src/vgpu/bloom.ts`; procedural shapes live in its WGSL files. A color variation only needs a palette object. Image-backed presets retain their authored sprites while palette colors drive their environment, energy, weapons, and feedback.
-
-The Chromium suite covers both games, their session lifecycle, and two focused Clearing rendering checks. Default headless Chromium may lack a WebGPU adapter; that path verifies initialization failure retains the run and skips the GPU-only assertions. To exercise actual shader rendering, switching, cleanup, and native device loss on a WebGPU-capable Chromium installation:
-
-```sh
-pnpm check:browser --grep 'Abyss switching' --headed
-pnpm exec vgpu check src/vgpu/field.wgsl --require-validation
-pnpm exec vgpu check src/vgpu/organisms.wgsl --require-validation
-```
-
-Native shader validation also requires an available adapter. The Vite WGSL loader resolves and reflects both shader modules during every build.
-
-## Explore further
-
-Arcade Lab is an experiment, with game-specific behavior kept close to the game until actual reuse justifies extraction. There is room for more games and shared parts, guided by what proves useful in play.
-
-Read the [architecture and ownership notes](docs/architecture.md), [two-game reuse review and current measurements](docs/two-game-review.md), [earlier foundation baseline](docs/foundation-review.md), [gameplay reference and adaptation choices](docs/last-light-clearing.md), [contributor guidance](AGENTS.md), and [art provenance](src/art/README.md). Code is available under the [MIT license](LICENSE).
+Code is available under the [MIT license](LICENSE).

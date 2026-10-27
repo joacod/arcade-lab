@@ -1,111 +1,35 @@
-# Architecture and ownership
+# Shared architecture
 
-Arcade Lab is one private application. Three.js and vgpu are the explicitly permitted runtime graphics dependencies for these presentation experiments. Last Light Clearing and Skybreak keep their gameplay and presentation contracts independent. Share browser infrastructure where both games have an actual need.
+[AGENTS.md](../AGENTS.md) defines development principles. [CATALOG.md](../CATALOG.md) is the index for game-specific documentation, source ownership and rendering details.
 
-## Dependency direction
+## Shared source map
 
-- `application.ts` defines the small `GameEntry` / `GameSession` mount-and-dispose contract and owns one active session and its DOM mount point. It imports no game, browser host, gameplay data, menu model, or renderer. `main.ts` mounts the collection screen, imports the selected game on demand, and disposes the application on HMR. A generation guard discards stale game imports. `selection.ts` owns the collection UI and its listener cleanup. `application.css` contains only the page and mount-point sizing.
-- `content.ts` defines typed gameplay data, physical geometry, tuning, and round profiles. `content-validation.ts` validates it before a session starts.
-- `game.ts` / `game-state.ts`, combat, weapons, and progression own world state and rules. They depend on content and action-level input, never DOM, audio, camera, or presentation.
-- `browser/host.ts` owns its root and stable focusable play surface, CSS measurement, capped DPR reporting, browser fullscreen, the single frame loop, listeners, ResizeObserver, and cleanup. The mounting game supplies root styling and accessible labels. Starting is idempotent; disposal during a frame cannot schedule another frame. `browser/input.ts` translates the clearing's physical keys and pointers into movement actions; `skybreak/input.ts` translates shooter keys, relative pointer steering, automatic pointer fire, and the separate evade button into flight actions. Neither imports clearing content or camera geometry at runtime.
-- `art-pack.ts` defines local named image bundles, semantic actor roles, frame clips, normalized pivots, authored visual footprints, orientation, sampling, and decorative environment stamps. `themes.ts` combines these with effect colors and default interface skins as visual presets. `art/mosslight.ts` is an optional local CraftPix definition, activated only through an ignored development manifest.
-- `animation.ts` owns bounded actor movement/facing observations outside gameplay. Composition updates them after each simulation step; render-only frames cannot reset a moving actor to idle.
-- `view.ts` computes a pure presentation transform from explicit world bounds, CSS surface dimensions, target, and view mode. `world-presentation.ts` defines only the clearing presentation lifecycle: canvas, resize, observe, reset, consume, draw, and dispose. `presentation.ts` owns a Canvas 2D canvas/context; the lazy `three/garden.ts` owns a separate WebGLRenderer canvas and all GPU resources. The lazy `vgpu/bloom.ts` owns a WebGPU canvas, device, pipelines, buffers and procedural cosmetic state. `screen-overlay.ts` owns the Clearing CSS-space joystick and offscreen cues.
-- `ui.ts` owns HTML menus, focus targets, settings controls, notices, and the authoritative-state HUD. Its typed callback object emits intents. It does not advance gameplay or call browser fullscreen.
-- `app.ts` is Last Light Clearing's game entry. It connects these owners, supplies the selected round to new runs and bounds/player to the camera, and coordinates screen transitions and suspension. `style.css` scopes every game selector, including control defaults and interface skins, to `.clearing-app`.
+| Responsibility | Owner |
+| --- | --- |
+| Selection and lazy game imports | `src/main.ts`, `src/selection.ts` |
+| Active session and mount point | `src/application.ts` |
+| Viewport and mount-point sizing | `src/application.css` |
+| Measurement, fullscreen, frame loop and lifetime signal | `src/browser/host.ts` |
+| Bounded fixed-step timing | `src/browser/clock.ts` |
+| Relative swept-circle intersection | `src/collision.ts` |
+| Current audio resource ownership | `src/browser/audio.ts` |
 
-## Application and game lifetime
+## Lifetimes and execution
 
-`createApplication(container)` exposes `mount(game: GameEntry)` and idempotent `dispose()`. Each mount disposes the previous game before giving the next game a fresh `.game-mount` element inside the supplied container. Removing that mount point also isolates DOM left by a failed mount. Mounting after application disposal is rejected.
+`GameEntry.mount(container): GameSession` returns synchronously. The application disposes the previous session before creating a fresh mount point. It removes that mount point even if construction or disposal throws; games must release resources acquired before a failed construction. Disposal is idempotent. Mounting after application disposal is rejected.
 
-A `GameEntry` implements `mount(container): GameSession`; a `GameSession` implements `dispose(): void`. Mount returns synchronously so cleanup is available while assets or GPU preparation are still pending. Each game must cancel its scheduling/listeners, invalidate async completions, release its resources, and clean up a failed construction. The application removes the owned mount point even if session disposal throws. It cannot clean up resources that a game never returns or releases.
+The entrypoint guards stale imports and disposes the application on HMR. Each game owns its DOM, scoped styles and async preparation. Pending completions must be invalidated when their session ends.
 
-The collection offers Last Light Clearing and Skybreak with two explicit lazy imports, rather than a game registry. Returning to selection disposes the game before mounting the collection. Each game returns its cleanup synchronously. Skybreak accepts no clearing world bounds, player state, notifications, camera modes, appearances, upgrades, or menus. Clearing CSS loads with its entry and stays scoped to `.clearing-app`; Skybreak uses `.skybreak-app`, and the collection uses `.arcade-selection`.
+The host owns a stable focusable surface and one frame loop. Starting is idempotent; disposal during a frame prevents rescheduling. Disposal cancels scheduling, aborts listeners, disconnects observation and removes the root. Renderers own their backing buffers and graphics resources.
 
-Both simulations use the pure `collision.ts` relative swept-circle intersection. Clearing supplies a stationary target twice to preserve its collision behavior; Skybreak supplies previous/current target positions. Target choice, damage, death, scores, and projectile lifetime stay in each game.
+The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
 
-Both games use `browser/host.ts` for measurement, the single frame loop, lifetime signal, and disposal; `browser/clock.ts` for bounded 60 Hz steps; and `browser/audio.ts` for immediate synthesized voices, mute, suspension, and audio resource ownership. Game-specific sound adapters map their own notifications to authored cue definitions. The clearing's `world-presentation.ts`, `view.ts`, `browser/input.ts`, and `screen-overlay.ts` remain specific to it. The host's optional fullscreen capability is available but Skybreak does not expose a fullscreen control.
+## Sound
 
-## Skybreak ownership
+AudioBits is required for all game sound. The dependency and [local skill](../.agents/skills/audiobits/SKILL.md) are installed; migration from the current handwritten synthesis in `src/browser/audio.ts` remains outstanding.
 
-`skybreak/content.ts` defines the 480×800 physical playfield, aircraft bodies, weapons, roll tuning, fifteen formations, deterministic supplies, and fortress tuning. `skybreak/game.ts` owns mutable flight state, active time, explicit straight/crossing/swoop/interceptor movement, concrete forward/spread weapons, pickups, damage, immunity, respawn, scoring, and the fortress entrance/attacks/destruction/outcomes. It uses neither browser APIs nor randomness. A resolved shot damages the nearest intersected living aircraft once. Player damage is shared across contacts; respawn clears hostile projectiles and grants protection. Escaped objects are removed.
-
-`skybreak/app.ts` connects input, UI, simulation, visual events, and audio. Title and pause transitions clear input and reset the clock. Restart replaces the run and clears effects and voices. `skybreak/input.ts` keeps drag displacement in CSS pixels, handles cancellation/capture, fires while a pointer is held, and consumes evade presses once at a simulation step. A second pointer can operate the roll button. The session pauses on focus loss, page hiding, and display changes. `skybreak/ui.ts` displays state and emits intents.
-
-`skybreak/presentation.ts` draws original vector aircraft, layered scrolling ocean, islands, a pier, clouds, and bounded cosmetic effects on Canvas 2D. One uniform transform fits and centers the portrait world. Scrolling and deterministic cosmetic noise never advance gameplay. Effects use active run time, so pause freezes them. The game owns its audio definitions in `skybreak/sound.ts` and imports no graphics package.
-
-The second game exposed no need to generalize combat or cameras. The existing movement-only input binding cannot express fire and evade, so Skybreak has its own binding. The audio voice owner was already shared by the playable foundation. Completing the second game extracted only duplicate collision math. Menus, asset loading, input bindings and view policies remain specific, as detailed in the [two-game review](two-game-review.md). The mount contract still relies on each game cleaning up resources if synchronous construction fails; it cannot recover resources a failed game does not return.
-
-## Clearing session and run lifetime
-
-`mountClearing(container, onExit)` returns an idempotent `dispose()`. A browser session retains appearance, interface override, accent, round, view, and sound settings. Start, Retry, Restart, and Return to title construct a fresh run rather than clearing selected fields. Run state owns enemies, entries, weapons/cooldowns, gems, progression, active time, outcomes, and pending gameplay notifications. Presentation reset discards effects and reseeds movement/facing history from the fresh run. A successful appearance replacement changes artwork without resetting the run or replaying notifications. Camera position is derived from the fresh player's position, so no previous offset survives.
-
-`browser/clock.ts` advances fixed 60 Hz steps, clamps elapsed time to 100 ms, and allows at most five catch-up steps. A transition clears input and resets timing. Pause, page hiding, external focus loss, layout/backing changes, and fullscreen transitions never turn suspended wall time into simulation catch-up. Completing an upgrade interrupted by suspension returns to Pause, requiring explicit Resume. Escape and P only pause; Escape never resumes and remains available to the browser for fullscreen exit.
-
-Composition drains gameplay notifications once per frame after the fixed steps, then gives the same batch to visuals and sound. Drawing never creates gameplay occurrences. Bounded effects age in active simulation time. Sound coalesces immediate cues, caps voices, and discards events received while silent; there is no playback queue or separate timer loop.
-
-## Clearing coordinates and display
-
-Last Light Clearing uses the unchanged 960×640 world. Collision radii belong to gameplay content. Source frame dimensions, transparent padding, cosmetic scales, and camera zoom do not determine collision geometry.
-
-The host measures the stable `.play-surface` CSS width/height and reports a device-pixel ratio capped at 2. It never resizes a world buffer. Each implementation owns its backing dimensions: Canvas assigns its width/height; Three.js uses `setPixelRatio` and `setSize(..., false)`; Bloom manually resizes its vgpu surface to physical pixels, with DPR capped at 1.5 and a 2.4-million-pixel budget. vgpu auto-resize is disabled so the browser host remains the single measurement owner. UI focus, pointer capture, fullscreen and listeners stay attached to stable elements while the world canvas is replaced. The overlay resizes its own small 2D buffer.
-
-`view.ts` calculates one uniform world-to-CSS transform. Canvas uses DPR multiplied by that transform. The orthographic garden maps game `(x, y)` to Three.js `(x, -y, elevation)` with a camera looking straight down negative Z. Its frustum is `left=-view.x/scale`, `right=(cssWidth-view.x)/scale`, `top=view.y/scale`, `bottom=-(cssHeight-view.y)/scale`. Consequently every ground point projects to the same CSS location as `toScreen`, in Close and Whole arena views. Decorative elevation has no perspective/parallax and cannot change physical bodies, the traversable floor or pointer displacement. `toWorld` is the inverse mapping. The screen overlay uses DPR only.
-
-Movement origin/tip and displacement live in CSS pixels relative to the stable surface: a 6-pixel dead zone, full strength at 42 pixels, proportional strength in between. Camera motion cannot change a held action. Actual surface or fullscreen changes cancel the gesture and clear keys, requiring a fresh press after Resume. Pointer capture, release, cancellation, and focus clearing belong to browser input.
-
-Fullscreen is requested directly from a button interaction on the session root, which contains HUD, canvas, and menus. Browser integration reports actual `fullscreenchange` state. Composition pauses, resets timing/input, and guards asynchronous status delivery after disposal. Rejected requests leave the viewport layout usable. Menus scroll inside the stage, safe-area insets protect chrome, and bounded failure notices cannot increase page height.
-
-## Clearing assets, sound, and disposal
-
-Visual presets in `themes.ts` form a small typed union: Canvas and the pixel garden require an art pack; Prism and Abyss are procedural and cannot specify one. Every preset selects a semantic cosmetic palette and default interface. Lanternwood, Moonglass, Ember Ruins and development-only Mosslight use Canvas. Prism Garden uses procedural geometry with Glass as its default interface. Ember Conservatory uses the exact Ember Ruins art-pack object for pixel actors in the lit garden. These named, supported choices avoid an arbitrary renderer/art matrix.
-
-`prepareAssets` decodes and validates a complete bundle, returning images and explicit disposal. Composition owns each preparation's abort signal and generation. The old presentation and images remain active during loading. After preparation, composition resets the candidate from the current run, resizes and paints once offscreen, then replaces the canvas atomically. Success releases the old renderer before its images. Stale/failed/aborted candidates release their own images and resources. Starting/resuming/restarting is disabled during preparation; settings can supersede it. No replacement constructs a run or replays events/sounds. Explicit interface/accent overrides and view mode remain session state.
-
-Initialization failure retains the current presentation. GPU context loss or a draw failure suspends play and immediately creates a fresh Canvas appearance with Lanternwood silhouettes on the current run. Pending upgrade choices stay frozen and still use the existing confirmation/suspension rules. The player must explicitly Resume after suspension. Lost contexts are discarded rather than restored into an active game.
-
-All Three.js imports and types live in `three/garden.ts`, reached only through `import()` on a garden selection. A Canvas selection never fetches that module or the graphics library. Vite pre-optimizes the dependency on the development server to avoid a first-selection reload; this does not fetch it on the client. All three implementations use the host's existing frame loop, fixed simulation and active run time. There is no second animation loop or clock.
-
-The garden reuses geometry, materials and textures. Ordinary/elite actors use reusable mesh slots, with enemy-ID animation observations. Gems, projectiles, warning rings and transient effects use fixed instanced batches sized above authored round maxima (2,048 gems, 256 per projectile type, 128 effects with six fragments each). Spark tails derive from velocity, so reuse cannot connect unrelated projectiles. Floor texture and scenery variation are deterministic cosmetics and never consume simulation randomness. One hemisphere light and one directional light with one bounded shadow map serve the whole scene.
-
-Pixel actors honor the art pack's nearest or smooth sampling on shared atlas textures without mipmaps. Smooth sampling insets UVs by half a texel to avoid neighboring-frame bleed. They use per-slot UVs, the same clips/active-time selection, pivots, visual footprints and orientation as Canvas. Changing a frame never mutates a shared atlas offset. Prism actors are game-specific geometry; weapon and pickup effects remain specific to Last Light Clearing.
-
-To add a visual treatment, add its supported named preset and cosmetic implementation. Reuse an art manifest when appropriate, keeping all physical sizes in content. Add an implementation branch at the composition's lazy preparation boundary only if a different renderer requires it. Supply the existing read-only run/view inputs and implement reset/resize/draw/disposal without editing simulation, adding entity IDs, or introducing a rendering command framework.
-
-Animation uses only active run time. Keeper and enemy observations update after each fixed simulation step and persist between draws, including while paused. Cosmetic hit/attack clips, flashes, and defeat effects consume the existing notification batch; they cannot apply damage, set weapon cadence, retain dead enemies, or change sound delivery. Animation and image handles never enter RunState.
-
-Interface tokens live in `style.css`, with names and accent choices in `interface.ts`. One HTML UI and callback set serves Classic, Rune, Glass, and Abyss. “Match appearance” resolves the current successfully loaded preset’s default; explicit skin and accent selections persist independently. Visual settings are available at title/pause and never resume a paused run.
-
-CraftPix image files and the activation manifest stay in ignored `local-art/`. Vite substitutes that manifest only for development when present; production builds always use an empty local registry. See [art definitions and provenance](../src/art/README.md) for the inspected mappings and reproduction steps. Sound owns one lazy Web Audio context, gain ramps, mute/volume, and short procedural cues. Pause/retry cancel voices; disposal disconnects nodes and closes the context.
-
-Composition disposes active/pending assets, the overlay, world presentation and sound. Garden disposal explicitly releases geometries, materials, textures, instanced buffers, the directional shadow target, WebGLRenderer caches/context and canvas, and aborts the context-loss listener. Initialization failures use the same cleanup. The host aborts listeners, disconnects observation, cancels scheduling, releases its DOM root, and input releases capture. Queued focus work and pending presentation/fullscreen completions guard session disposal. Retries retain the session without accumulating resources.
-
-## Abyssal Bloom
-
-`vgpu/bloom.ts` uses vgpu 0.6.0's `init`, `surface`, `uniforms`, `storage`, `effect`, `draw`, and explicit `frame` API. The matching `@vgpu/wgsl` Vite plugin prepares/reflection-checks WGSL at build time. The small Vite integration strips only Vite 8's development `?import` marker before invoking the documented loader. It does not ship the shader parser to the browser. TypeScript application checks remain strict; `skipLibCheck` accommodates the dependency's declarations under `exactOptionalPropertyTypes`.
-
-One render pass draws a fullscreen domain-warped current/vein field, then an instanced quad batch for procedural organisms, crystalline pickups, distinct weapons, warnings and transient light. The field evaluates at most 12 localized ripples, never every enemy. Storage arrays and buffers are allocated once: 4,096 instances, 12 ripples, and at most 192 CPU-side cosmetic particles. Buffers, uniform blocks and compiled pipelines are reused. Local analytic halos provide restrained glow without extra full-resolution postprocessing targets.
-
-`shared.wgsl` defines the shared frame/palette layouts; `field.wgsl` draws flowing contour interference and animated perimeter seams; `organisms.wgsl` interprets the instance stream as the Keeper, spectral crawlers, eclipse elite and weapon/effect shapes. Colors come from `themes.abyss.palette`. `bloomTuning` owns local artistic and resolution budgets. A color variant changes the semantic palette, without shader edits or a UI control for every parameter. Three.js consumes the same palette semantics through shared material colors/emissive channels, clear color, lighting and instance colors; materials stay alive for the presentation's lifetime.
-
-The vertex shader applies `(world * view.scale + view.translation) / cssSize` before conversion to clip space. The field performs the inverse mapping from fragment physical pixels through the actual backing/CSS ratio. This uses the same authoritative view as Canvas, Three.js, and the shared overlay, even when resolution is capped. Input remains in CSS pixels.
-
-Movement observations and notifications drive bounded ripples and light fragments. Pulse uses the existing event's position/radius and visual duration; its residual environmental disturbance is cosmetic. Elite defeat is identified from observed enemy identity and produces a brief collapsing corona. Reset and replacement discard old effects. Gameplay animation uses only `run.elapsed`, so pause/upgrade/background suspension freeze it. At the title only, composition supplies the existing host frame timestamp for idle breathing; this is not a second simulation clock or scheduler. The initial active seconds create the awakening wave.
-
-Preparation awaits pipeline compilation and GPU error delivery before returning a candidate. Aborted initialization releases a device as soon as the uncancellable native acquisition resolves. Abort listeners are removed when preparation completes so a later selection cannot dispose the active world prematurely. Existing composition generations reject stale candidates; the working presentation stays until the replacement paints. Device loss and GPU errors use the existing pause/Canvas recovery path. Bloom disposal retires both draws and disposes the vgpu owner, releasing managed buffers, surface configuration, caches, and the device. Intentional disposal suppresses its loss callback.
-
-This third implementation required only an asset/procedural type distinction, an asynchronous preparation branch, and an optional title-only frame timestamp. Simulation, progression, sound, input, camera geometry and the shared HTML interface did not need a renderer-specific API. No scene graph or generic renderer registry was needed.
+The audio owner provides gesture activation, mute/volume, bounded voices, cancellation, suspension and disposal. Game-owned adapters supply sound definitions and event mapping. Audio failure must leave play possible.
 
 ## Local verification
 
-- `pnpm check`: strict types, fast simulation/presentation invariants, production build.
-- For input or lifecycle work: `pnpm exec playwright install chromium` if needed, then `pnpm check:browser`.
-- The representative replacement browser flow retains an upgraded run across Canvas/pixel/garden changes, checks projection and atlas UVs, plays after Resume, supersedes preparation, retries, and verifies resource disposal plus real context-loss and initialization-failure fallback. It also checks Canvas does not fetch the lazy graphics module.
-- `tests/browser/bloom.spec.ts` checks real Three.js palette/smooth atlas bindings and WebGPU switching/native loss. On an adapter-less headless launch it checks failure retention and skips GPU assertions; run `pnpm check:browser --grep 'Abyss switching' --headed` on a capable Chromium setup for those assertions. Validate both WGSL entries with `pnpm exec vgpu check src/vgpu/<entry>.wgsl --require-validation` when a native adapter is available.
-- `tests/browser/mounting.spec.ts` checks single-loop ownership, disposal inside a frame, replacement of an active garden with an independent fixture, CSS isolation, audio/context cleanup, failed mounts, superseded initial artwork, and a fresh clearing remount without held movement.
-- `tests/browser/skybreak.spec.ts` covers the representative shooter flow and actual two-game selection, including native touch cancellation, a second-touch roll, pause/restart/outcomes, unavailable audio, lazy graphics loading, and frame/audio disposal. See [Skybreak](skybreak.md) for simulation checks.
-- Focused layout inspection at laptop, narrow portrait, and short landscape sizes is useful when changing display behavior. Chromium emulation does not establish physical-device behavior or subjective audio quality.
-
-Keep checks local and focused. Do not add CI, per-interaction suites, screenshot matrices, or more browsers/devices without an explicit request.
-
-See the [two-game review](two-game-review.md) for current reuse decisions and measurements, and the [earlier foundation review](foundation-review.md) for the original renderer baseline.
+Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` for input or lifecycle changes; install Chromium with `pnpm exec playwright install chromium` if needed. Renderer-specific checks belong with the owning game's documentation.

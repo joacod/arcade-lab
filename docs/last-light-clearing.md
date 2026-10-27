@@ -1,10 +1,6 @@
 # Last Light Clearing
 
-## Pinned reference
-
-The read-only gameplay reference is [Last Light Clearing in joacod/godot-games](https://github.com/joacod/godot-games/tree/2fc1de05248537b21cf9b9eed656ce877d3e1561/survivors), pinned to **`2fc1de05248537b21cf9b9eed656ce877d3e1561`**. Its [design](https://github.com/joacod/godot-games/blob/2fc1de05248537b21cf9b9eed656ce877d3e1561/survivors/docs/DESIGN.md), typed Resources, and gameplay scripts informed this browser adaptation. No Godot scenes, assets, architecture, or test suites were transplanted. Keep this reference unless deliberately updating it.
-
-The source of numerical tuning is [`src/content.ts`](../src/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn retains the original three-minute rules; Brief dusk supplies a shorter round through the same implementation. The original local SVG appearances and animated CC0 Ember Ruins use the same rules. Optional Mosslight artwork stays local to development. See [provenance](../src/art/README.md).
+The source of numerical tuning is [`src/content.ts`](../src/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn is a three-minute round; Brief dusk supplies a shorter round through the same implementation. Every appearance uses the same rules. See the [game catalog](../CATALOG.md) for controls and [art definitions and provenance](../src/art/README.md) for artwork.
 
 ## Gameplay semantics
 
@@ -12,17 +8,17 @@ The source of numerical tuning is [`src/content.ts`](../src/content.ts), includi
 - Spark targets the nearest living enemy. Halo is an orbiting contact body, not a continuously damaging ring, and retains per-target hit windows across upgrades/revolutions. Pulse samples its circle once per activation, including enemy body radii. Shard fires cardinal bursts. Fractional damage rounds up.
 - Each death drops one gem. Attraction persists after the Keeper moves away, and collection batches same-tick XP. Excess XP survives queued level choices. Choices stop gameplay, offer three distinct effective upgrades, and require releasing confirmation before continuing. Only offered IDs can apply.
 - Upgrade priority is deterministic: an unowned weapon, eligible Lens, eligible Spark ranks, then authored choices. Recovery, Power, and Reach remain repeatable. Unused recovery becomes shield; Reach survives acquiring Lens.
-- Rank-three Spark plus Lens evolves automatically in either acquisition order. Arc Spark preserves weapon slot, rank, cadence, and other weapons, clears old Spark projectiles, and chains to distinct living targets within the shot's existing lifetime. The reference's upgrade menu applies this recipe automatically; Arc Spark is not a fourth manual choice.
+- Rank-three Spark plus Lens evolves automatically in either acquisition order. Arc Spark preserves weapon slot, rank, cadence, and other weapons, clears old Spark projectiles, and chains to distinct living targets within the shot's existing lifetime. Arc Spark is not a fourth manual choice.
 - Ordinary spawns count pending entries toward their cap and discard capped slots. The elite is independent of that cap. Its entry warning is harmless, invulnerable, and excluded from targeting so projectiles are not wasted on it.
 - Shield and shared contact immunity apply before health. Lethal final-tick contact takes precedence over victory. Outcomes stop attacks, entries, and pickups, discard pending choices, and freeze results. Retry constructs a fresh run.
 
-## Browser adaptation choices
+## Browser behavior
 
-The centered browser start remains (480, 320), rather than the reference's (430, 320), with the initial crawler at (640, 320). Safe farthest-edge entry selection retains seeded tie breaking, while upstream selects the first farthest visible edge. Spawn rules and global targeting use world coordinates, regardless of the selected view.
+The Keeper starts at (480, 320), with the initial crawler at (640, 320). Safe farthest-edge entry selection uses seeded tie breaking. Spawn rules and global targeting use world coordinates, regardless of the selected view.
 
-The browser keeps swept projectile-radius collision and movement limited to remaining projectile lifetime. Upstream combines a center ray with cached area overlaps and expires before movement on its last tick. Browser death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
+Projectile-radius collision uses a swept intersection, with movement limited to remaining projectile lifetime. Death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
 
-Pause/resume and confirmation release follow native browser focus and pointer lifetimes. Focus loss, hiding, and display transitions clear held input and require deliberate Resume, including after a suspended upgrade choice. Canvas conveys the world visually; keyboard-accessible HTML menus and HUD do not provide a nonvisual equivalent of gameplay. Audio uses procedural Web Audio cues without recordings or ambient music.
+Pause/resume and confirmation release follow native browser focus and pointer lifetimes. Focus loss, hiding, and display transitions clear held input and require deliberate Resume, including after a suspended upgrade choice. Gameplay is visual; keyboard-accessible HTML menus and HUD do not provide a nonvisual equivalent of gameplay. Sound uses procedural cues without recordings or ambient music; see [audio integration status](architecture.md#sound).
 
 ## Close and whole-arena views
 
@@ -36,4 +32,44 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Visual settings
 
-Appearance chooses an art bundle, cosmetic environment, effect palette, and default interface. Classic, Rune, and Glass can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.
+Appearance chooses an art bundle or procedural treatment, cosmetic environment, effect palette, and default interface. Classic, Rune, Glass and Abyss can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.
+
+## Implementation ownership
+
+Paths below are relative to `src/`.
+
+| Responsibility | Owner |
+| --- | --- |
+| Composition and session settings | `app.ts` |
+| Simulation | `game.ts`, `game-state.ts`, `combat.ts`, `progression.ts`, `weapons/` |
+| Typed content and validation | `content.ts`, `content-validation.ts` |
+| Physical input and camera transform | `browser/input.ts`, `view.ts`, `screen-overlay.ts` |
+| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts`, `vgpu/` |
+| Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
+| UI and sound adapters | `ui.ts`, `interface.ts`, `style.css`, `sound.ts` |
+
+`mountClearing` owns composition and returns session cleanup while artwork prepares. If initial Canvas construction throws, it disposes the already-created host before propagating the error. Session settings survive run replacement; pending preparations are aborted and invalidated on disposal. Styles stay scoped to `.clearing-app`.
+
+## Renderer and asset lifetimes
+
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Canvas is the initial presentation; Three.js and vgpu implementations load only when selected. They use the host's frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax; Bloom applies the transform and its inverse in shaders. Renderers own backing resolution, with Bloom's limits in `bloomTuning`.
+
+`prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Lanternwood Canvas silhouettes.
+
+Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas and garden share clip helpers and art manifests; atlas UVs are per actor, with half-texel insets for smooth sampling. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.
+
+GPU implementations reuse bounded resources and release them on failure and disposal. Garden releases geometry, materials, textures, instance buffers, shadows and renderer/context resources. Bloom owns the device, surface, buffers and pipelines; aborted acquisition releases its eventual device, and intentional disposal suppresses device-loss recovery.
+
+Vite pre-optimizes graphics dependencies without fetching them for Canvas startup. Its WGSL integration strips the development `?import` marker before invoking the loader; shader reflection stays at build time. `skipLibCheck` accommodates the installed vgpu declarations while application types remain strict.
+
+## Renderer verification
+
+The browser checks exercise appearance replacement on a retained run, projection, atlas bindings, artwork failure, disposal and GPU loss. Headless Chromium without a WebGPU adapter verifies fallback and skips GPU-only assertions. On a capable installation:
+
+```sh
+pnpm check:browser --grep 'Abyss switching' --headed
+pnpm exec vgpu check src/vgpu/field.wgsl --require-validation
+pnpm exec vgpu check src/vgpu/organisms.wgsl --require-validation
+```
+
+Shader validation requires an available adapter. See [shared verification commands](architecture.md#local-verification) for the standard checks.
