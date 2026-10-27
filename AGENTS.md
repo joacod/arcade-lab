@@ -25,7 +25,8 @@
 
 ## Documentation and verification
 
-- README describes the purpose, current games, technologies and local setup for newcomers. Durable development rules live here; implementation/ownership details belong in linked documentation. Update relevant documentation when user-visible behavior or architecture changes. Preserve historical experiment/review records as historical evidence, not overriding guidance.
+- Keep README small and human-facing: what the project is and how to run/use it. Put game listings, screenshots and controls in [CATALOG.md](CATALOG.md), and link to it from README. Keep planned genres, agent workflows and implementation details in their dedicated documents.
+- Durable development rules live here; implementation/ownership details belong in linked documentation. Update relevant documentation when user-visible behavior or architecture changes. Preserve historical experiment/review records as historical evidence, not overriding guidance.
 - Keep verification local, small and meaningful. `pnpm check` runs types, invariant tests and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices or expand the browser/device matrix without explicit request.
 
-See [README](README.md), [architecture](docs/architecture.md), [Clearing gameplay](docs/last-light-clearing.md) and [Skybreak gameplay](docs/skybreak.md).
+See [README](README.md), [game catalog](CATALOG.md), [architecture](docs/architecture.md), [Clearing gameplay](docs/last-light-clearing.md) and [Skybreak gameplay](docs/skybreak.md).
