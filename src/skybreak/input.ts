@@ -29,12 +29,14 @@ export function bindInput(surface: HTMLElement, evadeButton: HTMLElement, active
     surface.addEventListener(name, event => { if (event.pointerId === pointer) release(); }, { signal });
   }
   evadeButton.addEventListener('pointerdown', event => {
-    if (!active()) return;
+    if (!active() || event.button !== 0) return;
     event.preventDefault(); evade = true;
   }, { signal });
-  evadeButton.addEventListener('click', () => {
+  evadeButton.addEventListener('click', event => {
     if (!active()) return;
-    evade = true; surface.focus({ preventScroll: true });
+    // Pointer activation was consumed on press. Only keyboard clicks create an intent here.
+    if (event.detail === 0) evade = true;
+    surface.focus({ preventScroll: true });
   }, { signal });
   signal.addEventListener('abort', clear, { once: true });
   return { clear,

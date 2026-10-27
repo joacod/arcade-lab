@@ -1,3 +1,4 @@
+import { sweptCircle } from './collision.ts';
 import { enemies, weapons } from './content.ts';
 import type { Enemy, Point, RunState, WeaponInstance } from './game-state.ts';
 
@@ -27,19 +28,6 @@ export function hitEnemy(run: RunState, enemy: Enemy, amount: number): void {
   run.events.push({ type: 'enemy-defeated', x: enemy.x, y: enemy.y, enemyId: enemy.id, at: run.elapsed });
   run.gems.push({ x: enemy.x, y: enemy.y, amount: enemies[enemy.kind].xp, attracted: false });
 }
-/** Earliest segment/circle intersection, including initial overlap. */
-function sweep(start: Point, end: Point, center: Point, radius: number): number | null {
-  const x = start.x - center.x, y = start.y - center.y;
-  const dx = end.x - start.x, dy = end.y - start.y;
-  const c = x * x + y * y - radius * radius;
-  if (c <= 0) return 0;
-  const a = dx * dx + dy * dy;
-  if (a === 0) return null;
-  const b = x * dx + y * dy, discriminant = b * b - a * c;
-  if (discriminant < 0) return null;
-  const t = (-b - Math.sqrt(discriminant)) / a;
-  return t >= 0 && t <= 1 ? t : null;
-}
 export function advanceProjectiles(run: RunState, dt: number): void {
   run.projectiles = run.projectiles.filter(projectile => {
     const data = weapons[projectile.weapon];
@@ -48,8 +36,8 @@ export function advanceProjectiles(run: RunState, dt: number): void {
     let hit: Enemy | undefined, earliest = Infinity;
     for (const enemy of run.enemies) {
       if (!targetable(enemy) || projectile.hitTargets.includes(enemy.id)) continue;
-      const t = sweep(projectile, end, enemy, data.hitRadius + enemies[enemy.kind].radius);
-      if (t !== null && t < earliest) { earliest = t; hit = enemy; }
+      const t = sweptCircle(projectile, end, enemy, enemy, data.hitRadius + enemies[enemy.kind].radius);
+      if (t !== undefined && t < earliest) { earliest = t; hit = enemy; }
     }
     projectile.remaining -= dt;
     if (hit) {

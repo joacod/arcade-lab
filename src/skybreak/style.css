@@ -42,3 +42,23 @@
   .skybreak-app .skybreak-menu { padding: 24px; }
   .skybreak-app .skybreak-footer { padding-inline: 12px; }
 }
+.skybreak-app .skybreak-loadout { color: #eed197; font-size: 9px; margin-top: 5px; }
+.skybreak-app .skybreak-pickup-guide { font: 10px/1.8 monospace; color: #aac6c5; margin: 14px 0 0; }
+.skybreak-app .skybreak-pickup-guide b:first-child { color: #ffcf70; }
+.skybreak-app .skybreak-pickup-guide b:nth-child(2) { color: #d6aaff; }
+.skybreak-app .skybreak-pickup-guide b:nth-child(3) { color: #a9f3b5; }
+.skybreak-app .skybreak-results { border-block: 1px solid #8bd6d24a; padding: 15px 0; margin: 0 0 20px; white-space: pre-line; font: 11px/2 monospace; color: #cdedcb; }
+.skybreak-app .skybreak-boss { position: absolute; pointer-events: none; z-index: 1; top: 12px; left: 50%; transform: translateX(-50%); width: min(310px, calc(100% - 30px)); padding: 9px 12px; background: #092237df; border: 1px solid #f1bb9155; font: 9px monospace; color: #ffd0a0; }
+.skybreak-app .skybreak-boss > div { display: flex; justify-content: space-between; letter-spacing: .08em; }
+.skybreak-app .skybreak-boss progress { display: block; appearance: none; width: 100%; height: 5px; border: 0; margin: 7px 0; background: #304755; }
+.skybreak-app .skybreak-boss progress::-webkit-progress-bar { background: #304755; }
+.skybreak-app .skybreak-boss progress::-webkit-progress-value { background: #ffc78e; }
+.skybreak-app .skybreak-boss-pattern { font-size: 8px; color: #bcd7d5; }
+.skybreak-app .skybreak-menu-layer { z-index: 2; }
+@media (max-height: 680px) {
+  .skybreak-app .skybreak-menu { padding: 18px 22px; }
+  .skybreak-app .skybreak-eyebrow { margin-bottom: 12px; }
+  .skybreak-app h1 { font-size: 34px; margin-bottom: 12px; }
+  .skybreak-app .skybreak-controls { margin-top: 12px; }
+  .skybreak-app .skybreak-hud { min-height: 55px; padding-block: 8px; }
+}

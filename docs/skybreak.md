@@ -1,25 +1,51 @@
 # Skybreak
 
-An original Canvas 2D vertical arcade shooter, loosely inspired by the accessible movement, forward fire, and temporary evasive protection of [1942](https://en.wikipedia.org/wiki/1942_(video_game)). The fictional aircraft, ocean artwork, synthesized cues, formations, and sortie are original. No Capcom artwork, audio, branding, or level content is included.
+An original Canvas 2D vertical arcade shooter, loosely inspired by the accessible movement, forward fire, and temporary evasive protection of [1942](https://en.wikipedia.org/wiki/1942_(video_game)). The fictional aircraft, ocean, fortress, synthesized cues, formations, and sortie are original application code under the repository's MIT license. No external artwork or audio is used.
 
-## Sortie and rules
+## Operation Iron Tempest
 
-The physical playfield is 480×800 world units. Movement is 300 units per active second, normalized diagonally. Ten formations arrive on authored active-time deadlines over a 72-second sortie. Straight approaches form a wing, crossings descend diagonally from alternating sides, and swooping formations follow offset sinusoidal paths. Each enemy fires aimed rounds at explicit intervals while ahead of the player. Finishing the sortie alive wins; losing all aircraft ends it in defeat. Defeating aircraft awards 100, 150, or 200 points by type. Enemies that escape give no score.
+A complete flight lasts about 2–3 active minutes, with a hard 168-second limit. Fifteen formations arrive between 1 and 100 seconds. Straight wings fire aimed singles, diagonal crossings close from alternating sides, swooping bombers fire slow tridents, and narrow interceptors fire faster aimed pairs. After 65 seconds enemy firing intervals shorten by 15%. Escaping aircraft give no score. Defeating them awards 100 / 150 / 200 / 300 points by type.
 
-The player starts with three aircraft, each with three hull points. A hit grants 1.15 seconds of protection. A lost aircraft respawns at the starting position with restored hull, 2.5 seconds of protection, and hostile bullets cleared. The evasive roll gives 0.65 seconds of immunity and recharges in seven active seconds. It requires a fresh press, so holding a key never queues another roll. Bright cyan rings show protection, blinking shows damage immunity, and the Roll control displays readiness, recharge, or IMMUNE.
+Supply drops arrive on fixed deadlines, independent of kills or chance. They drift downward at 80 world units/second. Each collection awards 100 points:
 
-Twin player projectiles fire every 0.14 seconds while Space/J or the movement pointer is held. Physical collision uses small circles, independent of the planes' wings and decorative trails. Swept relative collision accounts for both a projectile and its target moving during the same step. Each shot resolves only its earliest living intersection. Shared damage immunity prevents overlapping collisions from removing multiple hull points at once. Lethal damage is resolved before final-tick victory.
+| Pickup | Appearance | Effect |
+| --- | --- | --- |
+| Power | Gold double chevron | Gun II adds a center shot; Gun III also shortens cadence from 0.14 to 0.105 seconds. Further power pickups award 250 extra points. |
+| Spread | Violet branching arrows | Adds two diagonal shots for 24 active seconds. Collecting another refreshes the duration. |
+| Repair | Green cross | Repairs one of the current aircraft's three hull points. At full hull, awards 250 extra points. |
 
-## Browser ownership
+The player starts with three aircraft. Losing hull grants 1.15 seconds of immunity. Losing an aircraft restores hull at the starting position, clears hostile rounds, restores roll readiness, lowers forward fire by one level, removes spread, and grants 2.5 seconds of immunity. Lives do not increase. A fresh roll press grants 0.65 seconds of immunity and recharges in 5.5 active seconds. Holding its key never queues another roll. The cockpit dot marks the physical player position. Blinking and a cyan ring show protection; a short edge flash and a separate damage sound distinguish player damage from enemy impacts.
 
-The session reuses the browser host, fixed-step clock, and bounded synthesized voice playback. All aircraft, wave logic, combat, input actions, UI, and presentation are Skybreak-specific. There is no dependency on Clearing's progression, content, themes, or camera. `game.ts` and `content.ts` can run without DOM or Canvas APIs. Restart reconstructs the entire run. No saved progress or compatibility format is introduced.
+Movement is immediate at 300 world units/second, with normalized diagonals and proportional drag strength. The physical world is 480×800. Small authored collision circles remain independent of decorative wings and glow. Shared relative swept-circle math accounts for movement of both endpoints. Each projectile resolves its nearest living target once.
 
-The browser uniformly scales and centers the portrait world at any surface size; wide displays retain side gutters. Relative pointer displacement is measured in CSS pixels. Dragging steers continuously and holding fires automatically. A second touch can roll without releasing steering. Menus receive no gameplay input. Pause, hidden pages, focus loss, and layout changes clear inputs and discard catch-up time. Only explicit Resume continues a paused sortie. One host loop owns simulation and drawing; returning to game selection releases listeners, capture, the frame, canvas, and audio context.
+## Iron Tempest
 
-Ocean scrolling, clouds, island placement, and particles are presentation-only. Cosmetic noise is independent of rules. Effects are capped at 180 particles and age in active simulation time. Audio coalesces each cue per frame, caps total voices at 12, and retains no backlog. Sound initialization failure leaves the game playable.
+The armored flying fortress arrives at 112 seconds. Its three-second entrance protects it from damage and suppresses firing. Its broad armor is decorative; the glowing central reactor and two moving engine nacelles are the hittable circles. All three reduce one 420-point hull, displayed with phase and attack warnings.
+
+It cycles three readable patterns:
+
+1. **Fan volley:** seven slow rounds spread downward with gaps. Dashed rays show the spread before release.
+2. **Target lock:** both engines fire three aimed rounds toward the player's position captured at charge start. Dashed lines and a target ring mark that fixed position. Moving after the warning avoids the lock.
+3. **Lane barrage:** three marked vertical lanes receive four rounds each. The next barrage alternates the lanes, leaving broad safe corridors.
+
+At half hull, fans widen to nine rounds, aimed rounds accelerate, charge shortens from 1.1 to 0.9 seconds, and recovery shortens from 1.7 to 1.1 seconds. The fortress continues its slow lateral movement. Contact with its weak points damages the player; decorative armor does not.
+
+Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destruction state in the simulation drives the bounded explosion sequence. Movement remains available, pause freezes it, and no renderer callback advances it. Victory then awards 1,000 per remaining aircraft plus 250 per hull point. Results show score, flight time, kills, supplies, and the survival bonus. Losing all aircraft or reaching the time limit with the fortress alive ends in defeat. Damage on the kill step resolves before victory.
+
+## Browser ownership and presentation
+
+The session reuses the browser host, fixed-step clock, and bounded synthesized voice playback. Collision math is shared with Clearing. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
+
+One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Pause, hidden pages, focus loss, and layout changes clear input and catch-up time. Only explicit Resume continues. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. No Three.js or vgpu code is needed by Skybreak.
+
+Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating nacelle rings, glow, and flashes are procedural Canvas cosmetics. Particles are capped at 180; fortress destruction adds only nine analytic fire blooms. Effects age in active run time, so pause freezes them. Sound coalesces each cue per frame, caps total voices at 12, and retains no backlog. Quiet short gun cues leave room for pickups, hull damage, rolling, warnings, explosions, and outcomes. Audio initialization failure leaves play available.
+
+Change balance, supply deadlines, collision sizes, and formations in `src/skybreak/content.ts`; explicit behavior and rules in `game.ts`; artwork/effects in `presentation.ts`; synthesized cue definitions in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input in `input.ts`; composition in `app.ts`.
+
+A GPU ocean distortion or large smoke field could be a later visual experiment. The bounded Canvas scene currently needs neither a second renderer nor a rendering framework.
 
 ## Local verification
 
-`pnpm check` includes focused swept-collision, damage/immunity/respawn, deterministic scheduling, bounded full-sortie, pause/fresh-run, and uniform-projection checks alongside the existing Clearing invariants. `pnpm check:browser` adds one representative Skybreak Chromium flow covering keyboard and native touch input, cancellation, two-touch roll, pause/resume, focus loss, layout suspension, restart, terminal UI, and switching between both games with frame/audio disposal. The flow captures desktop and narrow gameplay for visual inspection. Browser outcome fixtures fast-forward active time or inject a lethal projectile; the invariant test covers the complete authored timeline.
+Focused invariants cover nearest swept hits, immunity/respawn, deterministic scheduling and object budgets, power caps and spread expiry, repairs, pause/fresh runs, protected boss entrance, all three attack cycles, phase change, kill-only victory, timeout defeat, and one-time result scoring. Shared collision checks cover relative motion, overlap, tangent/miss, zero travel, and endpoints. The existing Clearing checks exercise the same helper through its weapons.
 
-Physical mobile hardware and subjective listening are separate manual checks. Bosses, pickups, weapon progression, and advanced enemies are deferred to Step 3.
+The representative Chromium flow covers keyboard and native touch, cancellation, two-touch roll, suspension/restart, pickup HUD, boss hull/results, audio failure, lazy graphics loading, and switching games with frame/audio disposal. Terminal fixtures shorten that regression; separate complete normal-control playthroughs inspect the authored timeline. See the [two-game review](two-game-review.md) for actual measurements and limitations.

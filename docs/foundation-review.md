@@ -1,6 +1,8 @@
 # Foundation review — 2026-10-27
 
-Reviewed the implementation at `a6aada51d6e46d8ab867fc40d403e50277059029`, then made the focused changes described below. Last Light Clearing remains the only playable game. No gameplay, presentation implementation, runtime dependency, or round content changed.
+This is the earlier, single-game audit. The collection now has two complete games. See the [two-game review](two-game-review.md) for current boundaries and verification.
+
+Reviewed the implementation at `a6aada51d6e46d8ab867fc40d403e50277059029`, then made the focused changes described below. At that review, Last Light Clearing was the only playable game. No gameplay, presentation implementation, runtime dependency, or round content changed.
 
 ## Findings and changes
 
