@@ -16,7 +16,7 @@ The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](.
 
 ## Browser behavior
 
-The Keeper starts at (480, 320), with the initial crawler at (640, 320). Safe farthest-edge entry selection uses seeded tie breaking. Spawn rules and global targeting use world coordinates, regardless of the selected view.
+Starting positions and body geometry live in `content.ts`. Safe farthest-edge entry selection uses seeded tie breaking. Spawn rules and global targeting use world coordinates, regardless of the selected view.
 
 Projectile-radius collision uses a swept intersection, with movement limited to remaining projectile lifetime. Death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
 
@@ -24,7 +24,7 @@ Pause/resume and confirmation release follow native browser focus and pointer li
 
 ## Close and whole-arena views
 
-**Close view**, the default, follows the Keeper without smoothing. Its uniform scale is the larger of the padded arena fit and a readable minimum: currently 1.375 on desktop and 1 on surfaces narrower than 600 CSS pixels. A 32-world-unit Keeper frame therefore appears at about 44 or 32 CSS pixels, respectively. These are framing targets; useful larger fit scales remain intact.
+**Close view**, the default, follows the Keeper without smoothing. Its uniform scale is the larger of the padded arena fit and a readable minimum, with separate framing targets for desktop and narrow surfaces. Larger fit scales remain intact.
 
 Camera framing constants live in [`src/games/last-light-clearing/view.ts`](../../../src/games/last-light-clearing/view.ts), separately from artwork metadata and gameplay tuning. Each axis clamps within padded world bounds when cropped and centers when the visible span exceeds the padded world. Boundary padding leaves room for artwork at physical edges. The transform is recomputed from the current player, so retry/title reset position naturally and pausing leaves framing stable.
 
@@ -51,12 +51,13 @@ Paths below are relative to `src/games/last-light-clearing/`.
 | Composition and session settings | `app.ts` |
 | Simulation | `game.ts`, `game-state.ts`, `combat.ts`, `progression.ts`, `weapons/` |
 | Typed content and validation | `content.ts`, `content-validation.ts` |
-| Physical input and camera transform | `input.ts`, `view.ts`, `screen-overlay.ts` |
+| Physical input | `input.ts` |
+| Camera transform and CSS-space overlay | `view.ts`, `screen-overlay.ts` |
 | Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts`, `vgpu/` |
 | Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
 | UI and sound adapters | `ui.ts`, `interface.ts`, `style.css`, `sound.ts` |
 
-`mountClearing` owns composition and returns session cleanup while artwork prepares. If initial Canvas construction throws, it disposes the already-created host before propagating the error. Session settings survive run replacement; pending preparations are aborted and invalidated on disposal. Styles stay scoped to `.clearing-app`.
+`mountClearing` owns composition and returns session cleanup while artwork prepares. If construction fails, it releases the resources acquired before propagating the error. Session settings survive run replacement; pending preparations are aborted and invalidated on disposal. Styles stay scoped to `.clearing-app`.
 
 ## Renderer and asset lifetimes
 

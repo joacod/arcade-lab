@@ -2,8 +2,6 @@
 
 [Source](../../../src/games/blastline/) | [Catalog](../../../CATALOG.md)
 
-[Back to the catalog](../../../CATALOG.md)
-
 An original Canvas 2D run-and-gun operation through **Border Station** and **Foundry Run**. The intended first-play pace is about 3–5 minutes. Destroy glowing power relays, rescue Bolt at the border, break the foundry's Bastion and reach each extraction pad. Completing a mission's requirements starts the collapse countdown. Extraction includes a short departure before the mission result.
 
 ## Playing
@@ -39,10 +37,12 @@ Projectiles, queued blasts, semantic events, visual rings and particles have exp
 
 All visuals, cover artwork and procedural sound recipes were created for this game. There are no downloaded assets or additional art/audio licenses.
 
-## What the sixth genre revealed
+## Architecture decisions
 
-The existing mount/dispose boundary, host, fixed-step clock, page/focus bindings, captured buttons and session AudioBits owner work unchanged for a mutable world. Each continues to have a clear browser responsibility. Destructible terrain belongs to this game's simulation, rather than the renderer or shared host.
+Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
-The architectural comparison found one useful shared extraction: strict rectangle overlap now lives in `src/engine/collision.ts` and is used by the platformer and run-and-gun. Clockwork Hollow's static solid sweeps informed the local grid collision, while Skybreak's earliest-contact approach informed projectile ordering. Static solids, mutable tiles and moving circle targets retain distinct collision owners. The brawler's ground-depth attack volumes and the fighter's guard/height/contact-trade rules have different semantics and remain local.
+The local state contract connects movement, combat and objectives. Browser composition reuses the shared host, clock, input, focus/lifetime bindings and AudioBits owner. Fixed populations and visible tile traversal bound the work.
 
-No general terrain engine, physics wrapper or new session abstraction was needed. The local state contract connects movement, combat and objectives without putting rendering or browser APIs in rules. The remaining similar code is mostly compact session composition and game-specific drawing; this feature did not demonstrate a need to generalize either. Fixed populations and visible tile traversal bound the new work. Local verification exercises the complete authored operation, destructive geometry, population limits, input and teardown. The engine remains a small private application with explicit customization points in each game's content, behavior and presentation.
+## Local verification
+
+Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions and teardown. See the [shared commands](../../architecture.md#local-verification).

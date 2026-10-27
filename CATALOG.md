@@ -53,7 +53,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | Escape / P / Pause | Pause; use Resume journey to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/games/clockwork-hollow/README.md).
+Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 
@@ -71,7 +71,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | Escape / P / Pause | Pause; use Resume fight to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay, source ownership and the fourth-genre architecture evaluation](docs/games/midnight-circuit/README.md).
+Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
 
 ## Obsidian Duel
 
@@ -91,7 +91,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Escape / P / Pause | Pause; use Resume duel to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules, source ownership and the fifth-genre architecture review](docs/games/obsidian-duel/README.md).
+Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 
@@ -111,7 +111,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Escape / P / Pause | Pause; use Resume operation to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay, source ownership and the sixth-genre architecture assessment](docs/games/blastline/README.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

@@ -1,8 +1,8 @@
 import { TILE, materialHealth, type Material, type Mission, type Rect, type Point } from './content.ts';
 import { overlaps } from '../../engine/collision.ts';
-export interface Terrain { columns: number; rows: number; material: Material[]; health: number[]; revision: number }
+export interface Terrain { columns: number; rows: number; material: Material[]; health: number[] }
 export function createTerrain(mission: Pick<Mission, 'columns' | 'rows' | 'terrain'>): Terrain {
-  return { columns: mission.columns, rows: mission.rows, material: [...mission.terrain], health: mission.terrain.map(m => materialHealth[m]), revision: 0 };
+  return { columns: mission.columns, rows: mission.rows, material: [...mission.terrain], health: mission.terrain.map(m => materialHealth[m]) };
 }
 export function indexAt(t: Terrain, c: number, r: number): number {
   return c >= 0 && r >= 0 && c < t.columns && r < t.rows ? r * t.columns + c : -1;
@@ -11,10 +11,9 @@ export function solidAt(t: Terrain, x: number, y: number): boolean {
   const i = indexAt(t, Math.floor(x / TILE), Math.floor(y / TILE));
   return i >= 0 && t.material[i] !== 0;
 }
-export function tileRect(t: Terrain, i: number): Rect { return { x: i % t.columns * TILE, y: Math.floor(i / t.columns) * TILE, w: TILE, h: TILE }; }
 export function damageTile(t: Terrain, i: number, amount: number): boolean {
   if (i < 0 || i >= t.material.length || !Number.isFinite(amount) || amount <= 0 || (t.material[i] ?? 0) < 2) return false;
-  t.health[i] = Math.max(0, t.health[i]! - amount); t.revision++;
+  t.health[i] = Math.max(0, t.health[i]! - amount);
   if (t.health[i] === 0) { t.material[i] = 0; return true; }
   return false;
 }

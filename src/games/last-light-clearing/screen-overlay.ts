@@ -8,7 +8,8 @@ import type { DisplaySize } from './world-presentation.ts';
 export function createScreenOverlay(surface: HTMLElement) {
   const canvas = document.createElement('canvas');
   canvas.className = 'screen-overlay'; canvas.setAttribute('aria-hidden', 'true');
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D is required to draw the overlay.');
   surface.append(canvas);
   return {
     draw(run: Readonly<RunState>, view: Viewport, size: DisplaySize, stick?: Stick) {

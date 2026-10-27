@@ -44,18 +44,16 @@ Every attack has simulation-owned startup, active and recovery durations. Each s
 
 Artwork dimensions never supply collision geometry. Shadows remain on the ground while elevation moves the painted body. Actors sort by ground lane independently of elevation. The camera frames the whole encounter with a uniform transform, including on narrow screens. Reduced motion suppresses rain, particles and shake. All artwork, cover illustrations and procedural sound recipes are original project-authored assets, covered by the repository MIT license. No external art, audio or graphics dependency is required by this game.
 
-## What the fourth genre revealed
+## Architecture decisions
 
-- **Worked unchanged:** synchronous application sessions, guarded lazy imports, host measurement/fullscreen/single frame loop, bounded fixed-step clock, page/focus bindings and the AudioBits session owner. No additional scheduler, scene manager or audio lifecycle was needed.
-- **A demonstrated shared improvement:** Hollow and this game needed the same keyboard aliases, captured independent touch buttons, rising edges, cancellation and input clearing. `src/engine/browser/buttons.ts` now owns that capture mechanism for both. Their small input adapters still decide which holds/edges mean movement, jump or combat. The existing relative-drag inputs have different responsibilities and remain with their owners.
-- **Kept local:** lane-depth geometry, attack phases, hit ownership, combos, hitstun, crowd coordination, boss patterns and encounter progression. Neither swept circles nor platform solids simplify these rules. The projected camera and articulated vector animation also stay local.
-- **Existing boundaries to preserve:** timed gameplay transitions belong to the simulation; cosmetic tails belong to presentation. The shared clock needs no attack or animation knowledge. Browser composition continues to choose focus and suspension policy.
-- **Complexity and duplication:** one typed campaign and one local combat/AI owner are sufficient. Session composition repeats a short, explicit ownership pattern whose transitions differ across genres. No combat framework, ECS, compatibility layer, asset service or universal camera is justified here.
+Lane-depth geometry, attack phases, hit ownership, combos, hitstun, crowd coordination, boss patterns and encounter progression belong to this game's simulation. Swept circles and platform solids have different contact rules. The projected camera and articulated vector animation stay local.
+
+The input adapter translates shared captured-button holds and edges into movement and combat actions. Browser composition uses the shared host, clock, focus/lifetime bindings and AudioBits owner. Timed gameplay transitions stay in simulation; cosmetic tails stay in presentation.
 
 ## Verification
 
-`tests/unit/games/midnight-circuit/brawler.test.mjs` checks timing and hit ownership, lane/facing/height eligibility, crowd strikes, interruption, immunity and lives, gated waves, repairs, boss patterns and finale, pause, fresh runs and uniform projection. A deterministic controller completes both authored stages using actions alone and checks bounded crowds and attack coordination throughout.
+`tests/unit/games/midnight-circuit/game.test.mjs` checks timing and hit ownership, lane/facing/height eligibility, crowd strikes, interruption, immunity and lives, gated waves, repairs, boss patterns and finale, pause, fresh runs and uniform projection. A deterministic controller completes both authored stages using actions alone and checks bounded crowds and attack coordination throughout.
 
-`tests/browser/games/midnight-circuit/game.spec.ts` checks opening, keyboard and simultaneous touch actions, cancellation, display/blur interruption, restart, boss-result composition, audio failure recovery and disposal. The shared construction-failure check includes this game. Hollow's existing browser check covers the other caller of shared button capture. AudioBits recipes are validated, including JSON round trips, with the existing audio invariants.
+`tests/browser/games/midnight-circuit/game.spec.ts` checks opening, keyboard and simultaneous touch actions, cancellation, display/blur interruption, restart, boss-result composition, audio failure recovery and disposal. The shared construction-failure check includes this game. AudioBits recipes are validated, including JSON round trips, with the existing audio invariants.
 
 Run `pnpm check` and `pnpm check:browser` as described in the [shared architecture](../../architecture.md).
