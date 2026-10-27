@@ -1,0 +1,4 @@
+# Browser rendering needs neither Node adapter's optional binary installer.
+allowBuilds:
+  '@vgpu/adapter-node': false
+  webgpu: false

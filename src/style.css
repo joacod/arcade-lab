@@ -146,3 +146,25 @@ select option { background: var(--surface); color: var(--text); }
   .display-settings { grid-template-columns: 1fr; gap: 12px; }
   [data-skin='glass'] .brand span { display: none; }
 }
+
+.clearing-app[data-skin='abyss'] {
+  --background: #030713; --surface: #080f21; --panel: linear-gradient(145deg, #10243aee, #0b0b22f2 75%);
+  --veil: #02061225; --button: #10273bcd; --hover: #193a50; --text: #ecfffa; --muted: #a9c6d4;
+  --accent: #87f8e4; --on-accent: #07242b; --danger: #ff9ab7; --border: #72dbed55;
+  --health: #91f7da; --xp: #ba9dff; --radius: 16px;
+  --shadow: 0 24px 90px #0009, 0 0 60px #4d43b416, inset 0 1px #b9fff126;
+  --font: 'Segoe UI', system-ui, sans-serif; --heading-font: 'Segoe UI', system-ui, sans-serif;
+}
+[data-skin='abyss'] .hud { background: linear-gradient(100deg, #0c202bcc, #0c1026dd); border-color: #6ef2e433; }
+[data-skin='abyss'] .brand { font-size: 18px; font-weight: 500; letter-spacing: .3px; }
+[data-skin='abyss'] .brand span { color: #abb4d5; }
+[data-skin='abyss'] .menu { position: relative; text-align: left; border-top-color: #87f8e488; }
+[data-skin='abyss'] .menu h1 { font-weight: 400; font-size: 34px; letter-spacing: -1.3px; text-shadow: 0 0 25px #7af7e62a; }
+[data-skin='abyss'] .eyebrow { letter-spacing: 2px; }
+[data-skin='abyss'] .primary { box-shadow: 0 0 24px #83ffed18, inset 0 1px #efffff80; }
+[data-skin='abyss'] .primary:enabled:hover, [data-skin='abyss'] .upgrade-choices button:enabled:hover { box-shadow: 0 0 24px #83ffed30; }
+[data-skin='abyss'] .xp-track span { box-shadow: 0 0 10px #ba9dff80; }
+[data-skin='abyss'] .upgrade-choices button { background: linear-gradient(160deg, #163b45aa, #201b3dbb); }
+
+[data-skin='abyss'] .menu-layer { backdrop-filter: none; }
+[data-skin='abyss'] .menu { backdrop-filter: blur(8px); }

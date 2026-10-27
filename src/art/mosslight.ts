@@ -23,7 +23,7 @@ export function createMosslight(images: ArtPack['images']): Theme {
           { clip: row('fire', 0, 64, 32, 32, 5, 0.12), footprint: [48, 48], anchor: [0.5, 0.5] }],
       },
     },
-    palette: { shard: '#d7c0ff', background: '#262339', floor: '#405332', boundary: '#a49ac2', canopy: '#504669',
+    palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', shard: '#d7c0ff', background: '#262339', floor: '#405332', boundary: '#a49ac2', canopy: '#504669',
       ground: '#a4bf6540', light: '#ffe4b5', spark: '#fff1b5', pulse: '#a7f7db', gem: '#98fff4' },
   };
 }

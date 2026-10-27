@@ -19,6 +19,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
   let renderer: THREE.WebGLRenderer | undefined, disposed = false, lost = false;
   const listeners = new AbortController();
   const scene = new THREE.Scene();
+  const p = theme.palette;
   const { width, height } = clearing.arena;
   function dispose() {
     if (disposed) return;
@@ -35,7 +36,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
   const material = <T extends THREE.Material>(value: T): T => { materials.add(value); return value; };
   const texture = <T extends THREE.Texture>(value: T): T => { textures.add(value); return value; };
   const lit = (color: string, emissive = '#000000', intensity = 0) => material(new THREE.MeshStandardMaterial({
-    color, emissive, emissiveIntensity: intensity, roughness: 0.64, metalness: 0.18, flatShading: true,
+    color: color.slice(0, 7), emissive: emissive.slice(0, 7), emissiveIntensity: intensity, roughness: 0.64, metalness: 0.18, flatShading: true,
   }));
   const lightMaterial = (color: string) => material(new THREE.MeshBasicMaterial({ color }));
   function mesh(g: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = scene) {
@@ -45,14 +46,14 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
-    renderer.setClearColor('#080f22');
+    renderer.setClearColor(p.background);
     canvas.addEventListener('webglcontextlost', event => {
       event.preventDefault(); lost = true; onFailure();
     }, { signal: listeners.signal });
     const camera = new THREE.OrthographicCamera(0, 1, 0, -1, 0.1, 2000);
     camera.position.set(0, 0, 1000);
-    scene.add(new THREE.HemisphereLight('#b9eaff', '#293052', 2.1));
-    const sun = new THREE.DirectionalLight('#e0edff', 3.1);
+    scene.add(new THREE.HemisphereLight(p.light, p.canopy, 2.1));
+    const sun = new THREE.DirectionalLight(p.hit, 3.1);
     sun.position.set(180, 200, 600); sun.target.position.set(width / 2, -height / 2, 0);
     sun.castShadow = true;
     Object.assign(sun.shadow.camera, { left: -720, right: 720, top: 720, bottom: -720, near: 1, far: 1600 });
@@ -63,28 +64,28 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
     const data = new Uint8Array(64 * 64 * 4);
     for (let i = 0; i < 64 * 64; i++) {
       const n = (i * 73 + (i % 64) * 19) % 17;
-      data.set([28 + n, 44 + n, 61 + n, 255], i * 4);
+      data.set([190 + n * 3, 190 + n * 3, 190 + n * 3, 255], i * 4);
     }
     const floorMap = texture(new THREE.DataTexture(data, 64, 64));
     floorMap.colorSpace = THREE.SRGBColorSpace; floorMap.wrapS = floorMap.wrapT = THREE.RepeatWrapping;
     floorMap.repeat.set(14, 10); floorMap.needsUpdate = true;
-    const floorMat = material(new THREE.MeshStandardMaterial({ map: floorMap, roughness: 0.95, metalness: 0.12 }));
+    const floorMat = material(new THREE.MeshStandardMaterial({ map: floorMap, color: p.floor, roughness: 0.95, metalness: 0.12 }));
     const floor = mesh(geometry(new THREE.BoxGeometry(width, height, 18)), floorMat, width / 2, height / 2, -9.1);
     floor.receiveShadow = true;
-    const stone = lit('#263c51'), edge = lit('#508698', '#264957', 0.3);
+    const stone = lit(p.canopy), edge = lit(p.boundary, p.boundary, 0.3);
     const box = geometry(new THREE.BoxGeometry(1, 1, 1));
     // Boundary inlays stay at the actual world edge; all large scenery lies beyond it.
     for (const [x, y, w, h] of [[width / 2, -3, width + 6, 5], [width / 2, height + 3, width + 6, 5], [-3, height / 2, 5, height], [width + 3, height / 2, 5, height]]) {
       mesh(box, edge, x!, y!, 0).scale.set(w!, h!, 4);
     }
     const panel = geometry(new THREE.CircleGeometry(1, 6));
-    const panelMat = lit('#20364a');
+    const panelMat = lit(p.floor);
     for (let i = 0; i < 40; i++) {
       const x = 30 + (i * 173) % (width - 60), y = 30 + (i * 97) % (height - 60);
       const item = mesh(panel, panelMat, x, y, 0.05); item.scale.setScalar(10 + i % 4 * 4); item.rotation.z = i;
     }
     const crystal = geometry(new THREE.OctahedronGeometry(1));
-    const crystalMat = lit('#548ca9', '#1a4e63', 0.25), violet = lit('#6e689f', '#393366', 0.2);
+    const crystalMat = lit(p.ground, p.boundary, 0.25), violet = lit(p.canopy, p.canopy, 0.2);
     for (let i = 0; i < 54; i++) {
       const vertical = i >= 32, index = vertical ? i - 32 : i;
       const side = index % 2 === 0;
@@ -96,8 +97,8 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       const base = mesh(box, stone, x, y, -3); base.scale.set(28, 28, 9); base.rotation.z = i * 0.7;
     }
 
-    const keeperMat = lit('#a5f8ef', '#77efff', 1.2), enemyMat = lit('#e7809b', '#7a244f', 0.12);
-    const eliteMat = lit('#b285f0', '#501c73', 0.3), dark = lit('#30324b'), core = lightMaterial('#edffff');
+    const keeperMat = lit(p.light, p.light, 1.2), enemyMat = lit(p.enemy, p.enemy, 0.12);
+    const eliteMat = lit(p.elite, p.elite, 0.3), dark = lit(p.canopy), core = lightMaterial(p.hit);
     const ringGeometry = geometry(new THREE.TorusGeometry(1, 0.035, 5, 48));
     const sphere = geometry(new THREE.IcosahedronGeometry(1, 0));
     const observations = createAnimationObservations();
@@ -108,7 +109,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
     const atlas = new Map<string, THREE.Texture>();
     if (pixel) for (const [id, image] of Object.entries(images)) {
       const map = texture(new THREE.Texture(image));
-      map.colorSpace = THREE.SRGBColorSpace; map.magFilter = THREE.NearestFilter; map.minFilter = THREE.NearestFilter;
+      map.colorSpace = THREE.SRGBColorSpace; map.magFilter = map.minFilter = artPack!.sampling === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter;
       map.generateMipmaps = false; map.needsUpdate = true; atlas.set(id, map);
     }
     // Shared atlas materials, but independent per-slot UVs. A frame change never mutates the shared texture.
@@ -117,7 +118,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       map, color: '#ffffff', transparent: true, alphaTest: 0.2, roughness: 1, metalness: 0,
       emissiveMap: map, emissive: '#ffffff', emissiveIntensity: 0.7,
     })));
-    const flashMaterial = lightMaterial('#fff3dc'), healthMaterial = lightMaterial('#ffa5ae'), eliteHealthMaterial = lightMaterial('#d9a9ff');
+    const flashMaterial = lightMaterial(p.hit), healthMaterial = lightMaterial(p.damage), eliteHealthMaterial = lightMaterial(p.elite);
     function actor(role: ActorRole) {
       const group = new THREE.Group(); scene.add(group);
       const model = new THREE.Group(); group.add(model);
@@ -182,8 +183,10 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
         const image = images[frame.image]!, [sx, sy, w, h] = frame.rect;
         slot.card.material = pixelMaterials.get(frame.image)!;
         const uv = slot.card.geometry.getAttribute('uv');
-        const u0 = sx / image.naturalWidth, u1 = (sx + w) / image.naturalWidth;
-        const v0 = 1 - sy / image.naturalHeight, v1 = 1 - (sy + h) / image.naturalHeight;
+        // Linear filtering must stay inside this frame, even at its outermost texels.
+        const inset = artPack!.sampling === 'smooth' ? 0.5 : 0;
+        const u0 = (sx + inset) / image.naturalWidth, u1 = (sx + w - inset) / image.naturalWidth;
+        const v0 = 1 - (sy + inset) / image.naturalHeight, v1 = 1 - (sy + h - inset) / image.naturalHeight;
         uv.setXY(0, u0, v0); uv.setXY(1, u1, v0); uv.setXY(2, u0, v1); uv.setXY(3, u1, v1); uv.needsUpdate = true;
         slot.card.scale.x = art.orientation === 'mirror' && Math.cos(observation.angle) < -0.01 ? -1 : 1;
         slot.card.rotation.z = art.orientation === 'rotate' ? -observation.angle : 0;
@@ -202,17 +205,18 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       dummy.position.set(x, -y, z); dummy.rotation.set(0, 0, angle); dummy.scale.set(sx, sy, sz);
       dummy.updateMatrix(); batch.setMatrixAt(batch.count++, dummy.matrix);
     }
-    const gems = instances(crystal, lit('#87ffd3', '#22b98a', 0.6), 2048);
-    const spark = instances(sphere, lightMaterial('#fff3b8'), 256);
-    const trails = instances(box, lightMaterial('#8faec0'), 256);
-    const shards = instances(crystal, lit('#c7b1ff', '#9a5bdf', 0.7), 256);
-    const fragments = instances(crystal, lit('#f7b5d6', '#b85282', 0.5), MAX_EFFECTS * 6);
-    const rings = instances(ringGeometry, lightMaterial('#85e5ff'), MAX_EFFECTS);
-    const warningRings = instances(ringGeometry, lightMaterial('#ffbd8e'), 64);
-    const halo = mesh(crystal, lit('#ffefb2', '#ffce66', 1.2), 0, 0, 14); halo.scale.set(9, 9, 16);
-    const haloTrack = mesh(ringGeometry, lit('#5f7d88', '#30505f', 0.3), 0, 0, 1); haloTrack.scale.setScalar(weapons.halo.radius);
-    const keeperRing = mesh(ringGeometry, lightMaterial('#96e8e9'), 0, 0, 1); keeperRing.scale.setScalar(20);
-    const shieldRing = mesh(ringGeometry, lightMaterial('#ddc0ff'), 0, 0, 2); shieldRing.scale.setScalar(24);
+    const gems = instances(crystal, lit(p.gem, p.gem, 0.6), 2048);
+    const spark = instances(sphere, lightMaterial(p.spark), 256);
+    const trails = instances(box, lightMaterial(p.spark), 256);
+    const shards = instances(crystal, lit(p.shard, p.shard, 0.7), 256);
+    const fragments = instances(crystal, lit(p.enemy, p.enemy, 0.5), MAX_EFFECTS * 6);
+    const rings = instances(ringGeometry, lightMaterial('#ffffff'), MAX_EFFECTS);
+    const warningRings = instances(ringGeometry, lightMaterial(p.damage), 64);
+    const halo = mesh(crystal, lit(p.halo, p.halo, 1.2), 0, 0, 14); halo.scale.set(9, 9, 16);
+    const haloTrack = mesh(ringGeometry, lit(p.halo, p.halo, 0.3), 0, 0, 1); haloTrack.scale.setScalar(weapons.halo.radius);
+    const keeperRing = mesh(ringGeometry, lightMaterial(p.light), 0, 0, 1); keeperRing.scale.setScalar(20);
+    const shieldRing = mesh(ringGeometry, lightMaterial(p.shard), 0, 0, 2); shieldRing.scale.setScalar(24);
+    const effectColor = new THREE.Color();
     const batches = [gems, spark, trails, shards, fragments, rings, warningRings];
     let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
     return {
@@ -258,13 +262,17 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
           if (effect.type === 'pulse' && age < visualTiming.pulse) {
             const radius = effect.radius * (0.15 + 0.85 * age / visualTiming.pulse);
             add(rings, effect.x, effect.y, 2, radius, radius, 0.5);
+            rings.setColorAt(rings.count - 1, effectColor.set(p.pulse));
           } else if (effect.type === 'enemy-defeated' && age < visualTiming.defeat) {
             for (let j = 0; j < 6; j++) {
               const angle = j * Math.PI / 3 + effect.enemyId * 0.7, spread = age * 65;
               const scale = (1 - age / visualTiming.defeat) * 3;
               add(fragments, effect.x + Math.cos(angle) * spread, effect.y + Math.sin(angle) * spread, 4 + Math.sin(age / visualTiming.defeat * Math.PI) * 14, scale, scale, scale * 2, age * 8);
             }
-          } else if (effect.type === 'pickup' && age < visualTiming.pickup) add(rings, effect.x, effect.y, 2, 6 + age * 30, 6 + age * 30, 0.4);
+          } else if (effect.type === 'pickup' && age < visualTiming.pickup) {
+            add(rings, effect.x, effect.y, 2, 6 + age * 30, 6 + age * 30, 0.4);
+            rings.setColorAt(rings.count - 1, effectColor.set(p.gem));
+          }
         }
         for (const entry of [...run.entries, ...run.enemies.filter(e => e.entryDelay > 0).map(e => ({ ...e, remaining: e.entryDelay }))]) {
           const radius = 19 + (1 - entry.remaining / run.round.entryWarning) * 5;
@@ -279,6 +287,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
         keeperRing.position.set(run.player.x, -run.player.y, 1);
         shieldRing.position.set(run.player.x, -run.player.y, 2); shieldRing.visible = run.player.shield > 0;
         for (const batch of batches) batch.instanceMatrix.needsUpdate = true;
+        if (rings.instanceColor) rings.instanceColor.needsUpdate = true;
         renderer!.render(scene, camera);
         if (lost || renderer!.getContext().isContextLost()) throw new Error('Graphics context lost');
       },
