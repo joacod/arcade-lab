@@ -148,7 +148,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     if (preparing && ['start', 'restart', 'resume'].includes(action)) return;
     if (action === 'start' || action === 'restart') {
       if (document.hidden || !document.hasFocus()) return;
-      sound.activate(); sound.reset();
+      sound.reset(); sound.activate();
       run = newRun(); suspendedChoice = false;
       presentation.reset(run); transition('playing');
     } else if (action === 'pause' && screen === 'playing') {
@@ -168,7 +168,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     else if (screen === 'playing') { pauseRun(run, true); syncScreen(false); }
   }
   window.addEventListener('blur', suspend, { signal: host.signal });
-  window.addEventListener('pagehide', suspend, { signal: host.signal });
+  window.addEventListener('pagehide', event => { if (event.persisted) suspend(); else dispose(); }, { signal: host.signal });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) suspend(); else clock.reset();
   }, { signal: host.signal });
@@ -213,10 +213,9 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     overlay.draw(run, view, host, input.stick);
     ui.update(run);
   });
-  return {
-    dispose() {
-      if (disposed) return;
-      disposed = true; preparation?.abort(); generation++; input.clear(); presentation.dispose(); activeAssets?.dispose(); overlay.dispose(); sound.dispose(); host.dispose();
-    },
-  };
+  function dispose() {
+    if (disposed) return;
+    disposed = true; preparation?.abort(); generation++; input.clear(); presentation.dispose(); activeAssets?.dispose(); overlay.dispose(); sound.dispose(); host.dispose();
+  }
+  return { dispose };
 }

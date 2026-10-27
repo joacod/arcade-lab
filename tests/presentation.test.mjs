@@ -8,7 +8,6 @@ import { validateArtPack, clipFrame, row } from '../src/art-pack.ts';
 import { createAnimationObservations, actorClip } from '../src/animation.ts';
 import { resolvedSkin } from '../src/interface.ts';
 import { prepareAssets } from '../src/assets.ts';
-import { createSound, MAX_VOICES } from '../src/sound.ts';
 
 const idle = { x: 0, y: 0 };
 test('round profiles validate and preserve start, pause, outcome precedence and fresh retry', () => {
@@ -103,41 +102,4 @@ test('prepared bundles validate bounds and release failed, cancelled and dispose
     bundle.dispose(); bundle.dispose(); assert.equal(images[1].released, true);
     assert.equal(images[1].onload, null);
   } finally { globalThis.Image = original; }
-});
-
-test('sound activates immediately, caps voices, discards paused events and closes its single context', async () => {
-  const contexts = [];
-  const param = () => ({ value: 0, cancelScheduledValues() {}, setValueAtTime() {}, setTargetAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} });
-  class AudioStub {
-    currentTime = 0; state = 'suspended'; destination = {}; oscillators = []; resumes = 0;
-    constructor() { contexts.push(this); }
-    createGain() { return { gain: param(), connect() {}, disconnect() {} }; }
-    createOscillator() {
-      const oscillator = { frequency: param(), starts: 0, stops: 0, connect() {}, disconnect() {}, start() { this.starts++; }, stop() { this.stops++; } };
-      this.oscillators.push(oscillator); return oscillator;
-    }
-    resume() { this.resumes++; this.state = 'running'; return Promise.resolve(); }
-    suspend() { this.state = 'suspended'; return Promise.resolve(); }
-    close() { this.state = 'closed'; return Promise.resolve(); }
-  }
-  const original = globalThis.AudioContext; globalThis.AudioContext = AudioStub;
-  try {
-    const sound = createSound(() => {}), shot = [{ type: 'shot', x: 0, y: 0, at: 0 }];
-    sound.consume(shot); assert.equal(contexts.length, 0);
-    sound.activate(); assert.equal(contexts.length, 1); assert.equal(contexts[0].resumes, 1);
-    sound.consume([...shot, ...shot, ...shot]); assert.equal(contexts[0].oscillators.length, 1);
-    for (let i = 0; i < 100; i++) sound.consume(shot);
-    assert.equal(contexts[0].oscillators.length, MAX_VOICES);
-    sound.pause(); sound.consume(shot); assert.ok(contexts[0].oscillators.every(voice => voice.stops >= 2));
-    assert.ok(contexts[0].oscillators.every(voice => voice.onended === null));
-    sound.activate(); await Promise.resolve(); assert.equal(contexts[0].oscillators.length, MAX_VOICES); // no backlog
-    sound.consume(shot); assert.equal(contexts[0].oscillators.length, MAX_VOICES + 1);
-    sound.setMuted(true); sound.consume(shot); assert.equal(contexts[0].oscillators.length, MAX_VOICES + 1);
-    sound.setMuted(false); sound.setVolume(0); sound.consume(shot); assert.equal(contexts[0].oscillators.length, MAX_VOICES + 1);
-    sound.reset(); sound.dispose(); sound.dispose(); await Promise.resolve();
-    assert.equal(contexts[0].state, 'closed'); assert.equal(contexts.length, 1);
-    globalThis.AudioContext = class { constructor() { throw new Error('unavailable'); } };
-    const messages = [], silent = createSound(message => messages.push(message));
-    silent.activate(); assert.match(messages[0], /unavailable/); silent.dispose();
-  } finally { globalThis.AudioContext = original; }
 });

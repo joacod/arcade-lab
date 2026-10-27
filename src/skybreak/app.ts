@@ -32,7 +32,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     if (intent === 'pause') { suspend(); return; }
     if (document.hidden || !document.hasFocus()) return;
     if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
-      sound.activate(); sound.reset(); run = createRun(); presentation.reset(); transition('playing');
+      sound.reset(); sound.activate(); run = createRun(); presentation.reset(); transition('playing');
     } else if (intent === 'resume' && screen === 'paused') {
       sound.activate(); pauseRun(run, false); transition('playing');
     }
@@ -52,7 +52,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     });
   }, { signal: host.signal });
   window.addEventListener('blur', suspend, { signal: host.signal });
-  window.addEventListener('pagehide', suspend, { signal: host.signal });
+  window.addEventListener('pagehide', event => { if (event.persisted) suspend(); else dispose(); }, { signal: host.signal });
   document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(); else clock.reset(); }, { signal: host.signal });
   ui.show('title'); ui.update(run);
   host.start(now => {
@@ -65,8 +65,9 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined);
     ui.update(run);
   });
-  return { dispose() {
+  function dispose() {
     if (disposed) return;
     disposed = true; input.clear(); presentation.dispose(); sound.dispose(); host.dispose();
-  } };
+  }
+  return { dispose };
 }

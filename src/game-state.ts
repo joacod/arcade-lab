@@ -15,10 +15,11 @@ export interface Gem extends Point { amount: number; attracted: boolean }
 export interface UpgradeChoice { readonly id: string; readonly name: string; readonly description: string }
 export type Outcome = 'victory' | 'defeat';
 export type GameEvent =
-  | { type: 'shot' | 'player-hit'; x: number; y: number; at: number }
+  | { type: 'shot'; weapon: EquippedId; x: number; y: number; at: number }
+  | { type: 'player-hit'; x: number; y: number; at: number }
   | { type: 'pulse'; x: number; y: number; radius: number; at: number }
   | { type: 'enemy-hit' | 'enemy-defeated'; x: number; y: number; enemyId: number; at: number }
-  | { type: 'evolution'; at: number }
+  | { type: 'evolution' | 'elite' | 'halo'; at: number }
   | { type: 'pickup'; x: number; y: number; at: number }
   | { type: 'upgrade'; at: number }
   | { type: 'outcome'; outcome: Outcome; at: number };

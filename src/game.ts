@@ -72,6 +72,7 @@ function advanceSpawns(run: RunState, seconds: number): void {
   run.entries = run.entries.filter(entry => entry.remaining > 1e-9);
   if (!run.eliteSpawned && run.elapsed >= run.round.eliteAt - 1e-9) {
     run.eliteSpawned = true; requestEntry(run, 'elite_crawler');
+    run.events.push({ type: 'elite', at: run.elapsed });
   }
   while (run.nextSpawn <= run.elapsed + 1e-9) {
     const ordinaryCount = run.enemies.filter(enemy => !enemies[enemy.kind].elite).length + run.entries.length;

@@ -11,12 +11,15 @@ export function advanceHalo(run: RunState, slot: WeaponInstance, dt: number): vo
   slot.orbitAngle = (slot.orbitAngle + Math.PI * 2 * dt / data.lifetime) % (Math.PI * 2);
   const at = orbitPosition(run, slot);
   const living = new Set(run.enemies.filter(targetable).map(enemy => enemy.id));
+  let struck = false;
   for (const id of slot.nextHit.keys()) if (!living.has(id)) slot.nextHit.delete(id);
   for (const enemy of run.enemies) {
     if (targetable(enemy) && run.elapsed + 1e-9 >= (slot.nextHit.get(enemy.id) ?? 0)
       && distanceSquared(at, enemy) <= (data.hitRadius + enemies[enemy.kind].radius) ** 2) {
       slot.nextHit.set(enemy.id, run.elapsed + data.cadence);
       hitEnemy(run, enemy, weaponDamage(run, slot));
+      struck = true;
     }
   }
+  if (struck) run.events.push({ type: 'halo', at: run.elapsed });
 }

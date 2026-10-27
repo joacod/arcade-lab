@@ -17,7 +17,7 @@
 ## Technologies
 
 - Canvas 2D, Three.js and vgpu/WebGPU are valid rendering choices. Each game uses the renderer or renderers its design needs. Keep unrelated games and graphics implementations behind appropriate loading boundaries.
-- Use [AudioBits](.agents/skills/audiobits/SKILL.md) for all game sound. Keep game-specific sound design and event mapping local, with explicit session ownership, activation, cancellation and disposal. Current integration status belongs in the architecture document.
+- Use [AudioBits](.agents/skills/audiobits/SKILL.md) for all game sound. Reuse `src/browser/audio.ts` for session-owned AudioBits lifecycle and bounded playback. Keep recipes, event mapping, cue priorities and throttling local to each game. Activate synchronously in existing user gestures; pause and dispose through the session owner. Current integration status belongs in the architecture document.
 - Add dependencies when their capabilities improve quality or save substantial implementation work. Avoid unnecessary wrappers and large frameworks without a concrete benefit. Do not add publishing/release infrastructure or external API stability guarantees. Add compatibility only for persisted data, an actual external consumer or an explicit requirement.
 
 ## Documentation and verification

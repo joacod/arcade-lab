@@ -14,7 +14,7 @@ export interface Boss extends Point {
   age: number; health: number; phase: 1 | 2; attack: BossAttack; cycle: number;
   fireIn: number; charge: number; aimX: number; aimY: number; defeated: number;
 }
-export type Cue = 'shot' | 'warning' | 'hit' | 'explosion' | 'evade' | 'life' | 'victory' | 'defeat' | 'pickup' | 'boss-warning' | 'boss-break' | 'damage';
+export type Cue = 'shot' | 'warning' | 'hit' | 'explosion' | 'evade' | 'life' | 'victory' | 'defeat' | 'pickup' | 'boss-warning' | 'boss-shot' | 'boss-break' | 'damage';
 export interface FlightEvent extends Point { type: Cue; target?: number | 'boss' }
 export interface Run {
   elapsed: number; status: 'active' | 'paused' | 'victory' | 'defeat'; score: number;
@@ -93,6 +93,7 @@ function advanceBoss(run: Run, dt: number) {
       for (const x of bossLanes(b)) for (let j = 0; j < 4; j++) hostile(run, x, b.y + 50 - j * 25, 0, 260);
     }
     b.fireIn = b.phase === 2 ? 1.1 : 1.7;
+    emit(run, 'boss-shot', b);
   } else {
     b.fireIn -= dt;
     if (b.fireIn <= 0) {
