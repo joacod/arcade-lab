@@ -8,15 +8,15 @@ A playground for building small browser games and discovering useful reusable pa
 
 ## Fly Skybreak
 
-![Skybreak: the player aircraft fires toward an approaching wing above the scrolling ocean and islands](docs/images/skybreak.png)
+![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/images/skybreak.png)
 
-Take a small aircraft through a 72-second ocean sortie. Ten timed formations approach in straight wings, diagonal crossings, and swooping lines. Twin forward guns, bright enemy rounds, three lives with three hull points each, and a rechargeable roll keep the action readable. Defeat aircraft for points and survive the final passage to make it home.
+Take a small aircraft through a 2–3 minute ocean sortie. Fifteen formations build from straight wings and diagonal crossings to swooping bombers and fast interceptors. Collect gold **Power** chevrons for stronger forward guns, violet **Spread** arrows for 24 seconds of diagonal fire, and green **Repair** crosses for hull. Three lives and a rechargeable roll carry you to **Iron Tempest**, an armored flying fortress with glowing reactors and three telegraphed attack patterns. Destroy it before 2:48 to win, then bring your surviving aircraft home for a score bonus.
 
 | Control | Action |
 | --- | --- |
 | WASD / arrow keys | Steer |
 | Space / J | Hold to fire |
-| Shift / K / Roll button | Evade with 0.65 seconds of immunity; recharges in 7 seconds |
+| Shift / K / Roll button | Evade with 0.65 seconds of immunity; recharges in 5.5 seconds |
 | Hold and drag on the playfield | Steer and fire using touch, mouse, or pen |
 | Escape / Pause | Pause; use Resume flight to continue |
 
@@ -78,6 +78,7 @@ This is one private application/package. **Three.js and vgpu are its two runtime
 | Application mounting | `src/application.ts`; lazy selection and HMR cleanup in `src/main.ts`; collection UI in `src/selection.ts` |
 | Skybreak gameplay and authored waves | `src/skybreak/game.ts`, `src/skybreak/content.ts` |
 | Skybreak session, controls, visuals and sound | `src/skybreak/app.ts`, `input.ts`, `presentation.ts`, `ui.ts`, `sound.ts`, `style.css` |
+| Shared facilities | `src/browser/host.ts`, `clock.ts`, `audio.ts`; pure swept-circle math in `src/collision.ts` |
 | Clearing browser integration | `src/browser/`; game composition in `src/app.ts` |
 | Shared browser voice playback / Clearing cues | `src/browser/audio.ts` / `src/sound.ts` |
 
@@ -97,4 +98,4 @@ Native shader validation also requires an available adapter. The Vite WGSL loade
 
 Arcade Lab is an experiment, with game-specific behavior kept close to the game until actual reuse justifies extraction. There is room for more games and shared parts, guided by what proves useful in play.
 
-Read the [architecture and ownership notes](docs/architecture.md), [foundation review and local performance baseline](docs/foundation-review.md), [gameplay reference and adaptation choices](docs/last-light-clearing.md), [contributor guidance](AGENTS.md), and [art provenance](src/art/README.md). Code is available under the [MIT license](LICENSE).
+Read the [architecture and ownership notes](docs/architecture.md), [two-game reuse review and current measurements](docs/two-game-review.md), [earlier foundation baseline](docs/foundation-review.md), [gameplay reference and adaptation choices](docs/last-light-clearing.md), [contributor guidance](AGENTS.md), and [art provenance](src/art/README.md). Code is available under the [MIT license](LICENSE).

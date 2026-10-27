@@ -62,6 +62,12 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   ] });
   await page.clock.runFor(50); expect((await state()).player.roll).toBeGreaterThan(0);
   await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await page.evaluate(() => {
+    const run = (window as any).flightProbe; run.player.recharge = 0; run.player.roll = 0;
+    // A pointer's release click must not resubmit the press, even when roll is ready again.
+    document.querySelector('.skybreak-evade')!.dispatchEvent(new MouseEvent('click', { detail: 1, bubbles: true }));
+  });
+  await page.clock.runFor(50); expect((await state()).player.roll).toBe(0);
   const released = (await state()).player.x; await page.clock.runFor(300);
   expect((await state()).player.x).toBe(released); expect((await state()).player.fireIn).toBe(0);
   await page.clock.runFor(1600);
@@ -79,8 +85,21 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.clock.runFor(50); await expect(page.getByRole('heading', { name: 'Lost over the blue.' })).toBeVisible();
   await page.getByRole('button', { name: 'Fly again', exact: true }).click(); await page.clock.runFor(50);
   expect((await state()).player.lives).toBe(3);
-  await page.evaluate(() => { (window as any).flightProbe.elapsed = 71.99; });
-  await page.clock.runFor(50); await expect(page.getByRole('heading', { name: 'Clear skies. Welcome home.' })).toBeVisible();
+  await page.evaluate(() => {
+    const run = (window as any).flightProbe;
+    run.elapsed = 120; run.nextWave = 15; run.nextSupply = 9;
+    run.pickups.push({ x: run.player.x, y: run.player.y, kind: 'power', age: 0 });
+  });
+  await page.clock.runFor(50);
+  await expect(page.getByLabel('Aircraft weapons')).toContainText('GUN II');
+  await expect(page.getByLabel('Iron Tempest hull')).toBeVisible();
+  await page.evaluate(() => {
+    const run = (window as any).flightProbe, boss = run.boss;
+    boss.age = 4; boss.health = 1; boss.y = 150;
+    run.bullets.push({ x: boss.x, y: 280, vx: 0, vy: -10000, radius: 3, owner: 'player' });
+  });
+  await page.clock.runFor(3000); await expect(page.getByRole('heading', { name: 'Clear skies. Welcome home.' })).toBeVisible();
+  await expect(page.getByLabel('Flight results')).toContainText('survival bonus');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).flightFrames.size, audio: (window as any).flightContexts.map((c: AudioContext) => c.state) })))

@@ -1,15 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun, stepRun, pauseRun, takeEvents, sweptHit, idle } from '../src/skybreak/game.ts';
-import { aircraft, flight, waves } from '../src/skybreak/content.ts';
+import { createRun, stepRun, pauseRun, takeEvents, bossTargets, bossLanes, idle } from '../src/skybreak/game.ts';
+import { aircraft, flight, fortress, supplies, waves } from '../src/skybreak/content.ts';
 import { flightView } from '../src/skybreak/presentation.ts';
+import { sweptCircle } from '../src/collision.ts';
 const dt = 1 / 60;
 const isolated = () => { const run = createRun(); run.nextWave = waves.length; return run; };
 const enemy = (id, y) => ({ id, pattern: 'straight', x: 240, y, originX: 240, originY: y, age: 0, side: 1, health: 1, fireIn: 99 });
 const incoming = run => run.bullets.push({ x: run.player.x, y: run.player.y - 40, vx: 0, vy: 6000, radius: 5, owner: 'enemy' });
 
 test('Skybreak sweeps fast bullets against moving targets, resolves nearest hit once, and culls escaped objects', () => {
-  assert.notEqual(sweptHit({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 30 }, { x: 50, y: -30 }, 5), undefined);
+  assert.notEqual(sweptCircle({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 30 }, { x: 50, y: -30 }, 5), undefined);
   const run = isolated(); run.enemies = [enemy(0, 450), enemy(1, 550)];
   run.bullets.push({ x: 240, y: 600, vx: 0, vy: -12000, radius: 3, owner: 'player' });
   stepRun(run, idle, dt);
@@ -40,20 +41,76 @@ test('Skybreak damage grants immunity, life loss respawns safely, evade is limit
   const frozen = structuredClone(run); stepRun(run, { ...idle, fire: true }, 1); assert.deepEqual(run, frozen);
 });
 
-test('Skybreak schedules deterministic formations in active time and completes a bounded sortie', () => {
+test('Skybreak schedules deterministic formations and supplies over a bounded full sortie', () => {
   const first = createRun(), second = createRun();
-  for (let i = 0; i < Math.ceil(flight.duration / dt) + 1; i++) {
-    // Invulnerability isolates authored scheduling from survivability in this invariant.
+  for (let i = 0; i < Math.ceil(flight.duration / dt) + 2; i++) {
     for (const run of [first, second]) {
+      // Protection isolates scheduling and object budgets from pilot skill.
       run.player.immunity = 10; stepRun(run, { ...idle, fire: true }, dt); takeEvents(run);
-      assert.ok(run.enemies.length <= 15); assert.ok(run.bullets.length < 180);
+      assert.ok(run.enemies.length <= 16); assert.ok(run.bullets.length < 220); assert.ok(run.pickups.length <= 2);
     }
     if (i === 58) assert.equal(first.nextWave, 0);
     if (i === 61) assert.equal(first.nextWave, 1);
   }
-  assert.deepEqual(first, second); assert.equal(first.nextWave, waves.length); assert.equal(first.status, 'victory');
-  assert.ok(first.score > 0); assert.equal(first.enemies.length, 0);
-  assert.deepEqual(new Set(waves.map(w => w.pattern)), new Set(['straight', 'crossing', 'swoop']));
+  assert.deepEqual(first, second); assert.equal(first.nextWave, waves.length); assert.equal(first.nextSupply, supplies.length);
+  assert.equal(first.status, 'victory'); assert.equal(first.boss.health, 0); assert.ok(first.elapsed <= flight.duration + dt);
+  assert.ok(first.score > 0); assert.equal(first.enemies.length, 0); assert.ok(first.boss);
+  assert.deepEqual(new Set(waves.map(w => w.pattern)), new Set(['straight', 'crossing', 'swoop', 'interceptor']));
+});
+
+function pickup(run, kind) { run.pickups.push({ x: run.player.x, y: run.player.y, kind, age: 0 }); stepRun(run, idle, dt); }
+test('Skybreak pickups have distinct bounded effects, expire only in active time, and life loss reduces loadout', () => {
+  const run = isolated(); run.nextSupply = supplies.length;
+  pickup(run, 'power'); assert.equal(run.player.power, 1);
+  stepRun(run, { ...idle, fire: true }, dt); assert.equal(run.bullets.length, 3);
+  run.bullets = []; run.player.fireIn = 0;
+  pickup(run, 'power'); pickup(run, 'power'); assert.equal(run.player.power, 2);
+  pickup(run, 'spread'); stepRun(run, { ...idle, fire: true }, dt);
+  assert.equal(run.bullets.length, 5); assert.equal(run.bullets.filter(b => b.vx !== 0).length, 2);
+  pauseRun(run, true); const frozen = structuredClone(run); stepRun(run, idle, 30); assert.deepEqual(run, frozen); pauseRun(run, false);
+  for (let i = 0; i < 1442; i++) { stepRun(run, idle, dt); takeEvents(run); }
+  assert.equal(run.player.spread, 0);
+  run.player.health = 1; pickup(run, 'repair'); assert.equal(run.player.health, 2);
+  run.player.health = 1; run.player.immunity = 0; incoming(run); stepRun(run, idle, dt);
+  assert.equal(run.player.power, 1); assert.equal(run.player.spread, 0); assert.equal(run.player.recharge, 0);
+  assert.equal(run.stats.pickups, 5); assert.equal(createRun().player.power, 0);
+});
+function bossRun() {
+  const run = isolated(); run.nextSupply = supplies.length; run.elapsed = fortress.at;
+  stepRun(run, idle, dt); return run;
+}
+test('Skybreak fortress entrance, telegraphed patterns, phase change, and damage stay in simulation', () => {
+  const run = bossRun(), b = run.boss;
+  run.bullets.push({ x: b.x, y: b.y, vx: 0, vy: 0, radius: 3, owner: 'player' });
+  stepRun(run, idle, dt); assert.equal(b.health, fortress.health); assert.equal(run.bullets.filter(x => x.owner === 'enemy').length, 0);
+  while (b.age < fortress.entrance + 0.8) { stepRun(run, idle, dt); takeEvents(run); }
+  assert.ok(b.charge > 0); assert.equal(run.bullets.filter(x => x.owner === 'enemy').length, 0);
+  const attacks = new Set();
+  for (let i = 0; i < 900; i++) { run.player.immunity = 10; stepRun(run, idle, dt); if (b.charge > 0) attacks.add(b.attack); takeEvents(run); }
+  assert.deepEqual(attacks, new Set(['fan', 'aim', 'lanes'])); assert.equal(bossLanes(b).length, 3);
+  b.attack = 'aim'; b.charge = dt / 2; b.aimX = 0; b.aimY = 700; run.player.x = 450; run.bullets = [];
+  stepRun(run, idle, dt);
+  assert.equal(run.bullets.length, 6); assert.ok(run.bullets.every(shot => shot.vx < 0)); // Target lock never follows a later player move.
+  b.attack = 'aim'; b.charge = dt / 2; b.aimX = b.x; b.aimY = 40; run.bullets = [];
+  stepRun(run, idle, dt); assert.ok(run.bullets.every(shot => shot.vy < 0)); // The warning remains accurate even above the fortress.
+  b.health = 210; b.fireIn = 0;
+  stepRun(run, idle, dt); assert.equal(b.phase, 2);
+  run.bullets = [{ x: b.x, y: b.y + 130, vx: 0, vy: -10000, radius: 3, owner: 'player' }];
+  stepRun(run, idle, dt); assert.equal(b.health, 209); assert.ok(takeEvents(run).some(event => event.type === 'hit' && event.target === 'boss'));
+  assert.equal(bossTargets(b).length, 3);
+});
+
+test('Skybreak victory requires a fortress kill, destruction freezes on pause, and bonus is awarded once', () => {
+  const timeout = isolated(); timeout.elapsed = flight.duration - dt / 2; timeout.player.immunity = 10;
+  stepRun(timeout, idle, dt); assert.equal(timeout.status, 'defeat');
+  const run = bossRun(), b = run.boss; b.age = fortress.entrance; b.y = 150; b.health = 1;
+  run.bullets = [{ x: b.x, y: 280, vx: 0, vy: -10000, radius: 3, owner: 'player' }];
+  stepRun(run, idle, dt); assert.equal(b.health, 0); assert.equal(run.status, 'active'); assert.equal(run.score, 5000);
+  assert.equal(run.bullets.length, 0); assert.equal(takeEvents(run).filter(e => e.type === 'boss-break').length, 1);
+  pauseRun(run, true); const frozen = structuredClone(run); stepRun(run, idle, 5); assert.deepEqual(run, frozen); pauseRun(run, false);
+  for (let i = 0; i < 170; i++) stepRun(run, idle, dt);
+  assert.equal(run.status, 'victory'); assert.equal(run.bonus, 3750); assert.equal(run.score, 8750);
+  const result = structuredClone(run); stepRun(run, { ...idle, fire: true }, dt); assert.deepEqual(run, result);
 });
 
 test('Skybreak pauses every timer and action, and restart constructs independent pristine state', () => {

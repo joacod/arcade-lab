@@ -7,8 +7,9 @@
 - Camera/view settings are presentation state. World rendering uses one authoritative uniform transform. Relative movement gestures use CSS pixels, independent of camera motion; layout transitions clear held input and reset timing.
 - Themes own local artwork metadata and cosmetic values. Artwork dimensions and display zoom do not define physical collision geometry; physical sizes stay in gameplay content. Visuals and sound consume notifications without advancing rules.
 - UI displays state and emits intents. Composition connects explicit owners, supplies the selected round to each new run and world/player information to the camera, and owns asset/audio disposal.
+- Shared host, clock, audio voices, and pure collision math contain no game content. Keep Clearing progression/cameras and Skybreak waves/weapons/boss behavior local.
 - Add compatibility only for persisted data, an external consumer, or an explicit requirement.
 - README describes the current project for newcomers. Durable internal decisions belong in linked documentation. Update relevant documentation when user-visible behavior changes.
 - Keep verification local, small, and meaningful. `pnpm check` runs types, invariant tests, and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices, or expand the browser/device matrix without explicit request.
 
-See [README](README.md), [architecture](docs/architecture.md), and [gameplay reference](docs/last-light-clearing.md).
+See [README](README.md), [architecture](docs/architecture.md), and [Clearing gameplay](docs/last-light-clearing.md), and [Skybreak gameplay](docs/skybreak.md).
