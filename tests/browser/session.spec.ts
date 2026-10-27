@@ -36,6 +36,12 @@ async function keeper(page: Page, screenSpace = false) {
   throw new Error('Keeper was not drawn');
 }
 
+function expectStationary(actual: { x: number; y: number }, expected: { x: number; y: number }) {
+  // Active sprite frames change the raster centroid slightly, even at a fixed world position.
+  // One world unit is well below a single full-strength movement step (2.5 units).
+  expect(Math.hypot(actual.x - expected.x, actual.y - expected.y)).toBeLessThan(1);
+}
+
 test('movement, resize, pause, repeated restart, suspension and scoped keys', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -66,7 +72,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await expect(page.locator('.timer')).toHaveText(time!);
   await page.getByRole('button', { name: 'Resume surviving' }).click();
   await page.clock.runFor(50);
-  expect(await keeper(page)).toEqual(frozen);
+  expectStationary(await keeper(page), frozen);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
   await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
@@ -140,7 +146,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await page.mouse.up();
   const cancelled = await keeper(page);
   await page.clock.runFor(500);
-  expect(await keeper(page)).toEqual(cancelled);
+  expectStationary(await keeper(page), cancelled);
 
   // Real Chromium touch pointer/capture path via the DevTools protocol.
   const cdp = await page.context().newCDPSession(page);
@@ -152,14 +158,14 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
   const touchCancelled = await keeper(page);
   await page.clock.runFor(500);
-  expect(await keeper(page)).toEqual(touchCancelled);
+  expectStationary(await keeper(page), touchCancelled);
   await page.mouse.move(center.x, center.y);
   await page.mouse.down();
   await page.mouse.move(center.x + 90, center.y);
   await canvas.dispatchEvent('lostpointercapture', { pointerId: 1 });
   await page.mouse.up();
   await page.clock.runFor(500);
-  expect(await keeper(page)).toEqual(touchCancelled);
+  expectStationary(await keeper(page), touchCancelled);
   // A half-strength drag stays 21 CSS pixels on a narrow viewport too.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
@@ -326,7 +332,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
         };
         window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
       });
-      expect(fetched.some(url => url.includes('/three/') || url.includes('/three.js'))).toBe(false);
+      expect(fetched.some(url => ['/three/', '/three.js', '/vgpu/', '/vgpu.js'].some(path => url.includes(path)))).toBe(false);
       const shell = page.locator('.clearing-app');
       await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
       await expect(shell).toHaveAttribute('data-theme', 'ember');
@@ -544,7 +550,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await page.mouse.move(surface.x + 180, surface.y + 150); await page.mouse.up();
   await page.getByRole('button', { name: 'Resume surviving' }).click();
   await page.clock.runFor(500);
-  expect(await keeper(page)).toEqual(resizedFrozen);
+  expectStationary(await keeper(page), resizedFrozen);
 
   // A rejected browser request leaves the viewport playable and reports the failure.
   await page.evaluate(() => {
@@ -572,7 +578,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   const fullscreenFrozen = await keeper(page);
   await page.getByRole('button', { name: 'Resume surviving' }).click();
   await page.clock.runFor(500);
-  expect(await keeper(page)).toEqual(fullscreenFrozen);
+  expectStationary(await keeper(page), fullscreenFrozen);
 
   await page.keyboard.press('Escape');
   await page.getByLabel('View', { exact: true }).selectOption('close');

@@ -1,6 +1,7 @@
 # Project guidance
 
-- Keep one private application/package and zero runtime dependencies unless explicitly changed by a later task. Do not add speculative packages, publishing/release infrastructure, or architecture.
+- Keep one private application/package and only the existing Three.js and vgpu runtime graphics dependencies. Do not add speculative packages, publishing/release infrastructure, or architecture.
+- `application.ts` owns only the active game's mount point and disposal. A game entry mounts synchronously and returns its session cleanup; the game owns async preparation, UI, input, simulation, renderers, assets, and audio. Keep game styles scoped to their root.
 - Simulation owns world state and rules, depending on typed content and action-level input, never browser APIs or presentation. Keep game-specific behavior specific until actual reuse justifies extraction. Use typed data for content and TypeScript for behavior.
 - Browser sessions own DOM measurement, backing resolution, browser APIs, listeners, scheduling, and disposal. Runs own mutable gameplay state. Restart replaces a run. HMR must dispose the session.
 - Camera/view settings are presentation state. World rendering uses one authoritative uniform transform. Relative movement gestures use CSS pixels, independent of camera motion; layout transitions clear held input and reset timing.
