@@ -57,7 +57,8 @@ This is one private application/package. **Three.js and vgpu are its two runtime
 | Artwork and cosmetic values | `src/themes.ts`, `src/art-pack.ts`, `src/art/` |
 | Camera and rendering | `src/view.ts`, `src/world-presentation.ts`, `src/presentation.ts`, `src/three/garden.ts`, `src/vgpu/` |
 | Menus, HUD, interface skins | `src/ui.ts`, `src/interface.ts`, `src/style.css` |
-| Browser integration | `src/browser/`; composition in `src/app.ts` |
+| Application mounting | `src/application.ts`; selection and HMR cleanup in `src/main.ts` |
+| Clearing browser integration | `src/browser/`; game composition in `src/app.ts` |
 | Sound | `src/sound.ts` |
 
 Abyssal Bloom's semantic colors live in `themes.abyss.palette` in `src/themes.ts`. Its field speed, vein brightness, glow, resolution limits, and effect budgets live in `bloomTuning` in `src/vgpu/bloom.ts`; procedural shapes live in its WGSL files. A color variation only needs a palette object. Image-backed presets retain their authored sprites while palette colors drive their environment, energy, weapons, and feedback.
@@ -76,4 +77,4 @@ Native shader validation also requires an available adapter. The Vite WGSL loade
 
 Arcade Lab is an experiment, with game-specific behavior kept close to the game until actual reuse justifies extraction. There is room for more games and shared parts, guided by what proves useful in play.
 
-Read the [architecture and ownership notes](docs/architecture.md), [gameplay reference and adaptation choices](docs/last-light-clearing.md), [contributor guidance](AGENTS.md), and [art provenance](src/art/README.md). Code is available under the [MIT license](LICENSE).
+Read the [architecture and ownership notes](docs/architecture.md), [foundation review and local performance baseline](docs/foundation-review.md), [gameplay reference and adaptation choices](docs/last-light-clearing.md), [contributor guidance](AGENTS.md), and [art provenance](src/art/README.md). Code is available under the [MIT license](LICENSE).

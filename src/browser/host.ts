@@ -1,18 +1,26 @@
-export function createHost(container: HTMLElement, callbacks: { onDisplayChange(): void; onFullscreenChange(): void }) {
+interface HostOptions {
+  className: string;
+  label: string;
+  surfaceLabel: string;
+  onDisplayChange(): void;
+  onFullscreenChange(): void;
+}
+export function createHost(container: HTMLElement, callbacks: HostOptions) {
   const root = document.createElement('section');
-  root.className = 'clearing-app';
-  root.setAttribute('aria-label', 'Last Light Clearing');
+  root.className = callbacks.className;
+  root.setAttribute('aria-label', callbacks.label);
   container.append(root);
   const lifetime = new AbortController();
   const surface = document.createElement('div');
   surface.className = 'play-surface';
   surface.tabIndex = 0;
-  surface.setAttribute('aria-label', 'Clearing arena. Move with WASD or arrow keys. Press Escape to pause. Drag to move with touch or mouse.');
+  surface.setAttribute('aria-label', callbacks.surfaceLabel);
   let width = 1;
   let height = 1;
   let ratio = 1;
   let left = 0, top = 0;
-  let frame = 0;
+  let frame: number | undefined;
+  let started = false;
   let disposed = false;
 
   function resize() {
@@ -54,17 +62,21 @@ export function createHost(container: HTMLElement, callbacks: { onDisplayChange(
       }
     },
     start(onFrame: (now: number) => void) {
+      if (disposed || started) return;
+      started = true;
       resize();
       const tick = (now: number) => {
+        frame = undefined;
         if (disposed) return;
         onFrame(now);
-        frame = requestAnimationFrame(tick);
+        if (!disposed) frame = requestAnimationFrame(tick);
       };
-      frame = requestAnimationFrame(tick);
+      if (!disposed) frame = requestAnimationFrame(tick);
     },
     dispose() {
+      if (disposed) return;
       disposed = true;
-      cancelAnimationFrame(frame);
+      if (frame !== undefined) cancelAnimationFrame(frame);
       lifetime.abort();
       observer.disconnect();
       root.remove();

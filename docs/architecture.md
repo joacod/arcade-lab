@@ -4,14 +4,23 @@ Arcade Lab is one private application. Three.js and vgpu are the explicitly perm
 
 ## Dependency direction
 
+- `application.ts` defines the small `GameEntry` / `GameSession` mount-and-dispose contract and owns one active session and its DOM mount point. It imports no game, browser host, gameplay data, menu model, or renderer. `main.ts` selects Last Light Clearing and disposes the application on HMR. `application.css` contains only the page and mount-point sizing.
 - `content.ts` defines typed gameplay data, physical geometry, tuning, and round profiles. `content-validation.ts` validates it before a session starts.
 - `game.ts` / `game-state.ts`, combat, weapons, and progression own world state and rules. They depend on content and action-level input, never DOM, audio, camera, or presentation.
-- `browser/host.ts` owns its root and stable focusable play surface, CSS measurement, capped DPR reporting, browser fullscreen, the single frame loop, listeners, ResizeObserver, and cleanup. `browser/input.ts` translates physical keys and pointers into movement actions. Neither imports clearing content or camera geometry.
+- `browser/host.ts` owns its root and stable focusable play surface, CSS measurement, capped DPR reporting, browser fullscreen, the single frame loop, listeners, ResizeObserver, and cleanup. The mounting game supplies root styling and accessible labels. Starting is idempotent; disposal during a frame cannot schedule another frame. `browser/input.ts` translates the clearing's physical keys and pointers into movement actions. Neither imports clearing content or camera geometry at runtime.
 - `art-pack.ts` defines local named image bundles, semantic actor roles, frame clips, normalized pivots, authored visual footprints, orientation, sampling, and decorative environment stamps. `themes.ts` combines these with effect colors and default interface skins as visual presets. `art/mosslight.ts` is an optional local CraftPix definition, activated only through an ignored development manifest.
 - `animation.ts` owns bounded actor movement/facing observations outside gameplay. Composition updates them after each simulation step; render-only frames cannot reset a moving actor to idle.
 - `view.ts` computes a pure presentation transform from explicit world bounds, CSS surface dimensions, target, and view mode. `world-presentation.ts` defines only the clearing presentation lifecycle: canvas, resize, observe, reset, consume, draw, and dispose. `presentation.ts` owns a Canvas 2D canvas/context; the lazy `three/garden.ts` owns a separate WebGLRenderer canvas and all GPU resources. The lazy `vgpu/bloom.ts` owns a WebGPU canvas, device, pipelines, buffers and procedural cosmetic state. `screen-overlay.ts` owns the shared CSS-space joystick and offscreen cues.
 - `ui.ts` owns HTML menus, focus targets, settings controls, notices, and the authoritative-state HUD. Its typed callback object emits intents. It does not advance gameplay or call browser fullscreen.
-- `app.ts` connects these owners, supplies the selected round to new runs and bounds/player to the camera, and coordinates screen transitions and suspension. `main.ts` mounts the application and disposes it on HMR.
+- `app.ts` is Last Light Clearing's game entry. It connects these owners, supplies the selected round to new runs and bounds/player to the camera, and coordinates screen transitions and suspension. `style.css` scopes every game selector, including control defaults and interface skins, to `.clearing-app`.
+
+## Application and game lifetime
+
+`createApplication(container)` exposes `mount(game: GameEntry)` and idempotent `dispose()`. Each mount disposes the previous game before giving the next game a fresh `.game-mount` element inside the supplied container. Removing that mount point also isolates DOM left by a failed mount. Mounting after application disposal is rejected.
+
+A `GameEntry` implements `mount(container): GameSession`; a `GameSession` implements `dispose(): void`. Mount returns synchronously so cleanup is available while assets or GPU preparation are still pending. Each game must cancel its scheduling/listeners, invalidate async completions, release its resources, and clean up a failed construction. The application removes the owned mount point even if session disposal throws. It cannot clean up resources that a game never returns or releases.
+
+Only Last Light Clearing is selected today. No game registry or second-game menu is needed. Another game can provide an independent entry without accepting clearing world bounds, player state, notifications, camera modes, appearance choices, controls, or menus. `world-presentation.ts`, `view.ts`, `browser/input.ts`, `screen-overlay.ts`, the fixed-step policy and all game composition remain with the clearing; none is a required interface for future games.
 
 ## Session and run lifetime
 
@@ -79,6 +88,9 @@ This third implementation required only an asset/procedural type distinction, an
 - For input or lifecycle work: `pnpm exec playwright install chromium` if needed, then `pnpm check:browser`.
 - The representative replacement browser flow retains an upgraded run across Canvas/pixel/garden changes, checks projection and atlas UVs, plays after Resume, supersedes preparation, retries, and verifies resource disposal plus real context-loss and initialization-failure fallback. It also checks Canvas does not fetch the lazy graphics module.
 - `tests/browser/bloom.spec.ts` checks real Three.js palette/smooth atlas bindings and WebGPU switching/native loss. On an adapter-less headless launch it checks failure retention and skips GPU assertions; run `pnpm check:browser --grep 'Abyss switching' --headed` on a capable Chromium setup for those assertions. Validate both WGSL entries with `pnpm exec vgpu check src/vgpu/<entry>.wgsl --require-validation` when a native adapter is available.
+- `tests/browser/mounting.spec.ts` checks single-loop ownership, disposal inside a frame, replacement of an active garden with an independent fixture, CSS isolation, audio/context cleanup, failed mounts, superseded initial artwork, and a fresh clearing remount without held movement.
 - Focused layout inspection at laptop, narrow portrait, and short landscape sizes is useful when changing display behavior. Chromium emulation does not establish physical-device behavior or subjective audio quality.
 
 Keep checks local and focused. Do not add CI, per-interaction suites, screenshot matrices, or more browsers/devices without an explicit request.
+
+See the [foundation review](foundation-review.md) for the measured local baseline, audit coverage, and remaining monitoring points.

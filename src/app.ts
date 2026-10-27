@@ -14,9 +14,10 @@ import type { WorldPresentation } from './world-presentation.ts';
 import { createScreenOverlay } from './screen-overlay.ts';
 import { createSound } from './sound.ts';
 import { createViewport, type ViewMode } from './view.ts';
+import type { GameSession } from './application.ts';
 
 /** One browser session owns input, timing and disposal. Restart replaces the run. */
-export function mountClearing(container: HTMLElement): { dispose(): void } {
+export function mountClearing(container: HTMLElement): GameSession {
   const errors = validateContent();
   if (errors.length) {
     const message = document.createElement('pre'); message.setAttribute('role', 'alert');
@@ -24,7 +25,9 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     container.append(message);
     return { dispose: () => message.remove() };
   }
-  const host = createHost(container, { onDisplayChange: suspend,
+  const host = createHost(container, { className: 'clearing-app', label: 'Last Light Clearing',
+    surfaceLabel: 'Clearing arena. Move with WASD or arrow keys. Press Escape to pause. Drag to move with touch or mouse.',
+    onDisplayChange: suspend,
     onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) }), clock = createClock();
   let viewMode: ViewMode = 'close';
   let presentation: WorldPresentation = createPresentation(themes.woodland!);
