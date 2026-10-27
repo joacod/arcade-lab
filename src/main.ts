@@ -14,7 +14,10 @@ function showSelection(message = '') {
 async function selectGame(id: GameId) {
   const request = ++generation;
   try {
-    if (id === 'duel') {
+    if (id === 'blastline') {
+      const { mountBlastline } = await import('./run-gun/app.ts');
+      if (!disposed && request === generation) application.mount({ mount: host => mountBlastline(host, showSelection) });
+    } else if (id === 'duel') {
       const { mountDuel } = await import('./fighter/app.ts');
       if (!disposed && request === generation) application.mount({ mount: host => mountDuel(host, showSelection) });
     } else if (id === 'skybreak') {

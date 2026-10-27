@@ -21,7 +21,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
     window.requestAnimationFrame = cb => { const id = request(now => { pending.delete(id); cb(now); }); pending.add(id); return id; };
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
-  await expect(page.locator('[data-game]')).toHaveCount(5);
+  await expect(page.locator('[data-game]')).toHaveCount(6);
   await page.getByRole('button', { name: 'Play Obsidian Duel', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.getByRole('heading', { name: 'OBSIDIAN DUEL 雨' })).toBeVisible(); await page.clock.runFor(50);
   expect(await page.evaluate(() => (window as any).duelContexts.length)).toBe(0);

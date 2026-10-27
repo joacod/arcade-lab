@@ -13,7 +13,7 @@
 | Page visibility, blur, page-exit and deferred focus binding | `src/browser/session.ts` |
 | Keyboard/button holds, press edges and independent touch capture | `src/browser/buttons.ts` |
 | Bounded fixed-step timing | `src/browser/clock.ts` |
-| Relative swept-circle intersection | `src/collision.ts` |
+| Pure swept-circle intersection and strict rectangle overlap | `src/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/browser/audio.ts` |
 
 ## Lifetimes and execution
@@ -51,3 +51,5 @@ The [three-game review](three-game-review.md) explains the shared focus binding 
 The [fourth-genre evaluation](midnight-circuit.md#what-the-fourth-genre-revealed) covers the fourth genre and the shared button-capture extraction. Melee timing, lane contact geometry, encounter gates, AI and projected animation remain game-specific.
 
 The [fifth-genre evaluation](obsidian-duel.md#what-the-fifth-genre-revealed) covers a fixed side-view arena, delayed CPU observations and match rounds. Guard height, bilateral trades and stun recovery remain local fighting rules. Shared browser and sound owners are reused unchanged.
+
+The [sixth-genre evaluation](blastline.md#what-the-sixth-genre-revealed) covers mutable terrain, swept tile contact and bounded iterative explosions. Strict rectangle overlap is now shared with the platformer; destructible world state and its geometry remain local. All six games reuse the existing browser and AudioBits owners.

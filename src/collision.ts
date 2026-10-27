@@ -16,3 +16,8 @@ export function sweptCircle(
   const t = (-b - Math.sqrt(discriminant)) / a;
   return t >= 0 && t <= 1 ? t : undefined;
 }
+
+/** Strict overlap: touching edges are support/contact boundaries, not penetration. */
+export function overlaps(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}

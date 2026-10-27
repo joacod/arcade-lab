@@ -1,0 +1,103 @@
+.blast-app { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; overflow:hidden; background:#15262d; color:#e9ddc3; font-family:'Avenir Next',Avenir,system-ui,sans-serif; }
+.blast-app, .blast-app * { box-sizing:border-box; }
+.blast-app [hidden] { display:none!important; }
+.blast-app button { color:inherit; background:#243a40; border:1px solid #a9bc9d44; font:600 11px system-ui; cursor:pointer; min-height:40px; padding:10px 15px; }
+.blast-app button:hover { background:#3f5149; border-color:#efbd72; }
+.blast-app button:focus-visible { outline:2px solid #d4edb9; outline-offset:3px; }
+.blast-app button:disabled { opacity:.45; cursor:default; }
+.blast-app .blast-hud { display:flex; align-items:center; gap:clamp(12px,3vw,40px); flex:0 0 88px; padding:13px clamp(16px,3vw,44px); border-bottom:1px solid #c4c79930; z-index:2; background:#142831; }
+.blast-app .blast-identity { display:flex; align-items:center; gap:12px; min-width:175px; }
+.blast-app .blast-emblem { display:grid; place-items:center; width:37px; height:43px; background:#e3b76e; color:#1b343b; font-size:35px; clip-path:polygon(0 0,100% 0,100% 80%,50% 100%,0 80%); }
+.blast-app .blast-identity b { font-size:19px; letter-spacing:.12em; display:block; }
+.blast-app .blast-identity small { display:block; font:7px monospace; color:#9ab2a6; margin:2px 0 5px; }
+.blast-app .blast-health { color:#bfe3ab; font:12px monospace; }
+.blast-app .blast-orders { flex:1; min-width:0; }
+.blast-app .blast-orders small { display:block; font:8px monospace; color:#98b0a5; letter-spacing:.12em; margin-bottom:7px; }
+.blast-app .blast-objective { font:bold clamp(9px,1vw,12px) monospace; display:block; color:#ead1a0; line-height:1.5; }
+.blast-app .blast-urgent { color:#bcf0b3; }
+.blast-app .blast-resources { display:flex; gap:17px; color:#9eb2a4; font:8px monospace; white-space:nowrap; }
+.blast-app .blast-resources b { display:block; font:800 25px system-ui; color:#efcf94; margin-bottom:2px; }
+.blast-app [data-intent=pause] { font:20px monospace; padding:5px 10px; min-height:35px; }
+.blast-app .blast-stage { flex:1; min-height:0; position:relative; isolation:isolate; }
+.blast-app .play-surface { position:absolute; inset:0; touch-action:none; outline:none; }
+.blast-app canvas { width:100%; height:100%; display:block; image-rendering:pixelated; }
+.blast-app .blast-topline { position:absolute; top:15px; left:24px; right:24px; display:flex; justify-content:space-between; pointer-events:none; font:7px monospace; letter-spacing:.12em; color:#d6d1aa88; }
+.blast-app .blast-menu-layer { position:absolute; inset:0; overflow:auto; display:flex; align-items:center; padding:28px clamp(24px,5vw,75px); background:linear-gradient(90deg,#152a31fa 0%,#152a31f2 37%,#152a3199 60%,#152a3100 100%); }
+.blast-app .blast-menu { width:min(100%,510px); flex-shrink:0; padding:8px 0; z-index:1; }
+.blast-app .blast-eyebrow { font:8px monospace; letter-spacing:.1em; color:#879f94; margin:0 0 22px; }
+.blast-app .blast-eyebrow > span { color:#efbd72; }
+.blast-app h1 { font:950 clamp(65px,8.3vw,112px)/.78 'Avenir Next Condensed','Arial Narrow',Impact,system-ui,sans-serif; letter-spacing:-.065em; margin:0 0 24px -4px; color:#eee4c8; transform:skew(-5deg); }
+.blast-app h1 > span { display:block; color:#efb66d; }
+.blast-app .blast-dot { color:#d87855; }
+.blast-app .blast-tagline { font:800 12px/1.5 monospace; letter-spacing:.12em; color:#e4cf9e; margin:20px 0 13px; }
+.blast-app .blast-description { font-size:12px; line-height:1.8; max-width:370px; color:#a8bdb0; margin:0; }
+.blast-app .blast-mission-cards { display:flex; gap:22px; border-top:1px solid #a5b99d33; border-bottom:1px solid #a5b99d33; padding:15px 0; margin:20px 0; }
+.blast-app .blast-mission-cards > div { flex:1; }
+.blast-app .blast-mission-cards small { display:block; font:7px monospace; color:#93ac9b; }
+.blast-app .blast-mission-cards b { display:block; font-size:16px; font-weight:650; margin:5px 0; letter-spacing:-.02em; }
+.blast-app .blast-mission-cards span { display:block; font:6px monospace; color:#b0b498; }
+.blast-app .blast-actions { display:flex; gap:9px; flex-wrap:wrap; margin:18px 0; }
+.blast-app .blast-actions button { font-size:11px; }
+.blast-app .blast-actions .blast-primary { width:100%; display:flex; justify-content:space-between; background:#efbb72; border-color:#efbb72; color:#1e3035; padding:14px 18px; font-weight:800; }
+.blast-app .blast-actions .blast-primary:hover { background:#ffdb98; }
+.blast-app .blast-instructions { font:8px/1.9 monospace; color:#a1b9ab; margin:17px 0; }
+.blast-app .blast-instructions b { color:#e4d3ac; font-weight:500; }
+.blast-app .blast-instructions > span { color:#8ba695; display:block; margin-top:5px; }
+.blast-app .blast-settings { display:flex; align-items:center; flex-wrap:wrap; gap:7px; }
+.blast-app .blast-settings button { font:8px monospace; min-height:28px; padding:6px 10px; }
+.blast-app .blast-settings > span { margin-left:auto; font:6px monospace; color:#8ea191; }
+.blast-app .blast-sound-status,.blast-app .blast-display-status { font:10px/1.6 monospace; color:#ffd58d; }
+.blast-app .blast-title-stamp { position:absolute; left:64%; top:20%; color:#eee0b6; transform:rotate(-7deg); text-shadow:3px 3px #243b40; pointer-events:none; }
+.blast-app .blast-title-stamp > span { display:block; font:950 clamp(40px,5vw,70px)/.85 Impact,system-ui,sans-serif; letter-spacing:-.04em; }
+.blast-app .blast-title-stamp small { font:6px monospace; letter-spacing:.1em; display:block; margin-top:12px; }
+.blast-app .blast-title-stamp b { display:block; font:100px system-ui; color:#f4b569; margin-left:25px; }
+.blast-app .blast-results { display:block; font:10px/2 monospace; border-left:3px solid #eebe77; padding:9px 15px; color:#e9cc98; white-space:pre-line; margin-top:20px; }
+.blast-app .blast-banner { position:absolute; top:12%; left:15px; right:15px; text-align:center; pointer-events:none; text-shadow:2px 3px 0 #1c3035,0 0 20px #1c3035; }
+.blast-app .blast-banner b { display:block; font:950 clamp(21px,4vw,48px)/1 system-ui; letter-spacing:-.04em; color:#ffe3ab; transform:skew(-5deg); }
+.blast-app .blast-banner span { display:block; margin-top:9px; font:7px/1.6 monospace; letter-spacing:.08em; color:#e4ddb1; }
+.blast-app .blast-route { flex:0 0 24px; position:relative; display:flex; align-items:center; justify-content:space-between; font:6px monospace; padding:0 22px; color:#91afa0; border-top:1px solid #5b7b6b55; background:#1b333b; overflow:hidden; }
+.blast-app .blast-route > span { z-index:1; }
+.blast-app .blast-progress { position:absolute; top:0; bottom:0; left:0; background:#b2c18c14; border-right:2px solid #d1c08a; transition:width .1s linear; }
+.blast-app .blast-footer { flex:0 0 auto; padding:13px 10px; border-top:1px solid #9db59622; background:#142831; }
+.blast-app .blast-hint { font:8px monospace; color:#d2c49d; text-align:center; }
+.blast-app .blast-hint span { color:#7f9c91; }
+.blast-app .blast-touch { display:none; justify-content:space-between; align-items:center; gap:8px; }
+.blast-app .blast-directions { display:grid; grid-template-columns:repeat(3,36px); grid-template-rows:repeat(3,28px); gap:2px; }
+.blast-app .blast-touch button { touch-action:none; user-select:none; -webkit-user-select:none; padding:0; min-height:0; font:700 20px system-ui; }
+.blast-app [data-control=up] { grid-column:2; }
+.blast-app [data-control=left] { grid-row:2; grid-column:1; }
+.blast-app [data-control=right] { grid-row:2; grid-column:3; }
+.blast-app [data-control=down] { grid-row:3; grid-column:2; }
+.blast-app .blast-triggers { display:flex; align-items:center; gap:6px; }
+.blast-app .blast-triggers button { width:47px; height:53px; border-radius:5px; font-size:19px; }
+.blast-app .blast-touch small { display:block; font:6px monospace; margin-top:3px; }
+.blast-app [data-control=fire] { background:#eeb36a; color:#23353a; border-color:#eeb36a; height:62px; }
+.blast-app .blast-swap { width:36px; height:38px; font-size:12px!important; }
+.blast-app button[data-held] { background:#6f8d77; border-color:#fff0b5; }
+@media (pointer:coarse),(max-width:850px) {
+ .blast-app .blast-touch { display:flex; } .blast-app .blast-hint { display:none; }
+ .blast-app .blast-hud { flex-basis:100px; flex-wrap:wrap; gap:4px 12px; padding:8px 12px; }
+ .blast-app .blast-identity { min-width:0; flex:1; gap:8px; } .blast-app .blast-emblem { width:26px; height:32px; font-size:26px; }
+ .blast-app .blast-identity b { font-size:14px; } .blast-app .blast-identity small { font-size:6px; margin:1px 0; }
+ .blast-app .blast-health { font-size:9px; } .blast-app .blast-orders { flex-basis:100%; order:4; }
+ .blast-app .blast-orders small { display:none; } .blast-app .blast-objective { font-size:8px; }
+ .blast-app .blast-resources { gap:12px; font-size:6px; display:flex; } .blast-app .blast-resources b { font-size:17px; margin:0; }
+ .blast-app [data-intent=pause] { min-height:30px; font-size:16px; padding:5px 8px; }
+ .blast-app .blast-menu-layer { padding:25px 23px; align-items:flex-start; background:#152a31eb; }
+ .blast-app .blast-menu { margin:auto; padding:8px 0; } .blast-app h1 { font-size:76px; }
+ .blast-app .blast-title-stamp { display:none; } .blast-app .blast-eyebrow { font-size:6px; margin-bottom:20px; }
+ .blast-app .blast-mission-cards { gap:12px; } .blast-app .blast-mission-cards b { font-size:14px; }
+ .blast-app .blast-instructions { font-size:7px; } .blast-app .blast-settings > span { display:none; }
+ .blast-app .blast-topline { font-size:5px; left:12px; right:12px; }
+ .blast-app .blast-topline > span:first-child { display:none; }
+ .blast-app .blast-footer { padding:7px max(10px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)); }
+}
+@media (max-height:540px) and (min-width:600px) {
+ .blast-app .blast-hud { flex-basis:62px; flex-wrap:nowrap; padding:5px 15px; }
+ .blast-app .blast-orders { order:0; flex-basis:auto; } .blast-app .blast-resources b { font-size:18px; }
+ .blast-app .blast-touch { position:absolute; bottom:9px; left:14px; right:14px; pointer-events:none; opacity:.8; z-index:3; }
+ .blast-app .blast-touch button { pointer-events:auto; } .blast-app .blast-footer { padding:0; }
+ .blast-app:not([data-screen=playing]) .blast-touch { visibility:hidden; }
+ .blast-app .blast-menu-layer { padding:20px 25px; } .blast-app .blast-menu { width:440px; margin:0; }
+}
+@media (prefers-reduced-motion:reduce) { .blast-app .blast-progress { transition:none; } }
