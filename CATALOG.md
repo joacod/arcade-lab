@@ -43,7 +43,7 @@ The portrait playfield scales uniformly and stays centered. Roll supports a seco
 
 ![Clockwork Hollow: a brass keeper explores mossy aqueducts and glowing machinery](docs/images/clockwork-hollow.png)
 
-Guide a little brass keeper through **The Waking Aqueduct**, an original handcrafted platforming route in mechanical ruins reclaimed by nature. Cross broken spans, avoid copper thorns, collect optional wind-up motes and wake the old bell. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
+Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** and **The Starlit Belfry**. Three authored districts progress from mossy spans to pressure-powered machinery and moonlit climbs. Leap over copper thorns, stomp wind-up beetles, read vent warnings, collect optional motes and wake all three bells. The intended first-play pace is 3–6 minutes. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
 
 | Control | Action |
 | --- | --- |
@@ -53,6 +53,8 @@ Guide a little brass keeper through **The Waking Aqueduct**, an original handcra
 | Escape / P / Pause | Pause; use Resume journey to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Falling or touching thorns ends the attempt. Try again or Restart journey starts a fresh run. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/clockwork-hollow.md).
+Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/clockwork-hollow.md).
+
+See the [three-game architecture review](docs/three-game-review.md) for shared-system decisions.
 
 See [README](README.md) for local setup.

@@ -69,13 +69,45 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   await page.clock.runFor(50); await expect(page.getByRole('heading', { name: 'A spring out of step.' })).toBeVisible();
   await page.getByRole('button', { name: 'Try again', exact: true }).click(); await page.clock.runFor(50);
   expect((await state()).player.x).toBe(110);
-  await page.evaluate(() => { const p = (window as any).hollowProbe.player; p.x = 4270; p.y = 570; });
-  await page.clock.runFor(50); await expect(page.getByRole('heading', { name: 'The hollow is awake.' })).toBeVisible();
+  // Reach a lantern through the rule owner, die, and return without erasing discoveries.
+  await page.evaluate(() => { const run = (window as any).hollowProbe; const mote = run.level.motes[0]; run.player.x = mote.x - 13; run.player.y = mote.y - 20; });
+  await page.clock.runFor(50); expect((await state()).collected[0]).toBe(true);
+  await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, run.level.checkpoints[0], { vx: 0, vy: 0 }); });
+  await page.clock.runFor(50); expect((await state()).checkpoint).toBe(0);
+  await expect(page.getByLabel('Checkpoint', { exact: true })).toContainText('Moss lantern saved');
+  await page.evaluate(() => { const run = (window as any).hollowProbe; run.player.y = run.level.height + 100; });
+  await page.clock.runFor(50); const beforeRetry = await state();
+  await page.getByRole('button', { name: 'Return to lantern', exact: false }).click(); await page.clock.runFor(50);
+  expect((await state()).player.x).toBe(3690); expect((await state()).deaths).toBe(beforeRetry.deaths);
+  expect((await state()).elapsed).toBeGreaterThanOrEqual(beforeRetry.elapsed); expect((await state()).collected[0]).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Resume journey', exact: false }).click();
+  for (let level = 0; level < 3; level++) {
+    await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, { x: run.level.goal.x, y: run.level.goal.y + 60, vx: 0, vy: 0 }); });
+    await page.clock.runFor(50);
+    await page.screenshot({ path: info.outputPath(`hollow-result-${level + 1}.png`) });
+    if (level < 2) {
+      await expect(page.locator('.hollow-app')).toHaveAttribute('data-screen', 'interlude');
+      const interlude = await state(); await page.clock.runFor(5000); expect(await state()).toEqual(interlude);
+      await page.getByRole('button', { name: level === 0 ? 'Enter The Emberworks' : 'Enter The Starlit Belfry', exact: false }).click();
+      await page.clock.runFor(50); expect((await state()).levelIndex).toBe(level + 1); expect((await state()).checkpoint).toBe(-1);
+      expect((await state()).player.x).toBe(110);
+      await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, run.level.checkpoints[1], { vx: 0, vy: 0 }); });
+      await page.clock.runFor(1500);
+      await page.screenshot({ path: info.outputPath(`hollow-level-${level + 2}.png`) });
+    }
+  }
+  await expect(page.getByRole('heading', { name: 'The hollow is awake.' })).toBeVisible();
+  await expect(page.getByLabel('Adventure results')).toContainText('3 / 3 bells awakened');
   await expect(page.getByLabel('Adventure results')).toContainText('wind-up motes');
+  await page.getByRole('button', { name: 'Walk it again', exact: true }).click(); await page.clock.runFor(50);
+  expect((await state()).levelIndex).toBe(0); expect((await state()).deaths).toBe(0); expect((await state()).completed).toBe(0);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).hollowFrames.size, audio: (window as any).hollowContexts.map((c: AudioContext) => c.state) })))
     .toEqual({ frames: 0, audio: ['closed'] });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play Clockwork Hollow', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Something still ticks.' })).toBeVisible();
   expect((await state()).elapsed).toBe(0); expect((await state()).player.x).toBe(110);

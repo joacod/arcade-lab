@@ -62,3 +62,12 @@
   .hollow-app .hollow-footer { min-height: 42px; }
   .hollow-app .hollow-touch button { height: 42px; }
 }
+
+.hollow-app .hollow-results { white-space: pre-line; }
+.hollow-app .hollow-location > div { max-width: min(480px, 70vw); line-height: 1.7; text-shadow: 0 1px 6px #071e29; }
+@media (max-width: 760px) {
+  .hollow-app .hollow-progress { display: none; }
+  .hollow-app .hollow-results { font-size: 11px; }
+}
+
+.hollow-app .hollow-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

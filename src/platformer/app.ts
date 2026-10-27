@@ -1,8 +1,8 @@
 import type { GameSession } from '../application.ts';
 import { createHost } from '../browser/host.ts';
 import { createClock, FIXED_STEP } from '../browser/clock.ts';
-import { bindPageLifetime } from '../browser/session.ts';
-import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
+import { bindPageLifetime, bindSessionFocus } from '../browser/session.ts';
+import { createRun, pauseRun, stepRun, takeEvents, retryRun, nextLevel } from './game.ts';
 import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
@@ -43,6 +43,10 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     if (document.hidden || !document.hasFocus()) return;
     if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); transition('playing');
+    } else if ((intent === 'retry' && screen === 'defeat') || (intent === 'continue' && screen === 'interlude')) {
+      sound?.reset(); sound?.activate();
+      if (intent === 'retry') retryRun(run); else nextLevel(run);
+      presentation?.reset(); transition('playing');
     } else if (intent === 'resume' && screen === 'paused') {
       sound?.activate(); pauseRun(run, false); transition('playing');
     }
@@ -55,23 +59,18 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     host.root.addEventListener('keydown', event => {
       if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); }
     }, { signal: host.signal });
-    host.root.addEventListener('focusout', () => {
-      input?.clear();
-      queueMicrotask(() => {
-        const focused = document.activeElement;
-        if (!disposed && screen === 'playing' && focused !== host.surface && !Object.values(ui.controls).includes(focused as HTMLButtonElement)) suspend();
-      });
-    }, { signal: host.signal });
+    bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
+      shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
       if (screen === 'playing') {
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, input!.read(), FIXED_STEP);
-        const events = takeEvents(run); presentation!.consume(events); sound!.consume(events);
-        if (run.status === 'defeat' || run.status === 'victory') transition(run.status);
+        const events = takeEvents(run); presentation!.consume(events); sound!.consume(events, run.player);
+        if (run.status === 'defeat' || run.status === 'victory' || run.status === 'interlude') transition(run.status);
       }
-      presentation!.draw(run, host, screen); ui.update(run);
+      presentation!.draw(run, host, screen, now / 1000); ui.update(run);
     });
     return { dispose };
   } catch (error) { dispose(); throw error; }

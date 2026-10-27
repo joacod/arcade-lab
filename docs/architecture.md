@@ -10,7 +10,7 @@
 | Active session and mount point | `src/application.ts` |
 | Viewport and mount-point sizing | `src/application.css` |
 | Measurement, fullscreen, frame loop and lifetime signal | `src/browser/host.ts` |
-| Page visibility, blur and page-exit binding | `src/browser/session.ts` |
+| Page visibility, blur, page-exit and deferred focus binding | `src/browser/session.ts` |
 | Bounded fixed-step timing | `src/browser/clock.ts` |
 | Relative swept-circle intersection | `src/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/browser/audio.ts` |
@@ -23,7 +23,7 @@ The entrypoint guards stale imports and disposes the application on HMR. Each ga
 
 The host owns a stable focusable surface and one frame loop. Starting is idempotent; disposal during a frame prevents rescheduling. Disposal cancels scheduling, aborts listeners, disconnects observation and removes the root. Renderers own their backing buffers and graphics resources.
 
-`bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder.
+`bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder. `bindSessionFocus` also shares clear-input and deferred focusout handling, ignoring callbacks after host abortion. Sessions supply their own focus predicate, so different play controls and menu rules stay local.
 
 The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
 
@@ -42,3 +42,5 @@ Each game's sound adapter owns recipes, event mapping, batch coalescing, priorit
 ## Local verification
 
 Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` for input or lifecycle changes; install Chromium with `pnpm exec playwright install chromium` if needed. Renderer-specific checks belong with the owning game's documentation.
+
+The [three-game review](three-game-review.md) records the concrete comparison, the focus-binding extraction, boundaries deliberately kept local and remaining performance/verification limits.

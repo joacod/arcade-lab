@@ -12,3 +12,17 @@ export function bindPageLifetime({ signal, suspend, resetTiming, dispose }: Page
     if (document.hidden) suspend(); else resetTiming();
   }, { signal });
 }
+
+interface FocusLifetime {
+  signal: AbortSignal;
+  clearInput(): void;
+  shouldSuspend(): boolean;
+  suspend(): void;
+}
+/** Focus settles after focusout. Each session defines which destinations are playable. */
+export function bindSessionFocus(root: HTMLElement, { signal, clearInput, shouldSuspend, suspend }: FocusLifetime) {
+  root.addEventListener('focusout', () => {
+    clearInput();
+    queueMicrotask(() => { if (!signal.aborted && shouldSuspend()) suspend(); });
+  }, { signal });
+}
