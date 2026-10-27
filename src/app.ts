@@ -15,9 +15,10 @@ import { createScreenOverlay } from './screen-overlay.ts';
 import { createSound } from './sound.ts';
 import { createViewport, type ViewMode } from './view.ts';
 import type { GameSession } from './application.ts';
+import './style.css';
 
 /** One browser session owns input, timing and disposal. Restart replaces the run. */
-export function mountClearing(container: HTMLElement): GameSession {
+export function mountClearing(container: HTMLElement, onExit: () => void): GameSession {
   const errors = validateContent();
   if (errors.length) {
     const message = document.createElement('pre'); message.setAttribute('role', 'alert');
@@ -42,7 +43,7 @@ export function mountClearing(container: HTMLElement): GameSession {
   const input = bindInput(host.surface, () => screen === 'playing', host.signal);
   const sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
   const ui = createUI(host.root, host.surface, {
-    signal: host.signal, onAction: act, onChoose: choose,
+    signal: host.signal, onAction: act, onChoose: choose, onExit,
     onConfiguration(id) {
       if (screen !== 'title') return;
       configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); ui.update(run);

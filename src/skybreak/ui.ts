@@ -1,0 +1,65 @@
+import { flight, waves } from './content.ts';
+import type { Run } from './game.ts';
+export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
+export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit';
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
+  root.innerHTML = `<header class="skybreak-hud">
+    <div class="skybreak-brand">SKYBREAK <span>ARCADE LAB / 02</span></div>
+    <div class="skybreak-score"><span>SCORE</span><output aria-label="Score">000000</output></div>
+    <div class="skybreak-condition"><output aria-label="Aircraft lives">3 lives</output><output aria-label="Aircraft hull">Hull ●●●</output></div>
+    <button data-intent="pause">Pause</button></header>
+    <main class="skybreak-stage"><div class="skybreak-menu-layer"><section class="skybreak-menu" aria-labelledby="skybreak-heading">
+      <p class="skybreak-eyebrow">THE BLUE HORIZON SORTIE</p><h1 id="skybreak-heading">Own the<br>open sky.</h1>
+      <p class="skybreak-description">A small aircraft. A wide ocean. Make it home.</p>
+      <div class="skybreak-brief"><span>72 SECONDS</span><span>10 FORMATIONS</span><span>3 LIVES</span></div>
+      <div class="skybreak-menu-actions"><button data-intent="start" class="skybreak-primary">Take flight ↗</button><button data-intent="resume" class="skybreak-primary" hidden>Resume flight ↗</button><button data-intent="restart" hidden>Fly again</button><button data-intent="quit">Game selection</button></div>
+      <p class="skybreak-controls">WASD / arrows to steer · Space / J to fire<br>Shift / K to roll · Escape to pause<br>Touch: hold & drag to steer and fire. Tap Roll to evade.</p>
+      <button class="skybreak-mute" aria-pressed="false">Mute sound</button><p class="skybreak-audio-status" role="status" hidden></p>
+    </section></div></main>
+    <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 72 s</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL <span>READY</span></button></footer>`;
+  root.querySelector('.skybreak-stage')!.prepend(surface);
+  const layer = root.querySelector<HTMLElement>('.skybreak-menu-layer')!;
+  const heading = root.querySelector('h1')!, description = root.querySelector('.skybreak-description')!;
+  const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-intent]')];
+  for (const button of buttons) button.addEventListener('click', () => act(button.dataset.intent as Intent), { signal });
+  const muteButton = root.querySelector<HTMLButtonElement>('.skybreak-mute')!;
+  let muted = false;
+  muteButton.addEventListener('click', () => {
+    muted = !muted; muteButton.setAttribute('aria-pressed', String(muted)); muteButton.textContent = muted ? 'Unmute sound' : 'Mute sound'; mute(muted);
+  }, { signal });
+  const evade = root.querySelector<HTMLButtonElement>('.skybreak-evade')!;
+  const score = root.querySelector('[aria-label="Score"]')!, lives = root.querySelector('[aria-label="Aircraft lives"]')!;
+  const hull = root.querySelector('[aria-label="Aircraft hull"]')!, progress = root.querySelector('[aria-label="Sortie progress"]')!;
+  const wave = root.querySelector('.skybreak-wave')!, roll = evade.querySelector('span')!;
+  return { evade,
+    soundStatus(message: string) {
+      const status = root.querySelector<HTMLElement>('.skybreak-audio-status')!; status.textContent = message; status.hidden = !message;
+    },
+    show(screen: Screen, focus = true) {
+      root.dataset.screen = screen; layer.hidden = screen === 'playing';
+      surface.tabIndex = screen === 'playing' ? 0 : -1;
+      surface.setAttribute('aria-hidden', String(screen !== 'playing'));
+      heading.innerHTML = screen === 'paused' ? 'Holding<br>pattern.' : screen === 'victory' ? 'Clear skies.<br>Welcome home.' : screen === 'defeat' ? 'Lost over<br>the blue.' : 'Own the<br>open sky.';
+      description.textContent = screen === 'paused' ? 'Flight is paused. Your next move can wait.' : screen === 'victory' ? 'Sortie complete. Every formation is behind you.' : screen === 'defeat' ? 'The ocean keeps no score. You can try again.' : 'A small aircraft. A wide ocean. Make it home.';
+      root.querySelector<HTMLElement>('.skybreak-brief')!.hidden = screen !== 'title';
+      for (const button of buttons) {
+        const intent = button.dataset.intent;
+        button.hidden = intent === 'pause' ? screen !== 'playing' : intent === 'start' ? screen !== 'title' : intent === 'resume' ? screen !== 'paused' : intent === 'restart' ? !['paused', 'victory', 'defeat'].includes(screen) : screen === 'playing';
+        if (intent === 'restart') button.textContent = screen === 'paused' ? 'Restart sortie' : 'Fly again';
+      }
+      evade.disabled = screen !== 'playing';
+      if (focus) {
+        if (screen === 'playing') surface.focus({ preventScroll: true });
+        else buttons.find(b => !b.hidden)?.focus({ preventScroll: true });
+      }
+    },
+    update(run: Run) {
+      score.textContent = String(run.score).padStart(6, '0'); lives.textContent = `${run.player.lives} lives`;
+      hull.textContent = `Hull ${'●'.repeat(run.player.health)}${'○'.repeat(flight.player.health - run.player.health)}`;
+      progress.textContent = `${String(Math.min(flight.duration, Math.floor(run.elapsed))).padStart(2, '0')} / ${flight.duration} s`;
+      wave.textContent = run.nextWave ? `${String(run.nextWave).padStart(2, '0')} / ${waves.length} · ${waves[run.nextWave - 1]!.label.toUpperCase()}` : 'AWAITING TAKEOFF';
+      roll.textContent = run.player.roll > 0 ? 'IMMUNE' : run.player.recharge > 0 ? `${Math.ceil(run.player.recharge)}s` : 'READY';
+      evade.dataset.ready = String(run.player.recharge <= 0); evade.setAttribute('aria-label', `Evasive roll: ${roll.textContent}`);
+    },
+  };
+}

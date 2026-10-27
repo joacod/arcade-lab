@@ -1,13 +1,30 @@
-import { mountClearing } from './app.ts';
 import { createApplication } from './application.ts';
+import { mountSelection, type GameId } from './selection.ts';
 import './application.css';
-import './style.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing application container.');
 const application = createApplication(container);
-application.mount({ mount: mountClearing });
+let generation = 0, disposed = false;
+function showSelection(message = '') {
+  if (disposed) return;
+  generation++;
+  application.mount({ mount: host => mountSelection(host, selectGame, message) });
+}
+async function selectGame(id: GameId) {
+  const request = ++generation;
+  try {
+    if (id === 'skybreak') {
+      const { mountSkybreak } = await import('./skybreak/app.ts');
+      if (!disposed && request === generation) application.mount({ mount: host => mountSkybreak(host, showSelection) });
+    } else {
+      const { mountClearing } = await import('./app.ts');
+      if (!disposed && request === generation) application.mount({ mount: host => mountClearing(host, showSelection) });
+    }
+  } catch { if (!disposed && request === generation) showSelection('This world could not open. Please try again.'); }
+}
+showSelection();
 if (import.meta.hot) {
   import.meta.hot.accept();
-  import.meta.hot.dispose(() => application.dispose());
+  import.meta.hot.dispose(() => { disposed = true; generation++; application.dispose(); });
 }

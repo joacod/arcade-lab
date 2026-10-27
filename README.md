@@ -2,9 +2,27 @@
 
 A playground for building small browser games and discovering useful reusable parts through complete games. Each game is a reason to explore an idea, play it, and find out which pieces deserve to grow.
 
-**Last Light Clearing** is the first playable game: a little light, a crowded forest, and a survival round that lasts until dawn.
+**Last Light Clearing** is a little light, a crowded forest, and a survival round that lasts until dawn. **Skybreak** is a fast vertical shooter over an open ocean. Choose either game from the collection screen, and return to **Game selection** from its title, pause, or result menu. Each visit starts an independent session.
 
 ![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/images/last-light-clearing.png)
+
+## Fly Skybreak
+
+![Skybreak: the player aircraft fires toward an approaching wing above the scrolling ocean and islands](docs/images/skybreak.png)
+
+Take a small aircraft through a 72-second ocean sortie. Ten timed formations approach in straight wings, diagonal crossings, and swooping lines. Twin forward guns, bright enemy rounds, three lives with three hull points each, and a rechargeable roll keep the action readable. Defeat aircraft for points and survive the final passage to make it home.
+
+| Control | Action |
+| --- | --- |
+| WASD / arrow keys | Steer |
+| Space / J | Hold to fire |
+| Shift / K / Roll button | Evade with 0.65 seconds of immunity; recharges in 7 seconds |
+| Hold and drag on the playfield | Steer and fire using touch, mouse, or pen |
+| Escape / Pause | Pause; use Resume flight to continue |
+
+The portrait playfield scales uniformly and stays centered on desktop. Touch steering uses a relative drag: hold near a comfortable spot, then drag in the direction you want to move. Release or cancel to stop steering and shooting. Roll is reachable below the playfield and supports a second touch while steering. Damage briefly protects the aircraft; losing a life restores its hull at the starting position with extra protection. Focus loss and display changes pause and clear held input. Restart creates a fresh sortie. Original procedural Canvas artwork and synthesized sound require no downloaded art or audio. Sound can be muted, and unavailable audio never prevents play.
+
+See the [Skybreak gameplay and ownership notes](docs/skybreak.md) for tuning and implementation details.
 
 ## Play the clearing
 
@@ -57,13 +75,15 @@ This is one private application/package. **Three.js and vgpu are its two runtime
 | Artwork and cosmetic values | `src/themes.ts`, `src/art-pack.ts`, `src/art/` |
 | Camera and rendering | `src/view.ts`, `src/world-presentation.ts`, `src/presentation.ts`, `src/three/garden.ts`, `src/vgpu/` |
 | Menus, HUD, interface skins | `src/ui.ts`, `src/interface.ts`, `src/style.css` |
-| Application mounting | `src/application.ts`; selection and HMR cleanup in `src/main.ts` |
+| Application mounting | `src/application.ts`; lazy selection and HMR cleanup in `src/main.ts`; collection UI in `src/selection.ts` |
+| Skybreak gameplay and authored waves | `src/skybreak/game.ts`, `src/skybreak/content.ts` |
+| Skybreak session, controls, visuals and sound | `src/skybreak/app.ts`, `input.ts`, `presentation.ts`, `ui.ts`, `sound.ts`, `style.css` |
 | Clearing browser integration | `src/browser/`; game composition in `src/app.ts` |
-| Sound | `src/sound.ts` |
+| Shared browser voice playback / Clearing cues | `src/browser/audio.ts` / `src/sound.ts` |
 
 Abyssal Bloom's semantic colors live in `themes.abyss.palette` in `src/themes.ts`. Its field speed, vein brightness, glow, resolution limits, and effect budgets live in `bloomTuning` in `src/vgpu/bloom.ts`; procedural shapes live in its WGSL files. A color variation only needs a palette object. Image-backed presets retain their authored sprites while palette colors drive their environment, energy, weapons, and feedback.
 
-The existing browser suite includes two focused rendering checks. Default headless Chromium may lack a WebGPU adapter; that path verifies initialization failure retains the run and skips the GPU-only assertions. To exercise actual shader rendering, switching, cleanup, and native device loss on a WebGPU-capable Chromium installation:
+The Chromium suite covers both games, their session lifecycle, and two focused Clearing rendering checks. Default headless Chromium may lack a WebGPU adapter; that path verifies initialization failure retains the run and skips the GPU-only assertions. To exercise actual shader rendering, switching, cleanup, and native device loss on a WebGPU-capable Chromium installation:
 
 ```sh
 pnpm check:browser --grep 'Abyss switching' --headed

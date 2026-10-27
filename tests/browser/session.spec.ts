@@ -47,6 +47,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.getByRole('heading', { name: 'Keep the light alive.' })).toBeVisible();
@@ -131,6 +132,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByLabel('View', { exact: true }).selectOption('arena');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
@@ -202,7 +204,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
     };
     try {
       for (let i = 0; i < 5; i++) {
-        const session = mountClearing(container);
+        const session = mountClearing(container, () => {});
         session.dispose(); session.dispose();
       }
       return { remainingFrames: scheduled.size, children: container.childElementCount,
@@ -285,6 +287,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   });
   await page.clock.install();
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toBeHidden();
@@ -466,7 +469,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     const path = '/src/app.ts';
     const { mountClearing } = await import(path);
     const container = document.createElement('div'); document.body.append(container);
-    const session = mountClearing(container);
+    const session = mountClearing(container, () => {});
     await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
     // Initial preparation uses detached images, so wait for its status mutation.
     await new Promise<void>(resolve => {
@@ -485,6 +488,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 
   lethal = true;
   await page.reload();
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   for (const configuration of ['clearing', 'dusk']) {
     await page.getByLabel('Round configuration').selectOption(configuration);
     await page.getByRole('button', { name: 'Enter the clearing' }).click();
@@ -506,6 +510,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     window.AudioContext = class { constructor() { throw new Error('Audio unavailable for this check'); } } as unknown as typeof AudioContext;
   });
   await page.reload();
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
@@ -519,6 +524,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
   await page.getByRole('button', { name: 'Enter the clearing' }).click();

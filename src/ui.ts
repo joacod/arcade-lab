@@ -20,6 +20,7 @@ interface UIOptions {
   onVolume(value: number): void;
   onView(mode: ViewMode): void;
   onFullscreen(): void;
+  onExit(): void;
 }
 export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOptions) {
   const { signal, onAction, onChoose, onConfiguration, onTheme, onMute, onVolume } = options;
@@ -38,7 +39,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
         <h1 id="menu-heading">Keep the light alive.</h1>
         <p class="menu-description">Collect gems. Choose upgrades. Survive until dawn.</p>
         <div class="upgrade-choices" hidden></div>
-        <div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button></div>
+        <div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button><button class="game-selection">Game selection</button></div>
         <div class="settings">
           <div class="setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="configuration-note">${configurations.clearing.description}</p></div>
           <div class="display-settings"><label>Appearance <select aria-label="Appearance">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>Interface <select aria-label="Interface"><option value="match">Match appearance</option>${Object.entries(interfaceSkins).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>Interface accent <select aria-label="Interface accent">${Object.entries(accents).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div>
@@ -50,6 +51,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       </section></div></div>
       <aside class="notices" aria-label="Game notices"><p class="asset-status" role="status" hidden></p><p class="sound-status" role="status" hidden></p><p class="display-status" role="status" hidden></p></aside>
     </main>`;
+  root.querySelector('.game-selection')!.addEventListener('click', options.onExit, { signal });
+  root.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); options.onExit(); }, { signal });
   let configuration: ConfigurationId = 'clearing', muted = false;
   const configurationSelect = root.querySelector<HTMLSelectElement>('[aria-label="Round configuration"]')!;
   const themeSelect = root.querySelector<HTMLSelectElement>('[aria-label="Appearance"]')!;
