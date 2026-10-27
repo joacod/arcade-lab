@@ -4,11 +4,10 @@ export function createHost(container: HTMLElement, callbacks: { onDisplayChange(
   root.setAttribute('aria-label', 'Last Light Clearing');
   container.append(root);
   const lifetime = new AbortController();
-  const canvas = document.createElement('canvas');
-  canvas.tabIndex = 0;
-  canvas.setAttribute('aria-label', 'Clearing arena. Move with WASD or arrow keys. Press Escape to pause. Drag to move with touch or mouse.');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) { root.remove(); throw new Error('Canvas 2D is required to play.'); }
+  const surface = document.createElement('div');
+  surface.className = 'play-surface';
+  surface.tabIndex = 0;
+  surface.setAttribute('aria-label', 'Clearing arena. Move with WASD or arrow keys. Press Escape to pause. Drag to move with touch or mouse.');
   let width = 1;
   let height = 1;
   let ratio = 1;
@@ -18,21 +17,17 @@ export function createHost(container: HTMLElement, callbacks: { onDisplayChange(
 
   function resize() {
     if (disposed) return;
-    const rect = canvas.getBoundingClientRect();
+    const rect = surface.getBoundingClientRect();
     const nextWidth = Math.max(1, rect.width), nextHeight = Math.max(1, rect.height);
     const nextRatio = Math.min(window.devicePixelRatio || 1, 2);
     const changed = width !== nextWidth || height !== nextHeight || ratio !== nextRatio
       || left !== rect.left || top !== rect.top;
     left = rect.left; top = rect.top;
     width = nextWidth; height = nextHeight; ratio = nextRatio;
-    const backingWidth = Math.round(width * ratio), backingHeight = Math.round(height * ratio);
-    // resize + ResizeObserver may report the same size. Reassignment clears a painted frame.
-    if (canvas.width !== backingWidth) canvas.width = backingWidth;
-    if (canvas.height !== backingHeight) canvas.height = backingHeight;
     if (changed) callbacks.onDisplayChange();
   }
   const observer = new ResizeObserver(resize);
-  observer.observe(canvas);
+  observer.observe(surface);
   window.addEventListener('resize', resize, { signal: lifetime.signal });
   document.addEventListener('fullscreenchange', () => {
     if (disposed) return;
@@ -40,7 +35,7 @@ export function createHost(container: HTMLElement, callbacks: { onDisplayChange(
   }, { signal: lifetime.signal });
 
   return {
-    root, canvas, ctx, signal: lifetime.signal,
+    root, surface, signal: lifetime.signal,
     get width() { return width; },
     get height() { return height; },
     get ratio() { return ratio; },

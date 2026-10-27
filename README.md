@@ -10,9 +10,9 @@ A playground for building small browser games and discovering useful reusable pa
 
 Move the Keeper, collect green XP gems, and choose upgrades while weapons fire automatically. Spark starts your loadout; Halo, Pulse, and Shard bring different ways to hold back the crawlers. Combine the right upgrades to evolve Spark. A larger elite arrives late in the round.
 
-Choose **Until dawn** for the original three-minute round or **Brief dusk** for a shorter 90-second challenge. **Lanternwood**, **Moonglass**, and the animated pixel-art **Ember Ruins** offer distinct appearances with the same physical rules. Choose Classic, Rune, or Glass interface styling independently, with an optional accent color. The locally installed CraftPix experiment **Mosslight** is available in development only; see [art setup and provenance](src/art/README.md). Procedural sound has mute and volume controls, and play continues with silhouettes or silence if artwork or audio cannot load.
+Choose **Until dawn** for the original three-minute round or **Brief dusk** for a shorter 90-second challenge. **Lanternwood**, **Moonglass**, and the animated pixel-art **Ember Ruins** offer distinct appearances with the same physical rules. **Prism Garden** brings a sculpted stone arena, faceted creatures, and luminous crystals. **Ember Conservatory** puts the Ember pixel actors in the same lit garden. Choose Classic, Rune, or Glass interface styling independently, with an optional accent color. The locally installed CraftPix experiment **Mosslight** is available in development only; see [art setup and provenance](src/art/README.md). Procedural sound has mute and volume controls, and play continues with silhouettes or silence if artwork or audio cannot load.
 
-The game fills the browser viewport. **Close view** follows the Keeper with larger characters and screen-edge warnings for distant entries and the elite. **Whole arena** fits the entire clearing. Change appearance, interface, accent, view, and sound in the title or pause menu; choose the round at the title. Selections last through retries and title transitions until reload. Visual changes preserve a paused run and require explicit Resume. “Match appearance” follows its default interface; an explicit interface choice survives appearance changes.
+The game fills the browser viewport. **Close view** follows the Keeper with larger characters and screen-edge warnings for distant entries and the elite. **Whole arena** fits the entire clearing. Change appearance, interface, accent, view, and sound in the title or pause menu; choose the round at the title. Selections last through retries and title transitions until reload. Visual changes preserve a paused run and require explicit Resume. The current scene stays visible while the new appearance prepares. If graphics fail, the game keeps a working appearance or restores Lanternwood silhouettes on the same paused run. “Match appearance” follows its default interface; an explicit interface choice survives appearance changes.
 
 **Fullscreen** includes the arena, HUD, and menus when the browser supports it. Display changes and focus loss pause the action and clear held movement. Use **Resume** when ready. On short screens, scroll inside the menu to reach its settings; the game page stays fixed.
 
@@ -46,7 +46,7 @@ pnpm exec playwright install chromium
 pnpm check:browser
 ```
 
-This is one private application/package with **zero runtime dependencies**. TypeScript, Vite, and Playwright are development tools. The game uses Canvas 2D, HTML/CSS, and native browser APIs.
+This is one private application/package. **Three.js is its sole runtime dependency**, explicitly included for the garden presentation experiment and loaded only when a garden appearance is selected. The other appearances use Canvas 2D. TypeScript, Vite, Playwright, and Three.js types are development tools.
 
 ## Where to change things
 
@@ -55,7 +55,7 @@ This is one private application/package with **zero runtime dependencies**. Type
 | Gameplay and progression | `src/game.ts`, `src/combat.ts`, `src/progression.ts`, `src/weapons/` |
 | Balance and round configurations | `src/content.ts` |
 | Artwork and cosmetic values | `src/themes.ts`, `src/art-pack.ts`, `src/art/` |
-| Camera and rendering | `src/view.ts`, `src/presentation.ts` |
+| Camera and rendering | `src/view.ts`, `src/world-presentation.ts`, `src/presentation.ts`, `src/three/garden.ts` |
 | Menus, HUD, interface skins | `src/ui.ts`, `src/interface.ts`, `src/style.css` |
 | Browser integration | `src/browser/`; composition in `src/app.ts` |
 | Sound | `src/sound.ts` |
