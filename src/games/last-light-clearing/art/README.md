@@ -25,7 +25,7 @@ The loader checks all referenced frames against decoded image dimensions and val
 
 Register a label in `src/games/last-light-clearing/interface.ts`, then define its `[data-skin='name']` custom properties in `src/games/last-light-clearing/style.css`: background, surface, panel, veil, button/hover, text/muted, accent/on-accent, danger, border, health/XP, font/heading font, radius, and shadow. Reserve focused classes/selectors for actual layout differences. Keep the existing HTML controls, focus, intents, and state bindings in `src/games/last-light-clearing/ui.ts`.
 
-Classic retains the original interface treatment. Rune uses warm frames, square borders, monospace typography, and coral/gold health/XP. Glass uses translucent cool panels, fine borders, and a compact HUD. “Match appearance” follows the successfully loaded preset's default. Explicit interface and accent choices survive artwork changes, retries, and title transitions within a session.
+Classic retains the original interface treatment. Rune uses warm frames, square borders, monospace typography, and coral/gold health/XP. Glass uses translucent cool panels, fine borders, and a compact HUD. Abyss uses a dark, compact interface with aqua accents. “Match appearance” follows the successfully loaded preset's default. Explicit interface and accent choices survive artwork changes, retries, and title transitions within a session.
 
 ## Optional local Mosslight appearance
 

@@ -33,12 +33,14 @@ The CPU samples visible spacing, telegraphs and incoming bolts, then receives th
 
 All artwork is original procedural Canvas geometry, including the selection cover's original SVG composition. There are no downloaded art or sound assets. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Poses read simulation states. Reduced motion removes shake and storm flourishes and reduces particles while retaining all combat information.
 
-## What the fifth genre revealed
+## Architecture decisions
 
-The existing application mount contract, lazy imports, browser host, fixed clock, page/focus bindings, captured buttons and bounded AudioBits owner work unchanged for a fixed side-view arena. The session clears input and resets the clock at every round-phase transition as well as display and menu transitions. Async sound activation retains the shared owner's cancellation guards.
+Guard height, projectiles, bilateral trades, stun exits and best-of-three ownership are local fighting rules. Their contact and progression semantics differ from a scrolling brawler's lane geometry, crowd coordination and encounter gates.
 
-Guard height, projectiles, bilateral trades, stun exits and best-of-three ownership are local fighting rules. Midnight Circuit's swing ownership and timing were useful references, but its lane contacts, crowd control, attack tokens, encounter gates and scrolling camera remain independent. A generic combat engine would couple different rules without simplifying either implementation. No new shared combat abstraction is needed.
+Browser composition reuses the shared host, clock, input, focus/lifetime bindings and bounded AudioBits owner. The session clears input and resets timing at round-phase, display and menu transitions.
 
-The Chromium run exposed a cold development-server reload during lazy audio imports. AudioBits now joins the existing explicit Vite dependency pre-optimization list. This affects development preparation only; game sound still loads through its existing lazy boundary and starts only in a user gesture.
+## Local verification
 
 Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
+
+See the [shared commands](../../architecture.md#local-verification).

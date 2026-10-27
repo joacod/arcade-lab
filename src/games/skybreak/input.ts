@@ -40,7 +40,6 @@ export function bindInput(surface: HTMLElement, evadeButton: HTMLElement, active
   }, { signal });
   signal.addEventListener('abort', clear, { once: true });
   return { clear,
-    get stick() { return pointer === undefined ? undefined : { origin, tip }; },
     read(): Action {
       let x = Number(held.has('KeyD') || held.has('ArrowRight')) - Number(held.has('KeyA') || held.has('ArrowLeft'));
       let y = Number(held.has('KeyS') || held.has('ArrowDown')) - Number(held.has('KeyW') || held.has('ArrowUp'));

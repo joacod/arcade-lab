@@ -55,6 +55,65 @@ for (const game of [
   });
 }
 
+test('partial session setup failures release Clearing and Skybreak resources', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route(/\/src\/engine\/browser\/host\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createHost;
+      createHost = (...args) => { const host = original(...args); window.hostProbe = host; return host; };` });
+  });
+  await page.route(/\/src\/games\/(skybreak|last-light-clearing)\/ui\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createUI;
+      createUI = (...args) => { const ui = original(...args); if (window.failUI) throw new Error('UI setup failed'); return ui; };` });
+  });
+  await page.goto('/');
+  const results = await page.evaluate(async () => {
+    const w = window as any;
+    const OriginalObserver = window.ResizeObserver, getContext = HTMLCanvasElement.prototype.getContext;
+    const observers = new Set<ResizeObserver>();
+    window.ResizeObserver = class extends OriginalObserver {
+      constructor(callback: ResizeObserverCallback) { super(callback); observers.add(this); }
+      disconnect() { observers.delete(this); super.disconnect(); }
+    };
+    const results = [];
+    try {
+      for (const fixture of [
+        { path: '/src/games/last-light-clearing/app.ts', entry: 'mountClearing', failure: 'ui' },
+        { path: '/src/games/skybreak/app.ts', entry: 'mountSkybreak', failure: 'ui' },
+        { path: '/src/games/last-light-clearing/app.ts', entry: 'mountClearing', failure: 'overlay' },
+      ]) {
+        const { [fixture.entry]: mount } = await import(fixture.path);
+        const container = document.createElement('div'); document.body.append(container);
+        let calls = 0, message = '';
+        w.failUI = fixture.failure === 'ui';
+        HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
+          if (fixture.failure === 'overlay' && ++calls === 2) return null;
+          return (getContext as any).apply(this, args);
+        } as typeof getContext;
+        try {
+          try { mount(container, () => {}); } catch (error) { message = (error as Error).message; }
+          const host = w.hostProbe;
+          window.dispatchEvent(new Event('resize'));
+          document.dispatchEvent(new Event('fullscreenchange'));
+          results.push({ message, aborted: host.signal.aborted, children: container.childElementCount, observers: observers.size });
+        } finally { w.hostProbe?.dispose(); container.remove(); }
+      }
+    } finally {
+      w.failUI = false;
+      HTMLCanvasElement.prototype.getContext = getContext;
+      window.ResizeObserver = OriginalObserver;
+    }
+    return results;
+  });
+  expect(results).toEqual(['UI setup failed', 'UI setup failed', 'Canvas 2D is required to draw the overlay.'].map(message =>
+    ({ message, aborted: true, children: 0, observers: 0 })));
+  expect(errors).toEqual([]);
+});
+
 test('browser host owns one loop and cannot schedule work after disposal', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();

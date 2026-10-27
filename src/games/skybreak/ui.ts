@@ -1,7 +1,7 @@
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
-export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit';
+export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK <span>ARCADE LAB / 02</span></div>
@@ -14,7 +14,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       <div class="skybreak-brief"><span>2–3 MINUTES</span><span>FINAL BOSS</span><span>3 LIVES</span></div>
       <div class="skybreak-results" hidden><output aria-label="Flight results"></output></div><div class="skybreak-menu-actions"><button data-intent="start" class="skybreak-primary">Take flight ↗</button><button data-intent="resume" class="skybreak-primary" hidden>Resume flight ↗</button><button data-intent="restart" hidden>Fly again</button><button data-intent="quit">Game selection</button></div>
       <p class="skybreak-controls">WASD / arrows to steer · Space / J to fire<br>Shift / K to roll · Escape to pause<br>Touch: hold & drag to steer and fire. Tap Roll to evade.</p>
-      <p class="skybreak-pickup-guide"><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p><button class="skybreak-mute" aria-pressed="false">Mute sound</button><p class="skybreak-audio-status" role="status" hidden></p>
+      <p class="skybreak-pickup-guide"><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p><div class="skybreak-settings"><button class="skybreak-mute" aria-pressed="false">Mute sound</button><button data-intent="fullscreen">Fullscreen</button></div><p class="skybreak-display-status" role="status" hidden></p><p class="skybreak-audio-status" role="status" hidden></p>
     </section></div></main>
     <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL <span>READY</span></button></footer>`;
   root.querySelector('.skybreak-stage')!.prepend(surface);
@@ -32,6 +32,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const hull = root.querySelector('[aria-label="Aircraft hull"]')!, progress = root.querySelector('[aria-label="Sortie progress"]')!;
   const wave = root.querySelector('.skybreak-wave')!, roll = evade.querySelector('span')!;
   return { evade,
+    fullscreen(available: boolean, active: boolean) {
+      const button = root.querySelector<HTMLButtonElement>('[data-intent="fullscreen"]')!;
+      button.hidden = !available; button.textContent = active ? 'Exit fullscreen' : 'Fullscreen';
+    },
+    displayStatus(message: string) {
+      const status = root.querySelector<HTMLElement>('.skybreak-display-status')!; status.textContent = message; status.hidden = !message;
+    },
     soundStatus(message: string) {
       const status = root.querySelector<HTMLElement>('.skybreak-audio-status')!; status.textContent = message; status.hidden = !message;
     },
@@ -44,6 +51,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       root.querySelector<HTMLElement>('.skybreak-brief')!.hidden = screen !== 'title';
       for (const button of buttons) {
         const intent = button.dataset.intent;
+        if (intent === 'fullscreen') continue;
         button.hidden = intent === 'pause' ? screen !== 'playing' : intent === 'start' ? screen !== 'title' : intent === 'resume' ? screen !== 'paused' : intent === 'restart' ? !['paused', 'victory', 'defeat'].includes(screen) : screen === 'playing';
         if (intent === 'restart') button.textContent = screen === 'paused' ? 'Restart sortie' : 'Fly again';
       }

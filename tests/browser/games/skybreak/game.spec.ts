@@ -27,6 +27,13 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Own the open sky.' })).toBeVisible();
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).flightProbe)));
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('skybreak-app');
+  await expect(page.locator('.skybreak-hud')).toBeVisible();
+  await expect(page.locator('.skybreak-footer')).toBeVisible();
+  await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
   await page.keyboard.press('j'); await page.keyboard.press('d'); await page.keyboard.press('k'); await page.clock.runFor(100);
   expect((await state()).elapsed).toBe(0); // Menu keys cannot control the aircraft.
   await page.getByRole('button', { name: 'Take flight' }).click(); await page.clock.runFor(50);
@@ -40,9 +47,25 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.keyboard.press('k'); await page.clock.runFor(50);
   expect((await state()).player.roll).toBeGreaterThan(0);
   await page.keyboard.up('Space'); await page.keyboard.press('Escape');
-  const frozen = await state(); await page.clock.runFor(60000); expect(await state()).toEqual(frozen);
+  const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
+  await page.evaluate(() => {
+    document.querySelector<HTMLElement>('.skybreak-app')!.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied'));
+  });
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect(page.locator('.skybreak-display-status')).toContainText('Fullscreen could not open');
+  expect(await state()).toEqual(frozen);
+  await page.evaluate(() => { delete (document.querySelector('.skybreak-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
+  await expect(page.locator('.skybreak-display-status')).toBeHidden();
   await page.getByRole('button', { name: 'Resume flight' }).click(); await page.clock.runFor(100);
-  expect((await state()).player.x).toBe(frozen.player.x);
+  await page.keyboard.down('d'); await page.clock.runFor(100);
+  await page.evaluate(() => document.exitFullscreen()); await page.clock.runFor(100);
+  await expect(page.getByRole('button', { name: 'Resume flight' })).toBeVisible();
+  const displayFrozen = await state(); await page.clock.runFor(1000); expect(await state()).toEqual(displayFrozen);
+  await page.keyboard.up('d');
+  await page.getByRole('button', { name: 'Resume flight' }).click(); await page.clock.runFor(100);
+  expect((await state()).player.x).toBe(displayFrozen.player.x);
   await page.keyboard.down('j'); await page.clock.runFor(2600); await page.keyboard.up('j');
   await page.screenshot({ path: info.outputPath('skybreak-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(100);
@@ -74,7 +97,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.screenshot({ path: info.outputPath('skybreak-narrow.png') });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-  await page.clock.runFor(10000); const blurred = await state();
+  await page.clock.fastForward(10000); const blurred = await state();
   await expect(page.getByRole('button', { name: 'Resume flight' })).toBeVisible();
   await page.keyboard.up('d'); await page.getByRole('button', { name: 'Resume flight' }).click(); await page.clock.runFor(100);
   expect((await state()).player.x).toBe(blurred.player.x);
@@ -110,8 +133,10 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('.clearing-app')).toHaveCount(0); await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).flightFrames.size)).toBe(0);
+  await page.evaluate(() => { Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: false }); });
   await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Own the open sky.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeHidden();
   expect((await state()).elapsed).toBe(0); expect((await state()).player.lives).toBe(3);
   expect(await page.evaluate(() => (window as any).flightFrames.size)).toBe(1);
   await page.evaluate(() => {
@@ -120,6 +145,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.getByRole('button', { name: 'Take flight' }).click(); await page.clock.runFor(100);
   expect((await state()).elapsed).toBeGreaterThan(0);
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeHidden();
   await expect(page.locator('.skybreak-audio-status')).toContainText('Sound unavailable');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await page.evaluate(() => (window as any).flightFrames.size)).toBe(0);
