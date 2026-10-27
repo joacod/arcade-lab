@@ -1,6 +1,6 @@
 # Clockwork Hollow
 
-A complete Canvas 2D platform adventure through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit. An optimized deterministic traversal takes about 2:23 of active time; exploration, cautious crossings and retries add time. Human playtesting still needs to validate the intended pace and difficulty.
+A complete Canvas 2D platform adventure through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
 
 ## Playing
 
@@ -50,8 +50,6 @@ Sound uses a spring lift, soft stone/metal landing, descending unwinding damage,
 
 ## Local verification
 
-`pnpm check` covers grounding/braking, walls and ceilings, thin-platform landing, variable jump height, coyote expiry, single-use buffered jumps, collection, hazard precedence, frozen outcomes, pause, independent restarts, patrol reversal, stomp versus side contact, vent warnings/damage, checkpoint retry and score retention. Content checks verify safe checkpoint support and patrol endpoints. A deterministic action-only route crosses all three districts, touches all six checkpoints and reaches victory without overriding state. Camera checks cover uniform scaling and bounds at desktop, narrow and short sizes. Audio recipes and JSON round trips validate against the installed runtime.
-
-`pnpm check:browser` exercises real keyboard and native touch, cancellation, pause/resume, resize/blur, checkpoint retry, district transitions, final results, full restart, audio failure, lazy imports, switching and frame/audio cleanup. Focused outcome fixtures verify UI composition; the simulation traversal proves route reachability. Screenshots support visual inspection rather than pixel baselines. The shared audio browser check measures finite, non-clipping output and resource bounds for every cue, including both landing-strength extrema. Physical-device controls, subjective listening and human pacing remain unverified.
+Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions and session cleanup. See [shared commands](architecture.md#local-verification).
 
 See the [three-game architecture review](three-game-review.md) for the comparative ownership decisions and the scoped shared improvement.

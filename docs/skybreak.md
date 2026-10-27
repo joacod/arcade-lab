@@ -44,6 +44,4 @@ Change balance, supply deadlines, collision sizes, and formations in `src/skybre
 
 ## Local verification
 
-Focused invariants cover nearest swept hits, immunity/respawn, deterministic scheduling and object budgets, power caps and spread expiry, repairs, pause/fresh runs, protected boss entrance, all three attack cycles, phase change, kill-only victory, timeout defeat, and one-time result scoring. Shared collision checks cover relative motion, overlap, tangent/miss, zero travel, and endpoints.
-
-The representative Chromium flow covers keyboard and native touch, cancellation, two-touch roll, suspension/restart, pickup HUD, boss hull/results, audio failure, lazy graphics loading, and switching games with frame/audio disposal. Terminal fixtures shorten that regression. Chromium emulation does not establish physical-device behavior or subjective audio quality. See [architecture](architecture.md#local-verification) for commands and [sound](architecture.md#sound) for shared audio ownership.
+Local checks cover combat, pickups, respawn, boss patterns and scoring. Chromium checks cover controls, transitions and session cleanup. See [shared commands](architecture.md#local-verification) and [audio ownership](architecture.md#sound).

@@ -1,6 +1,6 @@
 # Three-game architecture review
 
-This review accompanies the completed three-district Clockwork Hollow. It compares the actual owners in Last Light Clearing, Skybreak and Clockwork Hollow. Shared lifecycle changes were verified against all three sessions. The [architecture](architecture.md) remains the reference for common contracts; game-specific source maps live in the [catalog](../CATALOG.md).
+This review compares ownership in Last Light Clearing, Skybreak and Clockwork Hollow. The [architecture](architecture.md) remains the reference for common contracts; game-specific source maps live in the [catalog](../CATALOG.md).
 
 | Area | Evidence across the three implementations | Decision |
 | --- | --- | --- |
@@ -18,12 +18,8 @@ This review accompanies the completed three-district Clockwork Hollow. It compar
 | Typed content | Clearing has weapons/upgrades/rounds, Skybreak has formations/boss tuning, Hollow has authored district geometry, palettes, signs, patrols and vents. | Keep TypeScript content close to rules. No new configuration language, export format, persistence compatibility layer or template generator. |
 | Pause/retry/restart/disposal | Every restart replaces a run. Clearing preserves upgrade confirmation boundaries; Skybreak respawns lives within a sortie; Hollow retries at checkpoints while preserving its journey ledger. All sessions explicitly resume from gestures. | Shared interruption bindings are appropriate. Retain the genre-specific distinction between retry, respawn and full restart. Checkpoints do not justify a generic save system. |
 
-## Complexity removed and limits
+## Shared improvement
 
 The implemented shared change removes repeated focusout listeners, queued microtasks and disposed guards from the three app owners. It reuses the existing host abort signal, without another lifetime object or resource registry. No compatibility layer, renderer, dependency, package or public API was added. Existing shared mounting, timing, browser host, circle math, asset preparation and AudioBits ownership remain intact.
 
 Repeated composition of run, clock, input, UI, presentation and sound is still visible in the three `app.ts` files. These are short explicit ownership boundaries with different transition rules, rather than evidence for a universal run/entity framework. A future common helper should address a concrete repeated policy, as the focus binder does.
-
-A remaining concrete concern is the optional Three.js garden bundle: the local production build reports approximately 544 kB minified, above Vite's default chunk warning threshold. It remains behind a lazy renderer import, and Hollow/Skybreak do not request it. Reworking that optional renderer's dependency split is a separate performance task; this pass adds no new renderer or eager dependency. Chromium verifies fallback and disposal, but the WebGPU device-loss check skips when no adapter is available. Physical hardware performance and subjective audio/feel still require human review.
-
-The action-only platformer route proves a fast 2:23 completion. The intended 3–6 minute first-play duration is a design target, not a measured human-play result. Avoid adding forced waits or empty corridors solely to make a timer match that estimate; adjust the authored challenges using actual playtesting.
