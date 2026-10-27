@@ -240,7 +240,7 @@ export function createPresentation(surface: HTMLElement) {
     } else {
       const length = s.kind === 'charge' ? 350 : d.reach + 22, start = a.facing > 0 ? x : x - length;
       rect(start, y - d.lane, length, d.lane * 2, '#e86e8b19'); ctx.strokeRect(start, y - d.lane, length, d.lane * 2);
-      if (s.kind === 'charge') text('CHARGE →', x + a.facing * 140, y - d.lane - 10, 9, color, 'center');
+      if (s.kind === 'charge') text(a.facing > 0 ? 'CHARGE →' : '← CHARGE', x + a.facing * 140, y - d.lane - 10, 9, color, 'center');
     }
     ctx.setLineDash([]); ctx.globalAlpha = 1;
     if (phase === 'startup') {
