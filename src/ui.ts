@@ -2,6 +2,7 @@ import { clearing, configurations, evolution, weapons, type ConfigurationId } fr
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
 import { themes, type ThemeId } from './themes.ts';
+import { interfaceSkins, accents, type InterfaceChoice, type Accent } from './interface.ts';
 import type { ViewMode } from './view.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
@@ -13,6 +14,8 @@ interface UIOptions {
   onChoose(id: string): void;
   onConfiguration(id: ConfigurationId): void;
   onTheme(id: ThemeId): void;
+  onInterface(choice: InterfaceChoice): void;
+  onAccent(choice: Accent): void;
   onMute(value: boolean): void;
   onVolume(value: number): void;
   onView(mode: ViewMode): void;
@@ -38,7 +41,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
         <div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button></div>
         <div class="settings">
           <div class="setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="configuration-note">${configurations.clearing.description}</p></div>
-          <div class="display-settings"><label>Artwork <select aria-label="Visual theme">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div>
+          <div class="display-settings"><label>Appearance <select aria-label="Appearance">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>Interface <select aria-label="Interface"><option value="match">Match appearance</option>${Object.entries(interfaceSkins).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>Interface accent <select aria-label="Interface accent">${Object.entries(accents).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div>
           <div class="sound-controls"><button class="mute" aria-pressed="false">Mute</button><label>Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label></div>
           <p class="controls">Move with WASD / arrows, or press and drag.<br>Weapons fire automatically. Escape / P pauses.<br>Focus loss and display changes pause. Use Resume to return.</p>
         </div>
@@ -49,7 +52,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
     </main>`;
   let configuration: ConfigurationId = 'clearing', muted = false;
   const configurationSelect = root.querySelector<HTMLSelectElement>('[aria-label="Round configuration"]')!;
-  const themeSelect = root.querySelector<HTMLSelectElement>('[aria-label="Visual theme"]')!;
+  const themeSelect = root.querySelector<HTMLSelectElement>('[aria-label="Appearance"]')!;
   configurationSelect.addEventListener('change', () => {
     const id = configurationSelect.value;
     if (id in configurations) {
@@ -64,6 +67,12 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
   }, { signal });
   root.querySelector<HTMLSelectElement>('[aria-label="View"]')!.addEventListener('change', event => {
     options.onView((event.target as HTMLSelectElement).value as ViewMode);
+  }, { signal });
+  root.querySelector<HTMLSelectElement>('[aria-label="Interface"]')!.addEventListener('change', event => {
+    options.onInterface((event.target as HTMLSelectElement).value as InterfaceChoice);
+  }, { signal });
+  root.querySelector<HTMLSelectElement>('[aria-label="Interface accent"]')!.addEventListener('change', event => {
+    options.onAccent((event.target as HTMLSelectElement).value as Accent);
   }, { signal });
   const fullscreen = root.querySelector<HTMLButtonElement>('.fullscreen')!;
   fullscreen.addEventListener('click', options.onFullscreen, { signal });
@@ -113,6 +122,7 @@ export function createUI(root: HTMLElement, canvas: HTMLCanvasElement, options: 
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds as the Keeper.<br>Collect gems. Choose upgrades. Survive until dawn.`;
   return {
+    appearance(id: ThemeId) { themeSelect.value = id; },
     fullscreen(available: boolean, active: boolean) {
       fullscreen.hidden = !available;
       fullscreen.textContent = active ? 'Exit fullscreen' : 'Fullscreen';
