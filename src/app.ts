@@ -31,7 +31,9 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     onDisplayChange: suspend,
     onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) }), clock = createClock();
   let viewMode: ViewMode = 'close';
-  let presentation: WorldPresentation = createPresentation(themes.woodland!);
+  let presentation: WorldPresentation;
+  try { presentation = createPresentation(themes.woodland!); }
+  catch (error) { host.dispose(); throw error; }
   let activeAssets: PreparedAssets | undefined;
   let preparation: AbortController | undefined;
   let generation = 0, preparing = false;
