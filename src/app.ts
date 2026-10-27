@@ -1,3 +1,4 @@
+import { bindPageLifetime } from './browser/session.ts';
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
 import { validateContent } from './content-validation.ts';
 import { releaseChoice, selectUpgrade } from './progression.ts';
@@ -167,11 +168,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     if (screen === 'choosing') suspendedChoice = true;
     else if (screen === 'playing') { pauseRun(run, true); syncScreen(false); }
   }
-  window.addEventListener('blur', suspend, { signal: host.signal });
-  window.addEventListener('pagehide', event => { if (event.persisted) suspend(); else dispose(); }, { signal: host.signal });
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) suspend(); else clock.reset();
-  }, { signal: host.signal });
+  bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
   host.root.addEventListener('focusout', () => {
     input.clear();
     queueMicrotask(() => {

@@ -10,6 +10,7 @@
 | Active session and mount point | `src/application.ts` |
 | Viewport and mount-point sizing | `src/application.css` |
 | Measurement, fullscreen, frame loop and lifetime signal | `src/browser/host.ts` |
+| Page visibility, blur and page-exit binding | `src/browser/session.ts` |
 | Bounded fixed-step timing | `src/browser/clock.ts` |
 | Relative swept-circle intersection | `src/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/browser/audio.ts` |
@@ -21,6 +22,8 @@
 The entrypoint guards stale imports and disposes the application on HMR. Each game owns its DOM, scoped styles and async preparation. Pending completions must be invalidated when their session ends.
 
 The host owns a stable focusable surface and one frame loop. Starting is idempotent; disposal during a frame prevents rescheduling. Disposal cancels scheduling, aborts listeners, disconnects observation and removes the root. Renderers own their backing buffers and graphics resources.
+
+`bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder.
 
 The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
 

@@ -1,0 +1,64 @@
+.hollow-app { --ink: #e4e9d5; --dim: #95b1a5; --gold: #edc07d; height: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--ink); background: #0c2428; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
+.hollow-app * { box-sizing: border-box; }
+.hollow-app [hidden] { display: none !important; }
+.hollow-app button { font: inherit; color: inherit; border: 1px solid #9cbaaa40; background: #133135; border-radius: 5px; min-height: 42px; padding: 10px 17px; cursor: pointer; }
+.hollow-app button:hover { border-color: var(--gold); background: #244344; }
+.hollow-app button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.hollow-app .hollow-hud { min-height: 76px; padding: 14px clamp(18px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #a8c7ad1f; background: #10292d; z-index: 1; }
+.hollow-app .hollow-brand { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 750; letter-spacing: .14em; }
+.hollow-app .hollow-mark { font-size: 36px; font-weight: 400; line-height: 1; color: var(--gold); }
+.hollow-app .hollow-brand small { display: block; color: var(--dim); font: 8px monospace; letter-spacing: .14em; margin-top: 7px; }
+.hollow-app .hollow-instruments { display: flex; align-items: center; gap: 28px; font: 12px monospace; color: var(--gold); }
+.hollow-app kbd { margin-left: 12px; font: 12px monospace; color: var(--dim); }
+.hollow-app .hollow-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; isolation: isolate; }
+.hollow-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; }
+.hollow-app .hollow-canvas { display: block; width: 100%; height: 100%; }
+.hollow-app .hollow-location { position: absolute; left: clamp(18px, 4vw, 48px); top: 24px; pointer-events: none; display: flex; align-items: center; gap: 13px; font: 10px monospace; letter-spacing: .08em; color: #c0d2bb; }
+.hollow-app .hollow-location > span { border: 1px solid #9cbaaa40; border-radius: 50%; padding: 8px; color: var(--gold); }
+.hollow-app .hollow-location small { display: block; font: 11px 'Avenir Next', system-ui, sans-serif; color: var(--dim); margin-top: 5px; letter-spacing: 0; }
+.hollow-app .hollow-menu-layer { position: absolute; inset: 0; display: flex; align-items: center; padding: clamp(18px, 4vw, 52px); overflow: auto; background: linear-gradient(90deg, #081d26ed 0%, #0b2328df 36%, #0b232890 59%, #0b232815 100%); }
+.hollow-app .hollow-menu { width: min(470px, 100%); margin: auto 0; padding: 12px 0; }
+.hollow-app .hollow-eyebrow { font: 9px monospace; letter-spacing: .14em; color: var(--gold); line-height: 1.8; }
+.hollow-app h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: clamp(48px, 6.4vw, 82px); line-height: .98; letter-spacing: -.055em; margin: 22px 0; color: #f0ead1; }
+.hollow-app .hollow-description { font-size: 14px; line-height: 1.8; color: #b4c8ba; max-width: 360px; }
+.hollow-app .hollow-facts { display: flex; gap: 20px; font: 8px monospace; letter-spacing: .09em; color: var(--gold); margin: 26px 0; }
+.hollow-app .hollow-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; max-width: 380px; }
+.hollow-app .hollow-actions button { font-size: 12px; }
+.hollow-app .hollow-actions .hollow-primary { flex-basis: 100%; max-width: 330px; display: flex; justify-content: space-between; background: var(--gold); color: #183236; border-color: var(--gold); font-size: 14px; font-weight: 700; padding: 14px 19px; }
+.hollow-app .hollow-controls { font-size: 10px; line-height: 2; color: var(--dim); }
+.hollow-app .hollow-controls b { font-weight: 600; color: #c6d8c6; }
+.hollow-app .hollow-controls span { padding: 0 7px; }
+.hollow-app .hollow-settings { display: flex; gap: 8px; margin-top: 18px; }
+.hollow-app .hollow-settings button { font-size: 10px; padding: 6px 12px; min-height: 34px; }
+.hollow-app .hollow-results { display: block; color: var(--gold); font: 12px monospace; line-height: 1.7; margin: 20px 0; }
+.hollow-app .hollow-status, .hollow-app .hollow-audio-status { color: var(--gold); font-size: 11px; line-height: 1.6; }
+.hollow-app .hollow-footer { position: relative; min-height: 47px; padding: 12px clamp(18px, 4vw, 48px); display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #10292d; border-top: 1px solid #a8c7ad1f; }
+.hollow-app .hollow-hint, .hollow-app .hollow-footer-note { font: 8px monospace; letter-spacing: .08em; color: var(--dim); }
+.hollow-app .hollow-touch { display: none; }
+.hollow-app:not([data-screen="playing"]) .hollow-location { opacity: 0; }
+@media (pointer: coarse), (max-width: 760px) {
+  .hollow-app .hollow-touch { display: flex; width: 100%; justify-content: space-between; gap: 12px; }
+  .hollow-app .hollow-touch > div { display: flex; gap: 10px; }
+  .hollow-app .hollow-touch button { width: 66px; height: 54px; padding: 5px; font-size: 25px; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .hollow-app .hollow-touch [data-control="jump"] { width: 88px; border-color: #edc07d88; color: var(--gold); }
+  .hollow-app .hollow-touch small { font: 9px monospace; vertical-align: middle; }
+  .hollow-app .hollow-footer { min-height: 80px; padding: 10px 18px max(10px, env(safe-area-inset-bottom)); }
+  .hollow-app .hollow-hint, .hollow-app .hollow-footer-note { display: none; }
+  .hollow-app .hollow-hud { min-height: 64px; padding: 10px 16px; }
+  .hollow-app .hollow-brand { font-size: 9px; letter-spacing: .08em; gap: 7px; }
+  .hollow-app .hollow-brand small { font-size: 7px; }
+  .hollow-app .hollow-instruments { gap: 10px; font-size: 10px; }
+  .hollow-app .hollow-instruments button { padding: 8px 12px; font-size: 11px; }
+  .hollow-app kbd { display: none; }
+  .hollow-app .hollow-menu-layer { background: #0a2227df; }
+  .hollow-app h1 { font-size: 56px; }
+  .hollow-app .hollow-location { top: 15px; font-size: 8px; }
+}
+@media (max-height: 600px) {
+  .hollow-app .hollow-hud { min-height: 48px; padding-top: 6px; padding-bottom: 6px; }
+  .hollow-app .hollow-menu-layer { align-items: flex-start; }
+  .hollow-app .hollow-menu { padding-top: 8px; }
+  .hollow-app h1 { font-size: 45px; margin: 14px 0; }
+  .hollow-app .hollow-footer { min-height: 42px; }
+  .hollow-app .hollow-touch button { height: 42px; }
+}
