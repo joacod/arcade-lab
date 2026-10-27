@@ -39,4 +39,20 @@ Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, 
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/skybreak.md) for pickups, boss patterns, tuning and source ownership.
 
+## Clockwork Hollow
+
+![Clockwork Hollow: a brass keeper explores mossy aqueducts and glowing machinery](docs/images/clockwork-hollow.png)
+
+Guide a little brass keeper through **The Waking Aqueduct**, an original handcrafted platforming route in mechanical ruins reclaimed by nature. Cross broken spans, avoid copper thorns, collect optional wind-up motes and wake the old bell. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
+
+| Control | Action |
+| --- | --- |
+| A/D / left and right arrows | Move |
+| Space / W / Up / Z | Jump; hold for height, release for a short hop |
+| Touch arrows + Jump | Move and jump with independent buttons |
+| Escape / P / Pause | Pause; use Resume journey to continue |
+| Fullscreen / Exit fullscreen | Change display mode from the menus |
+
+Falling or touching thorns ends the attempt. Try again or Restart journey starts a fresh run. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/clockwork-hollow.md).
+
 See [README](README.md) for local setup.

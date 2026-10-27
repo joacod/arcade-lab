@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateRecipe } from 'audiobits';
+import { hollowRecipes } from '../src/platformer/sound-recipes.ts';
 import { clearingRecipes } from '../src/sound-recipes.ts';
 import { skybreakRecipes } from '../src/skybreak/sound-recipes.ts';
 import { createRun, stepRun, takeEvents } from '../src/game.ts';
@@ -11,7 +12,7 @@ import { equip } from '../src/progression.ts';
 import { enemies } from '../src/content.ts';
 
 test('authored AudioBits recipes and JSON round trips validate against the installed runtime', () => {
-  for (const [game, recipes] of Object.entries({ clearing: clearingRecipes, skybreak: skybreakRecipes })) {
+  for (const [game, recipes] of Object.entries({ clearing: clearingRecipes, skybreak: skybreakRecipes, hollow: hollowRecipes })) {
     for (const [cue, recipe] of Object.entries(recipes)) {
       for (const input of [recipe, JSON.parse(JSON.stringify(recipe))]) {
         const result = validateRecipe(input);

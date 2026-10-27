@@ -1,3 +1,4 @@
+import { bindPageLifetime } from '../browser/session.ts';
 import type { GameSession } from '../application.ts';
 import { createHost } from '../browser/host.ts';
 import { createClock, FIXED_STEP } from '../browser/clock.ts';
@@ -51,9 +52,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       if (!disposed && screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade) suspend();
     });
   }, { signal: host.signal });
-  window.addEventListener('blur', suspend, { signal: host.signal });
-  window.addEventListener('pagehide', event => { if (event.persisted) suspend(); else dispose(); }, { signal: host.signal });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(); else clock.reset(); }, { signal: host.signal });
+  bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
   ui.show('title'); ui.update(run);
   host.start(now => {
     if (screen === 'playing') {
