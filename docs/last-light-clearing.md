@@ -60,6 +60,8 @@ Paths below are relative to `src/`.
 
 `world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Canvas is the initial presentation; Three.js and vgpu implementations load only when selected. They use the host's frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax; Bloom applies the transform and its inverse in shaders. Renderers own backing resolution, with Bloom's limits in `bloomTuning`.
 
+`three/garden.ts` powers the **Prism Garden** and **Ember Conservatory** appearances and loads only when selected. Vite's `build.chunkSizeWarningLimit` is set to 600 kB to accommodate this optional renderer.
+
 `prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Lanternwood Canvas silhouettes.
 
 Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas and garden share clip helpers and art manifests; atlas UVs are per actor, with half-texel insets for smooth sampling. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.

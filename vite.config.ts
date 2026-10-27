@@ -11,6 +11,8 @@ export default defineConfig(({ command }) => ({
   } }],
   // Optimize the lazy dependency upfront on the server, avoiding a mid-run dev reload.
   optimizeDeps: { include: ['three', 'vgpu'] },
+  // Allow the optional Three.js renderer while retaining warnings above 600 kB.
+  build: { chunkSizeWarningLimit: 600 },
   resolve: { alias: command === 'serve' && existsSync(localManifest)
     ? [{ find: /^\.\/local-appearances\.ts$/, replacement: localManifest }] : [] },
 }));

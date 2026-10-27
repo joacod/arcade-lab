@@ -43,4 +43,4 @@ Each game's sound adapter owns recipes, event mapping, batch coalescing, priorit
 
 Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` for input or lifecycle changes; install Chromium with `pnpm exec playwright install chromium` if needed. Renderer-specific checks belong with the owning game's documentation.
 
-The [three-game review](three-game-review.md) records the concrete comparison, the focus-binding extraction, boundaries deliberately kept local and remaining performance/verification limits.
+The [three-game review](three-game-review.md) explains the shared focus binding and the boundaries kept local to each game.
