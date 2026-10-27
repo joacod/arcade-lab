@@ -55,6 +55,24 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 
 Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay, source ownership and architecture evaluation](docs/clockwork-hollow.md).
 
+## Midnight Circuit
+
+![Midnight Circuit: Rook fights security enforcers in a rain-soaked neon street](docs/images/midnight-circuit.png)
+
+The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstreets** and **The Power Station**, then break the blackout by defeating the **Circuit Warden**. Align in the ground-depth lane, chain a three-hit combo, clear crowds with a heavy strike and jump into a flying kick. Authored encounters mix fast Strikers and committed Bruisers before the Warden's charge and ground-impact patterns. Three lives, repair cells and a station health refill support the roughly 4–6 minute first-run pace.
+
+| Control | Action |
+| --- | --- |
+| WASD / arrows | Move and align in depth |
+| J | Light combo; press again to chain |
+| K | Heavy strike |
+| Space, then J / K | Jump, then flying kick |
+| Touch arrows + Strike / Heavy / Jump | Independent movement and action buttons |
+| Escape / P / Pause | Pause; use Resume fight to continue |
+| Fullscreen / Exit fullscreen | Change display mode from the menus |
+
+Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay, source ownership and the fourth-genre architecture evaluation](docs/midnight-circuit.md).
+
 See the [three-game architecture review](docs/three-game-review.md) for shared-system decisions.
 
 See [README](README.md) for local setup.

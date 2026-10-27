@@ -1,0 +1,87 @@
+.circuit-app { box-sizing: border-box; width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #0b101d; color: #f6eedb; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
+.circuit-app * { box-sizing: border-box; }
+.circuit-app [hidden] { display: none !important; }
+.circuit-app button { font: inherit; color: inherit; background: #172333; border: 1px solid #6c8b9c55; border-radius: 3px; cursor: pointer; min-height: 38px; padding: 8px 14px; }
+.circuit-app button:hover { background: #253448; border-color: #6cf4db; }
+.circuit-app button:focus-visible { outline: 2px solid #68f5dc; outline-offset: 3px; }
+.circuit-app button:disabled { cursor: default; opacity: .35; }
+.circuit-app .circuit-hud { min-height: 0; flex: 0 0 68px; padding: 12px clamp(14px, 3vw, 38px); display: flex; gap: 28px; align-items: center; background: #0b101df2; border-bottom: 1px solid #68849d33; z-index: 2; }
+.circuit-app .circuit-wordmark { font-size: 25px; font-weight: 950; font-style: italic; color: #77f8d8; letter-spacing: -.1em; display: flex; align-items: center; gap: 14px; }
+.circuit-app .circuit-wordmark span { font: 9px monospace; letter-spacing: .12em; max-width: 65px; color: #c3d0d8; }
+.circuit-app .circuit-vitals { width: min(260px, 30vw); }
+.circuit-app .circuit-vitals > span { display: flex; justify-content: space-between; font: 10px monospace; letter-spacing: .12em; margin-bottom: 6px; }
+.circuit-app meter { display: block; width: 100%; height: 8px; border: none; background: #253142; accent-color: #72f4cd; }
+.circuit-app meter::-webkit-meter-bar { background: #253142; border: none; border-radius: 0; }
+.circuit-app meter::-webkit-meter-optimum-value { background: #72f4cd; border-radius: 0; }
+.circuit-app .circuit-score { margin-left: auto; font: bold 20px monospace; text-align: right; }
+.circuit-app .circuit-score small { display: block; font: 8px monospace; color: #99aebd; letter-spacing: .18em; margin-bottom: 3px; }
+.circuit-app .circuit-stage { position: relative; flex: 1; min-height: 0; isolation: isolate; }
+.circuit-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; }
+.circuit-app .circuit-canvas { display: block; width: 100%; height: 100%; }
+.circuit-app .circuit-location { position: absolute; top: 20px; left: clamp(16px, 3vw, 38px); pointer-events: none; text-shadow: 0 2px 6px #07101c; font: 11px monospace; letter-spacing: .1em; }
+.circuit-app .circuit-location small { display: block; font: 9px monospace; color: #9cc4c9; margin-top: 7px; letter-spacing: .04em; }
+.circuit-app .circuit-combo { position: absolute; top: 76px; right: 28px; font: italic 800 32px system-ui; color: #fff0b5; pointer-events: none; text-shadow: 3px 3px #ba4d76; }
+.circuit-app .circuit-combo.is-hot { color: #83ffe3; }
+.circuit-app .circuit-boss { position: absolute; left: 25%; right: 25%; bottom: 22px; pointer-events: none; }
+.circuit-app .circuit-boss span { display: flex; justify-content: space-between; gap: 8px; font: 10px monospace; letter-spacing: .12em; margin-bottom: 8px; }
+.circuit-app .circuit-boss small { font-size: 8px; color: #b8a2bd; }
+.circuit-app .circuit-boss meter::-webkit-meter-optimum-value { background: #fa7995; }
+.circuit-app .circuit-menu-layer { position: absolute; inset: 0; overflow: auto; padding: 32px clamp(24px, 6vw, 85px); display: flex; align-items: center; background: linear-gradient(90deg,#080e1af7 0%,#0b1121e8 40%,#0b112133 85%); }
+.circuit-app .circuit-menu { max-width: 510px; padding: 22px 0; }
+.circuit-app .circuit-eyebrow { font: 9px monospace; letter-spacing: .16em; color: #94c9c7; margin: 0 0 22px; }
+.circuit-app h1 { font: italic 950 clamp(42px, 6.6vw, 86px)/.91 system-ui; letter-spacing: -.07em; margin: 0 0 23px; }
+.circuit-app h1 em { color: #79f7d8; font-style: inherit; }
+.circuit-app .circuit-description { color: #b2c3cf; max-width: 340px; font-size: 14px; line-height: 1.75; }
+.circuit-app .circuit-facts { display: flex; gap: 20px; font: 9px monospace; color: #e4bf93; letter-spacing: .08em; margin: 23px 0; }
+.circuit-app .circuit-actions { display: flex; gap: 9px; flex-wrap: wrap; margin: 22px 0; max-width: 360px; }
+.circuit-app .circuit-actions button { text-align: left; font-size: 12px; }
+.circuit-app .circuit-actions .circuit-primary { width: 100%; display: flex; justify-content: space-between; background: #79f7d8; color: #0b242a; border-color: #79f7d8; font-weight: 800; padding: 14px 19px; }
+.circuit-app .circuit-actions .circuit-primary:hover { background: #b8ffe8; }
+.circuit-app .circuit-instructions { font: 10px/1.9 monospace; color: #8ca6b7; }
+.circuit-app .circuit-instructions b { color: #d4dcdb; font-weight: 500; }
+.circuit-app .circuit-settings { display: flex; gap: 9px; margin-top: 18px; }
+.circuit-app .circuit-settings button { font: 10px monospace; }
+.circuit-app .circuit-results { display: block; white-space: pre-line; font: 12px/1.9 monospace; color: #f2ce9d; border-left: 2px solid #79f7d8; padding-left: 15px; }
+.circuit-app .circuit-display-status,.circuit-app .circuit-sound-status { font: 10px/1.5 monospace; color: #f1bf9b; max-width: 340px; }
+.circuit-app .circuit-footer { flex: 0 0 auto; background: #0b101d; border-top: 1px solid #68849d33; padding: 9px 28px; z-index: 2; }
+.circuit-app .circuit-hint { font: 9px monospace; letter-spacing: .03em; color: #d5dfdd; text-align: center; }
+.circuit-app .circuit-hint span { color: #7a94a5; }
+.circuit-app .circuit-touch { display: none; justify-content: space-between; align-items: center; gap: 12px; }
+.circuit-app .circuit-pad { display: grid; grid-template-columns: repeat(3,42px); grid-template-rows: repeat(3,32px); gap: 2px; }
+.circuit-app .circuit-pad button { padding: 0; min-height: 0; font-size: 20px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.circuit-app [data-control="up"] { grid-column: 2; }
+.circuit-app [data-control="left"] { grid-column: 1; grid-row: 2; }
+.circuit-app .circuit-pad > span { grid-column: 2; grid-row: 2; align-self: center; justify-self: center; color: #365164; }
+.circuit-app [data-control="right"] { grid-column: 3; grid-row: 2; }
+.circuit-app [data-control="down"] { grid-column: 2; grid-row: 3; }
+.circuit-app .circuit-attack-buttons { display: flex; gap: 8px; align-items: center; }
+.circuit-app .circuit-attack-buttons button { border-radius: 50%; width: 58px; height: 58px; padding: 0; font: italic 700 22px system-ui; touch-action: none; user-select: none; -webkit-user-select: none; }
+.circuit-app .circuit-attack-buttons small { display: block; font: 7px monospace; margin-top: 2px; letter-spacing: .06em; }
+.circuit-app [data-control="light"] { border-color: #78f5d5; color: #84ffdc; width: 66px; height: 66px; }
+.circuit-app [data-control="heavy"] { border-color: #c480a6; color: #f4a3c3; }
+.circuit-app button[data-held] { background: #3d596b; border-color: #b3ffe8; }
+@media (pointer: coarse), (max-width: 850px) {
+  .circuit-app .circuit-touch { display: flex; }
+  .circuit-app .circuit-hint { display: none; }
+  .circuit-app .circuit-footer { padding: 7px max(12px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)); }
+  .circuit-app .circuit-hud { flex-basis: 60px; gap: 14px; padding-top: 10px; padding-bottom: 10px; }
+  .circuit-app .circuit-wordmark span { display: none; }
+  .circuit-app .circuit-score { font-size: 17px; }
+  .circuit-app .circuit-vitals { width: min(250px, 35vw); }
+  .circuit-app .circuit-boss { left: 10%; right: 10%; }
+  .circuit-app .circuit-location { top: 15px; font-size: 10px; }
+  .circuit-app .circuit-location small { max-width: 320px; font-size: 8px; }
+  .circuit-app .circuit-menu-layer { padding: 12px 24px; background: #080e1ae8; align-items: flex-start; }
+  .circuit-app .circuit-menu { padding: 20px 0; width: 100%; }
+  .circuit-app h1 { font-size: clamp(43px, 11vw, 65px); }
+  .circuit-app .circuit-description { font-size: 13px; }
+  .circuit-app .circuit-eyebrow { font-size: 8px; margin-bottom: 20px; }
+}
+@media (max-height: 550px) and (min-width: 600px) {
+  .circuit-app .circuit-hud { flex-basis: 50px; padding-top: 5px; padding-bottom: 5px; }
+  .circuit-app .circuit-touch { position: absolute; bottom: 12px; left: 12px; right: 12px; pointer-events: none; opacity: .8; }
+  .circuit-app .circuit-touch button { pointer-events: auto; }
+  .circuit-app .circuit-footer { padding: 5px; }
+  .circuit-app .circuit-boss { bottom: 10px; left: 28%; right: 28%; }
+  .circuit-app .circuit-menu-layer { padding: 8px 30px; }
+}

@@ -11,6 +11,7 @@
 | Viewport and mount-point sizing | `src/application.css` |
 | Measurement, fullscreen, frame loop and lifetime signal | `src/browser/host.ts` |
 | Page visibility, blur, page-exit and deferred focus binding | `src/browser/session.ts` |
+| Keyboard/button holds, press edges and independent touch capture | `src/browser/buttons.ts` |
 | Bounded fixed-step timing | `src/browser/clock.ts` |
 | Relative swept-circle intersection | `src/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/browser/audio.ts` |
@@ -24,6 +25,8 @@ The entrypoint guards stale imports and disposes the application on HMR. Each ga
 The host owns a stable focusable surface and one frame loop. Starting is idempotent; disposal during a frame prevents rescheduling. Disposal cancels scheduling, aborts listeners, disconnects observation and removes the root. Renderers own their backing buffers and graphics resources.
 
 `bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder. `bindSessionFocus` also shares clear-input and deferred focusout handling, ignoring callbacks after host abortion. Sessions supply their own focus predicate, so different play controls and menu rules stay local.
+
+`bindButtons` shares physical keyboard/button capture across button-based controls. It owns keyboard aliases, independent pointer captures, rising edges, release/cancellation and abort cleanup. Each simulation step consumes one held/pressed snapshot; game-local input adapters translate it into actions. Gesture-based movement remains local to its existing owners. Sessions clear input at display and gameplay transitions and through the focus/lifetime bindings.
 
 The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
 
@@ -44,3 +47,5 @@ Each game's sound adapter owns recipes, event mapping, batch coalescing, priorit
 Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` for input or lifecycle changes; install Chromium with `pnpm exec playwright install chromium` if needed. Renderer-specific checks belong with the owning game's documentation.
 
 The [three-game review](three-game-review.md) explains the shared focus binding and the boundaries kept local to each game.
+
+The [fourth-genre evaluation](midnight-circuit.md#what-the-fourth-genre-revealed) covers the fourth genre and the shared button-capture extraction. Melee timing, lane contact geometry, encounter gates, AI and projected animation remain game-specific.
