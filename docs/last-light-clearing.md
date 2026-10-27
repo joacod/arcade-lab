@@ -4,7 +4,7 @@
 
 The read-only gameplay reference is [Last Light Clearing in joacod/godot-games](https://github.com/joacod/godot-games/tree/2fc1de05248537b21cf9b9eed656ce877d3e1561/survivors), pinned to **`2fc1de05248537b21cf9b9eed656ce877d3e1561`**. Its [design](https://github.com/joacod/godot-games/blob/2fc1de05248537b21cf9b9eed656ce877d3e1561/survivors/docs/DESIGN.md), typed Resources, and gameplay scripts informed this browser adaptation. No Godot scenes, assets, architecture, or test suites were transplanted. Keep this reference unless deliberately updating it.
 
-The source of numerical tuning is [`src/content.ts`](../src/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn retains the original three-minute rules; Brief dusk supplies a shorter round through the same implementation. Artwork is original local SVG; see [provenance](../src/art/README.md).
+The source of numerical tuning is [`src/content.ts`](../src/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn retains the original three-minute rules; Brief dusk supplies a shorter round through the same implementation. The original local SVG appearances and animated CC0 Ember Ruins use the same rules. Optional Mosslight artwork stays local to development. See [provenance](../src/art/README.md).
 
 ## Gameplay semantics
 
@@ -33,3 +33,7 @@ Camera framing constants live in [`src/view.ts`](../src/view.ts), separately fro
 **Whole arena** fits the full arena with its boundary padding and letterboxing. Both modes preserve the same geometry, collision, spawning, weapon ranges, and global targeting. View selection persists across retries and title transitions within the session.
 
 Visible entries keep their world-space warning rings. Offscreen pending entries get restrained inset screen-edge arrows. The elite keeps an arrow and ELITE label while offscreen, including its entry warning. These cues read existing run state; there is no second spawn machine, enemy radar, or minimap. All world content uses one transform, and the floating movement joystick stays in CSS coordinates after world drawing.
+
+## Visual settings
+
+Appearance chooses an art bundle, cosmetic environment, effect palette, and default interface. Classic, Rune, and Glass can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.

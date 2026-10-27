@@ -8,6 +8,7 @@ import { createPresentation } from './presentation.ts';
 import { createUI, type Screen, type MenuAction } from './ui.ts';
 import { clearing, configurations, type ConfigurationId } from './content.ts';
 import { themes, type ThemeId } from './themes.ts';
+import { resolvedSkin, type InterfaceChoice, type Accent } from './interface.ts';
 import { createAssets } from './assets.ts';
 import { createSound } from './sound.ts';
 import { createViewport, type ViewMode } from './view.ts';
@@ -24,24 +25,35 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   const host = createHost(container, { onDisplayChange: suspend,
     onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) }), clock = createClock();
   let viewMode: ViewMode = 'close';
-  const presentation = createPresentation(host.ctx, themes.woodland);
+  const presentation = createPresentation(host.ctx, themes.woodland!);
+  let appearance: ThemeId = 'woodland', interfaceChoice: InterfaceChoice = 'match', accent: Accent = 'default';
   let configuration: ConfigurationId = 'clearing';
   const newRun = () => createRun(undefined, configurations[configuration].round);
   let run = newRun(), screen: Screen = 'title', disposed = false, suspendedChoice = false;
   const confirmations = new Set<string>(), pointers = new Set<number>();
   const input = bindInput(host.canvas, () => screen === 'playing', host.signal);
   const sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-  const assets = createAssets((image, message) => {
+  const assets = createAssets((ready, message) => {
     if (disposed) return;
-    presentation.setImage(image); ui.assetStatus(message);
+    if (ready) {
+      appearance = ready.id;
+      presentation.setAppearance(ready.theme, ready.images);
+      host.root.dataset.theme = appearance;
+      applyInterface();
+    }
+    ui.assetStatus(message);
+    if (message.startsWith('Artwork unavailable')) ui.appearance(appearance);
   });
   const ui = createUI(host.root, host.canvas, {
     signal: host.signal, onAction: act, onChoose: choose,
     onConfiguration(id) {
       if (screen !== 'title') return;
-      configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(); ui.update(run);
+      configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); ui.update(run);
     },
-    onTheme: selectTheme, onMute: value => sound.setMuted(value), onVolume: value => sound.setVolume(value),
+    onTheme: selectTheme,
+    onInterface(choice) { interfaceChoice = choice; applyInterface(); },
+    onAccent(choice) { accent = choice; applyInterface(); },
+    onMute: value => sound.setMuted(value), onVolume: value => sound.setVolume(value),
     onView(mode) { suspend(); viewMode = mode; },
     onFullscreen() {
       void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
@@ -50,9 +62,16 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
   ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
   function selectTheme(id: ThemeId) {
     if (screen !== 'title' && screen !== 'paused') return;
-    host.root.dataset.theme = id;
-    presentation.setTheme(themes[id]); assets.load(themes[id]);
+    const theme = themes[id];
+    if (theme) assets.load(id, theme);
   }
+  function applyInterface() {
+    host.root.dataset.skin = resolvedSkin(interfaceChoice, themes[appearance]!.interface);
+    host.root.dataset.accent = accent;
+  }
+  host.root.dataset.theme = appearance;
+  applyInterface();
+  presentation.reset(run);
   selectTheme('woodland');
 
   function transition(next: Screen, focus = true) {
@@ -74,14 +93,14 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
       if (document.hidden || !document.hasFocus()) return;
       sound.activate(); sound.reset();
       run = newRun(); suspendedChoice = false;
-      presentation.reset(); transition('playing');
+      presentation.reset(run); transition('playing');
     } else if (action === 'pause' && screen === 'playing') {
       pauseRun(run, true); syncScreen();
     } else if (action === 'resume' && screen === 'paused') {
       if (!document.hidden && document.hasFocus()) { sound.activate(); pauseRun(run, false); syncScreen(); }
     } else if (action === 'title') {
       sound.reset(); run = newRun(); pauseRun(run, true); suspendedChoice = false;
-      presentation.reset(); transition('title');
+      presentation.reset(run); transition('title');
     }
   }
   function suspend() {
@@ -125,7 +144,9 @@ export function mountClearing(container: HTMLElement): { dispose(): void } {
     }
     if (screen === 'playing') {
       const steps = clock.advance(now), move = input.read();
-      for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, move, FIXED_STEP);
+      for (let i = 0; i < steps && run.status === 'active'; i++) {
+        stepRun(run, move, FIXED_STEP); presentation.observe(run);
+      }
       syncScreen();
     }
     const events = takeEvents(run);

@@ -226,7 +226,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       override resume() { evidence.gestures.push(navigator.userActivation.isActive); return super.resume(); }
     };
   });
-  await page.route('**/src/content.ts', async route => {
+  await page.route(/\/src\/content\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     const body = `${await response.text()}
       clearing.round.duration = 4; clearing.round.eliteAt = 2.5;
@@ -238,6 +238,14 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     `;
     await route.fulfill({ response, body });
   });
+  // Test-only access to the actual run, without a production debug API.
+  await page.route(/\/src\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const originalCreateRun = createRun;
+      createRun = (...args) => { const run = originalCreateRun(...args); window.runEvidence = run; return run; };
+    ` });
+  });
   await page.clock.install();
   await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
@@ -245,7 +253,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await expect(page.locator('.asset-status')).toBeHidden();
   for (const [configuration, theme] of [['clearing', 'woodland'], ['dusk', 'moonglass']]) {
     await page.getByLabel('Round configuration').selectOption(configuration!);
-    await page.getByLabel('Visual theme').selectOption(theme!);
+    await page.getByLabel('Appearance', { exact: true }).selectOption(theme!);
     await expect(page.locator('.asset-status')).toBeHidden();
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', theme!);
     await page.getByRole('button', { name: 'Enter the clearing' }).click();
@@ -264,6 +272,38 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
       await page.keyboard.press('Escape');
       await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+      const snapshot = () => page.evaluate(() => {
+        const run = (window as unknown as { runEvidence: unknown }).runEvidence;
+        return JSON.stringify(run, (_, value) => value instanceof Map ? [...value] : value);
+      });
+      await page.evaluate(() => {
+        const w = window as unknown as { runEvidence: unknown; retainedRun: unknown };
+        w.retainedRun = w.runEvidence;
+      });
+      const retained = await snapshot();
+      const shell = page.locator('.clearing-app');
+      await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
+      await expect(shell).toHaveAttribute('data-theme', 'ember');
+      await expect(shell).toHaveAttribute('data-skin', 'rune');
+      await page.getByLabel('Interface', { exact: true }).selectOption('glass');
+      await page.getByLabel('Interface accent').selectOption('violet');
+      await expect(shell).toHaveAttribute('data-skin', 'glass');
+      await expect(shell).toHaveAttribute('data-accent', 'violet');
+      await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
+      await expect(shell).toHaveAttribute('data-theme', 'moonglass');
+      await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
+      await expect(shell).toHaveAttribute('data-theme', 'ember');
+      await expect(shell).toHaveAttribute('data-skin', 'glass');
+      await page.getByLabel('Interface', { exact: true }).selectOption('match');
+      await expect(shell).toHaveAttribute('data-skin', 'rune');
+      await page.clock.fastForward(60000);
+      expect(await snapshot()).toBe(retained);
+      expect(await page.evaluate(() => {
+        const w = window as unknown as { runEvidence: unknown; retainedRun: unknown };
+        return w.runEvidence === w.retainedRun;
+      })).toBe(true);
+      await expect(shell).toHaveAttribute('data-screen', 'paused');
+      await expect(page.getByLabel('View', { exact: true })).toHaveValue('arena');
       await page.getByRole('button', { name: 'Resume surviving' }).click();
     }
     for (let i = 0; i < 12 && await page.locator('.clearing-app').getAttribute('data-screen') !== 'victory'; i++) {
@@ -319,9 +359,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 
   lethal = false;
   // Vite may inline the sheets, so replace the source with a failed local reference.
-  await page.route('**/src/themes.ts', async route => {
+  await page.route(/\/src\/themes\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nthemes.woodland.source = '/missing-art.svg';` });
+    await route.fulfill({ response, body: `${await response.text()}\nthemes.woodland.art.images.actors = '/missing-art.svg';` });
   });
   await page.route('**/missing-art.svg', route => route.abort());
   await page.addInitScript(() => {
