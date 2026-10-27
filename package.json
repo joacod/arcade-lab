@@ -12,7 +12,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "check": "tsc --noEmit && node --test tests/*.test.mjs && vite build",
+    "check": "tsc --noEmit && node --test \"tests/unit/**/*.test.mjs\" && vite build",
     "check:browser": "playwright test"
   },
   "devDependencies": {
