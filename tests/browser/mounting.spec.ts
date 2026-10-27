@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('browser host owns one loop and cannot schedule work after disposal', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   const result = await page.evaluate(async () => {
     const path = '/src/browser/host.ts';
     const { createHost } = await import(path);
@@ -35,7 +36,7 @@ test('browser host owns one loop and cannot schedule work after disposal', async
 test('application replaces a running game, isolates styles, and remounts a fresh clearing', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  // Observe real composition without adding a production inspection API or second-game UI.
+  // Observe real composition without adding a production inspection API.
   await page.route(/\/src\/main\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.applicationProbe = application;` });
@@ -55,6 +56,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
     };
   });
   await page.clock.install(); await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     // Wrap the installed fake clock, whose initialization replaces the native frame methods.
@@ -101,7 +103,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   // Supersede initial artwork preparation several times, then let only the final session finish.
   await page.evaluate(async () => {
     const path = '/src/app.ts'; const { mountClearing } = await import(path);
-    for (let i = 0; i < 4; i++) (window as any).applicationProbe.mount({ mount: mountClearing });
+    for (let i = 0; i < 4; i++) (window as any).applicationProbe.mount({ mount: (host: HTMLElement) => mountClearing(host, () => {}) });
   });
   await expect(page.locator('.asset-status')).toBeHidden();
   await expect(page.locator('.clearing-app')).toHaveCount(1);

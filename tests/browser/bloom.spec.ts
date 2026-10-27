@@ -13,6 +13,7 @@ test('Abyss switching and native device loss preserve the current run', async ({
       'window.devices ??= []; window.devices.push(gpu); const output = surface') });
   });
   await page.clock.install(); await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Enter the clearing' }).click();
@@ -86,6 +87,7 @@ test('Three materials and smooth atlas UVs follow the selected definition', asyn
         linear: [...atlas.values()].every(t => t.magFilter === THREE.LinearFilter && !t.generateMipmaps), uv: [...keeper.card.geometry.getAttribute('uv').array] };`) });
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   const result = await page.evaluate(async () => {
     const paths = ['/src/three/garden.ts', '/src/themes.ts', '/src/assets.ts', '/src/game.ts'];
     const [{ createGarden }, { themes }, { prepareAssets }, { createRun }] = await Promise.all(paths.map(p => import(p)));
