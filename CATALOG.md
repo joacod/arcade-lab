@@ -21,7 +21,7 @@ Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances w
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [Clearing gameplay and visual settings](docs/last-light-clearing.md) and [art setup and provenance](src/art/README.md), including the optional development-only Mosslight appearance.
+See [game rules and implementation](docs/last-light-clearing.md) and [art setup and provenance](src/art/README.md), including the optional development-only Mosslight appearance.
 
 ## Skybreak
 
@@ -37,6 +37,6 @@ Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, 
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
 | Escape / Pause | Pause; use Resume flight to continue |
 
-The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Both games pause and clear held input on focus loss or display changes, and restart with fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [Skybreak gameplay](docs/skybreak.md) for pickups, boss patterns and tuning.
+The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/skybreak.md) for pickups, boss patterns, tuning and source ownership.
 
 See [README](README.md) for local setup.

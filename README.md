@@ -23,7 +23,7 @@ See the [game catalog](CATALOG.md) for the available games, screenshots and cont
 
 Built with TypeScript and Vite, using Canvas 2D, Three.js and vgpu/WebGPU for graphics. [AudioBits](https://github.com/joacod/audiobits) is the selected library for all game sound; integration is pending.
 
-- [Architecture](docs/architecture.md): engine design, source map and local verification.
+- [Architecture](docs/architecture.md): shared engine ownership and local verification.
 - [Development guidance](AGENTS.md): contributor and agent instructions.
 
 Code is available under the [MIT license](LICENSE).

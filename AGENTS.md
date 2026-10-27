@@ -23,5 +23,5 @@
 ## Documentation and verification
 
 - Keep README a short, human-facing project introduction and usage guide. Link to [CATALOG.md](CATALOG.md) for game descriptions, screenshots and controls instead of growing README with each game.
-- Keep durable development rules here, current implementation details in [architecture](docs/architecture.md), and rules/tuning in the [Clearing](docs/last-light-clearing.md) and [Skybreak](docs/skybreak.md) references. Retain asset provenance and licenses. Remove obsolete guidance and temporary audit/experiment reports after incorporating any still-useful decisions into current docs; Git history retains the old records.
+- Use CATALOG.md as the shared index for game-specific docs. Keep shared guidance independent of game names, inventories and implementation details. Document decisions where they are owned, avoid duplicating source constants or rules, and remove obsolete reports. Retain asset provenance and licenses.
 - Keep verification local, small and meaningful. `pnpm check` runs types, invariant tests and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices or expand the browser/device matrix without an explicit request.

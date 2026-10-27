@@ -33,3 +33,43 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 ## Visual settings
 
 Appearance chooses an art bundle or procedural treatment, cosmetic environment, effect palette, and default interface. Classic, Rune, Glass and Abyss can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.
+
+## Implementation ownership
+
+Paths below are relative to `src/`.
+
+| Responsibility | Owner |
+| --- | --- |
+| Composition and session settings | `app.ts` |
+| Simulation | `game.ts`, `game-state.ts`, `combat.ts`, `progression.ts`, `weapons/` |
+| Typed content and validation | `content.ts`, `content-validation.ts` |
+| Physical input and camera transform | `browser/input.ts`, `view.ts`, `screen-overlay.ts` |
+| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts`, `vgpu/` |
+| Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
+| UI and sound adapters | `ui.ts`, `interface.ts`, `style.css`, `sound.ts` |
+
+`mountClearing` owns composition and returns session cleanup while artwork prepares. If initial Canvas construction throws, it disposes the already-created host before propagating the error. Session settings survive run replacement; pending preparations are aborted and invalidated on disposal. Styles stay scoped to `.clearing-app`.
+
+## Renderer and asset lifetimes
+
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Canvas is the initial presentation; Three.js and vgpu implementations load only when selected. They use the host's frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax; Bloom applies the transform and its inverse in shaders. Renderers own backing resolution, with Bloom's limits in `bloomTuning`.
+
+`prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Lanternwood Canvas silhouettes.
+
+Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas and garden share clip helpers and art manifests; atlas UVs are per actor, with half-texel insets for smooth sampling. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.
+
+GPU implementations reuse bounded resources and release them on failure and disposal. Garden releases geometry, materials, textures, instance buffers, shadows and renderer/context resources. Bloom owns the device, surface, buffers and pipelines; aborted acquisition releases its eventual device, and intentional disposal suppresses device-loss recovery.
+
+Vite pre-optimizes graphics dependencies without fetching them for Canvas startup. Its WGSL integration strips the development `?import` marker before invoking the loader; shader reflection stays at build time. `skipLibCheck` accommodates the installed vgpu declarations while application types remain strict.
+
+## Renderer verification
+
+The browser checks exercise appearance replacement on a retained run, projection, atlas bindings, artwork failure, disposal and GPU loss. Headless Chromium without a WebGPU adapter verifies fallback and skips GPU-only assertions. On a capable installation:
+
+```sh
+pnpm check:browser --grep 'Abyss switching' --headed
+pnpm exec vgpu check src/vgpu/field.wgsl --require-validation
+pnpm exec vgpu check src/vgpu/organisms.wgsl --require-validation
+```
+
+Shader validation requires an available adapter. See [shared verification commands](architecture.md#local-verification) for the standard checks.
