@@ -27,7 +27,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   try {
     host = createHost(container, { className: 'skybreak-app', label: 'Skybreak',
       surfaceLabel: 'Skybreak playfield. WASD or arrows to move, Space or J to fire, Shift or K to roll. Drag to steer and fire.',
-      onDisplayChange: suspend, onFullscreenChange() {} });
+      onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value));
     input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
@@ -41,6 +41,9 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       if (disposed) return;
       if (intent === 'quit') { onExit(); return; }
       if (intent === 'pause') { suspend(); return; }
+      if (intent === 'fullscreen') {
+        void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
+      }
       if (document.hidden || !document.hasFocus()) return;
       if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
         sound.reset(); sound.activate(); run = createRun(); presentation.reset(); transition('playing');
@@ -59,7 +62,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
-    ui.show('title'); ui.update(run);
+    ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
       if (screen === 'playing') {
         const steps = clock.advance(now);

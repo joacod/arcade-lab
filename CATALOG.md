@@ -36,6 +36,7 @@ Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, 
 | Shift / K / Roll button | Evade; recharges between rolls |
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
 | Escape / Pause | Pause; use Resume flight to continue |
+| Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and source ownership.
 

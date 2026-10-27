@@ -25,7 +25,8 @@
 .skybreak-app .skybreak-primary:hover { background: #e0ffe1; }
 .skybreak-app .skybreak-controls { color: var(--sky-dim); font-size: 10px; line-height: 1.8; margin: 24px 0 10px; }
 .skybreak-app .skybreak-mute { background: none; border: 0; padding: 5px 0; font-size: 10px; color: var(--sky-dim); min-height: 30px; }
-.skybreak-app .skybreak-audio-status { color: #efd1a0; font-size: 11px; }
+.skybreak-app .skybreak-settings { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 12px; }
+.skybreak-app .skybreak-audio-status, .skybreak-app .skybreak-display-status { color: #efd1a0; font-size: 11px; }
 .skybreak-app .skybreak-footer { padding: 10px max(18px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #789da52b; }
 .skybreak-app .skybreak-footer output { font: 12px monospace; display: block; }
 .skybreak-app .skybreak-wave { font: 9px monospace; letter-spacing: .05em; color: var(--sky-dim); display: block; margin-top: 5px; }
