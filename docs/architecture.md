@@ -49,3 +49,5 @@ Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` f
 The [three-game review](three-game-review.md) explains the shared focus binding and the boundaries kept local to each game.
 
 The [fourth-genre evaluation](midnight-circuit.md#what-the-fourth-genre-revealed) covers the fourth genre and the shared button-capture extraction. Melee timing, lane contact geometry, encounter gates, AI and projected animation remain game-specific.
+
+The [fifth-genre evaluation](obsidian-duel.md#what-the-fifth-genre-revealed) covers a fixed side-view arena, delayed CPU observations and match rounds. Guard height, bilateral trades and stun recovery remain local fighting rules. Shared browser and sound owners are reused unchanged.

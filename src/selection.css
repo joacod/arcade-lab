@@ -9,7 +9,7 @@
 .arcade-selection .arcade-kicker { font: 10px monospace; letter-spacing: .13em; color: #acd6ba; }
 .arcade-selection h1 { font-size: clamp(40px, 6vw, 68px); font-weight: 650; letter-spacing: -.06em; line-height: 1.1; margin: 16px 0; }
 .arcade-selection .arcade-intro { color: #a1b4ad; font-size: 14px; line-height: 1.5; margin-bottom: 32px; }
-.arcade-selection .arcade-games { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.arcade-selection .arcade-games { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .arcade-selection .arcade-game { min-width: 0; padding: 0; text-align: left; color: inherit; background: #18292d; border: 1px solid #9bb9a62b; border-radius: 7px; overflow: hidden; cursor: pointer; font: inherit; transition: border-color .15s, transform .15s; }
 .arcade-selection .arcade-game:hover { border-color: #b9d9bb; transform: translateY(-3px); }
 .arcade-selection .arcade-game:focus-visible { outline: 2px solid #c0e5c1; outline-offset: 4px; }

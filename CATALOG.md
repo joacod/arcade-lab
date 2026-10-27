@@ -73,6 +73,26 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 
 Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay, source ownership and the fourth-genre architecture evaluation](docs/midnight-circuit.md).
 
+## Obsidian Duel
+
+![Obsidian Duel: Nera and Kael trade strikes on the storm-lit terrace of the Tempest Citadel](docs/images/obsidian-duel.png)
+
+Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
+
+| Control | Action |
+| --- | --- |
+| A/D / left and right arrows | Move; face the opponent automatically |
+| W / Up / Space | Jump |
+| S / Down | Crouch |
+| J / K / L | Light / heavy / special |
+| Crouch + J / airborne J or K | Low sweep / overhead jump attack |
+| Shift | Guard; hold crouch as well to stop sweeps |
+| Touch directions + Light / Heavy / Special / Guard | Independent held controls and attack presses |
+| Escape / P / Pause | Pause; use Resume duel to continue |
+| Fullscreen / Exit fullscreen | Change display mode from the menus |
+
+Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules, source ownership and the fifth-genre architecture review](docs/obsidian-duel.md).
+
 See the [three-game architecture review](docs/three-game-review.md) for shared-system decisions.
 
 See [README](README.md) for local setup.
