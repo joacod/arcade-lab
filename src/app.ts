@@ -1,4 +1,4 @@
-import { bindPageLifetime } from './browser/session.ts';
+import { bindPageLifetime, bindSessionFocus } from './browser/session.ts';
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
 import { validateContent } from './content-validation.ts';
 import { releaseChoice, selectUpgrade } from './progression.ts';
@@ -169,12 +169,8 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     else if (screen === 'playing') { pauseRun(run, true); syncScreen(false); }
   }
   bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
-  host.root.addEventListener('focusout', () => {
-    input.clear();
-    queueMicrotask(() => {
-      if (!disposed && (screen === 'playing' ? document.activeElement !== host.surface : !host.root.contains(document.activeElement))) suspend();
-    });
-  }, { signal: host.signal });
+  bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
+    shouldSuspend: () => screen === 'playing' ? document.activeElement !== host.surface : !host.root.contains(document.activeElement) });
   host.root.addEventListener('keydown', event => {
     if (event.code === 'Enter' || event.code === 'Space') confirmations.add(event.code);
   }, { signal: host.signal, capture: true });

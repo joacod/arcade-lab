@@ -1,4 +1,4 @@
-import { bindPageLifetime } from '../browser/session.ts';
+import { bindPageLifetime, bindSessionFocus } from '../browser/session.ts';
 import type { GameSession } from '../application.ts';
 import { createHost } from '../browser/host.ts';
 import { createClock, FIXED_STEP } from '../browser/clock.ts';
@@ -46,12 +46,8 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   host.root.addEventListener('keydown', event => {
     if (event.code === 'Escape' && screen === 'playing') { event.preventDefault(); suspend(); }
   }, { signal: host.signal });
-  host.root.addEventListener('focusout', () => {
-    input.clear();
-    queueMicrotask(() => {
-      if (!disposed && screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade) suspend();
-    });
-  }, { signal: host.signal });
+  bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
+    shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade });
   bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
   ui.show('title'); ui.update(run);
   host.start(now => {
