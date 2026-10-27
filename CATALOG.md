@@ -93,6 +93,26 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 
 Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules, source ownership and the fifth-genre architecture review](docs/obsidian-duel.md).
 
+## Blastline
+
+![Blastline: Nova opens a firing lane through an occupied industrial station](docs/images/blastline.png)
+
+Make an entrance. Catch the last ride out. Run, jump and blast through **Border Station** and **Foundry Run**, breaking cover, dropping elevated defenses and setting off explosive barrel chains. Start with **Nova** and her automatic rifle, rescue **Bolt** to unlock a slower rocket launcher, then swap between both weapon styles. Disable power relays, break the fortified **Bastion** and extract before each facility collapses. The intended first-play pace is 3–5 minutes.
+
+| Control | Action |
+| --- | --- |
+| A/D / left and right arrows | Run |
+| Space | Jump; release for a short hop |
+| J | Hold to fire |
+| W/S / up and down arrows | Aim vertically; combine with movement for diagonals |
+| K | Throw a fused grenade |
+| Q | Switch operator after rescuing Bolt |
+| Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
+| Escape / P / Pause | Pause; use Resume operation to continue |
+| Fullscreen / Exit fullscreen | Change display mode from the menus |
+
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay, source ownership and the sixth-genre architecture assessment](docs/blastline.md).
+
 See the [three-game architecture review](docs/three-game-review.md) for shared-system decisions.
 
 See [README](README.md) for local setup.

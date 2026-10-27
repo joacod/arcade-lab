@@ -5,6 +5,7 @@ for (const game of [
   { name: 'Clockwork Hollow', path: '/src/platformer/app.ts', entry: 'mountHollow', message: 'Canvas 2D is unavailable.' },
   { name: 'Midnight Circuit', path: '/src/brawler/app.ts', entry: 'mountCircuit', message: 'Canvas 2D is unavailable.' },
   { name: 'Obsidian Duel', path: '/src/fighter/app.ts', entry: 'mountDuel', message: 'Canvas 2D is unavailable.' },
+  { name: 'Blastline', path: '/src/run-gun/app.ts', entry: 'mountBlastline', message: 'Canvas 2D is unavailable.' },
   { name: 'Skybreak', path: '/src/skybreak/app.ts', entry: 'mountSkybreak', message: 'Canvas 2D is unavailable.' },
 ]) {
   test(`${game.name} releases its host when initial presentation construction fails`, async ({ page }) => {
@@ -47,7 +48,7 @@ for (const game of [
     expect(errors).toEqual([]);
     // The failed attempt must not prevent a fresh, working session.
     await page.getByRole('button', { name: game.name === 'Clearing' ? 'Play Last Light Clearing' : `Play ${game.name}`, exact: true }).click();
-    await expect(page.locator(game.name === 'Clearing' ? '.world-canvas' : game.name === 'Skybreak' ? '.skybreak-canvas' : game.name === 'Midnight Circuit' ? '.circuit-canvas' : game.name === 'Obsidian Duel' ? '.duel-canvas' : '.hollow-canvas')).toBeVisible();
+    await expect(page.locator(game.name === 'Clearing' ? '.world-canvas' : game.name === 'Blastline' ? '.blast-canvas' : game.name === 'Skybreak' ? '.skybreak-canvas' : game.name === 'Midnight Circuit' ? '.circuit-canvas' : game.name === 'Obsidian Duel' ? '.duel-canvas' : '.hollow-canvas')).toBeVisible();
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
     expect(errors).toEqual([]);

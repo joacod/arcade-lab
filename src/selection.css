@@ -15,7 +15,7 @@
 .arcade-selection .arcade-game:focus-visible { outline: 2px solid #c0e5c1; outline-offset: 4px; }
 .arcade-selection .arcade-game:disabled { opacity: .65; cursor: wait; }
 .arcade-selection .arcade-cover { display: block; position: relative; }
-.arcade-selection svg { display: block; width: 100%; height: auto; }
+.arcade-selection svg,.arcade-selection .arcade-cover img { display: block; width: 100%; height: auto; }
 .arcade-selection .arcade-number { position: absolute; top: 16px; left: 18px; font: 8px monospace; letter-spacing: .1em; color: #d9eee1; }
 .arcade-selection .arcade-card-copy { display: block; padding: 20px; }
 .arcade-selection .arcade-game-title { display: flex; justify-content: space-between; gap: 8px; font-size: clamp(17px, 1.6vw, 23px); font-weight: 650; letter-spacing: -.03em; }
@@ -28,7 +28,7 @@
 @media (max-width: 760px) {
   .arcade-selection .arcade-games { grid-template-columns: 1fr; }
   .arcade-selection .arcade-edition { display: none; }
-  .arcade-selection .arcade-cover svg { max-height: 185px; object-fit: cover; }
+  .arcade-selection .arcade-cover svg,.arcade-selection .arcade-cover img { max-height: 185px; object-fit: cover; }
   .arcade-selection .arcade-card-copy { padding: 20px; }
   .arcade-selection .arcade-game-title { font-size: 22px; }
 }

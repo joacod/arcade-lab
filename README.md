@@ -15,7 +15,7 @@ pnpm dev
 
 Open the local URL printed by Vite, then choose a game. **Game selection** in the game's menus returns to the collection. Games fill the browser viewport, with fullscreen available where supported.
 
-Play **Last Light Clearing** (survival), **Skybreak** (aerial arcade), **Clockwork Hollow** (a three-level platform adventure), **Midnight Circuit** (a street brawler), or **Obsidian Duel** (a one-on-one arcade fighter). See the [game catalog](CATALOG.md) for screenshots and controls.
+Play **Last Light Clearing** (survival), **Skybreak** (aerial arcade), **Clockwork Hollow** (a three-level platform adventure), **Midnight Circuit** (a street brawler), **Obsidian Duel** (a one-on-one arcade fighter), or **Blastline** (destructible run-and-gun action). See the [game catalog](CATALOG.md) for screenshots and controls.
 
 `pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
 

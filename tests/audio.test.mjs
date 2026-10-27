@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateRecipe } from 'audiobits';
+import { blastRecipes } from '../src/run-gun/sound-recipes.ts';
 import { duelRecipes } from '../src/fighter/sound-recipes.ts';
 import { circuitRecipes } from '../src/brawler/sound-recipes.ts';
 import { hollowRecipes } from '../src/platformer/sound-recipes.ts';
@@ -14,7 +15,7 @@ import { equip } from '../src/progression.ts';
 import { enemies } from '../src/content.ts';
 
 test('authored AudioBits recipes and JSON round trips validate against the installed runtime', () => {
-  for (const [game, recipes] of Object.entries({ clearing: clearingRecipes, skybreak: skybreakRecipes, hollow: hollowRecipes, circuit: circuitRecipes, duel: duelRecipes })) {
+  for (const [game, recipes] of Object.entries({ clearing: clearingRecipes, skybreak: skybreakRecipes, hollow: hollowRecipes, circuit: circuitRecipes, duel: duelRecipes, blastline: blastRecipes })) {
     for (const [cue, recipe] of Object.entries(recipes)) {
       for (const input of [recipe, JSON.parse(JSON.stringify(recipe))]) {
         const result = validateRecipe(input);

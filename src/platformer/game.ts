@@ -1,3 +1,4 @@
+import { overlaps } from '../collision.ts';
 import { journey, movement as m, type Level, type Rect, type Vent } from './content.ts';
 
 export interface Action { move: number; jumpPressed: boolean; jumpHeld: boolean }
@@ -24,9 +25,6 @@ export interface Run {
   enemies: Enemy[];
   vents: ('idle' | 'warning' | 'active')[];
   events: HollowEvent[];
-}
-export function overlaps(a: Rect, b: Rect): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 function playerAt(at: { x: number; y: number }): Player {
   return { x: at.x, y: at.y, vx: 0, vy: 0, grounded: false, facing: 1, coyote: 0, buffer: 0, jumpCut: false };
