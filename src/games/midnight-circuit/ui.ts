@@ -1,3 +1,4 @@
+import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { stageOf, type Run } from './game.ts';
 import type { Control } from './input.ts';
@@ -11,11 +12,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.querySelector('.circuit-stage')!.prepend(surface);
   const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
   pause.addEventListener('click', () => act('pause'), { signal });
+  const results = createMenuReadout('Run results');
   const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.circuit-stage')!, {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: `<output class="circuit-results" aria-label="Run results" hidden></output>`,
+    game: results.element,
     controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J IN AIR</b> flying kick<br>Tap J three times for a finisher. Step out of red telegraphs.<p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -25,7 +27,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, root.querySelector<HTMLButtonElement>(`[data-control="${key}"]`)!])) as Record<Control, HTMLButtonElement>;
-  const description = menu.description, results = root.querySelector<HTMLOutputElement>('.circuit-results')!;
+  const description = menu.description;
   let current: Screen = 'title';
   return { controls,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
@@ -34,7 +36,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       current = screen;
       menu.heading.textContent = screen === 'title' ? 'Midnight Circuit' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'title' ? "Fight through the backstreets and defeat the Circuit Warden at the power station." : screen === 'paused' ? '' : screen === 'interlude' ? 'The backstreets are behind you. The Warden is waiting at the heart of the grid. Health restored for the final push.' : screen === 'victory' ? 'Circuit Warden defeated.' : 'No lives remaining.';
-      results.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(screen);
+      results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(screen);
 
       for (const button of Object.values(controls)) button.disabled = screen !== 'playing';
       menu.show(screen, focus);
@@ -53,7 +55,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       root.querySelector<HTMLElement>('.circuit-boss')!.hidden = !boss || current !== 'playing';
       const bar = root.querySelector<HTMLMeterElement>('[aria-label="Circuit Warden health"]')!;
       if (boss) { bar.max = boss.maxHealth; bar.value = boss.health; }
-      results.textContent = `${run.score.toLocaleString()} POINTS  /  ${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.hits} hits landed · ${run.bestCombo} best chain · ${run.lives} lives remaining${run.status === 'victory' ? '\nCITY GRID: ONLINE' : ''}`;
+      results.update(`${run.score.toLocaleString()} POINTS  /  ${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.hits} hits landed · ${run.bestCombo} best chain · ${run.lives} lives remaining${run.status === 'victory' ? '\nCITY GRID: ONLINE' : ''}`);
     },
   };
 }

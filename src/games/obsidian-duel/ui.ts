@@ -1,3 +1,4 @@
+import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { fighters, type FighterId } from './content.ts';
 import type { Match } from './game.ts';
@@ -12,11 +13,15 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.querySelector('.duel-stage')!.prepend(surface);
   const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
   pause.addEventListener('click', () => act('pause'), { signal });
+  const results = createMenuReadout('Match results');
+  const gameContent = document.createElement('div');
+  gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
+  gameContent.append(results.element);
   const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.duel-stage')!, {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div><output class="duel-results" aria-label="Match results" hidden></output>`,
+    game: gameContent,
     controls: `<b>A D / ← →</b> move　 <b>W / ↑</b> jump　 <b>S / ↓</b> crouch<br><b>J</b> light　 <b>K</b> heavy　 <b>L</b> special　 <b>SHIFT</b> guard<br>Crouch + J sweeps. Jump + J kicks overhead.<br>Stand guard for overheads. Crouch guard for sweeps.<br><span>Let a heavy miss. Step in while they recover.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -37,7 +42,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     show(screen: Screen, focus = true) {
       current = screen;
       root.querySelector<HTMLElement>('.duel-roster')!.hidden = screen !== 'title';
-      root.querySelector<HTMLElement>('.duel-results')!.hidden = !['paused', 'victory', 'defeat'].includes(screen);
+      results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
       menu.heading.textContent = screen === 'title' ? 'Obsidian Duel' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = screen === 'title' ? 'Win two rounds against the CPU. Choose your fighter.' : '';
 
@@ -61,7 +66,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       // Keep the live region quiet unless the announcement actually changes.
       if (banner.querySelector('strong')!.textContent !== title) banner.querySelector('strong')!.textContent = title;
       if (banner.querySelector('span')!.textContent !== sub) banner.querySelector('span')!.textContent = sub;
-      root.querySelector('.duel-results')!.textContent = `${fighters[m.fighters[0].kind].name.toUpperCase()}　${m.wins[0]} : ${m.wins[1]}　${fighters[m.fighters[1].kind].name.toUpperCase()}`;
+      results.update(`${fighters[m.fighters[0].kind].name.toUpperCase()}　${m.wins[0]} : ${m.wins[1]}　${fighters[m.fighters[1].kind].name.toUpperCase()}`);
     },
   };
 }

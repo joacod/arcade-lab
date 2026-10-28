@@ -44,6 +44,7 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 | Page visibility, blur, page-exit and deferred focus binding | `src/engine/browser/session.ts` |
 | Keyboard/button holds, press edges and independent touch capture | `src/engine/browser/buttons.ts` |
 | Configured game menus, tabs, actions, focus and common options | `src/engine/browser/menu.ts`, `menu.css` |
+| Labeled select/range fields and multiline result readouts | `src/engine/browser/menu-components.ts`, `menu-components.css` |
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
@@ -71,6 +72,10 @@ The home screen is the game catalog. Each card provides a cover, name, gameplay 
 The component owns tab navigation (including arrows, Home and End), action visibility and focus, mute/fullscreen buttons, notices and compact layout. Actions stay outside the scrollable content area. Changing screens returns to the Game panel; changing tabs never changes run state. Gameplay instruments and touch controls are hidden behind menus while retaining their layout space. Short/narrow viewports use the full viewport for the menu; unusually constrained content can scroll without moving the action bar.
 
 Games own configuration values, result updates, upgrade choices and action callbacks. The component never starts, pauses or resets simulation itself. Listeners use the host abort signal. Add game-specific fields only when they control actual game behavior or presentation; shared menus contain no game content.
+
+Compose the `game` and `options` content as DOM elements. Elements are inserted directly, preserving references and listeners; game-specific containers can still use authored HTML internally. `createSelectField` accepts a value-to-label record, an initial value and a typed `onChange` callback. `createRangeField` accepts numeric bounds, step, initial value and `onInput`. Both return a labeled `element` to append and the native `input` for programmatic updates, and both bind listeners to the supplied session signal. Setting an input value programmatically does not emit an intent. Put related fields in a `menu-fields` container for the shared responsive grid.
+
+`createMenuReadout` returns an `element` and `update(text)` for multiline scores or results. It starts hidden; the game controls visibility and formats its own summary. Unchanged text is not rewritten, and frame-driven updates do not announce as live status messages. Use the menu's notices for sound/display status. Keep HUD arrangements, health/XP displays, touch layouts and game-specific choice interactions local; menu actions and utility buttons already share their presentation and behavior through `createGameMenu`.
 
 ## Sound
 
