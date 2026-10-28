@@ -72,7 +72,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
+Choose Neon diorama (Three.js), Neon cinema (Three.js with a vgpu/WebGPU finish), or the original illustrated Canvas appearance in Options. Modeled fighters, neon facades, rain, shadows and bright impacts bring the streets to life, with distance-driven walking across all styles and procedural AudioBits sound. Appearance changes preserve the paused run; unavailable graphics retain a working style or restore Canvas. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
 
 ## Obsidian Duel
 

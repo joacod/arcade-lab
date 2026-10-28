@@ -10,7 +10,7 @@ export default defineConfig(({ command }) => ({
     return wgsl.transform.call(this, source, id.replace(/\?import$/, ''));
   } }],
   // Optimize the lazy dependency upfront on the server, avoiding a mid-run dev reload.
-  optimizeDeps: { include: ['three', 'vgpu', 'audiobits'] },
+  optimizeDeps: { include: ['three', 'three/addons/geometries/RoundedBoxGeometry.js', 'three/addons/utils/BufferGeometryUtils.js', 'vgpu', 'audiobits'] },
   // Allow the optional Three.js renderer while retaining warnings above 600 kB.
   build: { chunkSizeWarningLimit: 600 },
   resolve: { alias: command === 'serve' && existsSync(localManifest)
