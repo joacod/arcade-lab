@@ -1,7 +1,7 @@
-import { createElementLookup, setText, setProperty } from '../../engine/browser/dom.ts';
+import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { appearances, type Appearance } from './graphics.ts';
-import { createMenuReadout, createSelectField } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';

@@ -1,11 +1,12 @@
-import { createElementLookup, setText } from '../../engine/browser/dom.ts';
-import { createMenuReadout } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { appearances, type Appearance } from './themes.ts';
+import { createElementLookup, setText } from '../../common/ui/dom.ts';
+import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { results as summarize, type Run } from './game.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat' | 'interlude';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'retry' | 'continue';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void) {
   root.innerHTML = `<header class="hollow-hud"><div class="hollow-brand"><span class="hollow-mark">◷</span><div>CLOCKWORK HOLLOW<small>THE WAKING AQUEDUCT</small></div></div>
     <div class="hollow-instruments"><output aria-label="Motes collected">◇ 0 / 12</output><output class="hollow-progress" aria-label="Journey progress"></output><button data-intent="pause">Pause <kbd>Ⅱ</kbd></button></div></header>
     <main class="hollow-stage"><div class="hollow-location" aria-hidden="true"><span>01</span><div>THE WAKING AQUEDUCT<small>Follow the light. Wake the bell.</small></div></div>
@@ -16,11 +17,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
+  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'verdant', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element,
+    game: results.element, options: theme.element,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br><b>Escape / P</b> pause <span>·</span> Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

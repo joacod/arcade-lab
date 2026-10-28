@@ -1,3 +1,4 @@
+import { themes, type BlastTheme } from './themes.ts';
 import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
 import { forTiles } from './terrain.ts';
 import { readyToExtract } from './game.ts';
@@ -16,6 +17,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'blast-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.prepend(canvas);
+  let theme = themes.iron;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
   const rect = (x: number, y: number, w: number, h: number, color: string) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h)); };
@@ -26,7 +28,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y)); ctx.textAlign = 'left';
   }
   function human(x: number, y: number, operator: Operator, facing: number, stride: number, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
-    const bolt = operator === 'bolt', suit = bolt ? '#dca54c' : '#6cc7b4', dark = bolt ? '#6d654c' : '#325861';
+    const bolt = operator === 'bolt', { suit, dark } = theme.operators[operator];
     ctx.save(); ctx.translate(Math.round(x + 9), Math.round(y + 15)); ctx.scale(facing, 1);
     const step = airborne ? 3 : Math.round(Math.sin(stride) * 3);
     rect(-7, 8, 6, 8 + step, '#152c37'); rect(2, 8, 6, 8 - step, '#152c37');
@@ -48,10 +50,11 @@ export function createPresentation(surface: HTMLElement) {
   function background(v: BlastView, run: Run, time: number) {
     const foundry = run.missionIndex > 0;
     const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
-    gradient.addColorStop(0, foundry ? '#202b3a' : '#253f4b'); gradient.addColorStop(.62, foundry ? '#765447' : '#ad8465'); gradient.addColorStop(1, '#293e42');
+    const sky = foundry ? theme.foundrySky : theme.sky;
+    gradient.addColorStop(0, sky[0]); gradient.addColorStop(.62, sky[1]); gradient.addColorStop(1, sky[2]);
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, v.width, v.height);
     const sunX = v.width * .78 - v.x * .025, sunY = v.height * .23;
-    rect(sunX - 29, sunY - 24, 58, 48, '#eccd8c'); rect(sunX - 24, sunY - 30, 48, 60, '#eccd8c');
+    rect(sunX - 29, sunY - 24, 58, 48, theme.sun); rect(sunX - 24, sunY - 30, 48, 60, theme.sun);
     rect(sunX - 34, sunY + 9, 68, 3, foundry ? '#745649' : '#9b7d64');
     for (let layer = 0; layer < 3; layer++) {
       const factor = [.12, .28, .48][layer]!, spacing = [200, 290, 360][layer]!, base = 655 - v.y + layer * 8;
@@ -59,7 +62,7 @@ export function createPresentation(surface: HTMLElement) {
       for (let i = start; i < end; i++) {
         const x = i * spacing - v.x * factor, h = (layer === 2 ? 105 : 140) + ((i * 37 + layer * 21) % 5 + 5) % 5 * 22;
         const facade = spacing * (layer === 2 ? .58 : .72);
-        const color = ['#394a50', '#2b4248', '#263c42'][layer]!;
+        const color = theme.skyline[layer]!;
         rect(x, base - h, facade, h + v.height, color);
         if (layer > 0) {
           rect(x + 30, base - h - 90, 22, 100, color); rect(x + 27, base - h - 90, 28, 7, '#ba8c6b');
@@ -89,8 +92,8 @@ export function createPresentation(surface: HTMLElement) {
     for (let i = 0; i < 3; i++) line(0, 170 - v.y * .2 + i * 8, v.width, 195 - v.y * .2 + i * 8, '#1d373c66');
     for (let i = 0; i < 16; i++) {
       const x = ((i * 87 - v.x * .08 + (motion.matches ? 0 : time * (i % 2 ? 4 : -3))) % v.width + v.width) % v.width;
-      const y = (i * 97 + (motion.matches ? 0 : time * 5)) % v.height;
-      rect(x, y, 1, 1, i % 3 === 0 ? '#ffd39088' : '#e1cc9633');
+      const y = (i * 97 + (motion.matches ? 0 : time * (theme.weather === 'snow' ? 18 : 5))) % v.height;
+      rect(x, y, 1, 1, theme.weather === 'snow' ? '#e5f5ffbb' : i % 3 === 0 ? '#ffd39088' : '#e1cc9633');
     }
   }
   function world(run: Run, v: BlastView, time: number, playing: boolean) {
@@ -103,8 +106,8 @@ export function createPresentation(surface: HTMLElement) {
     }
     forTiles(t, { x: v.x - TILE, y: v.y - TILE, w: v.width + TILE * 2, h: v.height + TILE * 2 }, (i, r) => {
       const m = t.material[i]!, armored = m === 3, structure = m === 1;
-      rect(r.x, r.y, TILE, TILE, structure ? '#1a323d' : armored ? '#71594e' : '#776f57');
-      rect(r.x + 1, r.y + 2, TILE - 2, TILE - 3, structure ? '#2e4850' : armored ? '#92705a' : '#a1906d');
+      rect(r.x, r.y, TILE, TILE, structure ? theme.structure[0] : armored ? theme.armor[0] : theme.masonry[0]);
+      rect(r.x + 1, r.y + 2, TILE - 2, TILE - 3, structure ? theme.structure[1] : armored ? theme.armor[1] : theme.masonry[1]);
       rect(r.x + 2, r.y + TILE - 5, TILE - 4, 3, structure ? '#1c353e' : '#5d5e50');
       if (structure) { rect(r.x + 3, r.y + 4, 2, 2, '#748479'); rect(r.x + 19, r.y + 18, 2, 2, '#182b36'); line(r.x + 6, r.y + 6, r.x + 18, r.y + 18, '#3a5356'); }
       else {
@@ -112,7 +115,7 @@ export function createPresentation(surface: HTMLElement) {
         if (armored) { line(r.x + 4, r.y + 5, r.x + 19, r.y + 19, '#604e43', 3); line(r.x + 19, r.y + 5, r.x + 4, r.y + 19, '#604e43', 3); }
         if (t.health[i]! < materialHealth[m] * .75) { line(r.x + 11, r.y, r.x + 7, r.y + 12, '#302f30'); line(r.x + 7, r.y + 12, r.x + 16, r.y + 19, '#302f30'); }
       }
-      if (i >= t.columns && !t.material[i - t.columns]) { rect(r.x, r.y, TILE, 3, structure ? '#77918a' : '#d5ba80'); if (structure && Math.floor(i / t.columns) >= 27) for (let j = 0; j < 3; j++) rect(r.x + j * 8, r.y + 3, 4, 3, '#d0ad63'); }
+      if (i >= t.columns && !t.material[i - t.columns]) { rect(r.x, r.y, TILE, 3, structure ? theme.ledge : '#d5ba80'); if (structure && Math.floor(i / t.columns) >= 27) for (let j = 0; j < 3; j++) rect(r.x + j * 8, r.y + 3, 4, 3, '#d0ad63'); }
     });
     run.mission.checkpoints.forEach((cp, i) => {
       rect(cp.x + 2, cp.y - 20, 3, 49, '#7e9485'); rect(cp.x + 5, cp.y - 20, 22, 13, i <= run.checkpoint ? '#a1e6bc' : '#4e6a61');
@@ -154,7 +157,7 @@ export function createPresentation(surface: HTMLElement) {
     for (const e of run.enemies) {
       if (e.health <= 0 || e.x < v.x - 90 || e.x > v.x + v.width + 90) continue;
       ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y)); ctx.scale(e.facing, 1);
-      const heavy = e.kind !== 'guard', bastion = e.kind === 'bastion', suit = e.flash ? '#fff0b4' : heavy ? '#846e62' : '#687b74';
+      const heavy = e.kind !== 'guard', bastion = e.kind === 'bastion', suit = e.flash ? '#fff0b4' : theme.enemies[heavy ? 1 : 0];
       if (bastion) {
         rect(-32, 33, 64, 17, '#1c2e36'); for (let j = 0; j < 8; j++) rect(-29 + j * 8, 37, 4, 8, '#526261');
         rect(-26, 13, 52, 24, suit); rect(-22, 10, 44, 5, '#b2a182'); rect(-17, 0, 34, 17, '#42585c');
@@ -215,6 +218,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { consume,
+    applyTheme(next: BlastTheme) { theme = next; },
     reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; },
     draw(run: Run, host: { width: number; height: number; ratio: number }, playing: boolean, time: number) {
       if (disposed) return;

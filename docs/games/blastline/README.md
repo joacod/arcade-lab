@@ -14,6 +14,10 @@ Five lives, health and brief hit immunity support retries. Death redeploys at th
 
 Brick cover and armored cover can break. Riveted structural steel stays solid. Destruction opens firing lanes, removes support and creates lower routes. Structural foundations, power decks and stairs preserve access to every required objective after all destructible tiles disappear. The final machine is required; ordinary guards can be bypassed. A locked extraction pad never advances the mission. The HUD points toward the nearest required objective, then toward extraction.
 
+## Appearances
+
+Options → Appearance offers **Iron coast** and **Arctic relay**. Arctic relay adds a cold skyline, snowfall, icy ledges and alternate operator and machine colors across both missions. Warning colors and material silhouettes retain their meaning. Pause, switch, then Resume with terrain damage, objectives and projectiles intact. The choice survives restart and mission transitions until returning to Game selection.
+
 ## Source ownership
 
 | Responsibility | Owner in `src/games/blastline/` |
@@ -27,6 +31,7 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 | Fresh runs, respawn, checkpoints, rescue and mission progression | `game.ts` |
 | Action translation using shared button capture | `input.ts` |
 | Uniform camera, original pixel characters/scenery and bounded effects | `presentation.ts` |
+| Mission skies, material palettes, weather and operator/machine colors | `themes.ts` |
 | HUD, menus and announcements | `ui.ts`, `style.css` |
 | Original AudioBits recipes and local cue admission | `sound-recipes.ts`, `sound.ts` |
 | Browser composition, sound activation and disposal | `app.ts` |
@@ -41,8 +46,10 @@ All visuals, cover artwork and procedural sound recipes were created for this ga
 
 Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
+Appearance changes use the renderer’s `applyTheme` without replacing the run or terrain. Theme data owns visual material colors; collision and destructibility remain in gameplay content. Replacement artwork stays local, reusing the shared image loader only if it needs image preparation.
+
 The local state contract connects movement, combat and objectives. Browser composition reuses the shared host, clock, input, focus/lifetime bindings and AudioBits owner. Fixed populations and visible tile traversal bound the work.
 
 ## Local verification
 
-Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions and teardown. See the [shared commands](../../architecture.md#local-verification).
+Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions, appearance changes that preserve the live operation, and teardown. See the [shared commands](../../architecture.md#local-verification).

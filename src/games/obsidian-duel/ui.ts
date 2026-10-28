@@ -1,12 +1,13 @@
-import { createElementLookup, setText, setProperty } from '../../engine/browser/dom.ts';
-import { createMenuReadout } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { appearances, type Appearance } from './themes.ts';
+import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
+import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { fighters, type FighterId } from './content.ts';
 import type { Match } from './game.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'title';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, select: (id: FighterId) => void, mute: (muted: boolean) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, select: (id: FighterId) => void, mute: (muted: boolean) => void, appearance: (id: Appearance) => void) {
   root.innerHTML = `<header class="duel-hud"><div class="duel-health duel-player"><div><b class="duel-player-name">NERA</b><small>YOU <span class="duel-player-wins">◇ ◇</span></small></div><meter aria-label="Your health" min="0" max="100" value="100"></meter><span class="duel-player-special">STORMGLASS READY</span></div><div class="duel-clock"><small>BEST OF THREE</small><output aria-label="Round timer">75</output><span class="duel-round">ROUND 01</span></div><div class="duel-health duel-enemy"><div><b class="duel-enemy-name">KAEL</b><small><span class="duel-enemy-wins">◇ ◇</span> CPU</small></div><meter aria-label="Opponent health" min="0" max="100" value="100"></meter><span class="duel-enemy-special">RIFTBREAKER READY</span></div><button class="duel-pause" data-intent="pause" aria-label="Pause">Ⅱ</button></header>
   <main class="duel-stage"><div class="duel-arena-label">THE TEMPEST CITADEL <span>·</span> OBSIDIAN DUEL</div><div class="duel-announcement" aria-live="polite"><strong></strong><span></span></div>
   </main>
@@ -19,11 +20,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
+  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'tempest', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent,
+    game: gameContent, options: theme.element,
     controls: `<b>A D / ← →</b> move　 <b>W / ↑</b> jump　 <b>S / ↓</b> crouch<br><b>J</b> light　 <b>K</b> heavy　 <b>L</b> special　 <b>SHIFT</b> guard<br>Crouch + J sweeps. Jump + J kicks overhead.<br>Stand guard for overheads. Crouch guard for sweeps.<br><span>Let a heavy miss. Step in while they recover.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

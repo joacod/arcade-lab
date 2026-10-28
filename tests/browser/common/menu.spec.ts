@@ -79,9 +79,9 @@ test('shared menus fit compact screens and keep actions accessible across keyboa
 test('composed menu fields retain native labels, values and session-owned listeners', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
-    const path = '/src/engine/browser/menu-components.ts';
+    const path = '/src/common/ui/menu-components.ts';
     const { createSelectField, createRangeField, createMenuReadout } = await import(path);
-    const menuPath = '/src/engine/browser/menu.ts';
+    const menuPath = '/src/common/ui/menu.ts';
     const { createGameMenu } = await import(menuPath);
     const lifetime = new AbortController(), events: (string | number)[] = [];
     const field = createSelectField({ label: 'Difficulty', choices: { gentle: 'Gentle', brisk: 'Brisk' }, value: 'gentle', signal: lifetime.signal, onChange: (value: string) => events.push(value) });

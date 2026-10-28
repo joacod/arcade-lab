@@ -1,6 +1,6 @@
-import { createElementLookup, setText, setProperty, setAttribute } from '../../engine/browser/dom.ts';
-import { createMenuReadout, createSelectField } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
+import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
 import { themes } from './themes.ts';

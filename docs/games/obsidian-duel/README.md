@@ -16,6 +16,10 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 **Game setup** from pause or results returns to fighter selection. **Restart** begins a fresh match with the selected fighter.
 
+## Appearances
+
+Choose **Tempest citadel** or **Gilded dawn** in Options → Appearance. Gilded dawn replaces the storm with a warm sunrise, pale clouds, blue banners and alternate fighter costumes. Pause and switch, then Resume the same round with health, attacks and timer intact. The choice survives restart and Game setup until returning to Game selection.
+
 ## Source ownership
 
 | Owner | Responsibility |
@@ -24,6 +28,7 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 | `src/games/obsidian-duel/game.ts` | Pure fighter states, attack instances, contact, guard, projectiles and match rounds |
 | `src/games/obsidian-duel/cpu.ts` | Seeded decisions using delayed visible observations and ordinary action commands |
 | `src/games/obsidian-duel/input.ts` | Shared captured-button snapshots translated into fighting actions |
+| `src/games/obsidian-duel/themes.ts` | Stage palettes, weather, banners and fighter costume colors |
 | `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, articulated poses, original scenery and bounded contact effects |
 | `src/games/obsidian-duel/ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `src/games/obsidian-duel/sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |
@@ -39,10 +44,12 @@ All artwork is original procedural Canvas geometry, including the selection cove
 
 Guard height, projectiles, bilateral trades, stun exits and best-of-three ownership are local fighting rules. Their contact and progression semantics differ from a scrolling brawler's lane geometry, crowd coordination and encounter gates.
 
-Browser composition reuses the shared host, clock, input, focus/lifetime bindings and bounded AudioBits owner. The session clears input and resets timing at round-phase, display and menu transitions.
+Browser composition reuses the shared host, clock, input, focus/lifetime bindings and bounded AudioBits owner. Appearance changes update the existing renderer through `applyTheme`; costume colors are independent of move tuning and fighter collision bodies. New artwork belongs in this renderer or a game-local replacement, with image preparation shared only when needed.
+
+The session clears input and resets timing at round-phase, display and menu transitions.
 
 ## Local verification
 
-Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
+Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies appearance changes preserve the live match, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
 
 See the [shared commands](../../architecture.md#local-verification).

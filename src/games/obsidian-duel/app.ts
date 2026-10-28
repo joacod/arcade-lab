@@ -1,3 +1,4 @@
+import { themes, type Appearance } from './themes.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
@@ -28,6 +29,11 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     if(disposed)return;input?.clear();clock.reset();sound?.pause();
     if(screen==='playing'){pauseMatch(match,true);transition('paused',false);}
   }
+  function appearance(id: Appearance) {
+    if (disposed || screen === 'playing') return;
+    presentation?.applyTheme(themes[id]);
+    host.root.dataset.appearance = id;
+  }
   function act(intent: Intent){
     if(disposed)return;
     if(intent==='quit'){onExit();return;}
@@ -45,8 +51,9 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
   }
   try{
     sound=createSound(message=>{if(!disposed)ui.soundStatus(message);});
-    ui=createUI(host.root,host.surface,host.signal,act,id=>{if(screen==='title'){selected=id;match=createMatch(id);presentation?.reset();ui.update(match);}},value=>sound?.setMuted(value));
+    ui=createUI(host.root,host.surface,host.signal,act,id=>{if(screen==='title'){selected=id;match=createMatch(id);presentation?.reset();ui.update(match);}},value=>sound?.setMuted(value),appearance);
     presentation=createPresentation(host.surface);
+    appearance('tempest');
     input=bindInput(host.surface,ui.controls,()=>screen==='playing'&&match.phase==='fight',host.signal);
     host.root.addEventListener('keydown',event=>{if(!event.repeat&&['Escape','KeyP'].includes(event.code)&&screen==='playing'){event.preventDefault();suspend();}},{signal:host.signal});
     bindSessionFocus(host.root,{signal:host.signal,clearInput:()=>input?.clear(),suspend,

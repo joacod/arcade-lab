@@ -1,3 +1,4 @@
+import { themes, type DuelTheme } from './themes.ts';
 import { arena, fighters } from './content.ts';
 import type { DuelEvent, Fighter, Match } from './game.ts';
 import type { Screen } from './ui.ts';
@@ -11,6 +12,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'duel-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
+  let theme = themes.tempest;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let sparks: Spark[] = [], impacts: Impact[] = [], shake = 0, last = 0, disposed = false;
   function rect(x: number, y: number, w: number, h: number, fill: string | CanvasGradient) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
@@ -28,23 +30,23 @@ export function createPresentation(surface: HTMLElement) {
     rect(x - radius, y - radius, radius * 2, radius * 2, g);
   }
   function scenery(t: number, reduced: boolean) {
-    const sky = ctx.createLinearGradient(0, 0, 0, 560); sky.addColorStop(0, '#16192f'); sky.addColorStop(.6, '#49414f'); sky.addColorStop(1, '#151825'); rect(0, 0, 1000, 560, sky);
-    glow(570, 143, 240, '#a799d034'); oval(570, 143, 55, 55, '#cec6ca'); oval(570, 143, 48, 48, '#bab9c2');
+    const sky = ctx.createLinearGradient(0, 0, 0, 560); sky.addColorStop(0, theme.sky[0]); sky.addColorStop(.6, theme.sky[1]); sky.addColorStop(1, theme.sky[2]); rect(0, 0, 1000, 560, sky);
+    glow(570, 143, 240, '#a799d034'); oval(570, 143, 55, 55, theme.orb[0]); oval(570, 143, 48, 48, theme.orb[1]);
     path([524,135,552,148,537,165,574,155,587,177,599,142,621,126], '#9b9aaa55', 2);
     // Authored mountain silhouettes and an ancient ring suspended over the dueling terrace.
-    path([0,278,63,205,127,261,203,151,275,243,365,190,470,284,580,234,690,272,778,165,863,237,952,174,1000,216,1000,440,0,440], '#252b40', 1, true);
-    path([0,333,109,260,203,314,292,239,352,309,465,275,593,327,735,274,840,321,934,265,1000,314,1000,440,0,440], '#2c3040', 1, true);
+    path([0,278,63,205,127,261,203,151,275,243,365,190,470,284,580,234,690,272,778,165,863,237,952,174,1000,216,1000,440,0,440], theme.mountains[0], 1, true);
+    path([0,333,109,260,203,314,292,239,352,309,465,275,593,327,735,274,840,321,934,265,1000,314,1000,440,0,440], theme.mountains[1], 1, true);
     ctx.strokeStyle = '#a09aaf2c'; ctx.lineWidth = 15; ctx.beginPath(); ctx.arc(570, 250, 165, Math.PI * 1.08, Math.PI * 1.93); ctx.stroke();
     ctx.lineWidth = 2; ctx.strokeStyle = '#d4bda34a'; ctx.beginPath(); ctx.arc(570, 250, 178, Math.PI * 1.08, Math.PI * 1.93); ctx.stroke();
     for (let i = 0; i < 12; i++) { const a = Math.PI * (1.12 + i * .07); path([570 + Math.cos(a)*159,250+Math.sin(a)*159,570+Math.cos(a)*172,250+Math.sin(a)*172], '#bba28666', 3); }
     // Storm filaments glow continuously; reduced motion removes the periodic lightning flourish.
-    const storm = reduced ? .12 : .10 + Math.pow(Math.max(0, Math.sin(t * .65)), 20) * .38;
+    const storm = theme.weather === 'dawn' ? 0 : reduced ? .12 : .10 + Math.pow(Math.max(0, Math.sin(t * .65)), 20) * .38;
     ctx.globalAlpha = storm;
     path([770,0,732,52,758,65,713,116,737,125,699,185], '#d4bafb', 3);
     path([170,0,196,42,181,61,215,94,194,113], '#a3c9f4', 2); ctx.globalAlpha = 1;
     for (let i = 0; i < 6; i++) {
       const drift = reduced ? 0 : Math.sin(t * .055 + i) * 28;
-      oval(i * 220 - 35 + drift, 93 + i % 3 * 31, 190, 19 + i * 2, i % 2 ? '#24283c80' : '#3030446b');
+      oval(i * 220 - 35 + drift, 93 + i % 3 * 31, 190, 19 + i * 2, theme.clouds[i % 2 ? 0 : 1]);
     }
     // Rear balustrade, worn bronze pillars and fluttering storm banners.
     rect(0,350,1000,9,'#5d5259'); rect(0,359,1000,6,'#211f2e');
@@ -55,13 +57,13 @@ export function createPresentation(surface: HTMLElement) {
       path([x-24,144,x+52,144,x+43,126,x-15,126], '#66606b',1,true);
       rect(x-17,119,62,8,'#8b7880'); rect(x-21,412,72,14,'#76636b');
       const flutter = reduced ? 0 : Math.sin(t*1.4+x)*7;
-      path([x+24,156,x+80,161,x+78+flutter,287,x+51,268,x+24,298], '#682f4666',1,true);
+      path([x+24,156,x+80,161,x+78+flutter,287,x+51,268,x+24,298], theme.banner,1,true);
       path([x+48,184,x+62,205,x+48,226,x+34,205], '#d0a67f66',2);
       glow(x+14,320,70,'#ffae6d25');
       path([x-4,326,x+32,326,x+24,343,x+3,343], '#88706b',1,true);
       for (let j=0;j<3;j++) { const f = reduced ? 0 : Math.sin(t*5+j+x)*4; path([x+2+j*8,327,x+1+j*8+f,300-j*6,x+13+j*7,323],j===1?'#ffdf9c':'#d9946e',1,true); }
     }
-    const floor = ctx.createLinearGradient(0,420,0,560); floor.addColorStop(0,'#5b5260'); floor.addColorStop(.2,'#39333f'); floor.addColorStop(1,'#1b1c2b'); rect(0,420,1000,140,floor);
+    const floor = ctx.createLinearGradient(0,420,0,560); floor.addColorStop(0,theme.floor[0]); floor.addColorStop(.2,theme.floor[1]); floor.addColorStop(1,theme.floor[2]); rect(0,420,1000,140,floor);
     path([0,423,1000,423], '#b5a19366',2); path([0,432,1000,432], '#171d2b',3);
     for (let i=0;i<12;i++) path([500+(i-6)*66,423,500+(i-6)*140,560], '#151b2c77',1.5);
     for (const y of [453,490,546]) path([0,y,1000,y], '#74637744',1);
@@ -112,7 +114,7 @@ export function createPresentation(surface: HTMLElement) {
     else if(f.state==='wakeup'){ctx.translate(0,Math.max(0,f.stateTime/.3)*24);ctx.rotate(-f.stateTime*.8);}
     ctx.rotate(lean);ctx.translate(0,breathe);
     if(f.immune>0&&!down) { ctx.globalAlpha=reduced?.9:.83+.17*Math.sin(time*35); }
-    const cloth=nera?'#326f77':'#6e4650', dark=nera?'#203c51':'#323344', trim=def.color,skin=nera?'#cda99e':'#d7aa8f';
+    const { cloth, dark, trim } = theme.fighters[f.kind], skin=nera?'#cda99e':'#d7aa8f';
     // A split, flowing silk coat versus a broad armored mantle creates different silhouettes.
     if(nera){path([-17,-103,-38,-82,-34-Math.sin(time*4)*5,-31,-8,-49,10,-91], '#215767',1,true);path([-16,-107,-46,-117,-72,-106,-47,-108,-27,-95], '#88e0cc',1,true);}
     else {path([-28,-116,21,-112,29,-48,-21,-33,-39,-56], '#3d3246',1,true);path([-28,-116,-39,-87,-28,-78,-17,-105], '#a77d6a',1,true);}
@@ -145,6 +147,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   return {
+    applyTheme(next: DuelTheme) { theme = next; },
     reset() { sparks=[];impacts=[];shake=0;last=0; },
     consume(events: readonly DuelEvent[]) {
       for(const e of events){
