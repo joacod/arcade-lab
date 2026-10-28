@@ -25,7 +25,7 @@ tests/
   browser/games/<slug>/ Game-specific input, rendering and session behavior
 ```
 
-The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests use the same game slug. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. Optional renderers and shaders stay inside the owning game, behind its lazy imports.
+The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests use the same game slug. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. Optional renderers and shaders stay inside the owning game, behind its lazy imports. Appearance controllers own cancellation, replacement and graphics-failure recovery. Preparing a replacement retains the active renderer until the candidate can draw; simulation state and the host loop remain session-owned. Shared pose observations belong with the game when multiple renderers need the same animation.
 
 Runtime artwork belongs in the owning game's `art/` folder. Collection covers are original SVG assets imported by `src/app/catalog.ts`; documentation screenshots live beside their game guide and are never imported by the application. Keep upstream metadata and license/provenance beside downloaded art. Restricted development-only artwork and its manifest stay in ignored `local-art/`, as described by the owning art guide. Generated builds and browser reports stay ignored.
 

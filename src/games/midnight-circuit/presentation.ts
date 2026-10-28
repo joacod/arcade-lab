@@ -1,3 +1,4 @@
+import { createGait, fighterPose } from './animation.ts';
 import { attacks } from './content.ts';
 import { attackPhase, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
 import type { Screen } from './ui.ts';
@@ -14,6 +15,8 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'circuit-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
+  const gait = createGait();
+  canvas.dataset.renderer = 'canvas';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false, camera: number | undefined, last: number | undefined, shake = 0;
   let particles: Particle[] = [], rings: Ring[] = [];
@@ -151,32 +154,19 @@ export function createPresentation(surface: HTMLElement) {
     ctx.save(); ctx.scale(a.facing * size, size);
     if (!reflection && a.immune > 0 && Math.floor(time * 16) % 2 === 0) ctx.globalAlpha *= .55;
     if (a.health <= 0) { ctx.rotate(-Math.PI * .37); ctx.scale(1, .6); }
-    const walking = a.moving && !a.attack && a.elevation === 0;
-    const stride = walking ? Math.sin(time * 15 + a.id) * 13 : 0;
-    const bob = walking ? Math.abs(Math.sin(time * 15 + a.id)) * 2 : 0;
+    const pose = fighterPose(a, gait.get(a.id));
+    const { stride, bob } = pose;
     const s = a.attack, phase = s ? attackPhase(s) : null;
     const active = phase === 'active', windup = phase === 'startup', recovery = phase === 'recovery';
     const kind = s?.kind, kick = kind === 'finisher' || kind === 'air';
     const heavy = kind === 'heavy' || kind === 'smash' || kind === 'quake';
     const recoil = a.stun > 0 && a.health > 0 ? -10 : windup ? -5 : active ? 7 : 0;
     ctx.translate(recoil, bob - a.elevation / size);
-    let backFoot: Point = [-13 + stride, -3], frontFoot: Point = [17 - stride, -3];
-    let backKnee: Point = [-12 - stride * .3, -25], frontKnee: Point = [13 + stride * .4, -25];
-    if (a.elevation > 0) { backFoot = [-24, -28]; backKnee = [-20, -37]; frontFoot = [24, -14]; frontKnee = [24, -32]; }
-    if (kick && active) { frontKnee = [33, -48]; frontFoot = [77, -51]; backFoot = [-13, -5]; }
-    if (kind === 'charge' && active) { backFoot = [-36, -4]; frontFoot = [35, -8]; }
+    const { backFoot, frontFoot, backKnee, frontKnee, rearElbow, rearHand, elbow, hand } = pose;
     limb([[-8, -45], backKnee, backFoot], '#26374d', boss ? 15 : 10);
     line([backFoot[0] - 7, backFoot[1], backFoot[0] + 10, backFoot[1]], '#182735', 10);
     line([backFoot[0] - 4, backFoot[1] - 4, backFoot[0] + 9, backFoot[1] - 4], trim, 2);
     // Rear arm is behind the jacket, with a compact guarded silhouette at rest.
-    let rearElbow: Point = [-26, -59], rearHand: Point = [-17, -73];
-    let elbow: Point = [28, -64], hand: Point = [33, -79];
-    if (windup) { elbow = heavy ? [-10, -96] : [8, -66]; hand = heavy ? [-6, -120] : [0, -81]; }
-    if (active && !kick) { elbow = heavy ? [25, -76] : [40, -69]; hand = heavy ? [65, kind === 'quake' ? -4 : -40] : [76, -69]; }
-    if (kick) { elbow = [-6, -60]; hand = [-16, -57]; rearElbow = [-24, -70]; rearHand = [-15, -86]; }
-    if (kind === 'cross' && active) { rearElbow = [25, -76]; rearHand = [73, -73]; hand = [10, -63]; }
-    if (kind === 'charge') { elbow = [28, -64]; hand = [40, -76]; }
-    if (a.stun > 0) { hand = [35, -45]; rearHand = [-35, -61]; }
     limb([[-13, -76], rearElbow, rearHand], coat, boss ? 17 : 9); ellipse(rearHand[0], rearHand[1], boss ? 13 : 7, boss ? 12 : 7, trim);
     polygon([-17, -81, 11, -83, 22, -48, 12, -39, -19, -43, -24, -60], coat);
     polygon([-15, -80, -3, -78, -5, -46, -18, -45, -22, -60], lit);
@@ -250,7 +240,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   return {
-    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; },
+    reset() { gait.reset(); particles = []; rings = []; camera = undefined; last = undefined; shake = 0; },
     consume(events: readonly BrawlerEvent[]) {
       for (const e of events) {
         const impact = e.type === 'hit' || e.type === 'damage' || e.type === 'ko';
@@ -271,6 +261,7 @@ export function createPresentation(surface: HTMLElement) {
       const width = Math.max(1, Math.round(size.width * size.ratio)), height = Math.max(1, Math.round(size.height * size.ratio));
       if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; camera = undefined; }
       const dt = last === undefined || screen === 'paused' || screen === 'title' ? 0 : clamp(now - last, 0, .05); last = now;
+      gait.observe(run);
       const view = circuitView(size.width, size.height, run);
       camera = camera === undefined ? view.x : camera + (view.x - camera) * (motion.matches ? 1 : 1 - Math.exp(-7 * dt)); view.x = camera;
       ctx.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, 0, 0); ctx.lineJoin = 'round'; ctx.lineCap = 'round';

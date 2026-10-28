@@ -6,14 +6,14 @@ import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session
 import { createRun, pauseRun, nextStage, stepRun, takeEvents } from './game.ts';
 import { bindInput } from './input.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
-import { createPresentation } from './presentation.ts';
+import { createAppearance } from './appearance.ts';
 import { createSound } from './sound.ts';
 import './style.css';
 export function mountCircuit(container: HTMLElement, onExit: () => void): GameSession {
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   let ui: ReturnType<typeof createUI>;
-  let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createPresentation> | undefined, sound: ReturnType<typeof createSound> | undefined;
+  let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createAppearance> | undefined, sound: ReturnType<typeof createSound> | undefined;
   const host = createHost(container, { className: 'circuit-app', label: 'Midnight Circuit',
     surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. Escape pauses.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
@@ -43,8 +43,9 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   }
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value));
-    presentation = createPresentation(host.surface); input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => { suspend(); void presentation?.select(value); });
+    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message));
+    void presentation.select('three'); input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     host.root.addEventListener('keydown', event => { if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });

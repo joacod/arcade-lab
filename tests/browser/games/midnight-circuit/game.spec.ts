@@ -37,6 +37,12 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(700);
   await page.screenshot({ path: info.outputPath('midnight-street.png') });
+  // The long rules/lifecycle traversal uses Canvas after exercising the default 3D scene.
+  // Dedicated appearance coverage below owns GPU switching and failure recovery.
+  await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Options', exact: true }).click();
+  await page.getByLabel('Appearance', { exact: true }).selectOption('canvas');
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
@@ -86,4 +92,54 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await page.evaluate(() => (window as any).circuitFrames.size)).toBe(0);
   expect(unrelated).toEqual([]); expect(errors).toEqual([]);
+});
+
+test('Midnight Circuit appearances retain a paused run and recover from graphics loss', async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/\/src\/games\/midnight-circuit\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}\nconst original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
+  await page.keyboard.press('Escape');
+  const state = () => page.evaluate(() => JSON.stringify((window as any).circuitProbe));
+  const paused = await state();
+  await page.getByRole('tab', { name: 'Options', exact: true }).click();
+  await page.getByLabel('Appearance', { exact: true }).selectOption('canvas');
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  expect(await state()).toBe(paused);
+  await page.getByLabel('Appearance', { exact: true }).selectOption('three');
+  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
+  expect(await state()).toBe(paused);
+  // Context loss restores a working appearance without resetting the game.
+  await page.locator('canvas').evaluate(c => c.dispatchEvent(new Event('webglcontextlost', { cancelable: true })));
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  await expect(page.getByLabel('Appearance', { exact: true })).toHaveValue('canvas');
+  expect(await state()).toBe(paused);
+  await page.getByLabel('Appearance', { exact: true }).selectOption('vgpu');
+  await expect(page.locator('.game-menu-display-status')).not.toContainText('Preparing', { timeout: 15000 });
+  expect(await state()).toBe(paused);
+  const selected = await page.getByLabel('Appearance', { exact: true }).inputValue();
+  if (selected === 'vgpu') {
+    await expect(page.locator('canvas[data-renderer="vgpu"]')).toBeVisible();
+    await page.getByRole('tab', { name: 'Game', exact: true }).click();
+    await page.getByRole('button', { name: 'Resume', exact: true }).click();
+    await page.screenshot({ path: info.outputPath('midnight-cinema.png') });
+    await page.keyboard.press('Escape');
+  } else await expect(page.locator('.game-menu-display-status')).toContainText('unavailable');
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  // A cancelled import/preparation must never attach to the departing session.
+  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await page.getByRole('tab', { name: 'Options', exact: true }).click();
+  await page.getByLabel('Appearance', { exact: true }).selectOption('vgpu');
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  await page.waitForTimeout(200);
+  await expect(page.locator('canvas')).toHaveCount(0);
+  expect(errors).toEqual([]);
 });

@@ -1,11 +1,12 @@
 import { createElementLookup, setText, setProperty } from '../../engine/browser/dom.ts';
-import { createMenuReadout } from '../../engine/browser/menu-components.ts';
+import { appearances, type Appearance } from './graphics.ts';
+import { createMenuReadout, createSelectField } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
-import { stageOf, type Run } from './game.ts';
+import { attackPhase, stageOf, type Run } from './game.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = 'start' | 'resume' | 'restart' | 'continue' | 'pause' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void, appearance: (value: Appearance) => void) {
   root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Ⅱ</button></header>
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
   </main>
@@ -15,11 +16,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
+  const style = createSelectField({ label: 'Appearance', choices: appearances, value: 'three', signal, onChange: appearance });
+  const options = document.createElement('div'); options.className = 'menu-fields'; options.append(style.element);
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element,
+    game: results.element, options,
     controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J IN AIR</b> flying kick<br>Tap J three times for a finisher. Step out of red telegraphs.<p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -32,6 +35,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const description = menu.description;
   let current: Screen = 'title';
   return { controls,
+    appearanceStatus(value: Appearance, message: string) { style.input.value = value; menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
@@ -55,6 +59,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       setText(combo, run.combo > 1 ? `${run.combo} HITS` : ''); combo.classList.toggle('is-hot', run.combo >= 6);
       const boss = run.enemies.find(a => a.kind === 'warden');
       setProperty($<HTMLElement>('.circuit-boss'), 'hidden', !boss || current !== 'playing');
+      setText($('.circuit-boss small'), boss?.attack && attackPhase(boss.attack) === 'recovery' ? 'OPEN · STRIKE NOW' : 'BREAK THE BLACKOUT');
       const bar = $<HTMLMeterElement>('[aria-label="Circuit Warden health"]');
       if (boss) { setProperty(bar, 'max', boss.maxHealth); setProperty(bar, 'value', boss.health); }
       results.update(`${run.score.toLocaleString()} POINTS  /  ${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.hits} hits landed · ${run.bestCombo} best chain · ${run.lives} lives remaining${run.status === 'victory' ? '\nCITY GRID: ONLINE' : ''}`);
