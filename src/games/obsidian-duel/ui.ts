@@ -1,6 +1,7 @@
-import { appearances, type Appearance } from './themes.ts';
+import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { themes, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
-import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { fighters, type FighterId } from './content.ts';
 import type { Match } from './game.ts';
@@ -20,12 +21,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
-  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'tempest', onChange: appearance });
+  const theme = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, options: theme.element,
+    game: gameContent, theme: theme.element,
     controls: `<b>A D / ← →</b> move　 <b>W / ↑</b> jump　 <b>S / ↓</b> crouch<br><b>J</b> light　 <b>K</b> heavy　 <b>L</b> special　 <b>SHIFT</b> guard<br>Crouch + J sweeps. Jump + J kicks overhead.<br>Stand guard for overheads. Crouch guard for sweeps.<br><span>Let a heavy miss. Step in while they recover.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

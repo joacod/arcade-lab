@@ -20,11 +20,11 @@ Align your feet with an opponent's ground lane before attacking. Read the red at
 
 Three lives cover the whole run. Losing a life cancels enemy attacks, restores health after a short fall and grants safe recovery time. Green repair cells restore health and score once, including cells awarded after street encounters. Entering the station restores health while preserving lives, elapsed time and scoring. Results show points, hits, best chain, time and remaining lives. Restart creates a fresh run; Game selection disposes the session.
 
-## Appearance
+## Theme modes
 
-Choose **Appearance** in Options at the title or while paused. **Neon diorama** is the default: a Three.js scene with articulated fighters, directional lighting, shadows, neon shop fronts, industrial transformer bays, rain and combat sparks. **Neon cinema** adds a vgpu/WebGPU bloom and color-grading pass to the same scene. **Illustrated arcade** retains the original Canvas art.
+**Normal**, the default, keeps Illustrated arcade on Canvas without a graphics dependency. **Quality** combines the existing Neon diorama and Neon cinema treatments: articulated 3D fighters, directional lighting, shadows, neon shop fronts, industrial transformer bays, rain and combat sparks, with a vgpu/WebGPU bloom and grading finish when supported. If preparation of the finish fails, the same Three.js scene runs directly. **Assets** is not implemented. Select Theme directly in the menu.
 
-Switching keeps the current stage, enemies, score, health and attack timing. Resume continues the paused run. Choices survive restarts for this session. An unavailable renderer retains the working appearance; graphics loss restores Canvas. GPU code loads only when requested, and the shared host remains the sole frame-loop owner.
+Switching keeps the current stage, enemies, score, health and attack timing. Resume continues the paused run. Choices survive restarts for this session. An unavailable renderer retains the working appearance; graphics loss pauses play and restores Normal for explicit Resume. GPU code loads only when requested, and the shared host remains the sole frame-loop owner.
 
 All appearances use distance-driven walking with a planted stance, lifted return step, bent knees and coordinated arm motion. Blocked input, jumps and hit pushes do not advance the gait. Presentation observes actor positions without modifying movement or combat rules.
 

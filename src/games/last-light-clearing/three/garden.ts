@@ -6,13 +6,12 @@ import type { Theme } from '../themes.ts';
 import { MAX_EFFECTS, visualTiming } from '../themes.ts';
 import type { WorldPresentation, DisplaySize } from '../world-presentation.ts';
 import type { Viewport } from '../view.ts';
-import { clipFrame, type ActorRole } from '../art-pack.ts';
-import { actorAnimation, createAnimationObservations } from '../animation.ts';
-import type { ImageBundle } from '../../../engine/browser/images.ts';
+import type { ActorRole } from '../art-pack.ts';
+import { createAnimationObservations } from '../animation.ts';
 import { orbitPosition } from '../weapons/halo.ts';
 
 /** XY ground: (x, -worldY, elevation). Camera looks down -Z, so elevation never shifts XY. */
-export function createGarden(theme: Theme, images: ImageBundle, onFailure: () => void): WorldPresentation {
+export function createGarden(theme: Theme, onFailure: () => void): WorldPresentation {
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas'; canvas.dataset.renderer = 'garden';
   const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
@@ -123,21 +122,6 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
     const sphere = geometry(new THREE.IcosahedronGeometry(1, 0));
     const observations = createAnimationObservations();
     let effects: Extract<GameEvent, { x: number }>[] = [];
-    const pixel = theme.presentation === 'pixel-garden';
-    const artPack = theme.art;
-    if (pixel && !artPack) throw new Error('Pixel appearance needs an art pack');
-    const atlas = new Map<string, THREE.Texture>();
-    if (pixel) for (const [id, image] of Object.entries(images)) {
-      const map = texture(new THREE.Texture(image));
-      map.colorSpace = THREE.SRGBColorSpace; map.magFilter = map.minFilter = artPack!.sampling === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter;
-      map.generateMipmaps = false; map.needsUpdate = true; atlas.set(id, map);
-    }
-    // Shared atlas materials, but independent per-slot UVs. A frame change never mutates the shared texture.
-    const pixelMaterials = new Map<string, THREE.MeshStandardMaterial>();
-    for (const [id, map] of atlas) pixelMaterials.set(id, material(new THREE.MeshStandardMaterial({
-      map, color: '#ffffff', transparent: true, alphaTest: 0.2, roughness: 1, metalness: 0,
-      emissiveMap: map, emissive: '#ffffff', emissiveIntensity: 0.7,
-    })));
     const flashMaterial = lightMaterial(p.hit), healthMaterial = lightMaterial(p.damage), eliteHealthMaterial = lightMaterial(p.elite);
     function actor(role: ActorRole) {
       const group = new THREE.Group(); scene.add(group);
@@ -145,33 +129,24 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       const elite = role === 'elite', keeper = role === 'keeper';
       const bodyMaterial = keeper ? keeperMat : elite ? eliteMat : enemyMat;
       const radius = keeper ? 11 : elite ? 21 : 12;
-      let card: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> | undefined;
-      if (pixel) {
-        const art = artPack!.actors[role], [w, h] = art.footprint, [ax, ay] = art.anchor;
-        const plane = geometry(new THREE.PlaneGeometry(w, h));
-        plane.translate((0.5 - ax) * w, (ay - 0.5) * h, 0);
-        card = new THREE.Mesh(plane, pixelMaterials.values().next().value!);
-        card.position.z = 4; card.castShadow = true; card.receiveShadow = true; group.add(card);
+      const body = mesh(keeper ? crystal : sphere, bodyMaterial, 0, 0, radius);
+      body.scale.set(radius, radius * (keeper ? 0.78 : 0.9), keeper ? 24 : radius * 0.85);
+      body.rotation.set(0.24, 0.18, 0); body.castShadow = true; model.add(body);
+      if (keeper) {
+        const cap = mesh(crystal, core, 0, 0, 36, model); cap.scale.set(4, 4, 5);
+        const frame = mesh(ringGeometry, edge, 0, 0, 12, model); frame.scale.setScalar(15);
       } else {
-        const body = mesh(keeper ? crystal : sphere, bodyMaterial, 0, 0, radius);
-        body.scale.set(radius, radius * (keeper ? 0.78 : 0.9), keeper ? 24 : radius * 0.85);
-        body.rotation.set(0.24, 0.18, 0); body.castShadow = true; model.add(body);
-        if (keeper) {
-          const cap = mesh(crystal, core, 0, 0, 36, model); cap.scale.set(4, 4, 5);
-          const frame = mesh(ringGeometry, edge, 0, 0, 12, model); frame.scale.setScalar(15);
-        } else {
-          // Four angled limbs and two bright eyes distinguish creatures from pickups.
-          for (let j = 0; j < 4; j++) {
-            const leg = mesh(box, dark, (j < 2 ? -1 : 1) * radius, (j % 2 ? -1 : 1) * radius * 0.7, 3, model);
-            leg.scale.set(radius * 0.9, 4, 5); leg.rotation.z = j % 2 ? -0.55 : 0.55; leg.castShadow = true;
-          }
-          for (const x of [-radius * 0.35, radius * 0.35]) {
-            const eye = mesh(sphere, core, x, -radius * 0.33, radius * 1.8, model); eye.scale.set(2.2, 2.2, 1.2);
-          }
-          if (elite) for (let j = 0; j < 5; j++) {
-            const spike = mesh(crystal, core, Math.cos(j * Math.PI * 2 / 5) * 15, Math.sin(j * Math.PI * 2 / 5) * 15, 24, model);
-            spike.scale.set(3, 3, 11);
-          }
+        // Four angled limbs and two bright eyes distinguish creatures from pickups.
+        for (let j = 0; j < 4; j++) {
+          const leg = mesh(box, dark, (j < 2 ? -1 : 1) * radius, (j % 2 ? -1 : 1) * radius * 0.7, 3, model);
+          leg.scale.set(radius * 0.9, 4, 5); leg.rotation.z = j % 2 ? -0.55 : 0.55; leg.castShadow = true;
+        }
+        for (const x of [-radius * 0.35, radius * 0.35]) {
+          const eye = mesh(sphere, core, x, -radius * 0.33, radius * 1.8, model); eye.scale.set(2.2, 2.2, 1.2);
+        }
+        if (elite) for (let j = 0; j < 5; j++) {
+          const spike = mesh(crystal, core, Math.cos(j * Math.PI * 2 / 5) * 15, Math.sin(j * Math.PI * 2 / 5) * 15, 24, model);
+          spike.scale.set(3, 3, 11);
         }
       }
       const flash = mesh(ringGeometry, flashMaterial, 0, 0, 5, group);
@@ -179,7 +154,7 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       const healthBack = mesh(box, dark, 0, -radius - 12, 5, group); healthBack.scale.set(radius * 2, 3, 1);
       const health = mesh(box, elite ? eliteHealthMaterial : healthMaterial, 0, -radius - 12, 6, group);
       group.visible = false;
-      return { group, model, role, card, flash, health, healthBack, radius };
+      return { group, model, flash, health, healthBack, radius };
     }
     type Actor = ReturnType<typeof actor>;
     const keeper = actor('keeper');
@@ -194,23 +169,8 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       slot.health.visible = slot.healthBack.visible = health < 1 && id !== 'keeper';
       slot.health.scale.set(slot.radius * 2 * health, 2, 1);
       slot.health.position.x = -slot.radius * (1 - health);
-      slot.group.scale.setScalar(pixel ? 1 : entry ? 0.8 : 1);
-      if (slot.card) {
-        const art = artPack!.actors[slot.role];
-        const attackAt = id === 'keeper' ? effects.findLast(e => e.type === 'shot')?.at : undefined;
-        const animation = actorAnimation(art, observation, time, hitAt, attackAt);
-        const frame = clipFrame(animation.clip, animation.age);
-        const image = images[frame.image]!, [sx, sy, w, h] = frame.rect;
-        slot.card.material = pixelMaterials.get(frame.image)!;
-        const uv = slot.card.geometry.getAttribute('uv');
-        // Linear filtering must stay inside this frame, even at its outermost texels.
-        const inset = artPack!.sampling === 'smooth' ? 0.5 : 0;
-        const u0 = (sx + inset) / image.naturalWidth, u1 = (sx + w - inset) / image.naturalWidth;
-        const v0 = 1 - (sy + inset) / image.naturalHeight, v1 = 1 - (sy + h - inset) / image.naturalHeight;
-        uv.setXY(0, u0, v0); uv.setXY(1, u1, v0); uv.setXY(2, u0, v1); uv.setXY(3, u1, v1); uv.needsUpdate = true;
-        slot.card.scale.x = art.orientation === 'mirror' && Math.cos(observation.angle) < -0.01 ? -1 : 1;
-        slot.card.rotation.z = art.orientation === 'rotate' ? -observation.angle : 0;
-      } else slot.model.rotation.z = id === 'keeper' ? time * 0.3 : -observation.angle + Math.PI / 2;
+      slot.group.scale.setScalar(entry ? 0.8 : 1);
+      slot.model.rotation.z = id === 'keeper' ? time * 0.3 : -observation.angle + Math.PI / 2;
     }
 
     // Fixed instance capacity covers authored round limits; no allocation per transient or per frame.

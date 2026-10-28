@@ -14,9 +14,9 @@ Five lives, health and brief hit immunity support retries. Death redeploys at th
 
 Brick cover and armored cover can break. Riveted structural steel stays solid. Destruction opens firing lanes, removes support and creates lower routes. Structural foundations, power decks and stairs preserve access to every required objective after all destructible tiles disappear. The final machine is required; ordinary guards can be bypassed. A locked extraction pad never advances the mission. The HUD points toward the nearest required objective, then toward extraction.
 
-## Appearances
+## Theme modes
 
-Options → Appearance offers **Iron coast** and **Arctic relay**. Arctic relay adds a cold skyline, snowfall, icy ledges and alternate operator and machine colors across both missions. Warning colors and material silhouettes retain their meaning. Pause, switch, then Resume with terrain damage, objectives and projectiles intact. The choice survives restart and mission transitions until returning to Game selection.
+**Normal** keeps Iron coast, the original industrial skies, weather and operator colors. Arctic relay was an alternate palette for the same renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
 
 ## Source ownership
 
@@ -52,4 +52,4 @@ The local state contract connects movement, combat and objectives. Browser compo
 
 ## Local verification
 
-Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions, appearance changes that preserve the live operation, and teardown. See the [shared commands](../../architecture.md#local-verification).
+Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions, menu availability and the live operation, and teardown. See the [shared commands](../../architecture.md#local-verification).

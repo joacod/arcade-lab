@@ -1,6 +1,18 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Menus share Game, Options and Controls tabs, with actions always available below the selected panel. Sound, fullscreen and Appearance are in Options. Every game can change appearance while paused and resume the same run.
+Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Each menu has one **Theme** selector, sound/fullscreen controls and expandable control instructions. Theme changes retain the paused run; Resume continues it. Missing modes are visible as disabled options.
+
+| Game | Normal | Assets | Quality |
+| --- | --- | --- | --- |
+| Last Light Clearing | Procedural clearing | Mosslight locally; bundled Ember Ruins otherwise | Prism Garden, sculpted and lit in 3D |
+| Skybreak | Pacific Run | Starfall Fleet with the local installation; unavailable in production | Not available |
+| Clockwork Hollow | Verdant clockwork | Not available | Not available |
+| Midnight Circuit | Illustrated arcade | Not available | Neon 3D scene, with WebGPU finish when supported |
+| Obsidian Duel | Tempest citadel | Not available | Not available |
+| Blastline | Iron coast | Not available | Not available |
+
+All games start in Normal. None currently needs a Custom exception. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+
 
 ## Last Light Clearing
 
@@ -10,7 +22,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution and a late elite encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
-Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances with the same gameplay rules. Appearance, interface, accent, Close/Whole arena view and sound settings are in Options; round selection is in Game before starting. Settings persist through retries until reload. Appearance changes retain the paused run and require Resume. Failed artwork/audio can fall back to silhouettes/silence; unavailable graphics retain a working appearance or restore Canvas.
+Normal uses procedural Canvas art without image loads. Assets supplies animated pixel characters and scenery, while Quality uses Prism Garden. Each mode includes matching HUD styling. The camera follows the Keeper consistently across modes. Round selection stays available before starting; theme selection survives restarts within the session. Failed replacements retain the working presentation; graphics loss restores Normal.
 
 | Control | Action |
 | --- | --- |
@@ -21,13 +33,13 @@ Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances w
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md), including the optional development-only Mosslight appearance.
+See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md), including the development-only Mosslight asset pack.
 
 ## Skybreak
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Switch between Pacific Run and Deep Space in **Options → Appearance**, then resume the same sortie. Optional local pixel fleets add Starfall Fleet and Redshift Armada; see [art setup and provenance](src/games/skybreak/art/README.md). Bundled procedural Canvas artwork and synthesized sound require no downloads.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses Starfall Fleet when its local images are installed; see [art setup and provenance](src/games/skybreak/art/README.md). Quality is not yet available. Bundled procedural Canvas artwork and synthesized sound require no downloads.
 
 | Control | Action |
 | --- | --- |
@@ -54,7 +66,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Choose Verdant clockwork or snowy Frostbound bells in Options. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Normal retains Verdant clockwork; Assets and Quality are not yet available. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 
@@ -72,7 +84,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Choose Neon diorama (Three.js), Neon cinema (Three.js with a vgpu/WebGPU finish), or the original illustrated Canvas appearance in Options. Modeled fighters, neon facades, rain, shadows and bright impacts bring the streets to life, with distance-driven walking across all styles and procedural AudioBits sound. Appearance changes preserve the paused run; unavailable graphics retain a working style or restore Canvas. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
+Normal uses the original illustrated Canvas presentation. Quality combines the modeled Neon diorama scene with the Neon cinema finish when WebGPU is supported. Modeled fighters, neon facades, rain, shadows and bright impacts bring the streets to life, with distance-driven walking across both modes and procedural AudioBits sound. Assets is not yet available. Theme changes preserve the paused run; unavailable graphics retain a working presentation or restore Normal. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
 
 ## Obsidian Duel
 
@@ -92,7 +104,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Choose Tempest citadel or Gilded dawn in Options, including alternate fighter costumes. Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Normal retains Tempest citadel and its original fighter costumes. Assets and Quality are not yet available. Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 
@@ -112,7 +124,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Choose Iron coast or snowy Arctic relay in Options. Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Normal retains Iron coast. Assets and Quality are not yet available. Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

@@ -44,8 +44,8 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => { suspend(); void presentation?.select(value); });
-    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message));
-    void presentation.select('three'); input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
+    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     host.root.addEventListener('keydown', event => { if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });

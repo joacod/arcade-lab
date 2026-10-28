@@ -31,23 +31,6 @@ export function createSelectField<Value extends string>(config: FieldOptions & {
   return { element, input };
 }
 
-export function createRangeField(config: FieldOptions & {
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onInput(value: number): void;
-}) {
-  const element = document.createElement('label'); element.className = 'menu-range';
-  element.append(config.label);
-  const input = document.createElement('input'); input.type = 'range';
-  input.min = String(config.min); input.max = String(config.max); input.step = String(config.step); input.value = String(config.value);
-  input.setAttribute('aria-label', config.accessibleLabel ?? config.label);
-  input.addEventListener('input', () => config.onInput(input.valueAsNumber), { signal: config.signal });
-  element.append(input);
-  return { element, input };
-}
-
 /** A multiline score/result readout. Games own its text, formatting and visibility. */
 export function createMenuReadout(label: string) {
   const element = document.createElement('output'); element.className = 'menu-readout';

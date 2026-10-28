@@ -17,7 +17,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'blast-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.prepend(canvas);
-  let theme = themes.iron;
+  let theme = themes.normal;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
   const rect = (x: number, y: number, w: number, h: number, color: string) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h)); };

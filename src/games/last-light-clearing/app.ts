@@ -1,3 +1,4 @@
+import { createPreparationScope } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
@@ -10,13 +11,12 @@ import { createPresentation } from './presentation.ts';
 import { createUI, type Screen, type MenuAction } from './ui.ts';
 import { clearing, configurations, type ConfigurationId } from './content.ts';
 import { themes, type ThemeId } from './themes.ts';
-import { resolvedSkin, type InterfaceChoice, type Accent } from './interface.ts';
 import { prepareAssets } from './assets.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
 import type { WorldPresentation } from './world-presentation.ts';
 import { createScreenOverlay } from './screen-overlay.ts';
 import { createSound } from './sound.ts';
-import { createViewport, type ViewMode } from './view.ts';
+import { createViewport } from './view.ts';
 import type { GameSession } from '../../engine/session.ts';
 import './style.css';
 
@@ -29,7 +29,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     container.append(message);
     return { dispose: () => message.remove() };
   }
-  let disposed = false, generation = 0;
+  let disposed = false;
   let host: ReturnType<typeof createHost>;
   let input: ReturnType<typeof bindInput>;
   let sound: ReturnType<typeof createSound>;
@@ -37,10 +37,10 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
   let overlay: ReturnType<typeof createScreenOverlay>;
   let presentation: WorldPresentation;
   let activeAssets: PreparedImages | undefined;
-  let preparation: AbortController | undefined;
+  const preparation = createPreparationScope();
   function dispose() {
     if (disposed) return;
-    disposed = true; preparation?.abort(); generation++;
+    disposed = true; preparation.dispose();
     disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeAssets?.dispose(),
       () => overlay?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
@@ -50,10 +50,10 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       onDisplayChange: suspend,
       onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     const clock = createClock();
-    let viewMode: ViewMode = 'close';
-    presentation = createPresentation(themes.woodland!);
+    const viewMode = 'close';
+    presentation = createPresentation(themes.normal);
     let preparing = false;
-    let appearance: ThemeId = 'woodland', interfaceChoice: InterfaceChoice = 'match', accent: Accent = 'default';
+    let appearance: ThemeId = 'normal';
     let configuration: ConfigurationId = 'clearing';
     const newRun = () => createRun(undefined, configurations[configuration].round);
     let run = newRun(), screen: Screen = 'title', suspendedChoice = false;
@@ -67,10 +67,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); ui.update(run);
       },
       onTheme: selectTheme,
-      onInterface(choice) { interfaceChoice = choice; applyInterface(); },
-      onAccent(choice) { accent = choice; applyInterface(); },
-      onMute: value => sound.setMuted(value), onVolume: value => sound.setVolume(value),
-      onView(mode) { suspend(); viewMode = mode; },
+      onMute: value => sound.setMuted(value),
       onFullscreen() {
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
       },
@@ -79,31 +76,23 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     overlay = createScreenOverlay(host.surface);
     ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     async function selectTheme(id: ThemeId) {
-      if (screen !== 'title' && screen !== 'paused') return;
+      if (disposed || screen === 'playing' || screen === 'choosing') return;
       const theme = themes[id];
       if (!theme) return;
-      preparation?.abort();
-      const request = ++generation, controller = new AbortController();
-      preparation = controller; preparing = true; ui.preparing(true);
+      const request = preparation.begin(); preparing = true; ui.preparing(true);
       ui.assetStatus(`Preparing ${theme.name}…`);
       let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
-        if (theme.art) bundle = await prepareAssets(theme.art, controller.signal);
-        if (controller.signal.aborted) return;
-        if (theme.presentation === 'abyss') {
-          const { createBloom } = await import('./vgpu/bloom.ts');
-          if (controller.signal.aborted) return;
-          next = await createBloom(theme, controller.signal, () => {
-            if (presentation === next) graphicsFailure();
-          });
-        } else if (theme.presentation) {
+        if (theme.art) bundle = await prepareAssets(theme.art, request.signal);
+        if (!request.current()) return;
+        if (theme.presentation === 'prism') {
           const { createGarden } = await import('./three/garden.ts');
-          if (controller.signal.aborted) return;
-          next = createGarden(theme, bundle?.images ?? {}, () => {
+          if (!request.current()) return;
+          next = createGarden(theme, () => {
             if (presentation === next) graphicsFailure();
           });
-        } else next = createPresentation(theme, bundle!.images);
-        if (disposed || request !== generation || controller.signal.aborted) return;
+        } else next = createPresentation(theme, bundle?.images);
+        if (!request.current()) return;
         // Prepare and paint against the CURRENT run, including a retry made during loading.
         next.reset(run); next.resize(host);
         next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
@@ -114,37 +103,35 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         ui.appearance(id); ui.assetStatus('');
         old.dispose(); oldAssets?.dispose();
       } catch (error) {
-        if (!disposed && request === generation) {
+        if (request.current()) {
           ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'graphics initialization failed'}). Keeping current appearance and run.`);
           ui.appearance(appearance);
         }
       } finally {
         if (next !== presentation) next?.dispose();
         if (bundle !== activeAssets) bundle?.dispose();
-        if (!disposed && request === generation) { preparing = false; ui.preparing(false); }
+        if (request.current()) { preparing = false; ui.preparing(false); }
       }
     }
     function graphicsFailure() {
       if (disposed) return;
-      suspend(); preparation?.abort(); generation++; preparing = false; ui.preparing(false);
+      suspend(); preparation.cancel(); preparing = false; ui.preparing(false);
       // A fresh 2D canvas is immediately usable, without requiring a lost GPU context.
-      const fallback = createPresentation(themes.woodland!);
+      const fallback = createPresentation(themes.normal);
       fallback.reset(run); fallback.resize(host);
       fallback.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
       const old = presentation;
       old.canvas.replaceWith(fallback.canvas); presentation = fallback;
       old.dispose(); activeAssets?.dispose(); activeAssets = undefined;
-      appearance = 'woodland'; host.root.dataset.theme = appearance; applyInterface(); ui.appearance(appearance);
-      ui.assetStatus('Graphics unavailable. Restored Lanternwood silhouettes. Your run is safe; use Resume when ready.');
+      appearance = 'normal'; host.root.dataset.theme = appearance; applyInterface(); ui.appearance(appearance);
+      ui.assetStatus('Graphics unavailable. Restored Normal. Your run is safe; use Resume when ready.');
     }
     function applyInterface() {
-      host.root.dataset.skin = resolvedSkin(interfaceChoice, themes[appearance]!.interface);
-      host.root.dataset.accent = accent;
+      host.root.dataset.skin = themes[appearance].interface;
     }
     host.root.dataset.theme = appearance;
     applyInterface();
     presentation.reset(run);
-    selectTheme('woodland');
 
     function transition(next: Screen, focus = true) {
       input.clear(); clock.reset(); screen = next;

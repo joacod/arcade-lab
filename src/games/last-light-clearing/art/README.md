@@ -1,12 +1,12 @@
 # Artwork and visual definitions
 
-`cover.svg`, `woodland.svg` and `moonglass.svg` are original Arcade Lab vector drawings under the repository's MIT license. The two actor sheets contain three static actor frames each, with different image dimensions and padding but identical authored world footprints (32/32/48). Ground marks, fallback silhouettes, gems, spell effects, and procedural sound are original application code.
+`cover.svg` is original Arcade Lab vector artwork under the repository's MIT license. Normal draws actors, ground marks, gems and spell effects procedurally without image assets.
 
 **Ember Ruins** uses the original CC0 0x72 DungeonTileset II v1.7, downloaded from its official source. The unmodified atlas, supplied frame list, author README, and [provenance](ember-ruins/PROVENANCE.md) live together. All runtime images are local.
 
 ## Add an art pack or replace one role
 
-`src/games/last-light-clearing/art-pack.ts` defines `ArtPack`, `ActorArt`, `Clip`, and `Decoration`. `src/games/last-light-clearing/themes.ts` holds the named visual presets: image bundle, semantic Keeper/crawler/elite actors, environment, effect palette, and default interface. Add a preset there after inspecting its source files and license.
+`src/games/last-light-clearing/art-pack.ts` defines `ArtPack`, `ActorArt`, `Clip`, and `Decoration`. `src/games/last-light-clearing/themes.ts` owns the mode definitions: image bundle, semantic Keeper/crawler/elite actors, environment, effect palette, and default interface. Replace the Assets definition there after inspecting source files and license terms; keep the same mode selector.
 
 - Give each local image a stable key in `images`, using `new URL('./art/file.png', import.meta.url).href`.
 - Define explicit `[x, y, width, height]` frame rectangles with `still()` or `frame()`. `row()` is a small helper for an inspected regular row with known frame count and stride.
@@ -15,19 +15,17 @@
 - Choose `rotate`, `mirror`, or an explicit four-direction idle/move map only where supplied art supports it. Set `nearest` or `smooth` sampling for the pack.
 - Environment ground stamps tile an open arena, optionally blended over the floor color. Border stamps and substantial perimeter props are placed completely outside it. Flat ground variation must read as decoration.
 
-To replace only the Keeper, copy a preset's art definition, add its image key, and replace `art.actors.keeper`. Leave crawler, elite, environment, and palette unchanged. The renderer uses these roles rather than external filenames. Reuse other image keys if several actors share an atlas.
+To replace only the Keeper, copy the Assets mode's art definition, add its image key, and replace `art.actors.keeper`. Leave crawler, elite, environment, and palette unchanged. The renderer uses these roles rather than external filenames. Reuse other image keys if several actors share an atlas.
 
 `footprint`, `anchor`, clip timing, sampling, decoration sizes, palettes, interface settings, and view zoom are visual values. Physical radii, health, speeds, attack cadence, ranges, damage, spawn timing, progression, and round rules remain in `src/games/last-light-clearing/content.ts` and the simulation modules. An actor's visual extent may exceed its physical body.
 
 The loader checks all referenced frames against decoded image dimensions and validates pivots, footprints, and timing before applying a bundle. A pending selection leaves the current appearance visible. A failed replacement retains it and reports a short notice. Initial failure uses silhouettes. New selections and disposal invalidate late callbacks and release owned image sources.
 
-## Add an interface skin
+## Interface styling
 
-Register a label in `src/games/last-light-clearing/interface.ts`, then define its `[data-skin='name']` custom properties in `src/games/last-light-clearing/style.css`: background, surface, panel, veil, button/hover, text/muted, accent/on-accent, danger, border, health/XP, font/heading font, radius, and shadow. Reserve focused classes/selectors for actual layout differences. Keep the existing HTML controls, focus, intents, and state bindings in `src/games/last-light-clearing/ui.ts`.
+Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, and Glass accompanies Quality. Keep the shared menu and native controls consistent. Independent interface and accent selectors are intentionally absent.
 
-Classic retains the original interface treatment. Rune uses warm frames, square borders, monospace typography, and coral/gold health/XP. Glass uses translucent cool panels, fine borders, and a compact HUD. Abyss uses a dark, compact interface with aqua accents. “Match appearance” follows the successfully loaded preset's default. Explicit interface and accent choices survive artwork changes, retries, and title transitions within a session.
-
-## Optional local Mosslight appearance
+## Local Mosslight asset pack
 
 The source is [Free Island Adventure Pixel Top-Down Minigame Kit](https://craftpix.net/freebies/free-island-adventure-pixel-top-down-minigame-kit/) by CraftPix. Archive: `craftpix-net-351300-free-island-adventure-pixel-top-down-minigame-kit.zip`, SHA-256 `0b436bf4193dd116bb1b16c084f4df5bcaa4d284d33655e49b98e8fffeb3d59b`.
 
@@ -55,10 +53,10 @@ export default { mosslight: createMosslight({
 }) };
 ```
 
-4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Mosslight is absent from the menu. Production builds always use the empty `src/games/last-light-clearing/local-appearances.ts`, including on a machine with local artwork installed. Production omits Mosslight while retaining all bundled appearances.
+4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Assets uses bundled Ember Ruins. Production builds always use the empty `src/games/last-light-clearing/local-appearances.ts`, including on a machine with local artwork installed. Production uses Ember Ruins for Assets. Mosslight replaces the same Assets slot locally; it never adds an option.
 
 This is a local typed-definition workflow. There is no runtime store connection, downloader, ZIP parser, upload editor, or asset auto-detection.
 
-## Renderer reuse
+## Renderers
 
-Ember Conservatory consumes the same `emberRuins.art` manifest as Ember Ruins. The garden implementation uploads its decoded sheet once, shares nearest-filtered atlas materials, and updates each actor slot's UVs independently. Both renderers use `actorAnimation`/`clipFrame`, the authored pivots, footprints and orientation. Prism Garden has procedural actors and needs no image bundle. Art sizes remain cosmetic in both presentations.
+Assets uses Canvas and the inspected pack's animation, pivots and footprints. Quality uses Prism Garden's procedural 3D actors and needs no image bundle. Both consume the same run through the local presentation contract. Art sizes remain cosmetic.

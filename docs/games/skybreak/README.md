@@ -4,9 +4,9 @@
 
 An original Canvas 2D vertical arcade shooter with interchangeable appearances. The fictional aircraft, ocean, space scenery, fortress, synthesized cues, formations and sortie are original application code under the repository's MIT license. Optional local pixel fleets use downloaded artwork with separate [provenance and setup](../../../src/games/skybreak/art/README.md). See the [game catalog](../../../CATALOG.md) for controls.
 
-## Appearances
+## Theme modes
 
-Open **Options → Appearance** on the title screen or after pausing. **Pacific Run** retains the original ocean and aircraft. **Deep Space** adds luminous starfighters, a blue planet, drifting stars and distant orbital stations. A local fleet installation also supplies **Starfall Fleet**, with an animated red fighter and varied enemy ships, and **Redshift Armada**, with a white bomber, copper nebulae and drifting rocks.
+**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects Starfall Fleet from the local installation, combining animated pixel ships with the existing orbital scenery. Deep Space and Redshift were alternate treatments and no longer add menu entries. Without local artwork, including production builds, Assets is disabled. **Quality** is not implemented. Theme selection is directly in the menu.
 
 Switching keeps the current sortie, score, health, weapons, formation progress and boss state. Resume continues from the same moment. Restart begins a fresh sortie while retaining the selected appearance. Image preparation leaves the current renderer active; failed loads restore the selected field and report a notice. Later selections and disposal invalidate pending image work. Appearance choices last for the session.
 

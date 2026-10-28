@@ -6,7 +6,7 @@ export function createSpaceScene(theme: FlightTheme) {
   const backdrop = document.createElement('canvas'); backdrop.width = 480; backdrop.height = 1100;
   const ctx = backdrop.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable.');
-  const b = ctx, p = theme.palette, rift = theme.scene === 'rift';
+  const b = ctx, p = theme.palette;
   b.fillStyle = p.background; b.fillRect(0, 0, 480, 1100);
   for (let i = 0; i < 12; i++) {
     const x = noise(i + 10) * 700 - 110, y = noise(i + 20) * 1100;
@@ -15,7 +15,7 @@ export function createSpaceScene(theme: FlightTheme) {
     b.fillStyle = glow; b.fillRect(0, 0, 480, 1100);
   }
   // A distant planet stays off the central combat corridor.
-  const x = rift ? 460 : 42, y = rift ? 245 : 210, radius = rift ? 145 : 182;
+  const x = 42, y = 210, radius = 182;
   const halo = b.createRadialGradient(x, y, radius - 4, x, y, radius + 24);
   halo.addColorStop(0, `${p.atmosphere}65`); halo.addColorStop(1, `${p.atmosphere}00`);
   b.fillStyle = halo; b.fillRect(0, 0, 480, 1100);
@@ -42,33 +42,19 @@ export function createSpaceScene(theme: FlightTheme) {
         c.fillStyle = depth === 2 ? '#e0f0ff99' : `${p.atmosphere}55`;
         c.fillRect(x, y, depth === 2 ? 1.7 : 1, depth === 2 ? 3.5 : 1);
       }
-      if (rift) {
-        for (let i = 0; i < 10; i++) {
-          const x = noise(i + 30) * 480, y = (i * 137 + time * 24) % 1200 - 180;
-          c.save(); c.translate(x, y); c.rotate(i * 1.2 + time * 0.015);
-          c.beginPath();
-          for (let j = 0; j < 7; j++) {
-            const angle = j / 7 * Math.PI * 2, r = 8 + noise(i * 10 + j) * 12;
-            if (j) c.lineTo(Math.cos(angle) * r, Math.sin(angle) * r); else c.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
-          }
-          c.closePath(); c.fillStyle = '#392835'; c.fill(); c.strokeStyle = '#b4796c44'; c.stroke();
-          c.beginPath(); c.moveTo(-4, -10); c.lineTo(7, -3); c.lineTo(3, 8); c.stroke(); c.restore();
+      // Orbital stations pass at the edges, never masquerading as targets.
+      for (let i = 0; i < 2; i++) {
+        const x = i ? 460 : 12, y = (i * 620 + time * 13) % 1400 - 200;
+        c.save(); c.translate(x, y); c.rotate(i ? -0.4 : 0.3); c.globalAlpha = 0.45;
+        c.strokeStyle = '#7386a0'; c.fillStyle = '#182a43'; c.lineWidth = 2;
+        c.beginPath(); c.arc(0, 0, 66, 0, Math.PI * 2); c.stroke();
+        c.fillRect(-11, -90, 22, 180); c.strokeRect(-11, -90, 22, 180);
+        for (const side of [-1, 1]) {
+          c.fillStyle = '#243c5b'; c.fillRect(side * 48 - 16, -44, 32, 88);
+          c.strokeStyle = '#6c9bc066';
+          for (let n = -32; n <= 32; n += 16) { c.beginPath(); c.moveTo(side * 48 - 14, n); c.lineTo(side * 48 + 14, n); c.stroke(); }
         }
-      } else {
-        // Orbital stations pass at the edges, never masquerading as targets.
-        for (let i = 0; i < 2; i++) {
-          const x = i ? 460 : 12, y = (i * 620 + time * 13) % 1400 - 200;
-          c.save(); c.translate(x, y); c.rotate(i ? -0.4 : 0.3); c.globalAlpha = 0.45;
-          c.strokeStyle = '#7386a0'; c.fillStyle = '#182a43'; c.lineWidth = 2;
-          c.beginPath(); c.arc(0, 0, 66, 0, Math.PI * 2); c.stroke();
-          c.fillRect(-11, -90, 22, 180); c.strokeRect(-11, -90, 22, 180);
-          for (const side of [-1, 1]) {
-            c.fillStyle = '#243c5b'; c.fillRect(side * 48 - 16, -44, 32, 88);
-            c.strokeStyle = '#6c9bc066';
-            for (let n = -32; n <= 32; n += 16) { c.beginPath(); c.moveTo(side * 48 - 14, n); c.lineTo(side * 48 + 14, n); c.stroke(); }
-          }
-          c.restore();
-        }
+        c.restore();
       }
     },
     dispose() { backdrop.width = backdrop.height = 1; },

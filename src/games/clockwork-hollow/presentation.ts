@@ -21,7 +21,7 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context;
   surface.prepend(canvas);
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
-  let theme = themes.verdant;
+  let theme = themes.normal;
   let palette = theme.districts.aqueduct;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   function circle(x: number, y: number, r: number, fill: string | CanvasGradient) {

@@ -1,4 +1,4 @@
-import { openOptions } from '../../menu.ts';
+import { openMenu } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and disposes its session', async ({ page }, info) => {
@@ -42,16 +42,16 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   const skyPixel = () => page.locator('.blast-canvas').evaluate((canvas: HTMLCanvasElement) =>
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
-  await openOptions(page);
-  await page.getByRole('combobox', { name: 'Appearance', exact: true }).selectOption('arctic');
+  await openMenu(page);
+  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
   await page.clock.runFor(50);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'arctic');
-  expect(await skyPixel()).not.toEqual(beforeTheme);
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
+  expect(await skyPixel()).toEqual(beforeTheme);
   expect(await state()).toEqual(frozen);
   expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).blastProbe)).toBe(true);
-  await page.getByRole('tab', { name: 'Game', exact: true }).click();
+
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'arctic');
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
   expect((await state()).player.x).toBe(99); expect((await state()).destroyed).toBe(0); expect((await state()).grenades).toBe(4);
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused');
@@ -91,7 +91,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     .toEqual({ frames: 0, audio: ['closed'] });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play Blastline', exact: true }).click(); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title'); await page.clock.runFor(50); expect((await state()).elapsed).toBe(0);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'iron');
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
   expect((await state()).elapsed).toBeGreaterThan(0); await page.keyboard.press('Escape');

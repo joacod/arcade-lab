@@ -16,9 +16,9 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 **Game setup** from pause or results returns to fighter selection. **Restart** begins a fresh match with the selected fighter.
 
-## Appearances
+## Theme modes
 
-Choose **Tempest citadel** or **Gilded dawn** in Options → Appearance. Gilded dawn replaces the storm with a warm sunrise, pale clouds, blue banners and alternate fighter costumes. Pause and switch, then Resume the same round with health, attacks and timer intact. The choice survives restart and Game setup until returning to Game selection.
+**Normal** keeps Tempest citadel, storm scenery and the original fighter costumes. Gilded dawn was an alternate palette for the same renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
 
 ## Source ownership
 
@@ -50,6 +50,6 @@ The session clears input and resets timing at round-phase, display and menu tran
 
 ## Local verification
 
-Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies appearance changes preserve the live match, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
+Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies the paused match remains intact, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
 
 See the [shared commands](../../architecture.md#local-verification).

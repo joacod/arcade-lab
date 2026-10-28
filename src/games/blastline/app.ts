@@ -55,7 +55,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
     presentation = createPresentation(host.surface);
-    appearance('iron');
+    appearance('normal');
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     host.root.addEventListener('keydown', e => { if (!e.repeat && ['Escape', 'KeyP'].includes(e.code) && screen === 'playing') { e.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,

@@ -1,3 +1,5 @@
+import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import type { ThemeMode } from '../../common/ui/theme-select.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -22,12 +24,13 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput>;
   let presentation: ReturnType<typeof createPresentation>;
-  let appearance = 'pacific', generation = 0;
-  let preparation: AbortController | undefined, activeArt: PreparedImages | undefined;
+  let appearance: ThemeMode = 'normal';
+  const preparation = createPreparationScope();
+  let activeArt: PreparedImages | undefined;
   function dispose() {
     if (disposed) return;
     disposed = true;
-    generation++; preparation?.abort();
+    preparation.dispose();
     disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeArt?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
@@ -37,7 +40,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), selectTheme);
     input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
-    presentation = createPresentation(host.surface, themes.pacific!);
+    presentation = createPresentation(host.surface, themes.normal!);
     applyPalette();
     function applyPalette() {
       const theme = themes[appearance]!;
@@ -46,22 +49,20 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       host.root.style.setProperty('--sky-accent', theme.palette.accent);
       host.root.style.setProperty('--sky-background', theme.palette.background);
     }
-    async function selectTheme(id: string) {
+    async function selectTheme(id: ThemeMode) {
       const theme = themes[id];
       if (disposed || screen === 'playing' || !theme) return;
-      preparation?.abort();
-      const request = ++generation, controller = new AbortController();
-      preparation = controller;
+      const request = preparation.begin();
       ui.appearanceStatus(`Preparing ${theme.name}…`);
       let candidate: PreparedImages | undefined;
       try {
-        if (theme.art) candidate = await prepareFlightArt(theme.art, controller.signal);
-        if (disposed || request !== generation || controller.signal.aborted) return;
+        if (theme.art) candidate = await prepareFlightArt(theme.art, request.signal);
+        if (!request.current()) return;
         presentation.applyTheme(theme, candidate?.images);
         const previous = activeArt; activeArt = candidate; candidate = undefined;
         appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus(''); previous?.dispose();
       } catch {
-        if (!disposed && request === generation) {
+        if (request.current()) {
           ui.appearance(appearance);
           ui.appearanceStatus(`Could not load ${theme.name}. Keeping ${themes[appearance]!.name}. Your sortie is preserved.`);
         }

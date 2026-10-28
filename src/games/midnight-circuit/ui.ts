@@ -1,6 +1,7 @@
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { appearances, type Appearance } from './graphics.ts';
-import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
+import { createThemeSelect } from '../../common/ui/theme-select.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
 import type { Control } from './input.ts';
@@ -16,13 +17,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
-  const style = createSelectField({ label: 'Appearance', choices: appearances, value: 'three', signal, onChange: appearance });
-  const options = document.createElement('div'); options.className = 'menu-fields'; options.append(style.element);
+  const style = createThemeSelect({ modes: appearances, value: 'normal', signal, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, options,
+    game: results.element, theme: style.element,
     controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J IN AIR</b> flying kick<br>Tap J three times for a finisher. Step out of red telegraphs.<p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
