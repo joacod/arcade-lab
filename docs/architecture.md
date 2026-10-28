@@ -29,6 +29,8 @@ The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests
 
 Runtime artwork belongs in the owning game's `art/` folder. Collection covers are original SVG assets imported by `src/app/catalog.ts`; documentation screenshots live beside their game guide and are never imported by the application. Keep upstream metadata and license/provenance beside downloaded art. Restricted development-only artwork and its manifest stay in ignored `local-art/`, as described by the owning art guide. Generated builds and browser reports stay ignored.
 
+Vite substitutes each game's optional local appearance manifest through an exact development-only import alias. Production always resolves the empty source manifest. Keep asset definitions, preparation and visual role mappings with their owning game; a new local appearance does not require a shared asset registry.
+
 `src/engine/` has no imports from the application or games. Games depend on its session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders in one catalog; adding a game does not require a second loader switch or card template.
 
 ## Shared source map
@@ -50,6 +52,7 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
+| Cancellable image preparation, source release and validation handoff | `src/engine/browser/images.ts` |
 
 ## Lifetimes and execution
 
@@ -105,8 +108,8 @@ Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` f
 
 ## Boundaries for future games
 
-Share mechanisms with a concrete common responsibility: session contracts, bounded timing, browser measurement, captured buttons, focus/lifetime binding, audio ownership and pure collision primitives. Game input adapters translate these mechanisms into local actions. Relative gestures stay in CSS pixels; camera policies and world transforms remain presentation concerns.
+Share mechanisms with a concrete common responsibility: session contracts, bounded timing, browser measurement, captured buttons, focus/lifetime binding, audio ownership, cancellable image preparation and pure collision primitives. Game input adapters translate these mechanisms into local actions. Relative gestures stay in CSS pixels; camera policies and world transforms remain presentation concerns.
 
-Keep gameplay state machines, retry/checkpoint policies, collision eligibility, authored content, UI intents and cosmetic animation local. Image-atlas validation and renderer contracts that depend on a game's state also stay with that game. Procedural artwork does not need an image bundle or a shared asset service.
+Keep gameplay state machines, retry/checkpoint policies, collision eligibility, authored content, UI intents and cosmetic animation local. Image-atlas validation and renderer contracts that depend on a game's state also stay with that game. The browser image helper owns only loading, cancellation and source release; each game supplies its own dimension validator. Procedural artwork does not need an image bundle.
 
 Each `app.ts` explicitly connects its run, clock, input, UI, presentation and sound. Extract repeated policies when doing so clarifies ownership; different transition rules stay local rather than moving into a universal run/entity framework, scene manager, camera or menu state machine.

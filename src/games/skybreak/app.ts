@@ -8,6 +8,9 @@ import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
+import { themes } from './themes.ts';
+import { prepareFlightArt } from './assets.ts';
+import type { PreparedImages } from '../../engine/browser/images.ts';
 import './style.css';
 
 /** Browser session and composition. Restart replaces the entire mutable run. */
@@ -19,19 +22,51 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput>;
   let presentation: ReturnType<typeof createPresentation>;
+  let appearance = 'pacific', generation = 0;
+  let preparation: AbortController | undefined, activeArt: PreparedImages | undefined;
   function dispose() {
     if (disposed) return;
     disposed = true;
-    disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host?.dispose());
+    generation++; preparation?.abort();
+    disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeArt?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
     host = createHost(container, { className: 'skybreak-app', label: 'Skybreak',
       surfaceLabel: 'Skybreak playfield. WASD or arrows to move, Space or J to fire, Shift or K to roll. Drag to steer and fire.',
       onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value));
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), selectTheme);
     input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
-    presentation = createPresentation(host.surface);
+    presentation = createPresentation(host.surface, themes.pacific!);
+    applyPalette();
+    function applyPalette() {
+      const theme = themes[appearance]!;
+      host.root.dataset.theme = appearance; host.root.dataset.scene = theme.scene;
+      host.root.style.setProperty('--menu-accent', theme.palette.accent);
+      host.root.style.setProperty('--sky-accent', theme.palette.accent);
+      host.root.style.setProperty('--sky-background', theme.palette.background);
+    }
+    async function selectTheme(id: string) {
+      const theme = themes[id];
+      if (disposed || screen === 'playing' || !theme) return;
+      preparation?.abort();
+      const request = ++generation, controller = new AbortController();
+      preparation = controller;
+      ui.appearanceStatus(`Preparing ${theme.name}…`);
+      let candidate: PreparedImages | undefined;
+      try {
+        if (theme.art) candidate = await prepareFlightArt(theme.art, controller.signal);
+        if (disposed || request !== generation || controller.signal.aborted) return;
+        presentation.applyTheme(theme, candidate?.images);
+        const previous = activeArt; activeArt = candidate; candidate = undefined;
+        appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus(''); previous?.dispose();
+      } catch {
+        if (!disposed && request === generation) {
+          ui.appearance(appearance);
+          ui.appearanceStatus(`Could not load ${theme.name}. Keeping ${themes[appearance]!.name}. Your sortie is preserved.`);
+        }
+      } finally { candidate?.dispose(); }
+    }
     function transition(next: Screen, focus = true) {
       input.clear(); clock.reset(); screen = next;
       if (next === 'paused' || next === 'title') sound.pause();
