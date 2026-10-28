@@ -76,3 +76,13 @@
 :where(.clearing-app)[data-skin='rune'] button { box-shadow: inset 0 -3px #19141b55; }
 :where(.clearing-app)[data-skin='glass'] .brand { font-size: 17px; font-weight: 600; }
 :where(.clearing-app)[data-skin='glass'] .hud { gap: 6px 16px; padding-block: 6px; }
+.clearing-app[data-skin='abyss'] {
+  --background: #030713; --surface: #080f21; --button: #10273bcd; --hover: #193a50; --text: #ecfffa; --muted: #a9c6d4;
+  --accent: #87f8e4; --danger: #ff9ab7; --border: #72dbed55;
+  --health: #91f7da; --xp: #ba9dff; --radius: 16px;
+  --font: 'Segoe UI', system-ui, sans-serif; --heading-font: 'Segoe UI', system-ui, sans-serif;
+}
+:where(.clearing-app)[data-skin='abyss'] .hud { background: linear-gradient(100deg, #0c202bcc, #0c1026dd); border-color: #6ef2e433; }
+:where(.clearing-app)[data-skin='abyss'] .brand { font-size: 18px; font-weight: 500; letter-spacing: .3px; }
+:where(.clearing-app)[data-skin='abyss'] .xp-track span { box-shadow: 0 0 10px #ba9dff80; }
+:where(.clearing-app)[data-skin='abyss'] .upgrade-choices button { background: linear-gradient(160deg, #163b45aa, #201b3dbb); }

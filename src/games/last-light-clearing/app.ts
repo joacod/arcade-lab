@@ -91,6 +91,12 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
           next = createGarden(theme, () => {
             if (presentation === next) graphicsFailure();
           });
+        } else if (theme.presentation === 'abyss') {
+          const { createBloom } = await import('./vgpu/bloom.ts');
+          if (!request.current()) return;
+          next = await createBloom(theme, request.signal, () => {
+            if (presentation === next) graphicsFailure();
+          });
         } else next = createPresentation(theme, bundle?.images);
         if (!request.current()) return;
         // Prepare and paint against the CURRENT run, including a retry made during loading.
