@@ -26,23 +26,6 @@
 .circuit-app .circuit-boss span { display: flex; justify-content: space-between; gap: 8px; font: 10px monospace; letter-spacing: .12em; margin-bottom: 8px; }
 .circuit-app .circuit-boss small { font-size: 8px; color: #b8a2bd; }
 .circuit-app .circuit-boss meter::-webkit-meter-optimum-value { background: #fa7995; }
-.circuit-app .circuit-menu-layer { position: absolute; inset: 0; overflow: auto; padding: 32px clamp(24px, 6vw, 85px); display: flex; align-items: center; background: linear-gradient(90deg,#080e1af7 0%,#0b1121e8 40%,#0b112133 85%); }
-.circuit-app .circuit-menu { max-width: 510px; padding: 22px 0; }
-.circuit-app .circuit-eyebrow { font: 9px monospace; letter-spacing: .16em; color: #94c9c7; margin: 0 0 22px; }
-.circuit-app h1 { font: italic 950 clamp(42px, 6.6vw, 86px)/.91 system-ui; letter-spacing: -.07em; margin: 0 0 23px; }
-.circuit-app h1 em { color: #79f7d8; font-style: inherit; }
-.circuit-app .circuit-description { color: #b2c3cf; max-width: 340px; font-size: 14px; line-height: 1.75; }
-.circuit-app .circuit-facts { display: flex; gap: 20px; font: 9px monospace; color: #e4bf93; letter-spacing: .08em; margin: 23px 0; }
-.circuit-app .circuit-actions { display: flex; gap: 9px; flex-wrap: wrap; margin: 22px 0; max-width: 360px; }
-.circuit-app .circuit-actions button { text-align: left; font-size: 12px; }
-.circuit-app .circuit-actions .circuit-primary { width: 100%; display: flex; justify-content: space-between; background: #79f7d8; color: #0b242a; border-color: #79f7d8; font-weight: 800; padding: 14px 19px; }
-.circuit-app .circuit-actions .circuit-primary:hover { background: #b8ffe8; }
-.circuit-app .circuit-instructions { font: 10px/1.9 monospace; color: #8ca6b7; }
-.circuit-app .circuit-instructions b { color: #d4dcdb; font-weight: 500; }
-.circuit-app .circuit-settings { display: flex; gap: 9px; margin-top: 18px; }
-.circuit-app .circuit-settings button { font: 10px monospace; }
-.circuit-app .circuit-results { display: block; white-space: pre-line; font: 12px/1.9 monospace; color: #f2ce9d; border-left: 2px solid #79f7d8; padding-left: 15px; }
-.circuit-app .circuit-display-status,.circuit-app .circuit-sound-status { font: 10px/1.5 monospace; color: #f1bf9b; max-width: 340px; }
 .circuit-app .circuit-footer { flex: 0 0 auto; background: #0b101d; border-top: 1px solid #68849d33; padding: 9px 28px; z-index: 2; }
 .circuit-app .circuit-hint { font: 9px monospace; letter-spacing: .03em; color: #d5dfdd; text-align: center; }
 .circuit-app .circuit-hint span { color: #7a94a5; }
@@ -71,11 +54,6 @@
   .circuit-app .circuit-boss { left: 10%; right: 10%; }
   .circuit-app .circuit-location { top: 15px; font-size: 10px; }
   .circuit-app .circuit-location small { max-width: 320px; font-size: 8px; }
-  .circuit-app .circuit-menu-layer { padding: 12px 24px; background: #080e1ae8; align-items: flex-start; }
-  .circuit-app .circuit-menu { padding: 20px 0; width: 100%; }
-  .circuit-app h1 { font-size: clamp(43px, 11vw, 65px); }
-  .circuit-app .circuit-description { font-size: 13px; }
-  .circuit-app .circuit-eyebrow { font-size: 8px; margin-bottom: 20px; }
 }
 @media (max-height: 550px) and (min-width: 600px) {
   .circuit-app .circuit-hud { flex-basis: 50px; padding-top: 5px; padding-bottom: 5px; }
@@ -83,5 +61,4 @@
   .circuit-app .circuit-touch button { pointer-events: auto; }
   .circuit-app .circuit-footer { padding: 5px; }
   .circuit-app .circuit-boss { bottom: 10px; left: 28%; right: 28%; }
-  .circuit-app .circuit-menu-layer { padding: 8px 30px; }
 }

@@ -13,7 +13,7 @@ An original Canvas 2D street brawler. Rook follows a blackout through **Neon Bac
 | K | Heavy strike: broad contact, strong stagger and committed recovery |
 | Space | Jump |
 | J or K while airborne | Flying kick |
-| Escape / P / Pause | Pause; Resume fight continues from the menu |
+| Escape / P / Pause | Pause; Resume continues from the menu |
 | Touch arrows + Strike / Heavy / Jump | Independent captured controls support simultaneous touches |
 
 Align your feet with an opponent's ground lane before attacking. Read the red attack telegraphs and step into another lane, move behind the attacker or jump. Aerial kicks work during the jump's useful height window. Jabs and crosses isolate one opponent; finishers, heavy strikes and flying kicks can hit a crowd. Holding an attack button does not repeat it. Brief input buffering accepts a press during recovery; a short gap after a light strike preserves the next combo move.

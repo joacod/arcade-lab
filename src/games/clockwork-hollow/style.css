@@ -16,22 +16,6 @@
 .hollow-app .hollow-location { position: absolute; left: clamp(18px, 4vw, 48px); top: 24px; pointer-events: none; display: flex; align-items: center; gap: 13px; font: 10px monospace; letter-spacing: .08em; color: #c0d2bb; }
 .hollow-app .hollow-location > span { border: 1px solid #9cbaaa40; border-radius: 50%; padding: 8px; color: var(--gold); }
 .hollow-app .hollow-location small { display: block; font: 11px 'Avenir Next', system-ui, sans-serif; color: var(--dim); margin-top: 5px; letter-spacing: 0; }
-.hollow-app .hollow-menu-layer { position: absolute; inset: 0; display: flex; align-items: center; padding: clamp(18px, 4vw, 52px); overflow: auto; background: linear-gradient(90deg, #081d26ed 0%, #0b2328df 36%, #0b232890 59%, #0b232815 100%); }
-.hollow-app .hollow-menu { width: min(470px, 100%); margin: auto 0; padding: 12px 0; }
-.hollow-app .hollow-eyebrow { font: 9px monospace; letter-spacing: .14em; color: var(--gold); line-height: 1.8; }
-.hollow-app h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: clamp(48px, 6.4vw, 82px); line-height: .98; letter-spacing: -.055em; margin: 22px 0; color: #f0ead1; }
-.hollow-app .hollow-description { font-size: 14px; line-height: 1.8; color: #b4c8ba; max-width: 360px; }
-.hollow-app .hollow-facts { display: flex; gap: 20px; font: 8px monospace; letter-spacing: .09em; color: var(--gold); margin: 26px 0; }
-.hollow-app .hollow-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; max-width: 380px; }
-.hollow-app .hollow-actions button { font-size: 12px; }
-.hollow-app .hollow-actions .hollow-primary { flex-basis: 100%; max-width: 330px; display: flex; justify-content: space-between; background: var(--gold); color: #183236; border-color: var(--gold); font-size: 14px; font-weight: 700; padding: 14px 19px; }
-.hollow-app .hollow-controls { font-size: 10px; line-height: 2; color: var(--dim); }
-.hollow-app .hollow-controls b { font-weight: 600; color: #c6d8c6; }
-.hollow-app .hollow-controls span { padding: 0 7px; }
-.hollow-app .hollow-settings { display: flex; gap: 8px; margin-top: 18px; }
-.hollow-app .hollow-settings button { font-size: 10px; padding: 6px 12px; min-height: 34px; }
-.hollow-app .hollow-results { display: block; color: var(--gold); font: 12px monospace; line-height: 1.7; margin: 20px 0; }
-.hollow-app .hollow-status, .hollow-app .hollow-audio-status { color: var(--gold); font-size: 11px; line-height: 1.6; }
 .hollow-app .hollow-footer { position: relative; min-height: 47px; padding: 12px clamp(18px, 4vw, 48px); display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #10292d; border-top: 1px solid #a8c7ad1f; }
 .hollow-app .hollow-hint, .hollow-app .hollow-footer-note { font: 8px monospace; letter-spacing: .08em; color: var(--dim); }
 .hollow-app .hollow-touch { display: none; }
@@ -50,24 +34,16 @@
   .hollow-app .hollow-instruments { gap: 10px; font-size: 10px; }
   .hollow-app .hollow-instruments button { padding: 8px 12px; font-size: 11px; }
   .hollow-app kbd { display: none; }
-  .hollow-app .hollow-menu-layer { background: #0a2227df; }
-  .hollow-app h1 { font-size: 56px; }
   .hollow-app .hollow-location { top: 15px; font-size: 8px; }
 }
 @media (max-height: 600px) {
   .hollow-app .hollow-hud { min-height: 48px; padding-top: 6px; padding-bottom: 6px; }
-  .hollow-app .hollow-menu-layer { align-items: flex-start; }
-  .hollow-app .hollow-menu { padding-top: 8px; }
-  .hollow-app h1 { font-size: 45px; margin: 14px 0; }
   .hollow-app .hollow-footer { min-height: 42px; }
   .hollow-app .hollow-touch button { height: 42px; }
 }
-
-.hollow-app .hollow-results { white-space: pre-line; }
 .hollow-app .hollow-location > div { max-width: min(480px, 70vw); line-height: 1.7; text-shadow: 0 1px 6px #071e29; }
 @media (max-width: 760px) {
   .hollow-app .hollow-progress { display: none; }
-  .hollow-app .hollow-results { font-size: 11px; }
 }
 
 .hollow-app .hollow-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

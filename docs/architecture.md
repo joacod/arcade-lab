@@ -43,6 +43,7 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 | Measurement, fullscreen, frame loop and lifetime signal | `src/engine/browser/host.ts` |
 | Page visibility, blur, page-exit and deferred focus binding | `src/engine/browser/session.ts` |
 | Keyboard/button holds, press edges and independent touch capture | `src/engine/browser/buttons.ts` |
+| Configured game menus, tabs, actions, focus and common options | `src/engine/browser/menu.ts`, `menu.css` |
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
@@ -60,6 +61,16 @@ The host owns a stable focusable surface and one frame loop. Starting is idempot
 `bindButtons` shares physical keyboard/button capture across button-based controls. It owns keyboard aliases, independent pointer captures, rising edges, release/cancellation and abort cleanup. Each simulation step consumes one held/pressed snapshot; game-local input adapters translate it into actions. Gesture-based movement remains local to its existing owners. Sessions clear input at display and gameplay transitions and through the focus/lifetime bindings.
 
 The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
+
+## Menus
+
+The home screen is the game catalog. Each card provides a cover, name, gameplay description and genre; selection loads the game lazily.
+
+`createGameMenu` supplies the shared Game, Options and Controls panels. Games provide their title, gameplay UI containers, authored setup/result markup, control instructions and typed action definitions with the screens on which they are available. Common actions use Play, Resume, Restart and Game selection. Checkpoint retries and stage transitions remain explicit game actions.
+
+The component owns tab navigation (including arrows, Home and End), action visibility and focus, mute/fullscreen buttons, notices and compact layout. Actions stay outside the scrollable content area. Changing screens returns to the Game panel; changing tabs never changes run state. Gameplay instruments and touch controls are hidden behind menus while retaining their layout space. Short/narrow viewports use the full viewport for the menu; unusually constrained content can scroll without moving the action bar.
+
+Games own configuration values, result updates, upgrade choices and action callbacks. The component never starts, pauses or resets simulation itself. Listeners use the host abort signal. Add game-specific fields only when they control actual game behavior or presentation; shared menus contain no game content.
 
 ## Sound
 
@@ -83,4 +94,4 @@ Share mechanisms with a concrete common responsibility: session contracts, bound
 
 Keep gameplay state machines, retry/checkpoint policies, collision eligibility, authored content, UI intents and cosmetic animation local. Image-atlas validation and renderer contracts that depend on a game's state also stay with that game. Procedural artwork does not need an image bundle or a shared asset service.
 
-Each `app.ts` explicitly connects its run, clock, input, UI, presentation and sound. Extract repeated policies when doing so clarifies ownership; different transition rules do not need a universal run/entity framework, scene manager, camera or menu controller.
+Each `app.ts` explicitly connects its run, clock, input, UI, presentation and sound. Extract repeated policies when doing so clarifies ownership; different transition rules stay local rather than moving into a universal run/entity framework, scene manager, camera or menu state machine.

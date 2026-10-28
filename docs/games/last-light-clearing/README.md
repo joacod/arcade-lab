@@ -34,6 +34,8 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Visual settings
 
+The shared Options panel contains appearance, interface, accent, view and sound controls. Interface and accent style the gameplay HUD and upgrade cards; shared menu navigation keeps a consistent layout.
+
 Appearance chooses an art bundle or procedural treatment, cosmetic environment, effect palette, and default interface. Classic, Rune, Glass and Abyss can be selected independently, with default/amber/teal/violet interface accents. Explicit interface choices survive appearance changes; “Match appearance” follows the successfully loaded preset. Paused replacements retain the entire run, including active time, positions, health, upgrades, and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints, and scenery never change physics or targeting.
 
 ## Sound identity

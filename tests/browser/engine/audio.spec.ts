@@ -194,13 +194,13 @@ test('game sessions suspend for cached pagehide and dispose on final page exit',
   for (const game of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow']) {
     await page.goto('/');
     await page.getByRole('button', { name: `Play ${game}`, exact: true }).click();
-    await page.getByRole('button', { name: game === 'Clockwork Hollow' ? 'Enter the hollow' : game === 'Skybreak' ? 'Take flight' : 'Enter the clearing' }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.at(-1)?.state)).toBe('running');
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));
     await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.at(-1).state)).toBe('suspended');
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
     expect(await page.evaluate(() => (window as any).audioProbe.live.size)).toBe(0);
-    await page.getByRole('button', { name: game === 'Clockwork Hollow' ? 'Resume journey' : game === 'Skybreak' ? 'Resume flight' : 'Resume surviving' }).click();
+    await page.getByRole('button', { name: 'Resume', exact: true }).click();
     await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.at(-1).state)).toBe('running');
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })));
     await expect(page.locator('canvas')).toHaveCount(0);
