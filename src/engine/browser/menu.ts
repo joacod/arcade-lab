@@ -18,9 +18,9 @@ interface MenuOptions<Action extends string, Screen extends string> {
   pause: HTMLButtonElement;
   /** HUD and touch-control containers retain their space behind menus. */
   gameplayUI: Iterable<HTMLElement>;
-  /** Authored game markup. Only supply sections the game actually needs. */
-  game?: string;
-  options?: string;
+  /** Composed game content. Only supply sections the game actually needs. */
+  game?: HTMLElement;
+  options?: HTMLElement;
   controls: string;
 }
 
@@ -36,8 +36,8 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       ${['Game', 'Options', 'Controls'].map((name, i) => `<button type="button" role="tab" id="${config.id}-tab-${i}" aria-controls="${config.id}-panel-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${name}</button>`).join('')}
     </div>
     <div class="game-menu-body">
-      <div role="tabpanel" id="${config.id}-panel-0" aria-labelledby="${config.id}-tab-0"><p class="game-menu-description"></p>${config.game ?? ''}</div>
-      <div role="tabpanel" id="${config.id}-panel-1" aria-labelledby="${config.id}-tab-1" hidden>${config.options ?? ''}<div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-pressed="false">Mute sound</button><button type="button" class="game-menu-fullscreen" hidden>Fullscreen</button></div></div>
+      <div role="tabpanel" id="${config.id}-panel-0" aria-labelledby="${config.id}-tab-0"><p class="game-menu-description"></p></div>
+      <div role="tabpanel" id="${config.id}-panel-1" aria-labelledby="${config.id}-tab-1" hidden><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-pressed="false">Mute sound</button><button type="button" class="game-menu-fullscreen" hidden>Fullscreen</button></div></div>
       <div role="tabpanel" id="${config.id}-panel-2" aria-labelledby="${config.id}-tab-2" hidden><div class="game-menu-controls">${config.controls}</div></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
@@ -51,6 +51,8 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const description = layer.querySelector<HTMLElement>('.game-menu-description')!;
   const tabs = [...layer.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
   const panels = [...layer.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+  if (config.game) panels[0]!.append(config.game);
+  if (config.options) panels[1]!.prepend(config.options);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
   const tablist = layer.querySelector<HTMLElement>('[role="tablist"]')!;
   const fullscreen = layer.querySelector<HTMLButtonElement>('.game-menu-fullscreen')!;

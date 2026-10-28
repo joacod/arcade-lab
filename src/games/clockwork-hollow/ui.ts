@@ -1,3 +1,4 @@
+import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { results as summarize, type Run } from './game.ts';
 import type { Control } from './input.ts';
@@ -12,11 +13,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.querySelector('.hollow-stage')!.prepend(surface);
   const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
   pause.addEventListener('click', () => act('pause'), { signal });
+  const results = createMenuReadout('Adventure results');
   const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.hollow-stage')!, {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: `<output class="hollow-results" aria-label="Adventure results" hidden></output>`,
+    game: results.element,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br><b>Escape / P</b> pause <span>·</span> Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -27,7 +29,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump'] as const).map(action => [action, root.querySelector<HTMLButtonElement>(`[data-control="${action}"]`)!])) as Record<Control, HTMLButtonElement>;
-  const description = menu.description, results = root.querySelector<HTMLOutputElement>('.hollow-results')!;
+  const description = menu.description;
   const motes = root.querySelector('[aria-label="Motes collected"]')!, hint = root.querySelector('.hollow-hint')!;
   const announcement = root.querySelector('.hollow-announcement')!;
   let saved = '';
@@ -37,7 +39,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     show(screen: Screen, focus = true) {
       menu.heading.textContent = screen === 'title' ? 'Clockwork Hollow' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'paused' ? '' : screen === 'victory' ? 'All three bells reached.' : screen === 'interlude' ? 'Continue to the next district.' : screen === 'defeat' ? 'Retry from the latest checkpoint. Collected motes are retained.' : 'Cross three districts and reach each bell. Lanterns save your return point. Motes are optional.';
-      results.hidden = !['paused', 'victory', 'defeat', 'interlude'].includes(screen);
+      results.element.hidden = !['paused', 'victory', 'defeat', 'interlude'].includes(screen);
 
       for (const control of Object.values(controls)) control.disabled = screen !== 'playing';
       menu.show(screen, focus);
@@ -58,7 +60,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       root.querySelector('[data-menu-action="retry"]')!.textContent = checkpoint ? 'Retry checkpoint' : 'Retry checkpoint';
       const next = run.levels[run.levelIndex + 1];
       root.querySelector('[data-menu-action="continue"]')!.textContent = next ? `Continue to ${next.name}` : 'Continue';
-      results.textContent = `${run.completed} / ${run.levels.length} bells awakened · ${tally.motes} / ${tally.total} wind-up motes\n${time} on the path · ${run.deaths} missed steps · ${tally.score.toLocaleString()} points${run.status === 'victory' ? `\n${tally.title}` : ''}`;
+      results.update(`${run.completed} / ${run.levels.length} bells awakened · ${tally.motes} / ${tally.total} wind-up motes\n${time} on the path · ${run.deaths} missed steps · ${tally.score.toLocaleString()} points${run.status === 'victory' ? `\n${tally.title}` : ''}`);
       if (run.status === 'interlude') description.textContent = `${run.level.name} is awake. Next: ${next?.name}. ${next?.subtitle}`;
       hint.textContent = run.levelIndex === 0 && run.player.x < 810 ? 'HOLD JUMP FOR HEIGHT · RELEASE FOR A LITTLE HOP'
         : checkpoint && Math.abs(run.player.x - checkpoint.x) < 220 ? 'LANTERN LIT · YOUR RETURN POINT IS SAVED'

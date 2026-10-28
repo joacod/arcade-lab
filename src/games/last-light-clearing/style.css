@@ -48,6 +48,7 @@
 :where(.clearing-app) .play-surface canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; }
 :where(.clearing-app) .screen-overlay { z-index: 1; }
 :where(.clearing-app) .play-surface:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+:where(.clearing-app) .run-details output { white-space: pre-line; font: 13px/1.6 ui-monospace, monospace; color: #d2e8dd; }
 :where(.clearing-app) .run-details { display: grid; gap: 6px; font-size: 14px; color: var(--text); margin-top: 16px; }
 :where(.clearing-app) .upgrade-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 :where(.clearing-app) .upgrade-choices button { text-align: left; min-height: 125px; background: var(--button); border-color: var(--border); }

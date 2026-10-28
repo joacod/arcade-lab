@@ -1,3 +1,4 @@
+import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
@@ -14,11 +15,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.querySelector('.blast-stage')!.prepend(surface);
   const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
   pause.addEventListener('click', () => act('pause'), { signal });
+  const results = createMenuReadout('Operation results');
   const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.blast-stage')!, {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: `<output class="blast-results" aria-label="Operation results" hidden></output>`,
+    game: results.element,
     controls: `<b>A D / ← →</b> MOVE　 <b>SPACE</b> JUMP　 <b>J</b> HOLD TO FIRE<br><b>W S / ↑ ↓</b> AIM　 <b>K</b> GRENADE　 <b>Q</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -43,7 +45,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     },
     show(next: Screen, focus = true) {
       screen = next;
-      $('.blast-results').hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
+      results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
       menu.heading.textContent = next === 'title' ? 'Blastline' : next === 'paused' ? 'Paused' : next === 'victory' ? 'Victory' : next === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = next === 'title' ? 'Rescue Bolt, cut the power and reach extraction. Supply posts save progress and refill your resources.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';
 
@@ -64,7 +66,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       write('.blast-banner b', run.extraction > 0 ? 'CATCH YOUR BREATH.' : notice);
       write('.blast-banner span', run.extraction > 0 ? 'EXTRACTION CONFIRMED / STAND CLEAR' : detail);
       $('.blast-objective').classList.toggle('blast-urgent', readyToExtract(run));
-      write('.blast-results', `${run.status === 'victory' ? 'OPERATION COMPLETE' : run.status === 'defeat' ? run.collapse === 0 ? 'FACILITY COLLAPSED' : 'NO LIVES REMAINING' : run.status === 'interlude' ? 'BORDER STATION COMPLETE' : run.mission.name.toUpperCase()}\n${String(run.score).padStart(6, '0')} POINTS　/　${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.destroyed} TILES BROKEN　/　${run.kills} MACHINES DOWN　/　${run.lives} LIVES`);
+      results.update(`${run.status === 'victory' ? 'OPERATION COMPLETE' : run.status === 'defeat' ? run.collapse === 0 ? 'FACILITY COLLAPSED' : 'NO LIVES REMAINING' : run.status === 'interlude' ? 'BORDER STATION COMPLETE' : run.mission.name.toUpperCase()}\n${String(run.score).padStart(6, '0')} POINTS　/　${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.destroyed} TILES BROKEN　/　${run.kills} MACHINES DOWN　/　${run.lives} LIVES`);
     },
   };
 }

@@ -1,3 +1,4 @@
+import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
@@ -14,11 +15,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.querySelector('.skybreak-stage')!.prepend(surface);
   const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
   pause.addEventListener('click', () => act('pause'), { signal });
+  const results = createMenuReadout('Flight results');
   const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.skybreak-stage')!, {
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: `<div class="skybreak-results" hidden><output aria-label="Flight results"></output></div>`,
+    game: results.element,
     controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll · Escape to pause<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -38,7 +40,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       menu.heading.textContent = screen === 'title' ? 'Skybreak' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'paused' ? '' : screen === 'victory' ? 'Iron Tempest destroyed.' : screen === 'defeat' ? 'Sortie ended.' : 'Destroy Iron Tempest before 2:48. Collect supplies to upgrade your guns and repair your hull.';
 
-      root.querySelector<HTMLElement>('.skybreak-results')!.hidden = !['paused', 'victory', 'defeat'].includes(screen);
+      results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
       evade.disabled = screen !== 'playing';
       menu.show(screen, focus);
     },
@@ -56,7 +58,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
         root.querySelector('.skybreak-boss-pattern')!.textContent = run.boss.age < fortress.entrance ? 'APPROACHING · AIM FOR THE LIGHTS' : run.boss.charge > 0 ? ({ fan: 'FAN VOLLEY · FIND A GAP', aim: 'TARGET LOCK · KEEP MOVING', lanes: 'BARRAGE · LEAVE THE MARKED LANES' } as const)[run.boss.attack] : 'REACTORS EXPOSED';
       }
       const minutes = Math.floor(run.elapsed / 60), seconds = String(Math.floor(run.elapsed % 60)).padStart(2, '0');
-      root.querySelector('[aria-label="Flight results"]')!.textContent = `${String(run.score).padStart(6, '0')} POINTS · ${minutes}:${seconds}\n${run.stats.kills} aircraft down · ${run.stats.pickups} supplies\n${run.status === 'active' || run.status === 'paused' ? '' : run.status === 'victory' ? `${run.bonus} survival bonus · ${run.player.lives} lives home` : run.elapsed >= flight.duration ? 'Time limit reached · Fortress escaped' : 'All aircraft lost'}`;
+      results.update(`${String(run.score).padStart(6, '0')} POINTS · ${minutes}:${seconds}\n${run.stats.kills} aircraft down · ${run.stats.pickups} supplies\n${run.status === 'active' || run.status === 'paused' ? '' : run.status === 'victory' ? `${run.bonus} survival bonus · ${run.player.lives} lives home` : run.elapsed >= flight.duration ? 'Time limit reached · Fortress escaped' : 'All aircraft lost'}`);
       roll.textContent = run.player.roll > 0 ? 'IMMUNE' : run.player.recharge > 0 ? `${Math.ceil(run.player.recharge)}s` : 'READY';
       evade.dataset.ready = String(run.player.recharge <= 0); evade.setAttribute('aria-label', `Evasive roll: ${roll.textContent}`);
     },

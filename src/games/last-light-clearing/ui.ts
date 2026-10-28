@@ -1,3 +1,4 @@
+import { createSelectField, createRangeField } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
@@ -39,13 +40,54 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     </main>`;
   const pause = root.querySelector<HTMLButtonElement>('[data-action="pause"]')!;
   pause.addEventListener('click', () => onAction('pause'), { signal });
+  let configuration: ConfigurationId = 'clearing';
+  const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
+  const gameContent = document.createElement('div');
+  gameContent.innerHTML = `<div class="menu-setup"><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-choices" hidden></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
+  const round = createSelectField({
+    label: 'Round', accessibleLabel: 'Round configuration', signal,
+    choices: Object.fromEntries(Object.entries(configurations).map(([id, config]) => [id, config.name])) as Record<ConfigurationId, string>,
+    value: configuration,
+    onChange(id) {
+      configuration = id;
+      gameContent.querySelector('.menu-note')!.textContent = configurations[id].description;
+      menu.description.textContent = roundDescription();
+      onConfiguration(id);
+    },
+  });
+  gameContent.querySelector('.menu-setup')!.prepend(round.element);
+  const appearance = createSelectField({
+    label: 'Appearance', signal,
+    choices: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])),
+    value: 'woodland', onChange: onTheme,
+  });
+  const skin = createSelectField({
+    label: 'Interface', signal, choices: { match: 'Match appearance', ...interfaceSkins },
+    value: 'match', onChange: options.onInterface,
+  });
+  const accent = createSelectField({
+    label: 'Interface accent', signal, choices: accents,
+    value: 'default', onChange: options.onAccent,
+  });
+  const view = createSelectField({
+    label: 'View', signal, choices: { close: 'Close view', arena: 'Whole arena' },
+    value: 'close', onChange: options.onView,
+  });
+  const volume = createRangeField({
+    label: 'Volume', accessibleLabel: 'Sound volume', signal,
+    min: 0, max: 100, step: 1, value: 45, onInput: value => onVolume(value / 100),
+  });
+  const settings = document.createElement('div');
+  const fields = document.createElement('div'); fields.className = 'menu-fields';
+  fields.append(appearance.element, skin.element, accent.element, view.element);
+  settings.append(fields, volume.element);
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, root.querySelector('.stage')!, {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
     onAction: action => action === 'exit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
-    game: `<div class="menu-setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-choices" hidden></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`,
-    options: `<div class="menu-fields"><label>Appearance <select aria-label="Appearance">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>Interface <select aria-label="Interface"><option value="match">Match appearance</option>${Object.entries(interfaceSkins).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>Interface accent <select aria-label="Interface accent">${Object.entries(accents).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div><label class="menu-volume">Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label>`,
+    game: gameContent,
+    options: settings,
     controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p><b>Escape / P</b> pause. Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       { id: 'start', label: 'Play', screens: ['title'], primary: true },
@@ -57,31 +99,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   });
   const assetStatus = document.createElement('p'); assetStatus.className = 'asset-status'; assetStatus.hidden = true;
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
-  let configuration: ConfigurationId = 'clearing';
-  const configurationSelect = root.querySelector<HTMLSelectElement>('[aria-label="Round configuration"]')!;
-  const themeSelect = root.querySelector<HTMLSelectElement>('[aria-label="Appearance"]')!;
-  configurationSelect.addEventListener('change', () => {
-    const id = configurationSelect.value;
-    if (id in configurations) {
-      configuration = id as ConfigurationId;
-      root.querySelector('.menu-note')!.textContent = configurations[configuration].description;
-      description.textContent = roundDescription();
-      onConfiguration(configuration);
-    }
-  }, { signal });
-  themeSelect.addEventListener('change', () => {
-    if (themeSelect.value in themes) onTheme(themeSelect.value as ThemeId);
-  }, { signal });
-  root.querySelector<HTMLSelectElement>('[aria-label="View"]')!.addEventListener('change', event => {
-    options.onView((event.target as HTMLSelectElement).value as ViewMode);
-  }, { signal });
-  root.querySelector<HTMLSelectElement>('[aria-label="Interface"]')!.addEventListener('change', event => {
-    options.onInterface((event.target as HTMLSelectElement).value as InterfaceChoice);
-  }, { signal });
-  root.querySelector<HTMLSelectElement>('[aria-label="Interface accent"]')!.addEventListener('change', event => {
-    options.onAccent((event.target as HTMLSelectElement).value as Accent);
-  }, { signal });
-  root.querySelector('input')!.addEventListener('input', event => onVolume(Number((event.target as HTMLInputElement).value) / 100), { signal });
   const xpBar = root.querySelector<HTMLElement>('.xp-track span')!;
   const choices = root.querySelector<HTMLElement>('.upgrade-choices')!;
   let choiceSignature = '';
@@ -115,12 +132,11 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const healthValue = root.querySelector<HTMLOutputElement>('.health-value')!;
   const kills = root.querySelector<HTMLOutputElement>('.kills')!;
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-  const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   return {
     preparing(value: boolean) {
       for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.menuAction!)) button.disabled = value;
     },
-    appearance(id: ThemeId) { themeSelect.value = id; },
+    appearance(id: ThemeId) { appearance.input.value = id; },
     fullscreen: menu.fullscreen,
     displayStatus: menu.displayStatus,
     soundStatus: menu.soundStatus,
