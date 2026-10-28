@@ -6,11 +6,11 @@ An original Canvas 2D run-and-gun operation through **Border Station** and **Fou
 
 ## Playing
 
-A/D or left/right runs, Space jumps, and releasing Space shortens the jump. Hold J to fire. W/up and S/down aim vertically while stationary and diagonally while moving. K throws a fused grenade. Reach Bolt to rescue him and switch automatically to his launcher; Q then swaps operators. Touch directions, Jump, Fire, Grenade and Switch own independent pointers. Escape/P pauses. Menus offer Resume, Restart operation, Game selection, sound mute and fullscreen.
+A/D or left/right runs, Space jumps, and releasing Space shortens the jump. Hold J to fire. W/up and S/down aim vertically while stationary and diagonally while moving. K throws a fused grenade. Reach Bolt to rescue him and switch automatically to his launcher; Q then swaps operators. Touch directions, Jump, Fire, Grenade and Switch own independent pointers. Escape/P pauses. Menus offer Resume, Restart, Game selection, sound mute and fullscreen.
 
 Nova's accurate automatic rifle opens small holes through sustained fire. Bolt's slower rockets damage groups of tiles and machines. Operator explosives are safe at close range; volatile barrels and machine attacks hurt. Guards commit to short bursts, while heavy units and the Bastion mark a target before firing stronger shells. Move away from the warning line rather than standing in its path.
 
-Five lives, health and brief hit immunity support retries. Death redeploys at the latest green supply post, preserving destruction, objectives and defeated machines. Each new supply post refills health and grenades once. Rescue and the next mission also resupply; redeployment guarantees a small grenade reserve. Restart operation creates intact terrain and clears all progress.
+Five lives, health and brief hit immunity support retries. Death redeploys at the latest green supply post, preserving destruction, objectives and defeated machines. Each new supply post refills health and grenades once. Rescue and the next mission also resupply; redeployment guarantees a small grenade reserve. Restart creates intact terrain and clears all progress.
 
 Brick cover and armored cover can break. Riveted structural steel stays solid. Destruction opens firing lanes, removes support and creates lower routes. Structural foundations, power decks and stairs preserve access to every required objective after all destructible tiles disappear. The final machine is required; ordinary guards can be bypassed. A locked extraction pad never advances the mission. The HUD points toward the nearest required objective, then toward extraction.
 

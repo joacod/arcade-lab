@@ -18,7 +18,7 @@ async function selectGame(id: GameId) {
     const entry = games.find(game => game.id === id)!;
     const mount = await entry.load();
     if (!disposed && request === generation) application.mount({ mount: host => mount(host, showSelection) });
-  } catch { if (!disposed && request === generation) showSelection('This world could not open. Please try again.'); }
+  } catch { if (!disposed && request === generation) showSelection('Could not load the game. Try again.'); }
 }
 showSelection();
 if (import.meta.hot) {

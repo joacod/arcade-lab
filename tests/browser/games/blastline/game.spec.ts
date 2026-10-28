@@ -28,7 +28,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   expect(await page.evaluate(() => (window as any).blastContexts.length)).toBe(0);
   await page.keyboard.press('j'); await page.clock.runFor(100); expect((await state()).elapsed).toBe(0);
   await page.screenshot({ path: info.outputPath('blastline-title.png') });
-  await page.getByRole('button', { name: 'Start operation', exact: false }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
   await page.keyboard.down('d'); await page.keyboard.down('j'); await page.clock.runFor(1200);
   await page.keyboard.up('d'); await page.keyboard.up('j'); await page.clock.runFor(100);
   expect((await state()).player.x).toBeGreaterThan(300); expect((await state()).projectiles.length).toBeGreaterThan(0);
@@ -36,11 +36,11 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   await page.keyboard.up('Space'); await page.clock.runFor(100); expect((await state()).player.vy).toBeGreaterThan(-180);
   await page.keyboard.press('k'); await page.clock.runFor(50); expect((await state()).grenades).toBe(3);
   await page.keyboard.press('Escape'); const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
-  await page.getByRole('button', { name: 'Restart operation', exact: true }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   expect((await state()).player.x).toBe(99); expect((await state()).destroyed).toBe(0); expect((await state()).grenades).toBe(4);
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused');
-  await page.getByRole('button', { name: 'Resume operation', exact: false }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(50);
   const cdp = await page.context().newCDPSession(page);
   const point = async (name: string, id: number) => { const r = (await page.getByRole('button', { name, exact: true }).boundingBox())!; return { x: r.x + r.width / 2, y: r.y + r.height / 2, id }; };
   const right = await point('Move right', 1), fire = await point('Fire', 2), jump = await point('Jump', 3);
@@ -53,7 +53,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused'); await page.keyboard.up('d');
-  const blurred = await state(); await page.getByRole('button', { name: 'Resume operation', exact: false }).click(); await page.clock.runFor(100);
+  const blurred = await state(); await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(100);
   expect((await state()).player.x).toBe(blurred.player.x);
   // Outcome fixtures exercise session composition. The invariant suite traverses authored routes with real actions.
   await page.evaluate(() => { const r = (window as any).blastProbe; Object.assign(r.player, r.mission.rescue, { vx: 0, vy: 0 }); });
@@ -64,10 +64,10 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     await page.clock.runFor(3200);
     await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', mission ? 'victory' : 'interlude');
     const result = await state(); await page.clock.runFor(1000); expect(await state()).toEqual(result);
-    if (!mission) { await page.getByRole('button', { name: 'Enter Foundry Run', exact: false }).click(); await page.clock.runFor(50); expect((await state()).missionIndex).toBe(1); }
+    if (!mission) { await page.getByRole('button', { name: 'Continue', exact: false }).click(); await page.clock.runFor(50); expect((await state()).missionIndex).toBe(1); }
   }
   await expect(page.getByLabel('Operation results', { exact: true })).toContainText('OPERATION COMPLETE');
-  await page.getByRole('button', { name: 'Restart operation', exact: true }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   expect((await state()).missionIndex).toBe(0); expect((await state()).rescued).toBe(false);
   await page.evaluate(() => { const r = (window as any).blastProbe; r.lives = 1; r.player.immune = 0; r.player.y = 1000; });
   await page.clock.runFor(50); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'defeat');
@@ -77,9 +77,9 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play Blastline', exact: true }).click(); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title'); await page.clock.runFor(50); expect((await state()).elapsed).toBe(0);
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
-  await page.getByRole('button', { name: 'Start operation', exact: false }).click(); await page.clock.runFor(100);
+  await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
   expect((await state()).elapsed).toBeGreaterThan(0); await page.keyboard.press('Escape');
-  await expect(page.locator('.blast-sound-status')).toContainText('Sound unavailable');
+  await expect(page.locator('.game-menu-sound-status')).toContainText('Sound unavailable');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await page.evaluate(() => (window as any).blastFrames.size)).toBe(0); expect(errors).toEqual([]); expect(foreign).toEqual([]);
 });

@@ -33,6 +33,9 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     if(intent==='pause'){suspend();return;}
     if(intent==='fullscreen'){void host.toggleFullscreen().then(message=>{if(!disposed)ui.displayStatus(message);});return;}
     if(document.hidden||!document.hasFocus())return;
+    if(intent==='title'&&screen!=='playing'){
+      sound?.reset();match=createMatch(selected);presentation?.reset();transition('title');return;
+    }
     if(intent==='start'&&screen==='title'||intent==='restart'&&screen!=='playing'){
       sound?.reset();sound?.activate();match=createMatch(selected);presentation?.reset();transition('playing');
     }else if(intent==='resume'&&screen==='paused'){

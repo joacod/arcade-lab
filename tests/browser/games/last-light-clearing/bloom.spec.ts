@@ -1,3 +1,4 @@
+import { openOptions } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Abyss switching and native device loss preserve the current run', async ({ page }) => {
@@ -16,7 +17,7 @@ test('Abyss switching and native device loss preserve the current run', async ({
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await expect(page.locator('.asset-status')).toBeHidden();
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(1700);
   await page.getByRole('button', { name: /Halo · Rank 1/ }).click(); await page.clock.runFor(50);
   await page.keyboard.down('d'); await page.clock.runFor(350); await page.keyboard.up('d');
@@ -30,7 +31,7 @@ test('Abyss switching and native device loss preserve the current run', async ({
       (window as any).restorePipeline = () => { GPUDevice.prototype.createRenderPipelineAsync = original; };
       GPUDevice.prototype.createRenderPipelineAsync = () => Promise.reject(new Error('shader preparation probe'));
     });
-    await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
+    await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
     await expect(page.locator('.asset-status')).toContainText('pipeline compilation failed');
     expect(await snapshot()).toBe(retained);
     expect(await page.evaluate(() => (window as any).devices.every((gpu: any) => gpu.disposed))).toBe(true);
@@ -41,15 +42,15 @@ test('Abyss switching and native device loss preserve the current run', async ({
       (window as any).restoreAdapter = () => { navigator.gpu.requestAdapter = original; };
       navigator.gpu.requestAdapter = () => new Promise(resolve => { (window as any).releaseAdapter = () => resolve(null); });
     });
-    await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
+    await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
     await expect(page.locator('.asset-status')).toContainText('Preparing Abyssal Bloom');
-    await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
+    await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'moonglass');
     await page.evaluate(() => { (window as any).releaseAdapter(); (window as any).restoreAdapter(); });
     expect(await snapshot()).toBe(retained);
   }
-  await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeEnabled();
+  await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('abyss');
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeEnabled();
   if (!supported) {
     await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
     expect(await snapshot()).toBe(retained);
@@ -58,15 +59,15 @@ test('Abyss switching and native device loss preserve the current run', async ({
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'abyss');
   await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'vgpu');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-skin', 'abyss');
-  await page.getByLabel('Interface', { exact: true }).selectOption('rune');
+  await openOptions(page); await page.getByLabel('Interface', { exact: true }).selectOption('rune');
   for (const appearance of ['prism', 'abyss', 'woodland', 'abyss']) {
-    await page.getByLabel('Appearance', { exact: true }).selectOption(appearance);
+    await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption(appearance);
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', appearance);
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-skin', 'rune');
     expect(await snapshot()).toBe(retained); expect(await page.locator('.world-canvas').count()).toBe(1);
   }
   expect(await page.evaluate(() => (window as any).devices.slice(0, -1).every((gpu: any) => gpu.disposed))).toBe(true);
-  await page.getByRole('button', { name: 'Resume surviving' }).click(); await page.clock.runFor(500);
+  await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(500);
   expect(await snapshot()).not.toBe(retained);
   await page.evaluate(() => (window as any).devices.at(-1).gpu.destroy());
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'woodland');
@@ -74,7 +75,7 @@ test('Abyss switching and native device loss preserve the current run', async ({
   await expect(page.locator('.asset-status')).toContainText('Your run is safe');
   const frozen = await snapshot(); await page.clock.runFor(500); expect(await snapshot()).toBe(frozen);
   expect(await page.evaluate(() => (window as any).devices.every((gpu: any) => gpu.disposed))).toBe(true);
-  await page.getByRole('button', { name: 'Resume surviving' }).click(); await page.clock.runFor(200);
+  await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(200);
   expect(await snapshot()).not.toBe(frozen);
 });
 

@@ -1,3 +1,4 @@
+import { openOptions } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
 // Read the Keeper's body from actual Canvas output, in world units.
@@ -49,9 +50,9 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.goto('/');
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByLabel('View', { exact: true }).selectOption('arena');
-  await expect(page.getByRole('heading', { name: 'Keep the light alive.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await expect(page.getByRole('heading', { name: 'Last Light Clearing' })).toBeVisible();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   const start = await keeper(page);
   await page.keyboard.down('d');
@@ -71,13 +72,13 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.clock.fastForward(60000);
   expect(await keeper(page)).toEqual(frozen);
   await expect(page.locator('.timer')).toHaveText(time!);
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
   expectStationary(await keeper(page), frozen);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
   const resized = await keeper(page);
   expect(Math.abs(resized.x - frozen.x)).toBeLessThan(5);
@@ -101,9 +102,9 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.keyboard.down('d');
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await page.clock.fastForward(60000);
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await page.keyboard.up('d');
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(500);
   const resumed = await keeper(page);
   expect(Math.abs(resumed.x - 480)).toBeLessThan(5);
@@ -116,13 +117,13 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
     delete (document as unknown as { hidden?: boolean }).hidden;
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
-  await page.getByRole('button', { name: 'Return to title' }).click();
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await page.getByRole('button', { name: 'Game setup' }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
-  await page.locator('.brand').focus();
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
-  const prevented = await page.locator('.brand').evaluate(link => !link.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true })));
+  await page.locator('[data-action="pause"]').focus();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  const prevented = await page.getByRole('button', { name: 'Resume', exact: true }).evaluate(link => !link.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true })));
   expect(prevented).toBe(false);
   expect(errors).toEqual([]);
 });
@@ -134,8 +135,8 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   await page.goto('/');
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByLabel('View', { exact: true }).selectOption('arena');
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   const canvas = page.locator('.play-surface');
   const box = (await canvas.boundingBox())!;
@@ -171,7 +172,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   // A half-strength drag stays 21 CSS pixels on a narrow viewport too.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(100);
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
   const narrow = (await canvas.boundingBox())!, beforeDrag = await keeper(page);
   await page.mouse.move(narrow.x + narrow.width / 2, narrow.y + narrow.height / 2);
@@ -289,14 +290,14 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.goto('/');
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toBeHidden();
   for (const [configuration, theme] of [['clearing', 'woodland'], ['dusk', 'moonglass']]) {
-    await page.getByLabel('Round configuration').selectOption(configuration!);
-    await page.getByLabel('Appearance', { exact: true }).selectOption(theme!);
+    await page.getByRole('tab', { name: 'Game', exact: true }).click(); await page.getByLabel('Round configuration').selectOption(configuration!);
+    await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption(theme!);
     await expect(page.locator('.asset-status')).toBeHidden();
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', theme!);
-    await page.getByRole('button', { name: 'Enter the clearing' }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.clock.runFor(1700);
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'choosing');
     const time = await page.locator('.timer').textContent();
@@ -309,9 +310,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await page.keyboard.up('Enter');
     await page.clock.runFor(50);
     if (configuration === 'clearing') {
-      await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
       const snapshot = () => page.evaluate(() => {
         const run = (window as unknown as { runEvidence: unknown }).runEvidence;
         return JSON.stringify(run, (_, value) => value instanceof Map ? [...value] : value);
@@ -337,14 +338,14 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       });
       expect(fetched.some(url => ['/three/', '/three.js', '/vgpu/', '/vgpu.js'].some(path => url.includes(path)))).toBe(false);
       const shell = page.locator('.clearing-app');
-      await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
       await expect(shell).toHaveAttribute('data-theme', 'ember');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
-      await page.getByLabel('Interface', { exact: true }).selectOption('glass');
-      await page.getByLabel('Interface accent').selectOption('violet');
+      await openOptions(page); await page.getByLabel('Interface', { exact: true }).selectOption('glass');
+      await openOptions(page); await page.getByLabel('Interface accent').selectOption('violet');
       await expect(shell).toHaveAttribute('data-skin', 'glass');
       await expect(shell).toHaveAttribute('data-accent', 'violet');
-      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
       await expect(shell).toHaveAttribute('data-theme', 'prism');
       await page.clock.runFor(20);
       expect(await snapshot()).toBe(retained);
@@ -354,21 +355,21 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       expect(projection.calls).toBeGreaterThan(20);
       expect(projection.projected.x).toBeCloseTo(projection.expected.x, 8);
       expect(projection.projected.y).toBeCloseTo(projection.expected.y, 8);
-      await page.getByLabel('View', { exact: true }).selectOption('close');
+      await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('close');
       await page.setViewportSize({ width: 780, height: 900 });
       await page.clock.runFor(60);
       const probes = await page.evaluate(() => (window as unknown as { gardenEvidence: { probes: { actual: number[]; expected: number[] }[] } }).gardenEvidence.probes);
       for (const probe of probes) for (let i = 0; i < 2; i++) expect(probe.actual[i]).toBeCloseTo(probe.expected[i]!, 8);
-      await page.getByLabel('View', { exact: true }).selectOption('arena');
+      await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
       await page.setViewportSize({ width: 1280, height: 1000 });
       await page.clock.runFor(60);
-      await page.getByRole('button', { name: 'Resume surviving' }).click();
+      await page.getByRole('button', { name: 'Resume' }).click();
       await page.keyboard.down('d'); await page.clock.runFor(150); await page.keyboard.up('d');
       await page.keyboard.press('Escape');
       const progressed = await snapshot();
       expect(progressed).not.toBe(retained);
       // Pixel actors share their manifest, animation and pivots with Ember Ruins.
-      await page.getByLabel('Appearance', { exact: true }).selectOption('ember-garden');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('ember-garden');
       await expect(shell).toHaveAttribute('data-theme', 'ember-garden');
       await page.clock.runFor(20);
       const uv = await page.evaluate(() => (window as unknown as { gardenEvidence: { uv: number[] } }).gardenEvidence.uv);
@@ -376,7 +377,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       expect(uv[2]! - uv[0]!).toBeCloseTo(16 / 512, 8);
       expect(uv[1]! - uv[5]!).toBeCloseTo(28 / 512, 8);
       expect(await snapshot()).toBe(progressed);
-      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
       await expect(shell).toHaveAttribute('data-theme', 'prism');
       await page.clock.runFor(20);
       // Real GPU loss restores a separate 2D canvas and preserves the paused run.
@@ -394,13 +395,13 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
           return original.call(this, type, ...args);
         } as typeof original;
       });
-      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
       await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
       await page.evaluate(() => (window as unknown as { restoreContext: () => void }).restoreContext());
       await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
       expect(await snapshot()).toBe(progressed);
       // Supersede an in-flight lazy appearance without committing or retaining its resources.
-      await page.getByLabel('Appearance', { exact: true }).evaluate(select => {
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).evaluate(select => {
         for (const value of ['prism', 'ember']) { select.value = value; select.dispatchEvent(new Event('change')); }
       });
       await expect(shell).toHaveAttribute('data-theme', 'ember');
@@ -411,12 +412,12 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       expect(lifetimes.resources).toBe(lifetimes.released);
       await page.clock.runFor(40);
       expect(await page.evaluate(() => (window as unknown as { pendingFrames: () => number }).pendingFrames())).toBe(1);
-      await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('moonglass');
       await expect(shell).toHaveAttribute('data-theme', 'moonglass');
-      await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('ember');
       await expect(shell).toHaveAttribute('data-theme', 'ember');
       await expect(shell).toHaveAttribute('data-skin', 'glass');
-      await page.getByLabel('Interface', { exact: true }).selectOption('match');
+      await openOptions(page); await page.getByLabel('Interface', { exact: true }).selectOption('match');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
       await page.clock.fastForward(60000);
       expect(await snapshot()).toBe(progressed);
@@ -426,38 +427,38 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       })).toBe(true);
       await expect(shell).toHaveAttribute('data-screen', 'paused');
       await expect(page.getByLabel('View', { exact: true })).toHaveValue('arena');
-      await page.getByRole('button', { name: 'Resume surviving' }).click();
+      await page.getByRole('button', { name: 'Resume' }).click();
     }
     for (let i = 0; i < 12 && await page.locator('.clearing-app').getAttribute('data-screen') !== 'victory'; i++) {
       if (await page.locator('.clearing-app').getAttribute('data-screen') === 'choosing') await page.locator('.upgrade-choices button').first().click();
       await page.clock.runFor(500);
     }
-    await expect(page.getByRole('heading', { name: 'Dawn finds you standing.' })).toBeVisible();
-    const result = await page.locator('.menu-description').textContent();
+    await expect(page.getByRole('heading', { name: 'Victory' })).toBeVisible();
+    const result = await page.locator('.game-menu-description').textContent();
     await page.clock.runFor(2000);
-    await expect(page.locator('.menu-description')).toHaveText(result!);
-    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(page.locator('.game-menu-description')).toHaveText(result!);
+    await page.getByRole('button', { name: 'Restart', exact: true }).click();
     await page.clock.runFor(50);
     await expect(page.locator('.progress')).toHaveText('Level 1 · XP 0 / 5');
     await expect(page.locator('.loadout')).toHaveText('Spark 1');
     if (configuration === 'clearing') {
       await page.keyboard.press('Escape');
-      await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('prism');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'prism');
       await page.clock.runFor(20);
-      await page.getByLabel('Appearance', { exact: true }).selectOption('woodland');
+      await openOptions(page); await page.getByLabel('Appearance', { exact: true }).selectOption('woodland');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'woodland');
       await expect(page.locator('.play-surface canvas')).toHaveCount(2);
-      await page.getByRole('button', { name: 'Resume surviving' }).click();
+      await page.getByRole('button', { name: 'Resume' }).click();
     }
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Mute', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Unmute' })).toHaveAttribute('aria-pressed', 'true');
-    await page.getByRole('button', { name: 'Unmute' }).click();
-    await page.getByRole('button', { name: 'Resume surviving' }).click();
+    await openOptions(page); await page.getByRole('button', { name: 'Mute sound', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Unmute sound' })).toHaveAttribute('aria-pressed', 'true');
+    await openOptions(page); await page.getByRole('button', { name: 'Unmute sound' }).click();
+    await page.getByRole('button', { name: 'Resume' }).click();
     await page.clock.runFor(100);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Return to title' }).click();
+    await page.getByRole('button', { name: 'Game setup' }).click();
   }
   const audio = await page.evaluate(() => {
     const value = (window as unknown as { audioEvidence: { created: number; gestures: boolean[]; contexts: AudioContext[] } }).audioEvidence;
@@ -473,13 +474,13 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
     // Initial preparation uses detached images, so wait for its status mutation.
     await new Promise<void>(resolve => {
-      if (!container.querySelector<HTMLButtonElement>('[data-action="start"]')!.disabled) { resolve(); return; }
+      if (!container.querySelector<HTMLButtonElement>('[data-menu-action="start"]')!.disabled) { resolve(); return; }
       const observer = new MutationObserver(() => {
-        if (!container.querySelector<HTMLButtonElement>('[data-action="start"]')!.disabled) { observer.disconnect(); resolve(); }
+        if (!container.querySelector<HTMLButtonElement>('[data-menu-action="start"]')!.disabled) { observer.disconnect(); resolve(); }
       });
       observer.observe(container, { attributes: true, subtree: true });
     });
-    container.querySelector<HTMLButtonElement>('[data-action="start"]')!.click();
+    container.querySelector<HTMLButtonElement>('[data-menu-action="start"]')!.click();
     session.dispose(); session.dispose();
     const contexts = (window as unknown as { audioEvidence: { contexts: AudioContext[] } }).audioEvidence.contexts;
     container.remove(); return contexts.at(-1)!.state;
@@ -490,13 +491,13 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.reload();
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   for (const configuration of ['clearing', 'dusk']) {
-    await page.getByLabel('Round configuration').selectOption(configuration);
-    await page.getByRole('button', { name: 'Enter the clearing' }).click();
+    await page.getByRole('tab', { name: 'Game', exact: true }).click(); await page.getByLabel('Round configuration').selectOption(configuration);
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.clock.runFor(100);
-    await expect(page.getByRole('heading', { name: 'Your light fades.' })).toBeVisible();
-    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Defeat' })).toBeVisible();
+    await page.getByRole('button', { name: 'Restart', exact: true }).click();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Return to title' }).click();
+    await page.getByRole('button', { name: 'Game setup' }).click();
   }
 
   lethal = false;
@@ -511,11 +512,11 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   });
   await page.reload();
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
-  await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
-  await expect(page.locator('.sound-status')).toContainText('Sound unavailable');
+  await expect(page.locator('.game-menu-sound-status')).toContainText('Sound unavailable');
   expect(Math.abs((await keeper(page)).x - 480)).toBeLessThan(5);
   expect(errors).toEqual([]);
 });
@@ -527,7 +528,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
-  await page.getByRole('button', { name: 'Enter the clearing' }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   const canvas = page.locator('.play-surface'), box = (await canvas.boundingBox())!;
   const start = await keeper(page, true);
@@ -538,10 +539,10 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   expect(Math.abs((await keeper(page, true)).x - start.x)).toBeLessThan(3);
   await page.mouse.up();
   await page.keyboard.press('Escape');
-  await page.getByLabel('View', { exact: true }).selectOption('arena');
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('arena');
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
   expect(Math.abs((await keeper(page)).x - 555)).toBeLessThan(8);
 
@@ -551,10 +552,10 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await page.clock.runFor(300);
   await page.setViewportSize({ width: 480, height: 740 });
   await page.clock.runFor(100);
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   const resizedFrozen = await keeper(page);
   await page.mouse.move(surface.x + 180, surface.y + 150); await page.mouse.up();
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(500);
   expectStationary(await keeper(page), resizedFrozen);
 
@@ -563,35 +564,35 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
     const root = document.querySelector<HTMLElement>('.clearing-app')!;
     root.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied for this check'));
   });
-  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
-  await expect(page.locator('.display-status')).toContainText('Fullscreen could not open');
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect(page.locator('.game-menu-display-status')).toContainText('Fullscreen could not open');
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await page.evaluate(() => { delete (document.querySelector('.clearing-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
 
   // Real native fullscreen, including the HUD/menu container and fullscreenchange state.
   await page.keyboard.down('d');
-  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await page.keyboard.up('d');
   await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible();
   expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('clearing-app');
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await page.evaluate(() => document.exitFullscreen());
   await page.clock.runFor(100);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: 'Resume surviving' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   const fullscreenFrozen = await keeper(page);
-  await page.getByRole('button', { name: 'Resume surviving' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(500);
   expectStationary(await keeper(page), fullscreenFrozen);
 
   await page.keyboard.press('Escape');
-  await page.getByLabel('View', { exact: true }).selectOption('close');
+  await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('close');
   await page.getByRole('button', { name: 'Restart', exact: true }).click();
   await page.clock.runFor(50);
   expect(Math.abs((await keeper(page, true)).x - 240)).toBeLessThan(3);
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Return to title' }).click();
+  await page.getByRole('button', { name: 'Game setup' }).click();
   await expect(page.getByLabel('View', { exact: true })).toHaveValue('close');
 });

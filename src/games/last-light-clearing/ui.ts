@@ -1,3 +1,4 @@
+import { createGameMenu } from '../../engine/browser/menu.ts';
 import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
@@ -27,41 +28,44 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   root.innerHTML = `
     <main class="game-shell">
       <header class="hud">
-        <a class="brand" href="./" aria-label="Arcade Lab home">Last Light Clearing<span>arcade lab</span></a>
+        <span class="brand">Last Light Clearing</span>
         <div class="vitals"><meter class="health-meter" min="0" max="100" value="100" aria-label="Keeper health"></meter><output class="health-value">100 / 100 HP</output></div>
         <output class="timer" aria-label="Active time">00:00</output>
         <output class="progress">Level 1 · XP 0 / 10</output>
-        <div class="hud-actions"><button data-action="pause" hidden>Pause</button><button class="fullscreen" hidden>Fullscreen</button></div>
+        <div class="hud-actions"><button data-action="pause" hidden>Pause</button></div>
       </header>
       <div class="xp-track" aria-hidden="true"><span></span></div>
-      <div class="stage"><div class="menu-layer"><section class="menu" aria-labelledby="menu-heading">
-        <p class="eyebrow">LAST LIGHT CLEARING <span class="status">Ready to survive</span></p>
-        <h1 id="menu-heading">Keep the light alive.</h1>
-        <p class="menu-description">Collect gems. Choose upgrades. Survive until dawn.</p>
-        <div class="upgrade-choices" hidden></div>
-        <div class="menu-actions"><button class="primary" data-action="start">Enter the clearing <span aria-hidden="true">↗</span></button><button class="primary" data-action="resume" hidden>Resume surviving <span aria-hidden="true">↗</span></button><button data-action="restart" hidden>Restart</button><button data-action="title" hidden>Return to title</button><button class="game-selection">Game selection</button></div>
-        <div class="settings">
-          <div class="setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="configuration-note">${configurations.clearing.description}</p></div>
-          <div class="display-settings"><label>Appearance <select aria-label="Appearance">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>Interface <select aria-label="Interface"><option value="match">Match appearance</option>${Object.entries(interfaceSkins).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>Interface accent <select aria-label="Interface accent">${Object.entries(accents).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div>
-          <div class="sound-controls"><button class="mute" aria-pressed="false">Mute</button><label>Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label></div>
-          <p class="controls">Move with WASD / arrows, or press and drag.<br>Weapons fire automatically. Escape / P pauses.<br>Focus loss and display changes pause. Use Resume to return.</p>
-        </div>
-        <div class="run-details" hidden><output class="loadout">Spark 1</output><output class="modifiers">Pickup 48</output><output class="kills">0 defeated</output></div>
-        <p class="menu-footnote">Movement is your only weapon control.</p>
-      </section></div></div>
-      <aside class="notices" aria-label="Game notices"><p class="asset-status" role="status" hidden></p><p class="sound-status" role="status" hidden></p><p class="display-status" role="status" hidden></p></aside>
+      <div class="stage"></div>
     </main>`;
-  root.querySelector('.game-selection')!.addEventListener('click', options.onExit, { signal });
-  root.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); options.onExit(); }, { signal });
-  let configuration: ConfigurationId = 'clearing', muted = false;
+  const pause = root.querySelector<HTMLButtonElement>('[data-action="pause"]')!;
+  pause.addEventListener('click', () => onAction('pause'), { signal });
+  const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, root.querySelector('.stage')!, {
+    id: 'clearing', title: 'Last Light Clearing', signal, pause,
+    gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
+    onAction: action => action === 'exit' ? options.onExit() : onAction(action),
+    onMute, onFullscreen: options.onFullscreen,
+    game: `<div class="menu-setup"><label>Round <select aria-label="Round configuration">${Object.entries(configurations).map(([id, config]) => `<option value="${id}">${config.name}</option>`).join('')}</select></label><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-choices" hidden></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`,
+    options: `<div class="menu-fields"><label>Appearance <select aria-label="Appearance">${Object.entries(themes).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join('')}</select></label><label>Interface <select aria-label="Interface"><option value="match">Match appearance</option>${Object.entries(interfaceSkins).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>Interface accent <select aria-label="Interface accent">${Object.entries(accents).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label><label>View <select aria-label="View"><option value="close">Close view</option><option value="arena">Whole arena</option></select></label></div><label class="menu-volume">Volume <input aria-label="Sound volume" type="range" min="0" max="100" value="45"></label>`,
+    controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p><b>Escape / P</b> pause. Resume after changing display settings or leaving the game window.</p>`,
+    actions: [
+      { id: 'start', label: 'Play', screens: ['title'], primary: true },
+      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
+      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
+      { id: 'title', label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
+      { id: 'exit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'choosing'] },
+    ],
+  });
+  const assetStatus = document.createElement('p'); assetStatus.className = 'asset-status'; assetStatus.hidden = true;
+  menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
+  let configuration: ConfigurationId = 'clearing';
   const configurationSelect = root.querySelector<HTMLSelectElement>('[aria-label="Round configuration"]')!;
   const themeSelect = root.querySelector<HTMLSelectElement>('[aria-label="Appearance"]')!;
   configurationSelect.addEventListener('change', () => {
     const id = configurationSelect.value;
     if (id in configurations) {
       configuration = id as ConfigurationId;
-      root.querySelector('.configuration-note')!.textContent = configurations[configuration].description;
-      description.innerHTML = roundDescription();
+      root.querySelector('.menu-note')!.textContent = configurations[configuration].description;
+      description.textContent = roundDescription();
       onConfiguration(configuration);
     }
   }, { signal });
@@ -76,12 +80,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   }, { signal });
   root.querySelector<HTMLSelectElement>('[aria-label="Interface accent"]')!.addEventListener('change', event => {
     options.onAccent((event.target as HTMLSelectElement).value as Accent);
-  }, { signal });
-  const fullscreen = root.querySelector<HTMLButtonElement>('.fullscreen')!;
-  fullscreen.addEventListener('click', options.onFullscreen, { signal });
-  const mute = root.querySelector<HTMLButtonElement>('.mute')!;
-  mute.addEventListener('click', () => {
-    muted = !muted; mute.setAttribute('aria-pressed', String(muted)); mute.textContent = muted ? 'Unmute' : 'Mute'; onMute(muted);
   }, { signal });
   root.querySelector('input')!.addEventListener('input', event => onVolume(Number((event.target as HTMLInputElement).value) / 100), { signal });
   const xpBar = root.querySelector<HTMLElement>('.xp-track span')!;
@@ -108,35 +106,25 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const modifiers = root.querySelector<HTMLOutputElement>('.modifiers')!;
   const stage = root.querySelector<HTMLElement>('.stage')!;
   stage.prepend(surface);
-  const layer = root.querySelector<HTMLElement>('.menu-layer')!;
-  const heading = root.querySelector<HTMLElement>('h1')!;
-  const description = root.querySelector<HTMLElement>('.menu-description')!;
-  const status = root.querySelector<HTMLElement>('.status')!;
+  const heading = menu.heading;
+  const description = menu.description;
   const timer = root.querySelector<HTMLOutputElement>('.timer')!;
-  const buttons = [...root.querySelectorAll<HTMLButtonElement>('button[data-action]')];
-  for (const button of buttons) {
-    button.addEventListener('click', () => onAction(button.dataset.action as MenuAction), { signal });
-  }
+  const buttons = menu.actions;
   const health = root.querySelector<HTMLMeterElement>('.health-meter')!;
   health.max = clearing.keeper.maxHealth;
   const healthValue = root.querySelector<HTMLOutputElement>('.health-value')!;
   const kills = root.querySelector<HTMLOutputElement>('.kills')!;
-  const footnote = root.querySelector<HTMLElement>('.menu-footnote')!;
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-  const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds as the Keeper.<br>Collect gems. Choose upgrades. Survive until dawn.`;
+  const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   return {
     preparing(value: boolean) {
-      for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.action!)) button.disabled = value;
+      for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.menuAction!)) button.disabled = value;
     },
     appearance(id: ThemeId) { themeSelect.value = id; },
-    fullscreen(available: boolean, active: boolean) {
-      fullscreen.hidden = !available;
-      fullscreen.textContent = active ? 'Exit fullscreen' : 'Fullscreen';
-      fullscreen.setAttribute('aria-pressed', String(active));
-    },
-    displayStatus(message: string) { const element = root.querySelector<HTMLElement>('.display-status')!; element.hidden = !message; element.textContent = message; },
-    assetStatus(message: string) { const element = root.querySelector<HTMLElement>('.asset-status')!; element.hidden = !message; element.textContent = message; },
-    soundStatus(message: string) { const element = root.querySelector<HTMLElement>('.sound-status')!; element.hidden = !message; element.textContent = message; },
+    fullscreen: menu.fullscreen,
+    displayStatus: menu.displayStatus,
+    soundStatus: menu.soundStatus,
+    assetStatus(message: string) { assetStatus.hidden = !message; assetStatus.textContent = message; },
     update(run: Readonly<RunState>) {
       timer.value = `${formatTime(Math.floor(run.elapsed))} / ${formatTime(run.round.duration)}`;
       health.value = run.player.health;
@@ -167,40 +155,16 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       root.classList.toggle('in-danger', run.player.health <= clearing.keeper.maxHealth * 0.3);
       if (run.outcome) {
         description.textContent = `${formatTime(Math.floor(run.elapsed))} survived · ${run.stats.kills} enemies defeated · ${run.stats.eliteKills} elite defeated · Level ${run.progression.level} · ${run.player.health} HP remaining.`;
-        footnote.textContent = `${run.stats.shots} projectiles fired · ${run.stats.damageDealt} damage dealt · ${run.stats.damageTaken} damage taken`;
       }
     },
     show(screen: Screen, focus = true) {
-      root.dataset.screen = screen;
-      root.querySelector<HTMLElement>('.setup')!.hidden = screen !== 'title';
-      root.querySelector<HTMLElement>('.settings')!.hidden = screen !== 'title' && screen !== 'paused';
+      root.querySelector<HTMLElement>('.menu-setup')!.hidden = screen !== 'title';
       root.querySelector<HTMLElement>('.run-details')!.hidden = screen === 'title';
-      layer.hidden = screen === 'playing';
       choices.hidden = screen !== 'choosing';
-      surface.tabIndex = screen === 'playing' ? 0 : -1;
-      surface.setAttribute('aria-hidden', String(screen !== 'playing'));
-      heading.textContent = screen === 'victory' ? 'Dawn finds you standing.'
-        : screen === 'defeat' ? 'Your light fades.' : screen === 'choosing' ? 'Choose an upgrade' : screen === 'paused' ? 'Take a breath.' : 'Keep the light alive.';
-      description.innerHTML = screen === 'paused'
-        ? 'Your light is safe here.<br>Return when you’re ready.'
-        : roundDescription();
-      footnote.textContent = screen === 'paused' ? 'Active time and combat are paused.'
-        : 'Movement is your only weapon control.';
-      status.textContent = screen === 'choosing' ? 'Choosing an upgrade' : screen === 'playing' ? 'Keeper · Surviving' : screen === 'paused' ? 'Paused'
-        : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Ready to survive';
-      for (const button of buttons) {
-        const action = button.dataset.action;
-        button.hidden = !(screen === 'title' ? action === 'start'
-          : screen === 'playing' ? action === 'pause'
-          : screen === 'choosing' ? false
-          : (action === 'resume' && screen === 'paused') || action === 'restart' || action === 'title');
-        if (action === 'restart') button.textContent = screen === 'paused' ? 'Restart' : 'Retry';
-      }
-      if (focus) {
-        if (screen === 'playing') surface.focus({ preventScroll: true });
-        else if (screen === 'choosing') choices.querySelector('button')?.focus({ preventScroll: true });
-        else buttons.find(button => !button.hidden)?.focus({ preventScroll: true });
-      }
+      heading.textContent = screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat'
+        : screen === 'choosing' ? 'Choose an upgrade' : screen === 'paused' ? 'Paused' : 'Last Light Clearing';
+      description.textContent = screen === 'paused' ? '' : roundDescription();
+      menu.show(screen, focus);
     },
   };
 }

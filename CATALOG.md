@@ -1,6 +1,6 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport, with menus scrolling inside the game.
+Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Menus share Game, Options and Controls tabs, with actions always available below the selected panel. Sound and fullscreen are in Options.
 
 ## Last Light Clearing
 
@@ -10,7 +10,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution and a late elite encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
-Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances with the same gameplay rules. Appearance, interface, accent, Close/Whole arena view and sound settings are available at title or pause; round selection is at title. Settings persist through retries until reload. Appearance changes retain the paused run and require Resume. Failed artwork/audio can fall back to silhouettes/silence; unavailable graphics retain a working appearance or restore Canvas.
+Choose SVG, animated pixel, sculpted Three.js or procedural WebGPU appearances with the same gameplay rules. Appearance, interface, accent, Close/Whole arena view and sound settings are in Options; round selection is in Game before starting. Settings persist through retries until reload. Appearance changes retain the paused run and require Resume. Failed artwork/audio can fall back to silhouettes/silence; unavailable graphics retain a working appearance or restore Canvas.
 
 | Control | Action |
 | --- | --- |
@@ -35,7 +35,7 @@ Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, 
 | Space / J | Hold to fire |
 | Shift / K / Roll button | Evade; recharges between rolls |
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
-| Escape / Pause | Pause; use Resume flight to continue |
+| Escape / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and source ownership.
@@ -51,10 +51,10 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | A/D / left and right arrows | Move |
 | Space / W / Up / Z | Jump; hold for height, release for a short hop |
 | Touch arrows + Jump | Move and jump with independent buttons |
-| Escape / P / Pause | Pause; use Resume journey to continue |
+| Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart journey creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 
@@ -69,7 +69,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | K | Heavy strike |
 | Space, then J / K | Jump, then flying kick |
 | Touch arrows + Strike / Heavy / Jump | Independent movement and action buttons |
-| Escape / P / Pause | Pause; use Resume fight to continue |
+| Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 Original articulated Canvas artwork, parallax facades, wet reflections, bright impacts and procedural AudioBits sound give the streets their identity. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
@@ -89,10 +89,10 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Crouch + J / airborne J or K | Low sweep / overhead jump attack |
 | Shift | Guard; hold crouch as well to stop sweeps |
 | Touch directions + Light / Heavy / Special / Guard | Independent held controls and attack presses |
-| Escape / P / Pause | Pause; use Resume duel to continue |
+| Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Rematch starts fresh; Game selection returns to the collection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 
@@ -109,10 +109,10 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | K | Throw a fused grenade |
 | Q | Switch operator after rescuing Bolt |
 | Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
-| Escape / P / Pause | Pause; use Resume operation to continue |
+| Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart operation restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 
