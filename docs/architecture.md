@@ -7,6 +7,7 @@
 ```text
 src/
   app/                 Collection catalog, selection screen, mounting and entrypoint
+  common/ui/           Collection-wide menus, fields, readouts and DOM presentation
   engine/              Game-independent contracts, fixed-step clock and collision math
     browser/           Host, input capture, focus/lifetime bindings and AudioBits owner
   games/<game-slug>/    Each game's content, simulation, session, input, UI and presentation
@@ -22,6 +23,7 @@ tests/
   unit/                Cross-game recipe validation
   browser/app/         Collection and session replacement
   browser/engine/      Shared browser/audio lifecycle
+  browser/common/      Collection-wide UI behavior
   browser/games/<slug>/ Game-specific input, rendering and session behavior
 ```
 
@@ -31,7 +33,9 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 
 Vite substitutes each game's optional local appearance manifest through an exact development-only import alias. Production always resolves the empty source manifest. Keep asset definitions, preparation and visual role mappings with their owning game; a new local appearance does not require a shared asset registry.
 
-`src/engine/` has no imports from the application or games. Games depend on its session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders in one catalog; adding a game does not require a second loader switch or card template.
+`src/engine/` and `src/common/` have no imports from the application or games. Games depend on the engine's session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders in one catalog; adding a game does not require a second loader switch or card template.
+
+Engine code supplies game-independent execution and resource mechanisms. `engine/browser/` marks browser dependencies, not a place for every file using a browser API. Collection-specific presentation conventions belong in `common/ui/`: menus, their layout, native fields and DOM updates. A game's browser session, renderer, theme definitions and asset-role mapping remain under that game. `common/` is not a holding area for helpers without a clear owner.
 
 ## Shared source map
 
@@ -46,9 +50,9 @@ Vite substitutes each game's optional local appearance manifest through an exact
 | Measurement, fullscreen, frame loop and lifetime signal | `src/engine/browser/host.ts` |
 | Page visibility, blur, page-exit and deferred focus binding | `src/engine/browser/session.ts` |
 | Keyboard/button holds, press edges and independent touch capture | `src/engine/browser/buttons.ts` |
-| Configured game menus, tabs, actions, focus and common options | `src/engine/browser/menu.ts`, `menu.css` |
-| Labeled select/range fields and multiline result readouts | `src/engine/browser/menu-components.ts`, `menu-components.css` |
-| Stable element lookup and change-only DOM updates | `src/engine/browser/dom.ts` |
+| Configured game menus, tabs, actions, focus and common options | `src/common/ui/menu.ts`, `menu.css` |
+| Labeled select/range fields and multiline result readouts | `src/common/ui/menu-components.ts`, `menu-components.css` |
+| Stable element lookup and change-only DOM updates | `src/common/ui/dom.ts` |
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
@@ -113,3 +117,17 @@ Share mechanisms with a concrete common responsibility: session contracts, bound
 Keep gameplay state machines, retry/checkpoint policies, collision eligibility, authored content, UI intents and cosmetic animation local. Image-atlas validation and renderer contracts that depend on a game's state also stay with that game. The browser image helper owns only loading, cancellation and source release; each game supplies its own dimension validator. Procedural artwork does not need an image bundle.
 
 Each `app.ts` explicitly connects its run, clock, input, UI, presentation and sound. Extract repeated policies when doing so clarifies ownership; different transition rules stay local rather than moving into a universal run/entity framework, scene manager, camera or menu state machine.
+
+## Appearance changes
+
+An appearance changes how an existing run is presented. It does not select a new level, reset a clock, change collision geometry or alter combat. Every game exposes Appearance in Options on its title and paused/result menus. Resume is an explicit action. A selection belongs to the mounted session and can survive restarts without becoming persisted data.
+
+Start with the owning game's presentation contract and visual data. Add palette, costume, scenery or asset-role definitions there, keyed by stable content identities when level-specific styling is needed. Keep artwork dimensions, anchors, draw footprints and clip mappings separate from physical bodies. Typed local data is sufficient for a synchronous procedural change; do not introduce an asset loader or renderer registry for it. Existing renderers may accept new theme data without resetting their camera or effects.
+
+For downloaded artwork, retain provenance and license terms beside the assets and use descriptive, vendor-neutral code and filenames. Define the roles and frame validation in the game. Reuse `engine/browser/images.ts` to prepare the URL bundle, cancel loading and release image sources; pass the local validator rather than teaching that helper about actors, aircraft or animations. Asset dimensions are validated before a candidate becomes active. Optional development-only manifests follow the import boundary described above.
+
+When a change needs asynchronous resources or a different graphics backend, the game session owns cancellation and selection generation. Keep the active presentation usable during preparation, draw the candidate against the current run before committing it, then dispose the replaced owner. Failure keeps the working presentation and updates the option/status; superseded or disposed requests cannot attach anything. Renderer interfaces, graphics-loss recovery and animation semantics stay local unless a concrete shared contract can simplify their owners.
+
+Before promoting code, identify the responsibility being shared, the actual consumers or concrete new requirement, and what game knowledge its contract would retain. Image ownership, native menu fields and resource cleanup meet that test. Sprite roles, hit flashes, cameras and per-game renderer transitions do not become shared merely because they look similar. Prefer extending an existing useful owner over creating another wrapper.
+
+Verify an appearance change with an ongoing paused run: visible output changes while the same state object, position, progress and timers remain intact, then Resume advances that run. Check selection retention on restart and release on unmount through the existing session checks. Async asset changes also need cancellation, failure and late-completion coverage. Keep these checks focused rather than adding a screenshot matrix.

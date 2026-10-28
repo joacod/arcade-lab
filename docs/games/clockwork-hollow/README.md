@@ -20,11 +20,15 @@ Falling, thorns, active pressure or beetle contact ends an attempt. Each distric
 
 Every bell ends its district and freezes simulation. An explicit **Continue to…** action starts the next district. The third bell completes the journey. Results show bells, motes, active time, missed steps, points and a completion distinction for full collection or a clean journey. Optional motes and bells award points; missed steps reduce them. Neither retrying enemies nor revisiting collected motes awards extra points. Scoring amounts live in `game.ts`.
 
-**Restart** create an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in Options when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
+**Restart** creates an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in Options when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
 
 ![The Emberworks: a saved lantern beside an active pressure column](clockwork-emberworks.png)
 
 ![The Starlit Belfry: moonlit machinery and staggered pressure vents](clockwork-belfry.png)
+
+## Appearances
+
+Options → Appearance switches between **Verdant clockwork** and **Frostbound bells**. Frostbound bells adds blue stone, icy foliage, snowfall and a rose scarf, with a separate palette for each district. Pause, select a style, then Resume from the same position. The choice survives retry, restart and district transitions until returning to Game selection.
 
 ## Source ownership and customization
 
@@ -34,13 +38,14 @@ Every bell ends its district and freezes simulation. An explicit **Continue to�
 | Movement and jump feel | `movement` in `content.ts`; explicit acceleration, collision and jump behavior in `game.ts` |
 | Enemy and obstacle behaviors, checkpoints, progression and scoring | `game.ts`; no generic AI or entity framework |
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`; `keeper`, `scenery`, `stone` and the local enemy/vent drawings are the artwork entry points |
-| Environment colors and district captions | `Level.palette`, `environment`, `name`, `subtitle` and `signs` in `content.ts` |
+| District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
+| District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts`, using the shared host, clock, interruption/focus binders and AudioBits lifecycle |
 
-Character and enemy visual dimensions never define their collision bodies. A replacement artwork implementation can preserve simulation, content, input and host ownership. If a later adaptation needs image loading, reuse the existing cancellable asset preparation pattern; this procedural game currently needs no asset loader or asynchronous preparation.
+Character and enemy visual dimensions never define their collision bodies. A replacement artwork implementation can preserve simulation, content, input and host ownership. If a later adaptation needs image loading, reuse `src/engine/browser/images.ts` with local role/frame validation; this procedural game currently needs no asset loader or asynchronous preparation.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable. Collision and jump rules use only fixed simulation steps. Content includes all physical dimensions independently of leaves, scarf, glow and animation poses.
 
@@ -52,6 +57,6 @@ Sound uses a spring lift, soft stone/metal landing, descending unwinding damage,
 
 ## Local verification
 
-Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions and session cleanup. See [shared commands](../../architecture.md#local-verification).
+Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions, appearance changes that preserve the live run, and session cleanup. See [shared commands](../../architecture.md#local-verification).
 
 See the [shared boundaries](../../architecture.md#boundaries-for-future-games) for common ownership decisions.

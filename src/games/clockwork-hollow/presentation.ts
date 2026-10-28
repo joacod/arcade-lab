@@ -1,3 +1,4 @@
+import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
 import type { Run, HollowEvent, Player } from './game.ts';
 import type { Screen } from './ui.ts';
@@ -20,7 +21,8 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context;
   surface.prepend(canvas);
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
-  let palette: Level['palette'];
+  let theme = themes.verdant;
+  let palette = theme.districts.aqueduct;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   function circle(x: number, y: number, r: number, fill: string | CanvasGradient) {
     ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
@@ -50,11 +52,11 @@ export function createPresentation(surface: HTMLElement) {
     ctx.moveTo(0, 0); ctx.quadraticCurveTo(length * 0.8, -length * 0.55, length, 0); ctx.quadraticCurveTo(length * 0.55, length * 0.4, 0, 0); ctx.fill(); ctx.restore();
   }
   function vine(x: number, y: number, length: number, seed: number) {
-    ctx.strokeStyle = '#417466'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.strokeStyle = theme.foliage[1]; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y);
     ctx.bezierCurveTo(x + 25, y + length * 0.3, x - 28, y + length * 0.7, x + 4, y + length); ctx.stroke();
     for (let i = 10; i < length; i += 22) {
       const px = x + Math.sin(i / length * Math.PI * 2) * 8;
-      leaf(px, y + i, 15 + seed % 8, i % 44 === 10 ? -0.6 : -2.8, i % 44 === 10 ? '#548b72' : '#376956');
+      leaf(px, y + i, 15 + seed % 8, i % 44 === 10 ? -0.6 : -2.8, theme.foliage[i % 44 === 10 ? 0 : 1]);
     }
   }
   function scenery(view: HollowView, time: number, level: Level) {
@@ -63,14 +65,14 @@ export function createPresentation(surface: HTMLElement) {
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
     // Distant light and aqueducts drift more slowly than physical geometry.
     glow(w * 0.74 - view.x * 0.03, h * 0.18, 340, `${palette.light}36`);
-    if (level.environment === 'belfry') {
+    if (palette.environment === 'belfry') {
       for (let i = 0; i < 65; i++) {
         const x = ((i * 137.7 - view.x * 0.08) % w + w) % w, y = (i * 73.3) % (h * 0.65);
         circle(x, y, i % 4 === 0 ? 2 : 1, '#e1dfff99');
       }
       circle(w * 0.8 - view.x * 0.015, h * 0.18, 42, '#e6e2c0');
     }
-    if (level.environment === 'foundry') {
+    if (palette.environment === 'foundry') {
       for (let i = 0; i < 8; i++) {
         const x = ((i * 260 - view.x * 0.27) % (w + 260) + w + 260) % (w + 260);
         line(x, 0, x, h, '#916b5c55', 16); line(x - 5, 0, x - 5, h, '#d1a27822', 3);
@@ -93,27 +95,28 @@ export function createPresentation(surface: HTMLElement) {
         ctx.bezierCurveTo(x + spacing - 95, top + 65, x + 58, top + 65, x + 58, top + 180);
         ctx.lineTo(x + 58, h); ctx.closePath(); ctx.fill();
         line(x, top + 25, x + spacing - 38, top + 25, '#48715b35', 7);
-        if (layer === 1) { if (level.environment === 'garden') vine(x + 35, top, 160 + i % 3 * 35, i); gear(x + 190, top + 115, 55, motion.matches ? 0 : time * 0.025, '#42675a'); }
+        if (layer === 1) { if (palette.environment === 'garden') vine(x + 35, top, 160 + i % 3 * 35, i); gear(x + 190, top + 115, 55, motion.matches ? 0 : time * 0.025, '#42675a'); }
       }
     }
     // Low fog and hanging canopy give depth without obscuring landing edges.
     for (let i = 0; i < 35; i++) {
       const x = ((i * 137.7 - view.x * 0.66) % (w + 150) + w + 150) % (w + 150) - 50;
-      const y = h * 0.65 + Math.sin(i * 37) * 130 + Math.sin(time * 0.6 + i) * (motion.matches ? 0 : 10);
-      circle(x, y, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? '#c7e5aa65' : '#94c6a044');
+      const y = theme.atmosphere === 'snow' ? (i * 97 + (motion.matches ? 0 : time * 16)) % h
+        : h * 0.65 + Math.sin(i * 37) * 130 + Math.sin(time * 0.6 + i) * (motion.matches ? 0 : 10);
+      circle(x, y, i % 3 === 0 ? 2 : 1, theme.atmosphere === 'snow' ? '#e5f5ff99' : i % 3 === 0 ? '#c7e5aa65' : '#94c6a044');
     }
     ctx.save(); ctx.translate(-view.x * 0.7, -view.y * 0.6);
     for (let i = Math.floor(view.x * 0.7 / 360); i < Math.ceil((view.x * 0.7 + w) / 360) + 1; i++) {
       const x = i * 360;
       ctx.fillStyle = '#0b292ddd'; ctx.beginPath(); ctx.moveTo(x - 80, -70); ctx.quadraticCurveTo(x + 70, 100, x + 270, -20); ctx.lineTo(x + 300, -100); ctx.fill();
-      for (let j = 0; j < 5; j++) leaf(x + j * 53, 12 + Math.sin(j) * 15, 45, j % 2 ? 0.2 : 2.8, '#164039');
+      for (let j = 0; j < 5; j++) leaf(x + j * 53, 12 + Math.sin(j) * 15, 45, j % 2 ? 0.2 : 2.8, theme.foliage[1]);
     }
     ctx.restore();
   }
   function stone(s: Rect, index: number) {
     const fill = ctx.createLinearGradient(s.x, s.y, s.x, s.y + Math.min(s.h, 250));
     fill.addColorStop(0, palette.stone); fill.addColorStop(1, palette.deep); ctx.fillStyle = fill; ctx.fillRect(s.x, s.y, s.w, s.h);
-    ctx.fillStyle = '#75836a'; ctx.fillRect(s.x, s.y, s.w, 5);
+    ctx.fillStyle = palette.edge; ctx.fillRect(s.x, s.y, s.w, 5);
     ctx.fillStyle = palette.edge; ctx.fillRect(s.x + 4, s.y, s.w - 8, 2);
     ctx.fillStyle = '#0b252b88'; ctx.fillRect(s.x, s.y + 12, s.w, 3);
     for (let row = 0; row < Math.min(s.h / 38, 9); row++) {
@@ -133,8 +136,8 @@ export function createPresentation(surface: HTMLElement) {
     }
     for (let i = 0; i < s.w / 23; i++) {
       const x = s.x + i * 23 + 5;
-      leaf(x, s.y + 2, 12 + i % 4 * 4, -0.5, i % 3 ? '#5b8860' : '#83a46a');
-      leaf(x, s.y + 1, 10, -2.3, '#416d51');
+      leaf(x, s.y + 2, 12 + i % 4 * 4, -0.5, theme.foliage[i % 3 ? 1 : 0]);
+      leaf(x, s.y + 1, 10, -2.3, theme.foliage[1]);
     }
     if (index % 3 === 0) vine(s.x + s.w - 12, s.y + 5, Math.min(110, s.h + 60), index);
     if (s.h > 80) {
@@ -152,9 +155,9 @@ export function createPresentation(surface: HTMLElement) {
     const spread = p.grounded ? walk * 7 : p.vy < 0 ? 7 : -4;
     line(-6, -14, -7 + spread, -3, '#866649', 5); line(6, -14, 7 - spread, -3, '#b39b67', 5);
     line(-10 + spread, -2, -4 + spread, -2, '#d8ba7d', 5); line(4 - spread, -2, 10 - spread, -2, '#ecd299', 5);
-    // A teal scarf makes direction and speed readable against warm brass.
-    ctx.fillStyle = '#71c4b1'; ctx.beginPath(); ctx.moveTo(-6, -30); ctx.quadraticCurveTo(-18, -30, -24 - Math.abs(p.vx) * 0.02, -22 + Math.sin(time * 12) * 3); ctx.lineTo(-19, -32); ctx.lineTo(-6, -35); ctx.fill();
-    ctx.fillStyle = '#b7915f'; ctx.beginPath(); ctx.roundRect(-11, -31 + walk, 22, 20, 6); ctx.fill();
+    // The contrasting scarf makes direction and speed readable.
+    ctx.fillStyle = theme.scarf; ctx.beginPath(); ctx.moveTo(-6, -30); ctx.quadraticCurveTo(-18, -30, -24 - Math.abs(p.vx) * 0.02, -22 + Math.sin(time * 12) * 3); ctx.lineTo(-19, -32); ctx.lineTo(-6, -35); ctx.fill();
+    ctx.fillStyle = theme.brass; ctx.beginPath(); ctx.roundRect(-11, -31 + walk, 22, 20, 6); ctx.fill();
     line(-8, -29 + walk, 8, -29 + walk, '#edd093', 2);
     circle(0, -21 + walk, 6, '#514d3d'); circle(0, -21 + walk, 3, '#afe6c9');
     line(-11, -26, -16, -17 + walk * 3, '#b29a6b', 4); line(11, -26, 15, -19 - walk * 3, '#d4b77c', 4);
@@ -163,7 +166,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.fillStyle = '#233f40'; ctx.beginPath(); ctx.roundRect(-8, -43 + Math.abs(walk), 21, 10, 4); ctx.fill();
     circle(1, -39 + Math.abs(walk), 2, '#d0ffdb'); circle(9, -39 + Math.abs(walk), 2, '#d0ffdb');
     line(-3, -51, -5, -58, '#b0a57c', 2); leaf(-5, -57, 10, -0.4, '#9fc98b');
-    ctx.fillStyle = '#76bea1'; ctx.fillRect(-11, -31, 24, 4);
+    ctx.fillStyle = theme.scarf; ctx.fillRect(-11, -31, 24, 4);
     ctx.restore();
   }
   function sign(x: number, y: number, title: string, detail: string) {
@@ -174,6 +177,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = '8px monospace'; ctx.fillStyle = '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
   }
   return {
+    applyTheme(next: HollowTheme) { theme = next; },
     reset() { particles = []; lastFrame = undefined; landing = 0; camera = undefined; },
     consume(events: readonly HollowEvent[]) {
       for (const event of events) {
@@ -191,7 +195,7 @@ export function createPresentation(surface: HTMLElement) {
       if (disposed) return;
       const w = Math.max(1, Math.round(size.width * size.ratio)), h = Math.max(1, Math.round(size.height * size.ratio));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; camera = undefined; }
-      palette = run.level.palette;
+      palette = theme.districts[run.level.id];
       const target = hollowView(size.width, size.height, run.level, run.player);
       // Cosmetic tails keep moving after an outcome; pause and hidden-page gaps never advance them.
       const dt = screen === 'paused' || screen === 'title' || lastFrame === undefined ? 0 : clamp(now - lastFrame, 0, 0.05);

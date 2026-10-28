@@ -1,13 +1,14 @@
-import { createElementLookup, setProperty, setAttribute } from '../../engine/browser/dom.ts';
-import { createMenuReadout } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { appearances, type Appearance } from './themes.ts';
+import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
+import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
 import type { Run, BlastEvent } from './state.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'continue' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void) {
   root.innerHTML = `<header class="blast-hud"><div class="blast-identity"><span class="blast-emblem" aria-hidden="true">↗</span><div><b class="blast-operator">NOVA</b><small class="blast-weapon">ASSAULT / AUTO RIFLE</small><span class="blast-health" aria-label="Health">▰ ▰ ▰ ▰ ▰</span></div></div><div class="blast-orders"><small class="blast-mission">01 / BORDER STATION</small><output class="blast-objective" aria-label="Mission objective"></output></div><div class="blast-resources"><span><b class="blast-lives">5</b> LIVES</span><span><b class="blast-grenades">4</b> GRENADES</span></div><button data-intent="pause" aria-label="Pause">Ⅱ</button></header>
   <main class="blast-stage"><div class="blast-topline"><span>ROGUE MACHINE TERRITORY</span><span class="blast-sector">SECTOR 01 / BORDER STATION</span></div><div class="blast-banner" role="status" hidden><b></b><span></span></div>
   </main>
@@ -18,11 +19,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Operation results');
+  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'iron', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element,
+    game: results.element, options: theme.element,
     controls: `<b>A D / ← →</b> MOVE　 <b>SPACE</b> JUMP　 <b>J</b> HOLD TO FIRE<br><b>W S / ↑ ↓</b> AIM　 <b>K</b> GRENADE　 <b>Q</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

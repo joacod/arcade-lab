@@ -1,3 +1,4 @@
+import { themes, type Appearance } from './themes.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
@@ -33,6 +34,11 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     input?.clear(); clock.reset(); sound?.pause();
     if (screen === 'playing') { pauseRun(run, true); transition('paused', false); }
   }
+  function appearance(id: Appearance) {
+    if (disposed || screen === 'playing') return;
+    presentation?.applyTheme(themes[id]);
+    host.root.dataset.appearance = id;
+  }
   function act(intent: Intent) {
     if (disposed) return;
     if (intent === 'quit') { onExit(); return; }
@@ -47,8 +53,9 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
   }
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value));
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
     presentation = createPresentation(host.surface);
+    appearance('iron');
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     host.root.addEventListener('keydown', e => { if (!e.repeat && ['Escape', 'KeyP'].includes(e.code) && screen === 'playing') { e.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,

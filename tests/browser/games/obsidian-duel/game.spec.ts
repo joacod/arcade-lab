@@ -1,3 +1,4 @@
+import { openOptions } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and disposal', async ({ page }, info) => {
@@ -39,6 +40,20 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.clock.runFor(100); expect(swing).toBe(null); expect((await state()).fighters[0].attack).toBe(null);
   await page.screenshot({ path: info.outputPath('obsidian-duel.png') });
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(30000); expect(await state()).toEqual(paused);
+  // Replacing presentation must retain the live simulation, including mid-action state.
+  await page.evaluate(() => { (window as any).appearanceRun = (window as any).duelProbe; });
+  const skyPixel = () => page.locator('.duel-canvas').evaluate((canvas: HTMLCanvasElement) =>
+    [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2),
+      Math.floor((canvas.height - Math.min(canvas.width / 1000, canvas.height / 560) * 560) / 2) + 8, 1, 1).data]);
+  const beforeTheme = await skyPixel();
+  await openOptions(page);
+  await page.getByRole('combobox', { name: 'Appearance', exact: true }).selectOption('dawn');
+  await page.clock.runFor(50);
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'dawn');
+  expect(await skyPixel()).not.toEqual(beforeTheme);
+  expect(await state()).toEqual(paused);
+  expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).duelProbe)).toBe(true);
+  await page.getByRole('tab', { name: 'Game', exact: true }).click();
   await page.getByRole('button', { name: 'Resume', exact: false }).click();
   await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.keyboard.up('d');
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
@@ -46,6 +61,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Restart', exact: false }).click(); await page.clock.runFor(3100);
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'dawn');
   await page.evaluate(() => { const e = (window as any).duelProbe.fighters[1]; e.state = 'hitstun'; e.stateTime = 10; e.attack = null; });
   const touch = await page.context().newCDPSession(page);
   const point = async (name: string, id: number) => { const b = (await page.getByRole('button', { name, exact: true }).boundingBox())!; return { x: b.x + b.width / 2, y: b.y + b.height / 2, id }; };
@@ -83,7 +99,8 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   expect(await page.evaluate(() => ({ frames: (window as any).duelFrames.size, audio: (window as any).duelContexts.map((c: AudioContext) => c.state) }))).toEqual({ frames: 0, audio: ['closed'] });
   await page.getByRole('button', { name: 'Play Obsidian Duel', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Obsidian Duel' })).toBeVisible(); await page.clock.runFor(50);
-  expect((await state()).elapsed).toBe(0); expect((await state()).fighters[0].kind).toBe('nera');
+  expect((await state()).elapsed).toBe(0);
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'tempest'); expect((await state()).fighters[0].kind).toBe('nera');
   expect(await page.evaluate(() => (window as any).duelFrames.size)).toBe(1);
   expect(unrelated).toEqual([]); expect(errors).toEqual([]);
 });

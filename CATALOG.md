@@ -1,6 +1,6 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Menus share Game, Options and Controls tabs, with actions always available below the selected panel. Sound and fullscreen are in Options.
+Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Menus share Game, Options and Controls tabs, with actions always available below the selected panel. Sound, fullscreen and Appearance are in Options. Every game can change appearance while paused and resume the same run.
 
 ## Last Light Clearing
 
@@ -54,7 +54,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Choose Verdant clockwork or snowy Frostbound bells in Options. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 
@@ -92,7 +92,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Choose Tempest citadel or Gilded dawn in Options, including alternate fighter costumes. Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 
@@ -112,7 +112,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Choose Iron coast or snowy Arctic relay in Options. Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

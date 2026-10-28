@@ -1,6 +1,6 @@
-import { createElementLookup, setText, setProperty, setAttribute } from '../../engine/browser/dom.ts';
-import { createSelectField, createRangeField } from '../../engine/browser/menu-components.ts';
-import { createGameMenu } from '../../engine/browser/menu.ts';
+import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
+import { createSelectField, createRangeField } from '../../common/ui/menu-components.ts';
+import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';

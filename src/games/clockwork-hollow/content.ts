@@ -5,12 +5,11 @@ export interface Patrol extends Rect { readonly to: number; readonly speed: numb
 export interface Vent extends Rect { readonly period: number; readonly offset: number }
 export interface Checkpoint { readonly x: number; readonly y: number; readonly name: string }
 export interface Sign { readonly x: number; readonly y: number; readonly title: string; readonly detail: string }
-export interface Palette { readonly sky: string; readonly middle: string; readonly deep: string; readonly stone: string; readonly edge: string; readonly light: string }
+export type LevelId = 'aqueduct' | 'emberworks' | 'belfry';
 export interface Level {
+  readonly id: LevelId;
   readonly name: string;
   readonly subtitle: string;
-  readonly environment: 'garden' | 'foundry' | 'belfry';
-  readonly palette: Palette;
   readonly checkpoints: readonly Checkpoint[];
   readonly patrols: readonly Patrol[];
   readonly vents: readonly Vent[];
@@ -30,8 +29,7 @@ export const movement = {
 } as const;
 
 export const hollow: Level = {
-  name: 'The Waking Aqueduct', environment: 'garden', subtitle: 'Follow the water. Find your spring.',
-  palette: { sky: '#143b42', middle: '#28574f', deep: '#0c252c', stone: '#36504a', edge: '#9eb48a', light: '#c2e6ae' },
+  name: 'The Waking Aqueduct', id: 'aqueduct', subtitle: 'Follow the water. Find your spring.',
   checkpoints: [{ x: 3690, y: 570, name: 'Moss lantern' }, { x: 8100, y: 610, name: 'Waterwheel rest' }],
   patrols: [{ x: 4490, y: 624, w: 36, h: 26, to: 4800, speed: 62 }, { x: 10300, y: 624, w: 36, h: 26, to: 10600, speed: 76 }],
   vents: [],
@@ -97,8 +95,7 @@ export const hollow: Level = {
 
 /** Individually authored routes: geometry and timing are content, never generated. */
 export const furnace: Level = {
-  name: 'The Emberworks', environment: 'foundry', subtitle: 'Read the pressure. Cross between breaths.', width: 13600, height: 1000,
-  palette: { sky: '#302a40', middle: '#65423e', deep: '#211e30', stone: '#514346', edge: '#d7a676', light: '#ffc28c' },
+  name: 'The Emberworks', id: 'emberworks', subtitle: 'Read the pressure. Cross between breaths.', width: 13600, height: 1000,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4350, y: 610, name: 'Foundry lantern' }, { x: 9000, y: 570, name: 'Pressure room' }],
   signs: [{ x: 230, y: 618, title: 'THE EMBERWORKS →', detail: 'VENTS GLOW BEFORE FIRING' },
@@ -142,8 +139,7 @@ export const furnace: Level = {
   goal: { x: 13400, y: 460, w: 70, h: 120 },
 };
 export const belfry: Level = {
-  name: 'The Starlit Belfry', environment: 'belfry', subtitle: 'One last climb. Let the hollow sing.', width: 14400, height: 1100,
-  palette: { sky: '#181e3b', middle: '#37375b', deep: '#121c32', stone: '#3c455e', edge: '#a8bdd0', light: '#c5c7ff' },
+  name: 'The Starlit Belfry', id: 'belfry', subtitle: 'One last climb. Let the hollow sing.', width: 14400, height: 1100,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4570, y: 570, name: 'Moon lantern' }, { x: 9400, y: 530, name: 'Bellkeeper rest' }],
   signs: [{ x: 210, y: 618, title: 'THE STARLIT BELFRY →', detail: 'EVERY SPRING HAS A SONG' },
