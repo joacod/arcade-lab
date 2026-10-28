@@ -1,4 +1,4 @@
-.skybreak-app { --menu-accent: #a8e9ef; --sky-ink: #dbefeb; --sky-dim: #91b3b8; --sky-accent: #b9f0c7; box-sizing: border-box; width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #051724; color: var(--sky-ink); font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
+.skybreak-app { --menu-accent: #a8e9ef; --sky-ink: #dbefeb; --sky-dim: #91b3b8; --sky-accent: #b9f0c7; --sky-background: #051724; box-sizing: border-box; width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--sky-background); color: var(--sky-ink); font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
 .skybreak-app *, .skybreak-app *::before, .skybreak-app *::after { box-sizing: border-box; }
 .skybreak-app [hidden] { display: none !important; }
 .skybreak-app button { font: inherit; font-size: 12px; font-weight: 600; color: var(--sky-ink); background: #112e3d; border: 1px solid #789da540; border-radius: 5px; min-height: 42px; padding: 9px 15px; cursor: pointer; }
@@ -38,6 +38,11 @@
 .skybreak-app .skybreak-boss progress::-webkit-progress-bar { background: #304755; }
 .skybreak-app .skybreak-boss progress::-webkit-progress-value { background: #ffc78e; }
 .skybreak-app .skybreak-boss-pattern { font-size: 8px; color: #bcd7d5; }
+.skybreak-app .skybreak-asset-status { color: #ffd48e; font-size: 12px; }
+.skybreak-app[data-scene='orbit'] .game-menu,
+.skybreak-app[data-scene='rift'] .game-menu { background: color-mix(in srgb, var(--sky-background) 88%, #7185aa); border-color: color-mix(in srgb, var(--sky-accent) 40%, transparent); }
+.skybreak-app[data-scene='orbit'] .skybreak-brand,
+.skybreak-app[data-scene='rift'] .skybreak-brand { color: var(--sky-accent); }
 @media (max-height: 680px) {
   .skybreak-app .skybreak-hud { min-height: 55px; padding-block: 8px; }
 }

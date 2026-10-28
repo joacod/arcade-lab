@@ -11,7 +11,8 @@ import { createUI, type Screen, type MenuAction } from './ui.ts';
 import { clearing, configurations, type ConfigurationId } from './content.ts';
 import { themes, type ThemeId } from './themes.ts';
 import { resolvedSkin, type InterfaceChoice, type Accent } from './interface.ts';
-import { prepareAssets, type PreparedAssets } from './assets.ts';
+import { prepareAssets } from './assets.ts';
+import type { PreparedImages } from '../../engine/browser/images.ts';
 import type { WorldPresentation } from './world-presentation.ts';
 import { createScreenOverlay } from './screen-overlay.ts';
 import { createSound } from './sound.ts';
@@ -35,7 +36,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
   let ui: ReturnType<typeof createUI>;
   let overlay: ReturnType<typeof createScreenOverlay>;
   let presentation: WorldPresentation;
-  let activeAssets: PreparedAssets | undefined;
+  let activeAssets: PreparedImages | undefined;
   let preparation: AbortController | undefined;
   function dispose() {
     if (disposed) return;
@@ -85,7 +86,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       const request = ++generation, controller = new AbortController();
       preparation = controller; preparing = true; ui.preparing(true);
       ui.assetStatus(`Preparing ${theme.name}…`);
-      let next: WorldPresentation | undefined, bundle: PreparedAssets | undefined;
+      let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
         if (theme.art) bundle = await prepareAssets(theme.art, controller.signal);
         if (controller.signal.aborted) return;

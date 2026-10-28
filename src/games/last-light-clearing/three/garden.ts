@@ -8,7 +8,7 @@ import type { WorldPresentation, DisplaySize } from '../world-presentation.ts';
 import type { Viewport } from '../view.ts';
 import { clipFrame, type ActorRole } from '../art-pack.ts';
 import { actorAnimation, createAnimationObservations } from '../animation.ts';
-import type { ImageBundle } from '../assets.ts';
+import type { ImageBundle } from '../../../engine/browser/images.ts';
 import { orbitPosition } from '../weapons/halo.ts';
 
 /** XY ground: (x, -worldY, elevation). Camera looks down -Z, so elevation never shifts XY. */

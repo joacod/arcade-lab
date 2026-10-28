@@ -6,7 +6,7 @@ import type { WorldPresentation, DisplaySize } from './world-presentation.ts';
 import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
 import { clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
 import { actorAnimation, createAnimationObservations } from './animation.ts';
-import type { ImageBundle } from './assets.ts';
+import type { ImageBundle } from '../../engine/browser/images.ts';
 
 export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
   const pack = theme.art;

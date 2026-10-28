@@ -2,7 +2,15 @@
 
 [Source](../../../src/games/skybreak/) | [Catalog](../../../CATALOG.md)
 
-An original Canvas 2D vertical arcade shooter. The fictional aircraft, ocean, fortress, synthesized cues, formations and sortie are original application code under the repository's MIT license. No external artwork or audio assets are used. See the [game catalog](../../../CATALOG.md) for controls.
+An original Canvas 2D vertical arcade shooter with interchangeable appearances. The fictional aircraft, ocean, space scenery, fortress, synthesized cues, formations and sortie are original application code under the repository's MIT license. Optional local pixel fleets use downloaded artwork with separate [provenance and setup](../../../src/games/skybreak/art/README.md). See the [game catalog](../../../CATALOG.md) for controls.
+
+## Appearances
+
+Open **Options → Appearance** on the title screen or after pausing. **Pacific Run** retains the original ocean and aircraft. **Deep Space** adds luminous starfighters, a blue planet, drifting stars and distant orbital stations. A local fleet installation also supplies **Starfall Fleet**, with an animated red fighter and varied enemy ships, and **Redshift Armada**, with a white bomber, copper nebulae and drifting rocks.
+
+Switching keeps the current sortie, score, health, weapons, formation progress and boss state. Resume continues from the same moment. Restart begins a fresh sortie while retaining the selected appearance. Image preparation leaves the current renderer active; failed loads restore the selected field and report a notice. Later selections and disposal invalidate pending image work. Appearance choices last for the session.
+
+![Starfall Fleet: red fighter and enemy ships above a blue planet](skybreak-starfall.png)
 
 ## Operation Iron Tempest
 
@@ -44,7 +52,7 @@ Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating 
 
 The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles and damage flashes are suppressed. Enemy movement, projectiles, attack lanes and the roll/immunity ring remain visible gameplay cues.
 
-Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; artwork/effects in `presentation.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input in `input.ts`; composition in `app.ts`.
+Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; appearance definitions in `themes.ts` and `art/`; image ownership/validation in `assets.ts` and `art-pack.ts`; drawing/effects in `presentation.ts` and cached space scenery in `space-scene.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input and composition in `input.ts` and `app.ts`.
 
 ## Local verification
 

@@ -27,7 +27,7 @@ See [game rules and implementation](docs/games/last-light-clearing/README.md) an
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute ocean sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Original procedural Canvas artwork and synthesized sound require no downloaded art or audio.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Switch between Pacific Run and Deep Space in **Options → Appearance**, then resume the same sortie. Optional local pixel fleets add Starfall Fleet and Redshift Armada; see [art setup and provenance](src/games/skybreak/art/README.md). Bundled procedural Canvas artwork and synthesized sound require no downloads.
 
 | Control | Action |
 | --- | --- |
