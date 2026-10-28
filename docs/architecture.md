@@ -38,6 +38,7 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 | Collection metadata, covers and lazy game imports | `src/app/catalog.ts` |
 | Entrypoint and selection screen | `src/app/main.ts`, `src/app/selection.ts` |
 | Synchronous mount/dispose contracts | `src/engine/session.ts` |
+| Cleanup that attempts every owner and aggregates failures | `src/engine/disposal.ts` |
 | Active session and mount point | `src/app/application.ts` |
 | Viewport and mount-point sizing | `src/app/application.css` |
 | Measurement, fullscreen, frame loop and lifetime signal | `src/engine/browser/host.ts` |
@@ -45,6 +46,7 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 | Keyboard/button holds, press edges and independent touch capture | `src/engine/browser/buttons.ts` |
 | Configured game menus, tabs, actions, focus and common options | `src/engine/browser/menu.ts`, `menu.css` |
 | Labeled select/range fields and multiline result readouts | `src/engine/browser/menu-components.ts`, `menu-components.css` |
+| Stable element lookup and change-only DOM updates | `src/engine/browser/dom.ts` |
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
@@ -53,9 +55,13 @@ Runtime artwork belongs in the owning game's `art/` folder. Collection covers ar
 
 `GameEntry.mount(container): GameSession` returns synchronously. The application disposes the previous session before creating a fresh mount point. It removes that mount point even if construction or disposal throws; games must release resources acquired before a failed construction. Disposal is idempotent. Mounting after application disposal is rejected.
 
+Session teardown uses `disposeAll` to attempt each cleanup in its explicit ownership order, including the browser host, even if graphics or another resource throws. Failures are reported together in an `AggregateError`; sessions retain their own idempotence and async invalidation guards.
+
 The entrypoint guards stale imports and disposes the application on HMR. Each game owns its DOM, scoped styles and async preparation. Pending completions must be invalidated when their session ends.
 
 The host owns a stable focusable surface and one frame loop. Starting is idempotent; disposal during a frame prevents rescheduling. Disposal cancels scheduling, aborts listeners, disconnects observation and removes the root. Renderers own their backing buffers and graphics resources.
+
+Hidden documents have no scheduled host frame. Becoming visible schedules exactly one frame again; the page-lifetime binding still resets simulation timing and requires deliberate gameplay resumption. Frame scheduling does not own run transitions or audio activation.
 
 `bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder. `bindSessionFocus` also shares clear-input and deferred focusout handling, ignoring callbacks after host abortion. Sessions supply their own focus predicate, so different play controls and menu rules stay local.
 
@@ -65,13 +71,17 @@ The clock bounds fixed-step catch-up; transitions reset timing so suspended wall
 
 ## Menus
 
-The home screen is the game catalog. Each card provides a cover, name, gameplay description and genre; selection loads the game lazily.
+The home screen is the game catalog. Each card provides a cover, name, gameplay description and genre; selection loads the game lazily. The shell retains the selected card and collection scroll position for the page lifetime. Loading names the requested game and offers cancellation; the import may finish, but the entrypoint's generation guard prevents a cancelled request from mounting. Returning, cancelling or retrying restores collection focus without persistent storage.
 
 `createGameMenu` supplies the shared Game, Options and Controls panels. Games provide their title, gameplay UI containers, authored setup/result markup, control instructions and typed action definitions with the screens on which they are available. Common actions use Play, Resume, Restart and Game selection. Checkpoint retries and stage transitions remain explicit game actions.
 
 The component owns tab navigation (including arrows, Home and End), action visibility and focus, mute/fullscreen buttons, notices and compact layout. Actions stay outside the scrollable content area. Changing screens returns to the Game panel; changing tabs never changes run state. Gameplay instruments and touch controls are hidden behind menus while retaining their layout space. Short/narrow viewports use the full viewport for the menu; unusually constrained content can scroll without moving the action bar.
 
+Local pauses move focus from gameplay into the first available menu action. Window blur and focus outside the game never pull focus back. Tab panels are keyboard-focusable so their text can be read and scrolled. Games can provide `--menu-accent` on their root to carry their palette into the shared menu. Routine HUD outputs are not live announcements; explicit status regions retain their authored behavior.
+
 Games own configuration values, result updates, upgrade choices and action callbacks. The component never starts, pauses or resets simulation itself. Listeners use the host abort signal. Add game-specific fields only when they control actual game behavior or presentation; shared menus contain no game content.
+
+Cache stable session DOM through `createElementLookup`, and use the change-only text, attribute and property writers for frame-driven readouts. Keep rebuilt choice lists outside the lookup cache. Round CSS percentages to display precision so browser serialization does not trigger repeated equivalent writes. Formatting, update timing and the meaning of each readout stay with the game.
 
 Compose the `game` and `options` content as DOM elements. Elements are inserted directly, preserving references and listeners; game-specific containers can still use authored HTML internally. `createSelectField` accepts a value-to-label record, an initial value and a typed `onChange` callback. `createRangeField` accepts numeric bounds, step, initial value and `onInput`. Both return a labeled `element` to append and the native `input` for programmatic updates, and both bind listeners to the supplied session signal. Setting an input value programmatically does not emit an intent. Put related fields in a `menu-fields` container for the shared responsive grid.
 

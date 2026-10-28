@@ -27,6 +27,13 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   });
   await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Skybreak' })).toBeVisible();
+  // Preference changes apply to the already-mounted renderer, without altering the run.
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await page.clock.runFor(20);
+  const picture = () => page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL());
+  const still = await picture(); await page.clock.runFor(500);
+  expect(await picture()).toBe(still);
+  await page.emulateMedia({ reducedMotion: 'no-preference' }); await page.clock.runFor(100);
+  expect(await picture()).not.toBe(still);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).flightProbe)));
   await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();

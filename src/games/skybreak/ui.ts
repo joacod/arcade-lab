@@ -1,3 +1,4 @@
+import { createElementLookup, setText, setProperty, setAttribute } from '../../engine/browser/dom.ts';
 import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { flight, fortress, waves } from './content.ts';
@@ -12,11 +13,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     <button data-intent="pause">Pause</button></header>
     <main class="skybreak-stage"><div class="skybreak-boss" hidden><div><strong>IRON TEMPEST</strong><output aria-label="Fortress phase"></output></div><progress aria-label="Iron Tempest hull" max="${fortress.health}" value="${fortress.health}"></progress><span class="skybreak-boss-pattern"></span></div></main>
     <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL <span>READY</span></button></footer>`;
-  root.querySelector('.skybreak-stage')!.prepend(surface);
-  const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
+  const $ = createElementLookup(root);
+  $('.skybreak-stage').prepend(surface);
+  const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.skybreak-stage')!, {
+  const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
@@ -29,10 +31,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const description = menu.description;
-  const evade = root.querySelector<HTMLButtonElement>('.skybreak-evade')!;
-  const score = root.querySelector('[aria-label="Score"]')!, lives = root.querySelector('[aria-label="Aircraft lives"]')!;
-  const hull = root.querySelector('[aria-label="Aircraft hull"]')!, progress = root.querySelector('[aria-label="Sortie progress"]')!;
-  const wave = root.querySelector('.skybreak-wave')!, roll = evade.querySelector('span')!;
+  const evade = $<HTMLButtonElement>('.skybreak-evade');
+  const score = $('[aria-label="Score"]'), lives = $('[aria-label="Aircraft lives"]');
+  const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
+  const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
     fullscreen: menu.fullscreen,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
@@ -45,22 +47,22 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       menu.show(screen, focus);
     },
     update(run: Run) {
-      score.textContent = String(run.score).padStart(6, '0'); lives.textContent = `${run.player.lives} lives`;
-      hull.textContent = `Hull ${'●'.repeat(run.player.health)}${'○'.repeat(flight.player.health - run.player.health)}`;
-      progress.textContent = `${String(Math.min(flight.duration, Math.floor(run.elapsed))).padStart(2, '0')} / ${flight.duration} s`;
-      wave.textContent = run.boss ? run.boss.health <= 0 ? 'IRON TEMPEST · DESTROYED' : 'FINAL CONTACT · IRON TEMPEST' : run.nextWave ? `${String(run.nextWave).padStart(2, '0')} / ${waves.length} · ${waves[run.nextWave - 1]!.label.toUpperCase()}` : 'AWAITING TAKEOFF';
-      root.querySelector('[aria-label="Aircraft weapons"]')!.textContent = `GUN ${['I', 'II', 'III'][run.player.power]}${run.player.spread > 0 ? ` + SPREAD ${Math.ceil(run.player.spread)}s` : ''}`;
-      const bossPanel = root.querySelector<HTMLElement>('.skybreak-boss')!;
-      bossPanel.hidden = !run.boss || run.boss.health <= 0;
+      setText(score, String(run.score).padStart(6, '0')); setText(lives, `${run.player.lives} lives`);
+      setText(hull, `Hull ${'●'.repeat(run.player.health)}${'○'.repeat(flight.player.health - run.player.health)}`);
+      setText(progress, `${String(Math.min(flight.duration, Math.floor(run.elapsed))).padStart(2, '0')} / ${flight.duration} s`);
+      setText(wave, run.boss ? run.boss.health <= 0 ? 'IRON TEMPEST · DESTROYED' : 'FINAL CONTACT · IRON TEMPEST' : run.nextWave ? `${String(run.nextWave).padStart(2, '0')} / ${waves.length} · ${waves[run.nextWave - 1]!.label.toUpperCase()}` : 'AWAITING TAKEOFF');
+      setText($('[aria-label="Aircraft weapons"]'), `GUN ${['I', 'II', 'III'][run.player.power]}${run.player.spread > 0 ? ` + SPREAD ${Math.ceil(run.player.spread)}s` : ''}`);
+      const bossPanel = $<HTMLElement>('.skybreak-boss');
+      setProperty(bossPanel, 'hidden', !run.boss || run.boss.health <= 0);
       if (run.boss) {
-        root.querySelector<HTMLProgressElement>('[aria-label="Iron Tempest hull"]')!.value = Math.max(0, run.boss.health);
-        root.querySelector('[aria-label="Fortress phase"]')!.textContent = `PHASE ${run.boss.phase} / 2`;
-        root.querySelector('.skybreak-boss-pattern')!.textContent = run.boss.age < fortress.entrance ? 'APPROACHING · AIM FOR THE LIGHTS' : run.boss.charge > 0 ? ({ fan: 'FAN VOLLEY · FIND A GAP', aim: 'TARGET LOCK · KEEP MOVING', lanes: 'BARRAGE · LEAVE THE MARKED LANES' } as const)[run.boss.attack] : 'REACTORS EXPOSED';
+        setProperty($<HTMLProgressElement>('[aria-label="Iron Tempest hull"]'), 'value', Math.max(0, run.boss.health));
+        setText($('[aria-label="Fortress phase"]'), `PHASE ${run.boss.phase} / 2`);
+        setText($('.skybreak-boss-pattern'), run.boss.age < fortress.entrance ? 'APPROACHING · AIM FOR THE LIGHTS' : run.boss.charge > 0 ? ({ fan: 'FAN VOLLEY · FIND A GAP', aim: 'TARGET LOCK · KEEP MOVING', lanes: 'BARRAGE · LEAVE THE MARKED LANES' } as const)[run.boss.attack] : 'REACTORS EXPOSED');
       }
       const minutes = Math.floor(run.elapsed / 60), seconds = String(Math.floor(run.elapsed % 60)).padStart(2, '0');
       results.update(`${String(run.score).padStart(6, '0')} POINTS · ${minutes}:${seconds}\n${run.stats.kills} aircraft down · ${run.stats.pickups} supplies\n${run.status === 'active' || run.status === 'paused' ? '' : run.status === 'victory' ? `${run.bonus} survival bonus · ${run.player.lives} lives home` : run.elapsed >= flight.duration ? 'Time limit reached · Fortress escaped' : 'All aircraft lost'}`);
-      roll.textContent = run.player.roll > 0 ? 'IMMUNE' : run.player.recharge > 0 ? `${Math.ceil(run.player.recharge)}s` : 'READY';
-      evade.dataset.ready = String(run.player.recharge <= 0); evade.setAttribute('aria-label', `Evasive roll: ${roll.textContent}`);
+      setText(roll, run.player.roll > 0 ? 'IMMUNE' : run.player.recharge > 0 ? `${Math.ceil(run.player.recharge)}s` : 'READY');
+      setProperty(evade.dataset, 'ready', String(run.player.recharge <= 0)); setAttribute(evade, 'aria-label', `Evasive roll: ${roll.textContent}`);
     },
   };
 }

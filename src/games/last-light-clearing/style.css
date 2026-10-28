@@ -1,4 +1,4 @@
-.clearing-app { font-synthesis: none; color-scheme: dark; }
+.clearing-app { --menu-accent: var(--accent); font-synthesis: none; color-scheme: dark; }
 .clearing-app {
   --background: #101c1c; --surface: #182621; --button: #20332c; --hover: #31483c; --text: #e6e7d9; --muted: #bacab6;
   --accent: #e6ca8b; --danger: #ffa49b; --border: #71816b;

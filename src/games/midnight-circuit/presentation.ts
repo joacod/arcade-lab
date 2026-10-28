@@ -14,7 +14,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'circuit-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false, camera: number | undefined, last: number | undefined, shake = 0;
   let particles: Particle[] = [], rings: Ring[] = [];
   function rect(x: number, y: number, w: number, h: number, color: string | CanvasGradient, radius = 0) {
@@ -96,7 +96,7 @@ export function createPresentation(surface: HTMLElement) {
         for (let k = 0; k < 4; k++) { rect(x + 274, y + 44 + k * 31, 36, 23, '#2a3e4c'); rect(x + 317, y + 44 + k * 31, 36, 23, online ? '#d3bb86' : '#284354'); }
         line([x + 244, y - 58, x + 244, g - 15, x + 255, g - 15], '#4d5c68', 5);
         rect(x + 283, y - 85, 70, 58, '#354151', 4); ellipse(x + 317, y - 55, 21, 21, '#192936');
-        for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 + (reduced ? 0 : time); line([x + 317, y - 55, x + 317 + Math.cos(r) * 17, y - 55 + Math.sin(r) * 17], '#546575', 3); }
+        for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 + (motion.matches ? 0 : time); line([x + 317, y - 55, x + 317 + Math.cos(r) * 17, y - 55 + Math.sin(r) * 17], '#546575', 3); }
         rect(x + 236, y + 50, 21, 90, '#173141'); neon('24', x + 236, y + 73, '#6ae1cb', 14);
       }
       ctx.strokeStyle = '#0c1726'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 80, y - 92); ctx.quadraticCurveTo(x + 160, y - 20, x + 460, y - 105); ctx.stroke();
@@ -120,7 +120,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     if (!station) {
       // Rain uses a fixed bounded field and the simulation clock; pausing freezes it.
-      for (let i = 0; i < (reduced ? 0 : 100); i++) {
+      for (let i = 0; i < (motion.matches ? 0 : 100); i++) {
         const x = ((i * 137.3 - time * 75) % w + w) % w, y = (i * 83.7 + time * 400) % h;
         line([x, y, x - 5, y + 15], '#b6d5e31c', 1);
       }
@@ -254,11 +254,11 @@ export function createPresentation(surface: HTMLElement) {
     consume(events: readonly BrawlerEvent[]) {
       for (const e of events) {
         const impact = e.type === 'hit' || e.type === 'damage' || e.type === 'ko';
-        if (impact && !reduced) shake = Math.max(shake, Math.min(5, e.strength * 3));
+        if (impact && !motion.matches) shake = Math.max(shake, Math.min(5, e.strength * 3));
         if (impact || e.type === 'pickup' || e.type === 'victory' || e.type === 'clear') {
           const color = e.type === 'damage' ? '#f797ac' : e.type === 'pickup' || e.type === 'victory' ? '#8effdb' : '#ffe6b1';
           if (rings.length < 12) rings.push({ x: e.x, lane: e.lane, life: .3, strength: e.strength, color });
-          for (let i = 0; i < (reduced ? 0 : e.type === 'victory' || e.type === 'ko' && e.strength >= 3 ? 48 : impact ? 14 : 20) && particles.length < 150; i++) {
+          for (let i = 0; i < (motion.matches ? 0 : e.type === 'victory' || e.type === 'ko' && e.strength >= 3 ? 48 : impact ? 14 : 20) && particles.length < 150; i++) {
             const angle = i * 2.4, power = 60 + i % 5 * 32;
             particles.push({ x: e.x, lane: e.lane, z: impact ? 60 : 20, vx: Math.cos(angle) * power, vy: Math.sin(angle) * power * .3,
               vz: 60 + Math.abs(Math.sin(angle)) * power, life: .35 + i % 4 * .12, max: .72, color });
@@ -272,10 +272,10 @@ export function createPresentation(surface: HTMLElement) {
       if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; camera = undefined; }
       const dt = last === undefined || screen === 'paused' || screen === 'title' ? 0 : clamp(now - last, 0, .05); last = now;
       const view = circuitView(size.width, size.height, run);
-      camera = camera === undefined ? view.x : camera + (view.x - camera) * (reduced ? 1 : 1 - Math.exp(-7 * dt)); view.x = camera;
+      camera = camera === undefined ? view.x : camera + (view.x - camera) * (motion.matches ? 1 : 1 - Math.exp(-7 * dt)); view.x = camera;
       ctx.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, 0, 0); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       scenery(view, run, run.elapsed);
-      ctx.save(); ctx.translate(-view.x + (reduced ? 0 : Math.sin(now * 83) * shake), reduced ? 0 : Math.cos(now * 67) * shake * .5);
+      ctx.save(); ctx.translate(-view.x + (motion.matches ? 0 : Math.sin(now * 83) * shake), motion.matches ? 0 : Math.cos(now * 67) * shake * .5);
       shake = Math.max(0, shake - dt * 26);
       for (const a of run.enemies) telegraph(a, view.ground);
       for (const pickup of run.pickups) if (!pickup.collected) {

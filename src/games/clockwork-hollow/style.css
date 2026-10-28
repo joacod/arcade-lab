@@ -1,4 +1,4 @@
-.hollow-app { --ink: #e4e9d5; --dim: #95b1a5; --gold: #edc07d; height: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--ink); background: #0c2428; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
+.hollow-app { --menu-accent: #edc07d; --ink: #e4e9d5; --dim: #95b1a5; --gold: #edc07d; height: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--ink); background: #0c2428; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
 .hollow-app * { box-sizing: border-box; }
 .hollow-app [hidden] { display: none !important; }
 .hollow-app button { font: inherit; color: inherit; border: 1px solid #9cbaaa40; background: #133135; border-radius: 5px; min-height: 42px; padding: 10px 17px; cursor: pointer; }

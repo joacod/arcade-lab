@@ -1,3 +1,4 @@
+import { createElementLookup, setText, setProperty } from '../../engine/browser/dom.ts';
 import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { stageOf, type Run } from './game.ts';
@@ -9,11 +10,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
   </main>
   <footer class="circuit-footer"><div class="circuit-hint">WASD <span>MOVE / ALIGN</span>　J <span>COMBO</span>　K <span>HEAVY</span>　SPACE <span>JUMP</span></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><span>＋</span><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack">K<small>HEAVY</small></button><button data-control="light" aria-label="Light attack">J<small>STRIKE</small></button></div></div></footer>`;
-  root.querySelector('.circuit-stage')!.prepend(surface);
-  const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
+  const $ = createElementLookup(root);
+  $('.circuit-stage').prepend(surface);
+  const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
-  const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.circuit-stage')!, {
+  const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
@@ -26,7 +28,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
-  const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, root.querySelector<HTMLButtonElement>(`[data-control="${key}"]`)!])) as Record<Control, HTMLButtonElement>;
+  const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, $<HTMLButtonElement>(`[data-control="${key}"]`)])) as Record<Control, HTMLButtonElement>;
   const description = menu.description;
   let current: Screen = 'title';
   return { controls,
@@ -43,18 +45,18 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     },
     update(run: Run) {
       const stage = stageOf(run), encounter = stage.encounters[run.encounter];
-      root.querySelector<HTMLMeterElement>('[aria-label="Health"]')!.value = run.player.health;
-      root.querySelector('[aria-label="Lives"]')!.textContent = `× ${run.lives}`;
-      root.querySelector('[aria-label="Score"]')!.textContent = String(run.score).padStart(6, '0');
-      root.querySelector('.circuit-location > span')!.textContent = `0${run.stageIndex + 1} / ${stage.name.toUpperCase()}`;
+      setProperty($<HTMLMeterElement>('[aria-label="Health"]'), 'value', run.player.health);
+      setText($('[aria-label="Lives"]'), `× ${run.lives}`);
+      setText($('[aria-label="Score"]'), String(run.score).padStart(6, '0'));
+      setText($('.circuit-location > span'), `0${run.stageIndex + 1} / ${stage.name.toUpperCase()}`);
       const alive = run.enemies.filter(a => a.health > 0).length;
-      root.querySelector('.circuit-location > small')!.textContent = run.respawn > 0 ? 'GET UP. THE CITY NEEDS YOU.' : run.finale > 0 ? 'CIRCUIT RESTORED' : run.gated ? `${encounter?.name.toUpperCase()} · WAVE ${run.wave + 1}/${encounter?.waves.length} · ${alive} LEFT` : encounter ? 'MOVE RIGHT → · FOLLOW THE DEAD GRID' : 'ALL CLEAR → HEAD FOR THE STATION';
-      const combo = root.querySelector<HTMLElement>('.circuit-combo')!;
-      combo.textContent = run.combo > 1 ? `${run.combo} HITS` : ''; combo.classList.toggle('is-hot', run.combo >= 6);
+      setText($('.circuit-location > small'), run.respawn > 0 ? 'GET UP. THE CITY NEEDS YOU.' : run.finale > 0 ? 'CIRCUIT RESTORED' : run.gated ? `${encounter?.name.toUpperCase()} · WAVE ${run.wave + 1}/${encounter?.waves.length} · ${alive} LEFT` : encounter ? 'MOVE RIGHT → · FOLLOW THE DEAD GRID' : 'ALL CLEAR → HEAD FOR THE STATION');
+      const combo = $<HTMLElement>('.circuit-combo');
+      setText(combo, run.combo > 1 ? `${run.combo} HITS` : ''); combo.classList.toggle('is-hot', run.combo >= 6);
       const boss = run.enemies.find(a => a.kind === 'warden');
-      root.querySelector<HTMLElement>('.circuit-boss')!.hidden = !boss || current !== 'playing';
-      const bar = root.querySelector<HTMLMeterElement>('[aria-label="Circuit Warden health"]')!;
-      if (boss) { bar.max = boss.maxHealth; bar.value = boss.health; }
+      setProperty($<HTMLElement>('.circuit-boss'), 'hidden', !boss || current !== 'playing');
+      const bar = $<HTMLMeterElement>('[aria-label="Circuit Warden health"]');
+      if (boss) { setProperty(bar, 'max', boss.maxHealth); setProperty(bar, 'value', boss.health); }
       results.update(`${run.score.toLocaleString()} POINTS  /  ${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}\n${run.hits} hits landed · ${run.bestCombo} best chain · ${run.lives} lives remaining${run.status === 'victory' ? '\nCITY GRID: ONLINE' : ''}`);
     },
   };

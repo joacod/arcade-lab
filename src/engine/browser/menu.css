@@ -3,20 +3,20 @@
 .game-menu-layer, .game-menu-layer * { box-sizing: border-box; }
 .game-menu-layer [hidden] { display: none !important; }
 .game-menu-layer .game-menu { width: min(600px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #65817e; border-radius: 8px; background: #142329; box-shadow: 0 12px 48px #0006; text-align: left; }
-.game-menu-layer .game-menu-header { padding: 18px 20px 12px; flex: none; }
+.game-menu-layer .game-menu-header { padding: 18px 20px 12px; flex: none; border-top: 3px solid var(--menu-accent, #b9efd4); }
 .game-menu-layer .game-menu h1 { font: 650 24px/1.2 system-ui, sans-serif; letter-spacing: -.03em; margin: 0; color: inherit; transform: none; }
 .game-menu-layer .game-menu-tabs { display: flex; gap: 6px; padding: 0 20px 12px; flex: none; border-bottom: 1px solid #65817e55; }
 .game-menu-layer .game-menu button { font: 600 13px/1.3 system-ui, sans-serif; letter-spacing: normal; border: 1px solid #65817e88; border-radius: 5px; color: #e6eeed; background: #22363d; padding: 10px 14px; min-height: 42px; cursor: pointer; box-shadow: none; }
 .game-menu-layer .game-menu button:enabled:hover { background: #304b52; }
-.game-menu-layer .game-menu button:focus-visible, .game-menu-layer .game-menu :is(select, input):focus-visible { outline: 2px solid #b9efd4; outline-offset: 2px; }
+.game-menu-layer .game-menu button:focus-visible, .game-menu-layer .game-menu :is(select, input):focus-visible { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 2px; }
 .game-menu-layer .game-menu button:disabled { opacity: .5; cursor: wait; }
 .game-menu-layer .game-menu [role='tab'] { flex: 1; min-height: 36px; padding: 7px 10px; background: transparent; border-color: transparent; }
 .game-menu-layer .game-menu [aria-selected='true'] { background: #2e494b; color: #ccf3dc; }
 .game-menu-layer .game-menu-body { padding: 16px 20px; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .game-menu-layer .game-menu-description { margin: 0 0 12px; color: #bbcfcc; font: 14px/1.5 system-ui, sans-serif; }
 .game-menu-layer .game-menu-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px 18px; border-top: 1px solid #65817e55; flex: none; }
-.game-menu-layer .game-menu-actions .game-menu-primary { background: #b9efd4; color: #142b24; border-color: #b9efd4; }
-.game-menu-layer .game-menu-actions .game-menu-primary:enabled:hover { background: #cef7e2; }
+.game-menu-layer .game-menu-actions .game-menu-primary { background: var(--menu-accent, #b9efd4); color: #142b24; border-color: var(--menu-accent, #b9efd4); }
+.game-menu-layer .game-menu-actions .game-menu-primary:enabled:hover { background: color-mix(in srgb, var(--menu-accent, #b9efd4), white 20%); }
 .game-menu-layer .game-menu-utilities { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .game-menu-layer .game-menu-controls { color: #bbcfcc; font: 14px/1.7 system-ui, sans-serif; }
 .game-menu-layer .game-menu-controls p { margin: 0 0 10px; }
@@ -48,3 +48,6 @@
 [data-menu-owner] .game-menu-notices:has(p:not([hidden])) { padding-top: 8px; }
 
 [data-menu-owner]:not([data-screen='playing']) [data-menu-stage] > :not(.play-surface, .game-menu-layer, .game-menu-notices) { visibility: hidden; }
+
+.game-menu-layer [role="tabpanel"]:focus-visible { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 4px; }
+@media (forced-colors: active) { .game-menu-layer .game-menu [aria-selected="true"] { border-color: Highlight; } .game-menu-layer .game-menu-actions .game-menu-primary { border: 2px solid Highlight; } }

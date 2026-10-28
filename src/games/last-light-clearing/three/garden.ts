@@ -97,6 +97,26 @@ export function createGarden(theme: Theme, images: ImageBundle, onFailure: () =>
       const base = mesh(box, stone, x, y, -3); base.scale.set(28, 28, 9); base.rotation.z = i * 0.7;
     }
 
+    // Scenery is immutable. Batch equal geometry/material/shadow combinations once,
+    // keeping authored transforms and letting Three compute bounds for each batch.
+    const scenery = new Map<string, THREE.Mesh<THREE.BufferGeometry, THREE.Material>[]>();
+    for (const item of scene.children) {
+      if (!(item instanceof THREE.Mesh) || Array.isArray(item.material)) continue;
+      const key = `${item.geometry.uuid}:${item.material.uuid}:${item.castShadow}:${item.receiveShadow}`;
+      const group = scenery.get(key) ?? [];
+      group.push(item); scenery.set(key, group);
+    }
+    for (const group of scenery.values()) {
+      if (group.length < 2) continue;
+      const first = group[0]!;
+      const batch = new THREE.InstancedMesh(first.geometry, first.material, group.length);
+      batch.castShadow = first.castShadow; batch.receiveShadow = first.receiveShadow;
+      group.forEach((item, index) => {
+        item.updateMatrix(); batch.setMatrixAt(index, item.matrix); scene.remove(item);
+      });
+      batch.computeBoundingSphere(); scene.add(batch);
+    }
+
     const keeperMat = lit(p.light, p.light, 1.2), enemyMat = lit(p.enemy, p.enemy, 0.12);
     const eliteMat = lit(p.elite, p.elite, 0.3), dark = lit(p.canopy), core = lightMaterial(p.hit);
     const ringGeometry = geometry(new THREE.TorusGeometry(1, 0.035, 5, 48));

@@ -1,3 +1,4 @@
+import { createElementLookup, setProperty, setAttribute } from '../../engine/browser/dom.ts';
 import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { operators } from './content.ts';
@@ -12,11 +13,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   </main>
   <div class="blast-route" aria-label="Mission route"><div class="blast-progress"></div><span class="blast-route-label">INSERTION</span><span>EXTRACTION →</span></div>
   <footer class="blast-footer"><div class="blast-hint">A D <span>MOVE</span>　SPACE <span>JUMP</span>　J <span>FIRE</span>　W S <span>AIM</span>　K <span>GRENADE</span>　Q <span>SWITCH</span>　ESC <span>PAUSE</span></div><div class="blast-touch"><div class="blast-directions"><button data-control="up" aria-label="Aim up">↑</button><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Aim down">↓</button></div><button class="blast-swap" data-control="switch" aria-label="Switch operator">Q<small>SWITCH</small></button><div class="blast-triggers"><button data-control="grenade" aria-label="Throw grenade">K<small>GRENADE</small></button><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="fire" aria-label="Fire">J<small>FIRE</small></button></div></div></footer>`;
-  root.querySelector('.blast-stage')!.prepend(surface);
-  const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
+  const $ = createElementLookup(root);
+  $('.blast-stage').prepend(surface);
+  const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Operation results');
-  const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.blast-stage')!, {
+  const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
@@ -29,7 +31,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
-  const $ = <T extends HTMLElement = HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'jump', 'fire', 'grenade', 'switch'] as const).map(c => [c, $<HTMLButtonElement>(`[data-control="${c}"]`)])) as Record<Control, HTMLButtonElement>;
   let screen: Screen = 'title', notice = '', detail = '', noticeUntil = 0;
   function write(selector: string, value: string) { const el = $(selector); if (el.textContent !== value) el.textContent = value; }
@@ -55,14 +56,14 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     update(run: Run) {
       const p = run.player, op = operators[p.operator];
       write('.blast-operator', op.name.toUpperCase()); write('.blast-weapon', `${op.role} / ${p.operator === 'nova' ? 'AUTO RIFLE' : 'ROCKET LAUNCHER'}`);
-      write('.blast-health', Array.from({ length: 5 }, (_, i) => i < p.health ? '▰' : '▱').join(' ')); $('.blast-health').setAttribute('aria-label', `Health ${p.health} of 5`);
+      write('.blast-health', Array.from({ length: 5 }, (_, i) => i < p.health ? '▰' : '▱').join(' ')); setAttribute($('.blast-health'), 'aria-label', `Health ${p.health} of 5`);
       write('.blast-lives', String(run.lives)); write('.blast-grenades', String(run.grenades));
       write('.blast-mission', `0${run.missionIndex + 1} / ${run.mission.name.toUpperCase()}`); write('.blast-objective', objectiveText(run));
       write('.blast-sector', `SECTOR 0${run.missionIndex + 1} / ${run.mission.name.toUpperCase()}`);
-      $('.blast-progress').style.width = `${Math.min(100, run.player.x / run.mission.exit.x * 100)}%`;
-      controls.switch.disabled = screen !== 'playing' || !run.rescued;
+      setProperty($('.blast-progress').style, 'width', `${Math.round(Math.min(100, run.player.x / run.mission.exit.x * 100) * 100) / 100}%`);
+      setProperty(controls.switch, 'disabled', screen !== 'playing' || !run.rescued);
       const banner = $('.blast-banner');
-      banner.hidden = screen !== 'playing' || run.elapsed > noticeUntil && run.extraction === 0 || !notice && run.extraction === 0;
+      setProperty(banner, 'hidden', screen !== 'playing' || run.elapsed > noticeUntil && run.extraction === 0 || !notice && run.extraction === 0);
       write('.blast-banner b', run.extraction > 0 ? 'CATCH YOUR BREATH.' : notice);
       write('.blast-banner span', run.extraction > 0 ? 'EXTRACTION CONFIRMED / STAND CLEAR' : detail);
       $('.blast-objective').classList.toggle('blast-urgent', readyToExtract(run));
