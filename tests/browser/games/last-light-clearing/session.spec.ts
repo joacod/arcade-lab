@@ -122,6 +122,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   await page.locator('[data-action="pause"]').focus();
+  await page.clock.runFor(1); // Focus suspension waits for the native focus transition to settle.
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   const prevented = await page.getByRole('button', { name: 'Resume', exact: true }).evaluate(link => !link.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true })));
   expect(prevented).toBe(false);
@@ -352,7 +353,8 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await expect(shell).toHaveAttribute('data-skin', 'glass');
       await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'garden');
       const projection = await page.evaluate(() => (window as unknown as { gardenEvidence: { projected: { x: number; y: number }; expected: { x: number; y: number }; calls: number } }).gardenEvidence);
-      expect(projection.calls).toBeGreaterThan(20);
+      expect(projection.calls).toBeGreaterThan(0);
+      expect(projection.calls).toBeLessThan(100);
       expect(projection.projected.x).toBeCloseTo(projection.expected.x, 8);
       expect(projection.projected.y).toBeCloseTo(projection.expected.y, 8);
       await openOptions(page); await page.getByLabel('View', { exact: true }).selectOption('close');

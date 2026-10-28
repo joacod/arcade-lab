@@ -22,6 +22,17 @@ export function createHost(container: HTMLElement, callbacks: HostOptions) {
   let frame: number | undefined;
   let started = false;
   let disposed = false;
+  let onFrame: ((now: number) => void) | undefined;
+
+  function schedule() {
+    if (!disposed && started && !document.hidden && frame === undefined) frame = requestAnimationFrame(tick);
+  }
+  function tick(now: number) {
+    frame = undefined;
+    if (disposed || document.hidden) return;
+    onFrame?.(now);
+    schedule();
+  }
 
   function resize() {
     if (disposed) return;
@@ -37,6 +48,14 @@ export function createHost(container: HTMLElement, callbacks: HostOptions) {
   const observer = new ResizeObserver(resize);
   observer.observe(surface);
   window.addEventListener('resize', resize, { signal: lifetime.signal });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = undefined;
+    } else {
+      resize(); schedule();
+    }
+  }, { signal: lifetime.signal });
   document.addEventListener('fullscreenchange', () => {
     if (disposed) return;
     callbacks.onDisplayChange(); resize(); callbacks.onFullscreenChange();
@@ -61,22 +80,18 @@ export function createHost(container: HTMLElement, callbacks: HostOptions) {
         return 'Fullscreen could not open. You can continue in the viewport layout.';
       }
     },
-    start(onFrame: (now: number) => void) {
+    start(callback: (now: number) => void) {
       if (disposed || started) return;
       started = true;
+      onFrame = callback;
       resize();
-      const tick = (now: number) => {
-        frame = undefined;
-        if (disposed) return;
-        onFrame(now);
-        if (!disposed) frame = requestAnimationFrame(tick);
-      };
-      if (!disposed) frame = requestAnimationFrame(tick);
+      schedule();
     },
     dispose() {
       if (disposed) return;
       disposed = true;
       if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = undefined; onFrame = undefined;
       lifetime.abort();
       observer.disconnect();
       root.remove();

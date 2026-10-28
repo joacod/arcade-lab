@@ -1,3 +1,4 @@
+import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
 import { validateContent } from './content-validation.ts';
@@ -39,8 +40,8 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
   function dispose() {
     if (disposed) return;
     disposed = true; preparation?.abort(); generation++;
-    try { input?.clear(); presentation?.dispose(); activeAssets?.dispose(); overlay?.dispose(); sound?.dispose(); }
-    finally { host?.dispose(); }
+    disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeAssets?.dispose(),
+      () => overlay?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
     host = createHost(container, { className: 'clearing-app', label: 'Last Light Clearing',

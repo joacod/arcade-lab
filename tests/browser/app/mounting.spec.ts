@@ -245,3 +245,108 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('#app')).toBeEmpty();
   expect(errors).toEqual([]);
 });
+
+test('hidden hosts cancel scheduling and restore exactly one loop without reviving disposed sessions', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { createHost } = await import('/src/engine/browser/host.ts');
+    const request = window.requestAnimationFrame, cancel = window.cancelAnimationFrame;
+    const pending = new Map<number, FrameRequestCallback>();
+    let id = 0, calls = 0, hidden = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    window.requestAnimationFrame = callback => { pending.set(++id, callback); return id; };
+    window.cancelAnimationFrame = frame => { pending.delete(frame); };
+    const container = document.createElement('div'); document.body.append(container);
+    const host = createHost(container, { className: 'fixture', label: 'Fixture', surfaceLabel: 'Fixture', onDisplayChange() {}, onFullscreenChange() {} });
+    host.root.append(host.surface);
+    const visibility = (value: boolean) => { hidden = value; document.dispatchEvent(new Event('visibilitychange')); };
+    try {
+      host.start(() => calls++);
+      const initiallyHidden = pending.size;
+      visibility(false); visibility(false); host.start(() => calls++);
+      const visible = pending.size;
+      const callback = [...pending.values()][0]!;
+      visibility(true);
+      const suspended = pending.size;
+      callback(100); // Even a callback already in flight must not draw a hidden page.
+      visibility(false);
+      const restored = pending.size;
+      visibility(true); host.dispose(); visibility(false);
+      return { initiallyHidden, visible, suspended, restored, disposed: pending.size, calls };
+    } finally {
+      host.dispose(); container.remove();
+      delete (document as any).hidden;
+      window.requestAnimationFrame = request; window.cancelAnimationFrame = cancel;
+    }
+  });
+  expect(result).toEqual({ initiallyHidden: 0, visible: 1, suspended: 0, restored: 1, disposed: 0, calls: 0 });
+});
+
+test('renderer cleanup failures still release every game sound owner and browser host', async ({ page }) => {
+  await page.route(/\/src\/games\/[^/]+\/presentation\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createPresentation;
+      createPresentation = (...args) => { const presentation = original(...args); return { ...presentation,
+        dispose() { presentation.dispose(); throw new Error('renderer cleanup fixture'); } }; };` });
+  });
+  await page.route(/\/src\/games\/[^/]+\/sound\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createSound;
+      createSound = (...args) => { const sound = original(...args); return { ...sound,
+        dispose() { window.soundDisposed = true; sound.dispose(); } }; };` });
+  });
+  await page.route(/\/src\/engine\/browser\/host\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createHost;
+      createHost = (...args) => { const host = original(...args); window.hostProbe = host; return host; };` });
+  });
+  await page.goto('/');
+  const results = await page.evaluate(async () => {
+    const results = [];
+    for (const [slug, entry] of [['last-light-clearing', 'mountClearing'], ['skybreak', 'mountSkybreak'], ['clockwork-hollow', 'mountHollow'], ['midnight-circuit', 'mountCircuit'], ['obsidian-duel', 'mountDuel'], ['blastline', 'mountBlastline']]) {
+      const module = await import(`/src/games/${slug}/app.ts`);
+      const container = document.createElement('div'); document.body.append(container);
+      const session = module[entry!](container, () => {});
+      (window as any).soundDisposed = false;
+      let errors: string[] = [];
+      try { session.dispose(); } catch (error) { errors = (error as AggregateError).errors.map(e => e.message); }
+      session.dispose();
+      results.push({ errors, soundDisposed: (window as any).soundDisposed, aborted: (window as any).hostProbe.signal.aborted, children: container.childElementCount });
+      container.remove();
+    }
+    return results;
+  });
+  expect(results).toEqual(Array.from({ length: 6 }, () => ({ errors: ['renderer cleanup fixture'], soundDisposed: true, aborted: true, children: 0 })));
+});
+
+test('collection restores navigation and ignores a cancelled lazy load that finishes late', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(/\/src\/games\/skybreak\/app\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch(); await gate; await route.fulfill({ response });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const selected = page.getByRole('button', { name: 'Play Blastline', exact: true });
+  await selected.scrollIntoViewIfNeeded();
+  const scrollTop = await page.locator('.arcade-selection').evaluate(root => root.scrollTop);
+  await selected.click();
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  await expect(selected).toBeFocused();
+  expect(await page.locator('.arcade-selection').evaluate(root => root.scrollTop)).toBeCloseTo(scrollTop, 0);
+  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Loading Skybreak…');
+  await expect(page.getByRole('button', { name: 'Cancel loading', exact: true })).toBeInViewport({ ratio: 1 });
+  await page.getByRole('button', { name: 'Cancel loading', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Play Skybreak', exact: true })).toBeFocused();
+  release();
+  // Await that exact import rather than relying on a timeout for the stale completion.
+  await page.evaluate(async () => { const path = '/src/games/skybreak/app.ts'; await import(path); });
+  await expect(page.locator('.arcade-selection')).toBeVisible();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Skybreak', exact: true })).toBeVisible();
+});

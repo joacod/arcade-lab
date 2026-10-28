@@ -42,6 +42,8 @@ One uniform transform scales and centers the portrait field. Relative drag displ
 
 Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating nacelle rings, glow, and flashes are procedural Canvas cosmetics. Particles are capped at 180; fortress destruction adds only nine analytic fire blooms. Effects age in active run time, so pause freezes them. Sound coalesces each cue per frame, caps total voices at 12, and retains no backlog. Dry, short gun transients leave room for filtered metal impacts, low enemy blasts, hull fractures and slipstream rolls. Boss armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. Routine cues have game-owned cooldowns and restrained world-space stereo placement; milestones replace combat tails. Audio initialization failure leaves play available.
 
+The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles and damage flashes are suppressed. Enemy movement, projectiles, attack lanes and the roll/immunity ring remain visible gameplay cues.
+
 Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; artwork/effects in `presentation.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input in `input.ts`; composition in `app.ts`.
 
 ## Local verification

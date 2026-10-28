@@ -1,3 +1,4 @@
+import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
@@ -21,8 +22,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   function dispose() {
     if (disposed) return;
     disposed = true;
-    try { input?.clear(); presentation?.dispose(); sound?.dispose(); }
-    finally { host?.dispose(); }
+    disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
     host = createHost(container, { className: 'skybreak-app', label: 'Skybreak',

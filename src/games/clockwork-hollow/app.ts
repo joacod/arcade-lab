@@ -1,3 +1,4 @@
+import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
 import { createClock, FIXED_STEP } from '../../engine/clock.ts';
@@ -21,7 +22,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
   let ui: ReturnType<typeof createUI>;
   function dispose() {
     if (disposed) return;
-    disposed = true; input?.clear(); presentation?.dispose(); sound?.dispose(); host.dispose();
+    disposed = true; disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose());
   }
   function transition(next: Screen, focus = true) {
     input?.clear(); clock.reset(); screen = next;

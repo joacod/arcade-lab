@@ -13,6 +13,7 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable.');
   const c = ctx;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   surface.append(canvas);
   let particles: Particle[] = [], lastTime = 0, width = 0, height = 0, damageFlash = 0;
   const flashes = new Map<number | 'boss', number>();
@@ -24,8 +25,10 @@ export function createPresentation(surface: HTMLElement) {
   function plane(x: number, y: number, kind: Pattern | 'player', bank = 0, roll = 0, shadow = false, flash = false) {
     c.save(); c.translate(x, y);
     if (kind !== 'player') c.rotate(Math.PI);
-    c.scale(roll ? Math.cos(roll * Math.PI * 3) * 0.75 : 1 - Math.abs(bank) * 0.12, 1);
-    c.rotate(bank * 0.12);
+    if (!motion.matches) {
+      c.scale(roll ? Math.cos(roll * Math.PI * 3) * 0.75 : 1 - Math.abs(bank) * 0.12, 1);
+      c.rotate(bank * 0.12);
+    }
     if (shadow) { c.globalAlpha = 0.2; c.translate(9, 16); }
     const base = flash ? '#ffffff' : shadow ? '#031c31' : kind === 'player' ? '#eaf6e9' : kind === 'interceptor' ? '#ffb9a7' : kind === 'crossing' ? '#eeb963' : kind === 'swoop' ? '#bdafdf' : '#f17c67';
     const dark = shadow ? '#031c31' : kind === 'player' ? '#269ab2' : '#723f55';
@@ -77,7 +80,7 @@ export function createPresentation(surface: HTMLElement) {
     const dead = b.health <= 0;
     if (b.charge > 0 && !dead) {
       c.save();
-      const pulse = 0.35 + Math.sin(b.age * 16) * 0.12;
+      const pulse = motion.matches ? 0.35 : 0.35 + Math.sin(b.age * 16) * 0.12;
       c.strokeStyle = `rgba(255, 169, 125, ${pulse})`; c.fillStyle = '#ffb17c13'; c.lineWidth = 1.5;
       c.setLineDash([8, 10]);
       if (b.attack === 'lanes') {
@@ -114,7 +117,7 @@ export function createPresentation(surface: HTMLElement) {
     c.beginPath(); c.arc(0, 10, 28, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
     polygon([-15, -9, 15, -9, 20, 25, 0, 39, -20, 25], '#19344d', '#ddfff3');
     c.fillStyle = '#ffe3a7'; c.fillRect(-3, 0, 6, 22);
-    if (dead) for (let i = 0; i < 9; i++) {
+    if (dead && !motion.matches) for (let i = 0; i < 9; i++) {
       const age = (b.defeated + i * 0.19) % 0.7, x = noise(i + Math.floor(b.defeated * 4)) * 260 - 130, y = noise(i + 30) * 90 - 40;
       c.globalAlpha = (1 - age / 0.7) * Math.max(0, 1 - b.defeated / fortress.defeatDuration);
       c.fillStyle = i % 2 ? '#ffe9ab' : '#ff8259'; c.beginPath(); c.arc(x, y, 8 + age * 34, 0, Math.PI * 2); c.fill();
@@ -128,7 +131,7 @@ export function createPresentation(surface: HTMLElement) {
         if (event.type === 'hit' && event.target !== undefined) flashes.set(event.target, 0.09);
         if (!['hit', 'explosion', 'life', 'evade', 'pickup', 'boss-break', 'damage'].includes(event.type)) continue;
         if (event.type === 'damage') damageFlash = 0.24;
-        const count = event.type === 'boss-break' ? 60 : event.type === 'hit' ? 4 : 14;
+        const count = motion.matches ? 0 : event.type === 'boss-break' ? 60 : event.type === 'hit' ? 4 : 14;
         for (let i = 0; i < count; i++) {
           const angle = noise(i + event.x) * Math.PI * 2, speed = 35 + noise(i + event.y) * 110;
           const life = event.type === 'boss-break' ? 1.6 : event.type === 'hit' ? 0.18 : 0.6;
@@ -147,7 +150,8 @@ export function createPresentation(surface: HTMLElement) {
       const view = flightView(size.width, size.height);
       c.translate(view.x, view.y); c.scale(view.scale, view.scale);
       c.save(); c.beginPath(); c.rect(0, 0, 480, 800); c.clip();
-      ocean(attractTime ?? run.elapsed);
+      ocean(motion.matches ? 0 : attractTime ?? run.elapsed);
+      if (motion.matches) { particles = []; damageFlash = 0; }
       const dt = Math.max(0, run.elapsed - lastTime); lastTime = run.elapsed;
       for (const [id, life] of flashes) {
         if (life <= dt) flashes.delete(id); else flashes.set(id, life - dt);
@@ -159,7 +163,7 @@ export function createPresentation(surface: HTMLElement) {
       if (run.boss) drawFortress(run.boss);
       for (const item of run.pickups) {
         const color = item.kind === 'power' ? '#ffcf70' : item.kind === 'spread' ? '#d6aaff' : '#a9f3b5';
-        c.save(); c.translate(item.x, item.y); c.rotate(Math.sin(item.age * 3) * 0.1);
+        c.save(); c.translate(item.x, item.y); if (!motion.matches) c.rotate(Math.sin(item.age * 3) * 0.1);
         c.fillStyle = '#06273e'; c.strokeStyle = color; c.lineWidth = 2;
         c.shadowColor = color; c.shadowBlur = 14;
         c.beginPath(); c.roundRect(-18, -18, 36, 36, 9); c.fill(); c.stroke(); c.shadowBlur = 0;
@@ -178,7 +182,7 @@ export function createPresentation(surface: HTMLElement) {
       const p = run.player;
       if (run.status !== 'defeat') {
         plane(p.x + 10, p.y + 18, 'player', p.bank, p.roll, true);
-        c.save(); if (p.immunity > 0) c.globalAlpha = Math.floor(run.elapsed * 12) % 2 ? 0.4 : 1;
+        c.save(); if (p.immunity > 0) c.globalAlpha = motion.matches ? 0.65 : Math.floor(run.elapsed * 12) % 2 ? 0.4 : 1;
         plane(p.x, p.y, 'player', p.bank, p.roll); c.restore();
         if (p.roll > 0 || p.immunity > 0) {
           c.strokeStyle = p.roll ? '#a4ffff' : '#a4ffff66'; c.lineWidth = p.roll ? 3 : 1;
@@ -214,6 +218,6 @@ export function createPresentation(surface: HTMLElement) {
       c.restore();
       c.strokeStyle = '#73c7c233'; c.lineWidth = 1; c.strokeRect(0, 0, 480, 800);
     },
-    dispose() { particles = []; flashes.clear(); canvas.remove(); },
+    dispose() { particles = []; flashes.clear(); canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

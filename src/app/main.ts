@@ -1,5 +1,5 @@
 import { createApplication } from './application.ts';
-import { mountSelection } from './selection.ts';
+import { mountSelection, type SelectionState } from './selection.ts';
 import { games, type GameId } from './catalog.ts';
 import './application.css';
 
@@ -7,10 +7,13 @@ const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing application container.');
 const application = createApplication(container);
 let generation = 0, disposed = false;
+const selection: SelectionState = { scrollTop: 0 };
 function showSelection(message = '') {
   if (disposed) return;
   generation++;
-  application.mount({ mount: host => mountSelection(host, selectGame, message) });
+  application.mount({ mount: host => mountSelection(host, {
+    select: selectGame, cancel: () => showSelection(), state: selection, message,
+  }) });
 }
 async function selectGame(id: GameId) {
   const request = ++generation;

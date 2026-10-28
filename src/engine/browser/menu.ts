@@ -28,7 +28,11 @@ interface MenuOptions<Action extends string, Screen extends string> {
 export function createGameMenu<Action extends string, Screen extends string>(root: HTMLElement, surface: HTMLElement, stage: HTMLElement, config: MenuOptions<Action, Screen>) {
   root.dataset.menuOwner = '';
   stage.dataset.menuStage = '';
-  for (const element of config.gameplayUI) element.dataset.menuGameplay = '';
+  for (const element of config.gameplayUI) {
+    element.dataset.menuGameplay = '';
+    // Routine HUD values are readouts, not a stream of screen-reader announcements.
+    for (const output of element.querySelectorAll('output:not([aria-live]):not([role])')) output.setAttribute('aria-live', 'off');
+  }
   const layer = document.createElement('div'); layer.className = 'game-menu-layer';
   layer.innerHTML = `<section class="game-menu" aria-labelledby="${config.id}-heading">
     <header class="game-menu-header"><p class="game-menu-name" hidden>${config.title}</p><h1 id="${config.id}-heading">${config.title}</h1></header>
@@ -51,6 +55,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const description = layer.querySelector<HTMLElement>('.game-menu-description')!;
   const tabs = [...layer.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
   const panels = [...layer.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+  for (const panel of panels) panel.tabIndex = 0;
   if (config.game) panels[0]!.append(config.game);
   if (config.options) panels[1]!.prepend(config.options);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
@@ -86,6 +91,10 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
     soundStatus(message: string) { status('.game-menu-sound-status', message); },
     displayStatus(message: string) { status('.game-menu-display-status', message); },
     show(next: Screen, focus = true) {
+      // A local pause must not strand focus on the now-hidden playfield or Pause button.
+      // Browser blur and focus leaving the game must never pull focus back into it.
+      const moveFocus = focus || (next !== 'playing' && screen === 'playing'
+        && !document.hidden && document.hasFocus() && root.contains(document.activeElement));
       if (next !== screen) select(0);
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
       name.hidden = next === 'title';
@@ -103,10 +112,10 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
         button.classList.toggle('game-menu-primary', highlighted);
         primary ||= highlighted;
       });
-      if (focus) {
+      if (moveFocus) {
         if (next === 'playing') surface.focus({ preventScroll: true });
         else if (next === 'choosing') panels[0]!.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
-        else actions.find(button => !button.hidden)?.focus({ preventScroll: true });
+        else (actions.find(button => !button.hidden && !button.disabled) ?? tabs[0])?.focus({ preventScroll: true });
       }
     },
   };

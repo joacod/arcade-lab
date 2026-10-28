@@ -21,8 +21,16 @@ interface FocusLifetime {
 }
 /** Focus settles after focusout. Each session defines which destinations are playable. */
 export function bindSessionFocus(root: HTMLElement, { signal, clearInput, shouldSuspend, suspend }: FocusLifetime) {
+  let pending: number | undefined;
   root.addEventListener('focusout', () => {
     clearInput();
-    queueMicrotask(() => { if (!signal.aborted && shouldSuspend()) suspend(); });
+    if (pending !== undefined) window.clearTimeout(pending);
+    // Native pointer focus can run a microtask checkpoint between focusout and
+    // focusin. Wait for the next task so the destination has actually settled.
+    pending = window.setTimeout(() => {
+      pending = undefined;
+      if (!signal.aborted && shouldSuspend()) suspend();
+    }, 0);
   }, { signal });
+  signal.addEventListener('abort', () => { if (pending !== undefined) window.clearTimeout(pending); }, { once: true });
 }

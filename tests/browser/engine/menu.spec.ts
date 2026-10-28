@@ -14,9 +14,13 @@ test('shared menus fit compact screens and keep actions accessible across keyboa
     await play.hover();
     const contrast = await play.evaluate(button => {
       const style = getComputedStyle(button);
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d')!;
       function luminance(color: string) {
-        const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map(channel => {
-          const value = Number(channel) / 255;
+        // CSS color-mix serializes as color(srgb ...), not necessarily rgb(0..255).
+        context.fillStyle = color; context.fillRect(0, 0, 1, 1);
+        const [r, g, b] = [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).map(channel => {
+          const value = channel / 255;
           return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
         });
         return .2126 * r! + .7152 * g! + .0722 * b!;
@@ -45,13 +49,29 @@ test('shared menus fit compact screens and keep actions accessible across keyboa
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+    await page.getByRole('button', { name: 'Resume', exact: true }).click();
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+    // A frozen run must not rewrite HUD/readout attributes or text on every draw.
+    const mutations = await page.locator('[data-menu-owner]').evaluate(async root => {
+      await new Promise(requestAnimationFrame);
+      let count = 0;
+      const recording = new MutationObserver(records => { count += records.length; });
+      recording.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
+      for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
+      count += recording.takeRecords().length; recording.disconnect();
+      return count;
+    });
+    expect(mutations, `${title} leaves unchanged UI untouched`).toBe(0);
     await expect(game).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: 'Options', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeInViewport({ ratio: 1 });
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `Play ${title}`, exact: true })).toBeFocused();
   }
   expect(errors).toEqual([]);
 });

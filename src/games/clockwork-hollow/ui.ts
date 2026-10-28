@@ -1,3 +1,4 @@
+import { createElementLookup, setText } from '../../engine/browser/dom.ts';
 import { createMenuReadout } from '../../engine/browser/menu-components.ts';
 import { createGameMenu } from '../../engine/browser/menu.ts';
 import { results as summarize, type Run } from './game.ts';
@@ -10,11 +11,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     <main class="hollow-stage"><div class="hollow-location" aria-hidden="true"><span>01</span><div>THE WAKING AQUEDUCT<small>Follow the light. Wake the bell.</small></div></div>
     <output class="hollow-announcement" role="status" aria-label="Checkpoint"></output></main>
     <footer class="hollow-footer"><span class="hollow-hint">A D / ← → MOVE <span>·</span> SPACE TO JUMP</span><div class="hollow-touch"><div><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button></div><button data-control="jump" aria-label="Jump">↑ <small>JUMP</small></button></div><span class="hollow-footer-note">MOTES ARE OPTIONAL. THE BELL IS WAITING.</span></footer>`;
-  root.querySelector('.hollow-stage')!.prepend(surface);
-  const pause = root.querySelector<HTMLButtonElement>('[data-intent="pause"]')!;
+  const $ = createElementLookup(root);
+  $('.hollow-stage').prepend(surface);
+  const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
-  const menu = createGameMenu<Intent, Screen>(root, surface, root.querySelector('.hollow-stage')!, {
+  const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
@@ -28,10 +30,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
-  const controls = Object.fromEntries((['left', 'right', 'jump'] as const).map(action => [action, root.querySelector<HTMLButtonElement>(`[data-control="${action}"]`)!])) as Record<Control, HTMLButtonElement>;
+  const controls = Object.fromEntries((['left', 'right', 'jump'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
   const description = menu.description;
-  const motes = root.querySelector('[aria-label="Motes collected"]')!, hint = root.querySelector('.hollow-hint')!;
-  const announcement = root.querySelector('.hollow-announcement')!;
+  const motes = $('[aria-label="Motes collected"]'), hint = $('.hollow-hint');
+  const announcement = $('.hollow-announcement');
   let saved = '';
   return { controls,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
@@ -47,25 +49,24 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     update(run: Run) {
       const collected = run.collected.filter(Boolean).length, tally = summarize(run);
       const time = `${Math.floor(run.elapsed / 60)}:${String(Math.floor(run.elapsed % 60)).padStart(2, '0')}`;
-      motes.textContent = `◇ ${collected} / ${run.level.motes.length}`;
-      root.querySelector('.hollow-progress')!.textContent = `${run.levelIndex + 1} / ${run.levels.length} · ${time}`;
-      root.querySelector('.hollow-brand small')!.textContent = run.level.name.toUpperCase();
-      root.querySelector('.hollow-location > span')!.textContent = `0${run.levelIndex + 1}`;
-      const location = root.querySelector('.hollow-location > div')!;
+      setText(motes, `◇ ${collected} / ${run.level.motes.length}`);
+      setText($('.hollow-progress'), `${run.levelIndex + 1} / ${run.levels.length} · ${time}`);
+      setText($('.hollow-brand small'), run.level.name.toUpperCase());
+      setText($('.hollow-location > span'), `0${run.levelIndex + 1}`);
+      const location = $('.hollow-location > div');
       const checkpoint = run.level.checkpoints[run.checkpoint];
       const savedPoint = checkpoint ? `${run.level.name}: ${checkpoint.name} saved.` : '';
-      if (savedPoint !== saved) { saved = savedPoint; announcement.textContent = saved; }
+      if (savedPoint !== saved) { saved = savedPoint; setText(announcement, saved); }
       const caption = `${run.level.name} · ${checkpoint ? `Saved: ${checkpoint.name}` : run.level.subtitle}`;
-      if (location.textContent !== caption) location.textContent = caption;
-      root.querySelector('[data-menu-action="retry"]')!.textContent = checkpoint ? 'Retry checkpoint' : 'Retry checkpoint';
+      if (location.textContent !== caption) setText(location, caption);
       const next = run.levels[run.levelIndex + 1];
-      root.querySelector('[data-menu-action="continue"]')!.textContent = next ? `Continue to ${next.name}` : 'Continue';
+      setText($('[data-menu-action="continue"]'), next ? `Continue to ${next.name}` : 'Continue');
       results.update(`${run.completed} / ${run.levels.length} bells awakened · ${tally.motes} / ${tally.total} wind-up motes\n${time} on the path · ${run.deaths} missed steps · ${tally.score.toLocaleString()} points${run.status === 'victory' ? `\n${tally.title}` : ''}`);
-      if (run.status === 'interlude') description.textContent = `${run.level.name} is awake. Next: ${next?.name}. ${next?.subtitle}`;
-      hint.textContent = run.levelIndex === 0 && run.player.x < 810 ? 'HOLD JUMP FOR HEIGHT · RELEASE FOR A LITTLE HOP'
+      if (run.status === 'interlude') setText(description, `${run.level.name} is awake. Next: ${next?.name}. ${next?.subtitle}`);
+      setText(hint, run.levelIndex === 0 && run.player.x < 810 ? 'HOLD JUMP FOR HEIGHT · RELEASE FOR A LITTLE HOP'
         : checkpoint && Math.abs(run.player.x - checkpoint.x) < 220 ? 'LANTERN LIT · YOUR RETURN POINT IS SAVED'
         : run.levelIndex > 0 ? 'BLUE: SAFE · AMBER: WARNING · CORAL: PRESSURE · LAND ON BEETLES'
-        : 'LAND ON BEETLES · TOUCH LANTERNS · FOLLOW THE MOTES';
+        : 'LAND ON BEETLES · TOUCH LANTERNS · FOLLOW THE MOTES');
     },
   };
 }
