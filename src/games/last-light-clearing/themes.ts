@@ -4,7 +4,7 @@ import localAppearances from './local-appearances.ts';
 interface Appearance {
   readonly name: string;
   readonly motif: 'grove' | 'crystal' | 'ruins';
-  readonly interface: 'classic' | 'rune' | 'glass';
+  readonly interface: 'classic' | 'rune' | 'glass' | 'abyss';
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
     readonly light: string; readonly ground: string; readonly canopy: string;
@@ -15,7 +15,7 @@ interface Appearance {
 /** Asset requirements are explicit: procedural worlds never need a dummy atlas. */
 export type Theme = Appearance & (
   | { readonly presentation?: undefined; readonly art?: ArtPack }
-  | { readonly presentation: 'prism'; readonly art?: never }
+  | { readonly presentation: 'prism' | 'abyss'; readonly art?: never }
 );
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
@@ -56,7 +56,13 @@ export const themes: Readonly<Record<ThemeId, Theme>> = {
   },
   assets: localAppearances.mosslight ?? emberRuins,
   quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', palette: gardenPalette },
+  custom: {
+    name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
+    palette: { background: '#020510', floor: '#080f26', boundary: '#337b9c', ground: '#17345e', canopy: '#573cc0',
+      light: '#83fff0', enemy: '#8d91ff', elite: '#df8fff', spark: '#9aefff', halo: '#ffc77b',
+      pulse: '#4cffe2', shard: '#cbb1ff', gem: '#51eacb', hit: '#f1fffc', damage: '#ff6d9c' },
+  },
 };
-export type ThemeId = 'normal' | 'assets' | 'quality';
+export type ThemeId = 'normal' | 'assets' | 'quality' | 'custom';
 export const visualTiming = { hit: 0.16, defeat: 0.4, shot: 0.1, pulse: 0.3, pickup: 0.3 };
 export const MAX_EFFECTS = 128;

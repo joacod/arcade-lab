@@ -23,7 +23,7 @@ The loader checks all referenced frames against decoded image dimensions and val
 
 ## Interface styling
 
-Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, and Glass accompanies Quality. Keep the shared menu and native controls consistent. Independent interface and accent selectors are intentionally absent.
+Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, Glass accompanies Quality, and Abyss accompanies Custom. Keep the shared menu and native controls consistent. Independent interface and accent selectors are intentionally absent.
 
 ## Local Mosslight asset pack
 

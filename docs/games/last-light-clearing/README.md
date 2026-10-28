@@ -32,7 +32,9 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Theme modes
 
-**Normal**, the default, uses the existing procedural clearing, actor silhouettes and spell effects without fetching images. **Assets** uses the installed Mosslight pack during development, or bundled Ember Ruins otherwise. **Quality** uses Prism Garden's sculpted actors, illuminated scenery and Three.js lighting. Palette-only variants, independent skin/accent settings, the sprite-card garden and the separate Abyss treatment have been consolidated into these three modes.
+**Normal**, the default, uses the existing procedural clearing, actor silhouettes and spell effects without fetching images. **Assets** uses the installed Mosslight pack during development, or bundled Ember Ruins otherwise. **Quality** uses Prism Garden's sculpted actors, illuminated scenery and Three.js lighting.
+
+**Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
 
 Each mode includes its matching HUD styling. The menu offers one Theme selector; the camera follows the Keeper in every mode. Replacements retain the entire run, including active time, positions, health, upgrades and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints and scenery never change physics or targeting.
 
@@ -53,7 +55,7 @@ Paths below are relative to `src/games/last-light-clearing/`.
 | Typed content and validation | `content.ts`, `content-validation.ts` |
 | Physical input | `input.ts` |
 | Camera transform and CSS-space overlay | `view.ts`, `screen-overlay.ts` |
-| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts` |
+| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts`, `vgpu/` |
 | Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
 | UI and sound adapters | `ui.ts`, `style.css`, `sound.ts` |
 
@@ -61,15 +63,17 @@ Paths below are relative to `src/games/last-light-clearing/`.
 
 ## Renderer and asset lifetimes
 
-`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality lazily loads `three/garden.ts`; it uses the host frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Renderers own backing resolution.
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality lazily loads `three/garden.ts`; it uses the host frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom lazily loads `vgpu/bloom.ts` and its WGSL field and organism shaders. It uses the same host loop and world-to-CSS transform, with bounded instance, ripple and particle buffers. Renderers own backing resolution.
 
 Garden batches immutable scenery by geometry, material and shadow settings at construction. Each instance retains its authored transform and the batch owns its bounds; actor animation remains independent. Transient gems, shots and effects reuse bounded instance buffers. This keeps repeated scenery from adding one draw submission per prop.
 
 `prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Normal.
 
-Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas uses the asset pack’s clip helpers; garden uses procedural actor observations. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.
+Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas uses the asset pack’s clip helpers; garden and bloom use procedural actor observations. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.
 
-Garden reuses bounded resources and releases geometry, materials, textures, instance buffers, shadows and renderer/context resources on failure and disposal. `createPreparationScope` invalidates superseded work; the session releases rejected image bundles and renderers.
+Garden reuses bounded resources and releases geometry, materials, textures, instance buffers, shadows and renderer/context resources on failure and disposal. Bloom releases shader draws, effects, uniforms, storage buffers, its surface and device on cancellation, failure or disposal. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. Unavailable WebGPU or failed preparation retains the working presentation; an active graphics failure pauses and restores Normal.
+
+`createPreparationScope` invalidates superseded work; the session releases rejected image bundles and renderers.
 
 ## Renderer verification
 
