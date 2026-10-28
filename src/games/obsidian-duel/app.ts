@@ -53,7 +53,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     sound=createSound(message=>{if(!disposed)ui.soundStatus(message);});
     ui=createUI(host.root,host.surface,host.signal,act,id=>{if(screen==='title'){selected=id;match=createMatch(id);presentation?.reset();ui.update(match);}},value=>sound?.setMuted(value),appearance);
     presentation=createPresentation(host.surface);
-    appearance('tempest');
+    appearance('normal');
     input=bindInput(host.surface,ui.controls,()=>screen==='playing'&&match.phase==='fight',host.signal);
     host.root.addEventListener('keydown',event=>{if(!event.repeat&&['Escape','KeyP'].includes(event.code)&&screen==='playing'){event.preventDefault();suspend();}},{signal:host.signal});
     bindSessionFocus(host.root,{signal:host.signal,clearInput:()=>input?.clear(),suspend,

@@ -1,11 +1,10 @@
 import { still, row, type ActorArt, type ArtPack, type Decoration } from './art-pack.ts';
-import type { InterfaceSkin } from './interface.ts';
 import localAppearances from './local-appearances.ts';
 /** Named visual presets combine art/environment, effects and a default interface. */
 interface Appearance {
   readonly name: string;
   readonly motif: 'grove' | 'crystal' | 'ruins';
-  readonly interface: InterfaceSkin;
+  readonly interface: 'classic' | 'rune' | 'glass';
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
     readonly light: string; readonly ground: string; readonly canopy: string;
@@ -15,14 +14,9 @@ interface Appearance {
 }
 /** Asset requirements are explicit: procedural worlds never need a dummy atlas. */
 export type Theme = Appearance & (
-  | { readonly presentation?: undefined; readonly art: ArtPack }
-  | { readonly presentation: 'pixel-garden'; readonly art: ArtPack }
-  | { readonly presentation: 'prism' | 'abyss'; readonly art?: never }
+  | { readonly presentation?: undefined; readonly art?: ArtPack }
+  | { readonly presentation: 'prism'; readonly art?: never }
 );
-function staticActor(x: number, size: number, footprint: number): ActorArt {
-  const clip = still('actors', [x, 0, size, size]);
-  return { clips: { idle: clip, move: clip }, anchor: [0.5, 0.5], footprint: [footprint, footprint], orientation: 'rotate' };
-}
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
     anchor: [0.5, 0.78], footprint, orientation: 'mirror' };
@@ -54,35 +48,15 @@ export const emberRuins: Theme = {
 };
 const gardenPalette: Theme['palette'] = { enemy: '#e7809b', elite: '#b285f0', halo: '#ffefb2', hit: '#fff3dc', damage: '#ffa5ae', background: '#080f22', floor: '#18283a', boundary: '#6198ad', light: '#a9fcff',
       ground: '#52788c', canopy: '#324c70', spark: '#fcf0af', shard: '#c8a6ff', pulse: '#7bdcff', gem: '#73ffc7' };
-export const themes: Readonly<Record<string, Theme>> = {
-  woodland: {
-    name: 'Lanternwood', motif: 'grove', interface: 'classic',
-    art: { images: { actors: new URL('./art/woodland.svg', import.meta.url).href }, sampling: 'smooth',
-      actors: { keeper: staticActor(0, 64, 32), crawler: staticActor(64, 64, 32), elite: staticActor(128, 64, 48) } },
+export const themes: Readonly<Record<ThemeId, Theme>> = {
+  normal: {
+    name: 'Normal', motif: 'grove', interface: 'classic',
     palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#0b171a', floor: '#172e29', boundary: '#708a6c', light: '#f5d58b',
       ground: '#7a9b7440', canopy: '#203d34', spark: '#b7edff', shard: '#d4b7ff', pulse: '#88e0d0', gem: '#9cecaa' },
   },
-  moonglass: {
-    name: 'Moonglass', motif: 'crystal', interface: 'glass',
-    art: { images: { actors: new URL('./art/moonglass.svg', import.meta.url).href }, sampling: 'smooth',
-      actors: { keeper: staticActor(0, 80, 32), crawler: staticActor(80, 80, 32), elite: staticActor(160, 80, 48) } },
-    palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#111329', floor: '#202645', boundary: '#7b8ec4', light: '#b6e8ff',
-      ground: '#a8b9ef40', canopy: '#30345a', spark: '#b9f6ff', shard: '#ffb8df', pulse: '#bca7ff', gem: '#8eeadf' },
-  },
-  ember: emberRuins,
-  prism: {
-    name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass',
-    palette: gardenPalette,
-  },
-  'ember-garden': { ...emberRuins, name: 'Ember Conservatory', presentation: 'pixel-garden', interface: 'glass', palette: gardenPalette },
-  abyss: {
-    name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
-    palette: { background: '#020510', floor: '#080f26', boundary: '#337b9c', ground: '#17345e', canopy: '#573cc0',
-      light: '#83fff0', enemy: '#8d91ff', elite: '#df8fff', spark: '#9aefff', halo: '#ffc77b',
-      pulse: '#4cffe2', shard: '#cbb1ff', gem: '#51eacb', hit: '#f1fffc', damage: '#ff6d9c' },
-  },
-  ...localAppearances,
+  assets: localAppearances.mosslight ?? emberRuins,
+  quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', palette: gardenPalette },
 };
-export type ThemeId = string;
+export type ThemeId = 'normal' | 'assets' | 'quality';
 export const visualTiming = { hit: 0.16, defeat: 0.4, shot: 0.1, pulse: 0.3, pickup: 0.3 };
 export const MAX_EFFECTS = 128;

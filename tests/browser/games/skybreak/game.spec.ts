@@ -1,4 +1,4 @@
-import { openOptions } from '../../menu.ts';
+import { openMenu } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Skybreak sortie controls, suspension, outcomes, and switching release each session', async ({ page }, info) => {
@@ -35,12 +35,12 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.emulateMedia({ reducedMotion: 'no-preference' }); await page.clock.runFor(100);
   expect(await picture()).not.toBe(still);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).flightProbe)));
-  await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('skybreak-app');
   await expect(page.locator('.skybreak-hud')).toBeHidden();
   await expect(page.locator('.skybreak-footer')).toBeHidden();
-  await openOptions(page); await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();
+  await openMenu(page); await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();
   await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
   await page.keyboard.press('j'); await page.keyboard.press('d'); await page.keyboard.press('k'); await page.clock.runFor(100);
   expect((await state()).elapsed).toBe(0); // Menu keys cannot control the aircraft.
@@ -56,25 +56,23 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   expect((await state()).player.roll).toBeGreaterThan(0);
   await page.keyboard.up('Space'); await page.keyboard.press('Escape');
   const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
-  await openOptions(page);
-  await page.getByRole('combobox', { name: 'Appearance', exact: true }).selectOption('deep-space');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'deep-space');
+  await openMenu(page);
+  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   await page.clock.runFor(30); expect(await state()).toEqual(frozen);
-  await page.screenshot({ path: info.outputPath('skybreak-deep-space-menu.png') });
   await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(100);
-  await page.screenshot({ path: info.outputPath('skybreak-deep-space.png') });
   await page.keyboard.press('Escape');
-  await openOptions(page); await page.getByRole('combobox', { name: 'Appearance', exact: true }).selectOption('pacific');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'pacific');
+  await openMenu(page); await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   const afterTheme = await state();
   await page.evaluate(() => {
     document.querySelector<HTMLElement>('.skybreak-app')!.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied'));
   });
-  await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.locator('.game-menu-display-status')).toContainText('Fullscreen could not open');
   expect(await state()).toEqual(afterTheme);
   await page.evaluate(() => { delete (document.querySelector('.skybreak-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
-  await openOptions(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
   await expect(page.locator('.game-menu-display-status')).toBeHidden();
   await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(100);

@@ -62,7 +62,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
     presentation = createPresentation(host.surface);
-    appearance('verdant');
+    appearance('normal');
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     host.root.addEventListener('keydown', event => {
       if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); }

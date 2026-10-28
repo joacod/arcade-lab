@@ -12,7 +12,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'duel-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
-  let theme = themes.tempest;
+  let theme = themes.normal;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let sparks: Spark[] = [], impacts: Impact[] = [], shake = 0, last = 0, disposed = false;
   function rect(x: number, y: number, w: number, h: number, fill: string | CanvasGradient) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }

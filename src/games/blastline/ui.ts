@@ -1,6 +1,7 @@
-import { appearances, type Appearance } from './themes.ts';
+import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { themes, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
-import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
@@ -19,12 +20,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Operation results');
-  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'iron', onChange: appearance });
+  const theme = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, options: theme.element,
+    game: results.element, theme: theme.element,
     controls: `<b>A D / ← →</b> MOVE　 <b>SPACE</b> JUMP　 <b>J</b> HOLD TO FIRE<br><b>W S / ↑ ↓</b> AIM　 <b>K</b> GRENADE　 <b>Q</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

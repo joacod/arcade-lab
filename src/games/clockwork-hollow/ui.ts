@@ -1,6 +1,7 @@
-import { appearances, type Appearance } from './themes.ts';
+import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { themes, type Appearance } from './themes.ts';
 import { createElementLookup, setText } from '../../common/ui/dom.ts';
-import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { results as summarize, type Run } from './game.ts';
 import type { Control } from './input.ts';
@@ -17,12 +18,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
-  const theme = createSelectField({ label: 'Appearance', signal, choices: appearances, value: 'verdant', onChange: appearance });
+  const theme = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, options: theme.element,
+    game: results.element, theme: theme.element,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br><b>Escape / P</b> pause <span>·</span> Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

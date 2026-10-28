@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test('shared menus fit compact screens and keep actions accessible across keyboard tabs', async ({ page }) => {
-  const errors: string[] = [];
+test('shared menus fit compact screens and keep actions accessible with a single theme selector', async ({ page }) => {
+  const errors: string[] = [], requests: string[] = [];
+  page.on('request', request => requests.push(request.url()));
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const games = ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline'];
   for (const title of games) {
+    requests.length = 0;
     await page.getByRole('button', { name: `Play ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.locator('[data-control]:visible')).toHaveCount(0);
@@ -29,23 +31,31 @@ test('shared menus fit compact screens and keep actions accessible across keyboa
       return (Math.max(foreground, background) + .05) / (Math.min(foreground, background) + .05);
     });
     expect(contrast, `${title} primary action remains readable on hover`).toBeGreaterThanOrEqual(4.5);
-    const game = page.getByRole('tab', { name: 'Game', exact: true });
-    await game.focus();
-    for (const name of ['Options', 'Controls', 'Game']) {
-      await page.keyboard.press('ArrowRight');
-      await expect(page.getByRole('tab', { name, exact: true })).toBeFocused();
-      await expect(page.getByRole('tab', { name, exact: true })).toHaveAttribute('aria-selected', 'true');
-      expect(await page.locator('.game-menu-body').evaluate(body => body.scrollHeight <= body.clientHeight + 1)).toBe(true);
-      expect(await page.locator('.game-menu').evaluate(menu => menu.scrollWidth <= menu.clientWidth + 1)).toBe(true);
-      await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
-      await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
-    }
+    await expect(page.getByRole('tab')).toHaveCount(0);
+    const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
+    await expect(theme).toHaveValue('normal');
+    expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
+    expect(await theme.locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(['normal', 'assets', 'quality']);
+    await expect(theme.locator('option[value="quality"]')).toHaveJSProperty('disabled', !['Last Light Clearing', 'Midnight Circuit'].includes(title));
+    if (['Clockwork Hollow', 'Obsidian Duel', 'Blastline', 'Midnight Circuit'].includes(title)) await expect(theme.locator('option[value="assets"]')).toHaveJSProperty('disabled', true);
+    await theme.focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeFocused();
+    const controls = page.locator('.game-menu-controls summary');
+    await controls.focus(); await page.keyboard.press('Enter');
+    await expect(page.locator('.game-menu-controls')).toHaveAttribute('open', '');
+    expect(await page.locator('.game-menu').evaluate(menu => menu.scrollWidth <= menu.clientWidth + 1)).toBe(true);
+    await expect(play).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
+    await page.keyboard.press('Enter');
     if (title === games[0]) {
       await page.setViewportSize({ width: 844, height: 390 });
-      await page.getByRole('tab', { name: 'Options', exact: true }).click();
-      expect(await page.locator('.game-menu-body').evaluate(body => body.scrollHeight <= body.clientHeight + 1)).toBe(true);
-      await expect(page.getByLabel('Appearance', { exact: true })).toBeInViewport({ ratio: 1 });
-      await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
+      await theme.scrollIntoViewIfNeeded();
+      await expect(theme).toBeInViewport({ ratio: 1 });
+      await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeInViewport({ ratio: 1 });
+      await expect(controls).toBeInViewport({ ratio: 1 });
+      await expect(play).toBeInViewport({ ratio: 1 });
+      await page.screenshot({ path: 'test-results/theme-menu-landscape.png' });
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -66,8 +76,8 @@ test('shared menus fit compact screens and keep actions accessible across keyboa
       return count;
     });
     expect(mutations, `${title} leaves unchanged UI untouched`).toBe(0);
-    await expect(game).toHaveAttribute('aria-selected', 'true');
-    await page.getByRole('tab', { name: 'Options', exact: true }).click();
+    await expect(theme).toBeVisible();
+
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeInViewport({ ratio: 1 });
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
@@ -80,38 +90,42 @@ test('composed menu fields retain native labels, values and session-owned listen
   await page.goto('/');
   await page.evaluate(async () => {
     const path = '/src/common/ui/menu-components.ts';
-    const { createSelectField, createRangeField, createMenuReadout } = await import(path);
+    const { createSelectField, createMenuReadout } = await import(path);
     const menuPath = '/src/common/ui/menu.ts';
     const { createGameMenu } = await import(menuPath);
     const lifetime = new AbortController(), events: (string | number)[] = [];
     const field = createSelectField({ label: 'Difficulty', choices: { gentle: 'Gentle', brisk: 'Brisk' }, value: 'gentle', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
-    const range = createRangeField({ label: 'Volume', accessibleLabel: 'Test volume', min: 0, max: 100, step: 5, value: 45, signal: lifetime.signal, onInput: (value: number) => events.push(value) });
+    const themePath = '/src/common/ui/theme-select.ts';
+    const { createThemeSelect } = await import(themePath);
+    const theme = createThemeSelect({ modes: { custom: {} }, value: 'custom', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
     const readout = createMenuReadout('Test results'); readout.update('100 POINTS\n2 lives'); readout.element.hidden = false;
-    const settings = document.createElement('div'); settings.append(field.element, range.element);
+    const settings = document.createElement('div'); settings.append(field.element, readout.element);
     const root = document.createElement('div'), stage = document.createElement('div'), surface = document.createElement('div'), pause = document.createElement('button');
     root.append(stage, pause); stage.append(surface); document.body.replaceChildren(root);
-    const menu = createGameMenu(root, surface, stage, { id: 'test', title: 'Test game', signal: lifetime.signal, pause, gameplayUI: [], game: readout.element, options: settings, controls: '<p>Authored controls</p>', actions: [], onAction() {}, onMute() {}, onFullscreen() {} });
+    const menu = createGameMenu(root, surface, stage, { id: 'test', title: 'Test game', signal: lifetime.signal, pause, gameplayUI: [], game: settings, theme: theme.element, controls: '<p>Authored controls</p>', actions: [], onAction() {}, onMute() {}, onFullscreen() {} });
     menu.show('title', false);
-    (window as any).menuProbe = { lifetime, events, field, range, readout };
+    (window as any).menuProbe = { lifetime, events, field, theme, readout };
   });
   await expect(page.getByLabel('Test results', { exact: true })).toHaveText('100 POINTS\n2 lives');
   await expect(page.getByLabel('Test results', { exact: true })).toHaveAttribute('aria-live', 'off');
-  await page.getByRole('tab', { name: 'Options', exact: true }).click();
+
   await expect(page.getByLabel('Difficulty', { exact: true })).toHaveValue('gentle');
   await page.getByLabel('Difficulty', { exact: true }).selectOption('brisk');
-  await page.getByLabel('Test volume', { exact: true }).fill('75');
-  expect(await page.evaluate(() => (window as any).menuProbe.events)).toEqual(['brisk', 75]);
+  await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('custom');
+  await expect(page.getByLabel('Theme', { exact: true }).locator('option[value="normal"]')).toHaveJSProperty('disabled', true);
+  await page.getByLabel('Theme', { exact: true }).evaluate(select => { select.value = 'normal'; select.dispatchEvent(new Event('change')); });
+  expect(await page.evaluate(() => (window as any).menuProbe.events)).toEqual(['brisk']);
   const result = await page.evaluate(() => {
-    const { lifetime, events, field, range, readout } = (window as any).menuProbe;
+    const { lifetime, events, field, theme, readout } = (window as any).menuProbe;
     // Programmatic synchronization must not emit another game intent.
-    field.input.value = 'gentle'; range.input.value = '50';
+    field.input.value = 'gentle'; theme.input.value = 'custom';
     const observer = new MutationObserver(() => {}); observer.observe(readout.element, { childList: true, subtree: true, characterData: true });
     readout.update('100 POINTS\n2 lives');
     const unchangedMutations = observer.takeRecords().length; observer.disconnect();
     // Even retained DOM references cannot call a disposed session.
     lifetime.abort();
-    field.input.dispatchEvent(new Event('change')); range.input.dispatchEvent(new Event('input'));
+    field.input.dispatchEvent(new Event('change')); theme.input.dispatchEvent(new Event('change'));
     return { events, unchangedMutations };
   });
-  expect(result).toEqual({ events: ['brisk', 75], unchangedMutations: 0 });
+  expect(result).toEqual({ events: ['brisk'], unchangedMutations: 0 });
 });

@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 import { configurations, clearing, enemies } from '../../../../src/games/last-light-clearing/content.ts';
 import { createRun, stepRun, pauseRun, takeEvents } from '../../../../src/games/last-light-clearing/game.ts';
 import { content, validateContent } from '../../../../src/games/last-light-clearing/content-validation.ts';
-import { themes } from '../../../../src/games/last-light-clearing/themes.ts';
+import { themes, emberRuins } from '../../../../src/games/last-light-clearing/themes.ts';
 import { validateArtPack, clipFrame, row } from '../../../../src/games/last-light-clearing/art-pack.ts';
 import { createAnimationObservations, actorClip } from '../../../../src/games/last-light-clearing/animation.ts';
-import { resolvedSkin } from '../../../../src/games/last-light-clearing/interface.ts';
 import { prepareAssets } from '../../../../src/games/last-light-clearing/assets.ts';
 
 const idle = { x: 0, y: 0 };
@@ -34,15 +33,9 @@ test('round profiles validate and preserve start, pause, outcome precedence and 
 });
 
 test('art manifests validate decoded bounds, clips, pivots and visual footprints independently of bodies', () => {
-  assert.deepEqual(validateArtPack(themes.woodland.art, { actors: { width: 192, height: 64 } }), []);
-  assert.deepEqual(validateArtPack(themes.moonglass.art, { actors: { width: 240, height: 80 } }), []);
-  assert.deepEqual(validateArtPack(themes.ember.art, { dungeon: { width: 512, height: 512 } }), []);
-  for (const id of ['keeper', 'crawler', 'elite']) {
-    const a = themes.woodland.art.actors[id], b = themes.moonglass.art.actors[id];
-    assert.notEqual(a.clips.idle.frames[0].rect[2], b.clips.idle.frames[0].rect[2]);
-    assert.deepEqual(a.footprint, b.footprint);
-  }
-  const invalid = structuredClone(themes.ember.art);
+  assert.equal(themes.normal.art, undefined);
+  assert.deepEqual(validateArtPack(emberRuins.art, { dungeon: { width: 512, height: 512 } }), []);
+  const invalid = structuredClone(emberRuins.art);
   invalid.actors.keeper.clips.move.frames[3].rect[0] = 510;
   invalid.actors.crawler.anchor[0] = NaN;
   invalid.actors.elite.clips.idle.frameSeconds = 0;
@@ -58,7 +51,7 @@ test('animation uses active time and step observations, retaining motion between
   assert.equal(clipFrame(clip, 0.45), clip.frames[0]);
   assert.equal(clipFrame({ ...clip, loop: false }, 8), clip.frames[3]);
   const run = createRun(42), observer = createAnimationObservations(); observer.reset(run);
-  const art = themes.ember.art.actors.keeper;
+  const art = emberRuins.art.actors.keeper;
   assert.equal(actorClip(art, observer.get('keeper')), art.clips.idle);
   stepRun(run, { x: 1, y: 0 }, 1 / 60); observer.observe(run);
   const moving = structuredClone(observer.get('keeper'));
@@ -70,8 +63,6 @@ test('animation uses active time and step observations, retaining motion between
   assert.equal(observer.get('keeper').angle, 0);
   run.enemies = []; observer.observe(run); assert.equal(observer.get(1), undefined);
   observer.reset(createRun(42)); assert.equal(observer.get('keeper').moving, false);
-  assert.equal(resolvedSkin('glass', 'rune'), 'glass');
-  assert.equal(resolvedSkin('match', 'rune'), 'rune');
 });
 
 test('prepared bundles validate bounds and release failed, cancelled and disposed images', async () => {
@@ -84,19 +75,19 @@ test('prepared bundles validate bounds and release failed, cancelled and dispose
   const original = globalThis.Image; globalThis.Image = ImageStub;
   try {
     const stale = new AbortController();
-    const cancelled = prepareAssets(themes.woodland.art, stale.signal);
+    const cancelled = prepareAssets(emberRuins.art, stale.signal);
     const late = images[0].onload; stale.abort();
     await assert.rejects(cancelled, /cancelled/); late(); assert.equal(images[0].released, true);
     const controller = new AbortController();
-    const prepared = prepareAssets(themes.ember.art, controller.signal);
+    const prepared = prepareAssets(emberRuins.art, controller.signal);
     images[1].onload(); const bundle = await prepared;
     assert.equal(bundle.images.dungeon, images[1]);
     // Successful images outlive the preparation signal; only their owner disposes them.
     controller.abort(); assert.equal(images[1].released, false);
-    const invalid = prepareAssets(themes.woodland.art, new AbortController().signal);
+    const invalid = prepareAssets(emberRuins.art, new AbortController().signal);
     images[2].naturalWidth = 1; images[2].onload();
     await assert.rejects(invalid, /invalid frame/); assert.equal(images[2].released, true);
-    const failed = prepareAssets(themes.woodland.art, new AbortController().signal);
+    const failed = prepareAssets(emberRuins.art, new AbortController().signal);
     images[3].onerror(); await assert.rejects(failed, /could not load/);
     assert.equal(images[3].released, true);
     bundle.dispose(); bundle.dispose(); assert.equal(images[1].released, true);

@@ -20,15 +20,15 @@ Falling, thorns, active pressure or beetle contact ends an attempt. Each distric
 
 Every bell ends its district and freezes simulation. An explicit **Continue to…** action starts the next district. The third bell completes the journey. Results show bells, motes, active time, missed steps, points and a completion distinction for full collection or a clean journey. Optional motes and bells award points; missed steps reduce them. Neither retrying enemies nor revisiting collected motes awards extra points. Scoring amounts live in `game.ts`.
 
-**Restart** creates an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in Options when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
+**Restart** creates an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in the menu when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
 
 ![The Emberworks: a saved lantern beside an active pressure column](clockwork-emberworks.png)
 
 ![The Starlit Belfry: moonlit machinery and staggered pressure vents](clockwork-belfry.png)
 
-## Appearances
+## Theme modes
 
-Options → Appearance switches between **Verdant clockwork** and **Frostbound bells**. Frostbound bells adds blue stone, icy foliage, snowfall and a rose scarf, with a separate palette for each district. Pause, select a style, then Resume from the same position. The choice survives retry, restart and district transitions until returning to Game selection.
+**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. Frostbound bells was an alternate palette for this same procedural renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
 
 ## Source ownership and customization
 
@@ -57,6 +57,6 @@ Sound uses a spring lift, soft stone/metal landing, descending unwinding damage,
 
 ## Local verification
 
-Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions, appearance changes that preserve the live run, and session cleanup. See [shared commands](../../architecture.md#local-verification).
+Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions, menu availability and the live run, and session cleanup. See [shared commands](../../architecture.md#local-verification).
 
 See the [shared boundaries](../../architecture.md#boundaries-for-future-games) for common ownership decisions.

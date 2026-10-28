@@ -9,9 +9,7 @@ import { actorAnimation, createAnimationObservations } from './animation.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 
 export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
-  const pack = theme.art;
-  if (!pack) throw new Error('Canvas appearance needs an art pack');
-  const artPack = pack;
+  const artPack = theme.art;
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
   canvas.dataset.renderer = 'canvas';
@@ -42,7 +40,14 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     ctx.drawImage(source, sx, sy, sw, sh, -ax * w, -ay * h, w, h);
   }
   function sprite(role: ActorRole, id: string | number, time: number, fallbackRadius: number, color: string, hitAt?: number, attackAt?: number) {
-    const art = artPack.actors[role], observation = observations.get(id);
+    const observation = observations.get(id);
+    if (!artPack) {
+      ctx.save(); ctx.rotate(observation.angle);
+      circle(0, 0, fallbackRadius, color);
+      circle(fallbackRadius * 0.4, 0, 3, theme.palette.hit);
+      ctx.restore(); return;
+    }
+    const art = artPack.actors[role];
     const { clip, age } = actorAnimation(art, observation, time, hitAt, attackAt);
     ctx.save();
     if (art.orientation === 'rotate') ctx.rotate(observation.angle);
@@ -54,7 +59,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     ctx.restore();
   }
   function environment(time: number) {
-    const environment = artPack.environment!;
+    const environment = artPack!.environment!;
     const { tileSize, ground, perimeter } = environment;
     ctx.save();
     ctx.globalAlpha = environment.groundOpacity ?? 1;
@@ -106,7 +111,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     draw(run: Readonly<RunState>, view: Viewport) {
       const { width: cssWidth, height: cssHeight, ratio } = size;
       const palette = theme.palette;
-      ctx.imageSmoothingEnabled = artPack.sampling === 'smooth';
+      ctx.imageSmoothingEnabled = artPack?.sampling !== 'nearest';
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.fillStyle = palette.background;
       ctx.fillRect(0, 0, cssWidth, cssHeight);
@@ -115,7 +120,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       ctx.fillStyle = palette.floor;
       ctx.fillRect(0, 0, width, height);
 
-      if (artPack.environment) environment(run.elapsed);
+      if (artPack?.environment) environment(run.elapsed);
       else {
         const glow = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, 540);
         glow.addColorStop(0, palette.boundary + '25');
@@ -184,7 +189,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           && run.elapsed - effect.at < visualTiming.hit
           && effect.enemyId === enemy.id);
         const data = enemies[enemy.kind];
-        circle(enemy.x, enemy.y + data.radius * 0.65, artPack.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
+        circle(enemy.x, enemy.y + data.radius * 0.65, artPack?.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
         ctx.save(); ctx.translate(enemy.x, enemy.y);
         if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
         sprite(data.elite ? 'elite' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? palette.elite : palette.enemy,
@@ -193,12 +198,12 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         ctx.restore();
         if (data.elite) {
           ctx.fillStyle = palette.elite; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-          const art = artPack.actors.elite;
-          ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art.footprint[1] * art.anchor[1] + 8));
+          const art = artPack?.actors.elite;
+          ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art ? art.footprint[1] * art.anchor[1] + 8 : 0));
         }
         if (enemy.health < data.maxHealth) {
-          const art = artPack.actors[data.elite ? 'elite' : 'crawler'];
-          const barY = enemy.y - Math.max(data.radius + 8, art.footprint[1] * art.anchor[1] + 3);
+          const art = artPack?.actors[data.elite ? 'elite' : 'crawler'];
+          const barY = enemy.y - Math.max(data.radius + 8, art ? art.footprint[1] * art.anchor[1] + 3 : 0);
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2, 3);
           ctx.fillStyle = palette.damage; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
         }
@@ -261,7 +266,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       ctx.restore();
 
       // A steady lantern core remains readable at narrow viewport scales.
-      if (artPack.sampling === 'smooth') circle(x, y, 5, palette.light);
+      if (artPack?.sampling !== 'nearest') circle(x, y, 5, palette.light);
     },
   };
 }

@@ -1,12 +1,11 @@
+import { createThemeSelect } from '../../common/ui/theme-select.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
-import { createSelectField, createRangeField } from '../../common/ui/menu-components.ts';
+import { createSelectField } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
 import { themes, type ThemeId } from './themes.ts';
-import { interfaceSkins, accents, type InterfaceChoice, type Accent } from './interface.ts';
-import type { ViewMode } from './view.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
 export type MenuAction = 'start' | 'pause' | 'resume' | 'restart' | 'title';
@@ -17,16 +16,12 @@ interface UIOptions {
   onChoose(id: string): void;
   onConfiguration(id: ConfigurationId): void;
   onTheme(id: ThemeId): void;
-  onInterface(choice: InterfaceChoice): void;
-  onAccent(choice: Accent): void;
   onMute(value: boolean): void;
-  onVolume(value: number): void;
-  onView(mode: ViewMode): void;
   onFullscreen(): void;
   onExit(): void;
 }
 export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOptions) {
-  const { signal, onAction, onChoose, onConfiguration, onTheme, onMute, onVolume } = options;
+  const { signal, onAction, onChoose, onConfiguration, onTheme, onMute } = options;
   root.innerHTML = `
     <main class="game-shell">
       <header class="hud">
@@ -58,38 +53,14 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     },
   });
   gameContent.querySelector('.menu-setup')!.prepend(round.element);
-  const appearance = createSelectField({
-    label: 'Appearance', signal,
-    choices: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])),
-    value: 'woodland', onChange: onTheme,
-  });
-  const skin = createSelectField({
-    label: 'Interface', signal, choices: { match: 'Match appearance', ...interfaceSkins },
-    value: 'match', onChange: options.onInterface,
-  });
-  const accent = createSelectField({
-    label: 'Interface accent', signal, choices: accents,
-    value: 'default', onChange: options.onAccent,
-  });
-  const view = createSelectField({
-    label: 'View', signal, choices: { close: 'Close view', arena: 'Whole arena' },
-    value: 'close', onChange: options.onView,
-  });
-  const volume = createRangeField({
-    label: 'Volume', accessibleLabel: 'Sound volume', signal,
-    min: 0, max: 100, step: 1, value: 45, onInput: value => onVolume(value / 100),
-  });
-  const settings = document.createElement('div');
-  const fields = document.createElement('div'); fields.className = 'menu-fields';
-  fields.append(appearance.element, skin.element, accent.element, view.element);
-  settings.append(fields, volume.element);
+  const appearance = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
     onAction: action => action === 'exit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
     game: gameContent,
-    options: settings,
+    theme: appearance.element,
     controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p><b>Escape / P</b> pause. Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       { id: 'start', label: 'Play', screens: ['title'], primary: true },

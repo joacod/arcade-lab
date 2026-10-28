@@ -1,12 +1,13 @@
+import { createThemeSelect, type ThemeMode } from '../../common/ui/theme-select.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
-import { createMenuReadout, createSelectField } from '../../common/ui/menu-components.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
 import { themes } from './themes.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: string) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: ThemeMode) => void) {
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK</div>
     <div class="skybreak-score"><span>SCORE</span><output aria-label="Score">000000</output></div>
@@ -19,21 +20,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const options = document.createElement('div');
-  const fields = document.createElement('div'); fields.className = 'menu-fields';
-  const appearance = createSelectField({ label: 'Appearance', signal,
-    choices: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])),
-    value: 'pacific', onChange: onTheme });
-  fields.append(appearance.element);
-  const themeDescription = document.createElement('p'); themeDescription.className = 'menu-note'; themeDescription.textContent = themes.pacific!.description;
-  const note = document.createElement('p'); note.className = 'menu-note'; note.textContent = 'Change appearance here, then Resume to continue the same sortie.';
+  const appearance = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: onTheme });
   const assetStatus = document.createElement('p'); assetStatus.className = 'skybreak-asset-status'; assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
-  options.append(fields, themeDescription, note, assetStatus);
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, options,
+    game: results.element, theme: appearance.element,
     controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll · Escape to pause<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -41,13 +34,14 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
   });
 
+  menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
   const description = menu.description;
   const evade = $<HTMLButtonElement>('.skybreak-evade');
   const score = $('[aria-label="Score"]'), lives = $('[aria-label="Aircraft lives"]');
   const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
-    appearance(id: string) { appearance.input.value = id; themeDescription.textContent = themes[id]!.description; },
+    appearance(id: ThemeMode) { appearance.input.value = id; },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
     fullscreen: menu.fullscreen,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
