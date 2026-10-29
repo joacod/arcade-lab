@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun, stepRun, pauseRun, takeEvents, bossTargets, bossLanes, idle } from '../../../../src/games/skybreak/game.ts';
-import { aircraft, flight, fortress, supplies, waves } from '../../../../src/games/skybreak/content.ts';
+import { createRun, stepRun, pauseRun, takeEvents, bossTargets, bossLanes, enemyCharge, idle } from '../../../../src/games/skybreak/game.ts';
+import { aircraft, flight, fortress, supplies, waves, volleyWindup } from '../../../../src/games/skybreak/content.ts';
 import { flightView } from '../../../../src/games/skybreak/presentation.ts';
 import { sweptCircle } from '../../../../src/engine/collision.ts';
 const dt = 1 / 60;
@@ -39,6 +39,43 @@ test('Skybreak damage grants immunity, life loss respawns safely, evade is limit
   run.player.lives = 1; run.player.health = 1; run.player.immunity = 0;
   incoming(run); stepRun(run, idle, dt); assert.equal(run.status, 'defeat'); assert.equal(run.player.lives, 0);
   const frozen = structuredClone(run); stepRun(run, { ...idle, fire: true }, 1); assert.deepEqual(run, frozen);
+});
+
+test('Skybreak dangerous volleys prepare visibly on entry and track current aim until release', () => {
+  for (const pattern of ['swoop', 'interceptor']) {
+    const run = isolated(); run.nextSupply = supplies.length;
+    const e = { ...enemy(0, -40), pattern, health: 4, fireIn: 0 };
+    run.enemies = [e];
+    while (e.y <= 20) {
+      assert.equal(enemyCharge(e, run.player), undefined);
+      stepRun(run, idle, dt);
+      assert.equal(run.bullets.length, 0);
+    }
+    assert.ok(e.fireIn >= volleyWindup[pattern] - dt - 1e-9);
+    assert.ok(enemyCharge(e, run.player) < 0.1);
+    const snapshot = structuredClone(run);
+    enemyCharge(e, run.player); assert.deepEqual(run, snapshot);
+    pauseRun(run, true); const charge = enemyCharge(e, run.player);
+    stepRun(run, idle, 2); assert.equal(enemyCharge(e, run.player), charge);
+    pauseRun(run, false);
+    while (e.fireIn > dt) {
+      stepRun(run, idle, dt);
+      assert.equal(run.bullets.length, 0);
+    }
+    assert.ok(enemyCharge(e, run.player) > 0.9);
+    run.player.x = 420;
+    stepRun(run, idle, dt);
+    assert.equal(run.bullets.length, pattern === 'swoop' ? 3 : 2);
+    const direction = Math.atan2(run.bullets.reduce((sum, b) => sum + b.vx, 0), run.bullets.reduce((sum, b) => sum + b.vy, 0));
+    assert.ok(Math.abs(direction - Math.atan2(run.player.x - e.x, run.player.y - e.y)) < 1e-9);
+    assert.equal(enemyCharge(e, run.player), undefined);
+    e.fireIn = 0.1;
+    assert.equal(enemyCharge(e, { x: 240, y: e.y + 60 }), undefined);
+    // Losing firing space resets preparation instead of storing an almost-fired volley.
+    run.player.y = 40; stepRun(run, idle, dt);
+    assert.equal(e.fireIn, volleyWindup[pattern]);
+  }
+  assert.equal(enemyCharge(enemy(0, 100), { x: 240, y: 660 }), undefined);
 });
 
 test('Skybreak schedules deterministic formations and supplies over a bounded full sortie', () => {

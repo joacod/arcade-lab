@@ -1,5 +1,5 @@
 import { sweptCircle } from '../../engine/collision.ts';
-import { aircraft, flight, fortress, supplies, waves, type Pattern, type Wave, type PickupKind } from './content.ts';
+import { aircraft, flight, fortress, supplies, waves, volleyWindup, type Pattern, type Wave, type PickupKind } from './content.ts';
 
 export interface Point { x: number; y: number }
 export interface Action extends Point { fire: boolean; evade: boolean }
@@ -69,6 +69,15 @@ export function bossLanes(boss: Boss): readonly number[] { return boss.cycle % 2
 export function bossTargets(boss: Boss) {
   return [{ x: boss.x, y: boss.y + 10, radius: fortress.radius },
     ...[-1, 1].map(side => ({ x: boss.x + side * 88, y: boss.y + 16 + Math.sin(boss.age * 2) * 8, radius: fortress.engineRadius }))];
+}
+function canEnemyFire(enemy: Enemy, player: Point) {
+  return enemy.health > 0 && enemy.y > 20 && enemy.y < player.y - 70 && enemy.x > 0 && enemy.x < flight.width;
+}
+/** Read-only preparation progress; aim continues to track the player until release. */
+export function enemyCharge(enemy: Enemy, player: Point): number | undefined {
+  const duration = volleyWindup[enemy.pattern];
+  if (!duration || !canEnemyFire(enemy, player) || enemy.fireIn > duration) return;
+  return Math.max(0, Math.min(1, 1 - enemy.fireIn / duration));
 }
 function advanceBoss(run: Run, dt: number) {
   const b = run.boss!;
@@ -147,8 +156,9 @@ export function stepRun(run: Run, action: Readonly<Action>, dt: number) {
     if (e.pattern === 'crossing') e.x = e.originX + e.side * e.age * 58;
     if (e.pattern === 'swoop') e.x = e.originX + e.side * Math.sin(e.age * 1.8) * 48;
     if (e.pattern === 'interceptor') e.x = e.originX + Math.sin(e.age * 2.4) * e.side * 34;
-    e.fireIn -= dt;
-    if (e.fireIn <= 0 && e.y > 20 && e.y < p.y - 70 && e.x > 0 && e.x < flight.width) {
+    const eligible = canEnemyFire(e, p);
+    e.fireIn = eligible ? e.fireIn - dt : Math.max(volleyWindup[e.pattern] ?? 0, e.fireIn - dt);
+    if (e.fireIn <= 0 && eligible) {
       const angle = Math.atan2(p.x - e.x, p.y - e.y);
       // Broad slow tridents contrast with the interceptors' fast aimed pairs.
       const offsets = e.pattern === 'swoop' ? [-0.28, 0, 0.28] : e.pattern === 'interceptor' ? [-0.09, 0.09] : [0];

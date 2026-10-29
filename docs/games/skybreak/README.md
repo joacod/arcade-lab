@@ -26,7 +26,7 @@ Quality lazily imports `quality/foundry.ts` and loads its validated background. 
 
 ## Operation Iron Tempest
 
-A complete flight lasts about 2–3 active minutes, with a hard 168-second limit. Fifteen formations arrive between 1 and 100 seconds. Straight wings fire aimed singles, diagonal crossings close from alternating sides, swooping bombers fire slow tridents, and narrow interceptors fire faster aimed pairs. After 65 seconds enemy firing intervals shorten by 15%. Escaping aircraft give no score. Defeating them awards 100 / 150 / 200 / 300 points by type.
+A complete flight lasts about 2–3 active minutes, with a hard 168-second limit. Fifteen formations arrive between 1 and 100 seconds. Straight wings fire aimed singles, diagonal crossings close from alternating sides, swooping bombers fire slow tridents, and narrow interceptors fire faster aimed pairs. Bombers and interceptors show amber muzzle cells filling before their volleys: three for the trident and two for the pair. Aim tracks the player until release. Their preparation window is preserved when they enter or regain firing space, so an expired offscreen timer cannot cause an immediate volley. After 65 seconds enemy firing intervals shorten by 15%. Escaping aircraft give no score. Defeating them awards 100 / 150 / 200 / 300 points by type.
 
 Supply drops arrive on fixed deadlines, independent of kills or chance. They drift downward at 80 world units/second. Each collection awards 100 points:
 
@@ -36,13 +36,13 @@ Supply drops arrive on fixed deadlines, independent of kills or chance. They dri
 | Spread | Violet branching arrows | Adds two diagonal shots for 24 active seconds. Collecting another refreshes the duration. |
 | Repair | Green cross | Repairs one of the current aircraft's three hull points. At full hull, awards 250 extra points. |
 
-The player starts with three aircraft. Losing hull grants 1.15 seconds of immunity. Losing an aircraft restores hull at the starting position, clears hostile rounds, restores roll readiness, lowers forward fire by one level, removes spread, and grants 2.5 seconds of immunity. Lives do not increase. A fresh roll press grants 0.65 seconds of immunity and recharges in 5.5 active seconds. Holding its key never queues another roll. The cockpit dot marks the physical player position. Blinking and a cyan ring show protection; a short edge flash and a separate damage sound distinguish player damage from enemy impacts.
+The player starts with three aircraft. Losing hull grants 1.15 seconds of immunity. Losing an aircraft restores hull at the starting position, clears hostile rounds, restores roll readiness, lowers forward fire by one level, removes spread, and grants 2.5 seconds of immunity. Lives do not increase. A fresh roll press grants 0.65 seconds of immunity and recharges in 5.5 active seconds. Holding its key never queues another roll. A compact bar beside the aircraft fills during recharge and reads **ROLL READY** when available, with a brief outline when readiness returns. Near the lower boundary it moves above the aircraft. The cockpit dot marks the physical player position. Blinking and a cyan ring show protection; a short edge flash and a separate damage sound distinguish player damage from enemy impacts.
 
 Movement is immediate at 300 world units/second, with normalized diagonals and proportional drag strength. The physical world is 480×800. Small authored collision circles remain independent of decorative wings and glow. Shared relative swept-circle math accounts for movement of both endpoints. Each projectile resolves its nearest living target once.
 
 ## Iron Tempest
 
-The armored flying fortress arrives at 112 seconds. Its three-second entrance protects it from damage and suppresses firing. Its broad armor is decorative; the glowing central reactor and two moving engine nacelles are the hittable circles. All three reduce one 420-point hull, displayed with phase and attack warnings.
+The armored flying fortress arrives at 112 seconds. Its three-second entrance protects it from damage and suppresses firing. Its broad armor is decorative; the glowing central reactor and two moving engine nacelles are the hittable circles. All three reduce one 420-point hull, displayed with phase and attack warnings. After entry they remain vulnerable during both preparation and recovery; **Keep firing · Aim for the lights** reinforces this between attack warnings.
 
 It cycles three readable patterns:
 
@@ -64,7 +64,7 @@ One uniform transform scales and centers the portrait field. Relative drag displ
 
 Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating nacelle rings, glow, and flashes are procedural Canvas cosmetics. Particles are capped at 180; fortress destruction adds only nine analytic fire blooms. Effects age in active run time, so pause freezes them. Sound coalesces each cue per frame, caps total voices at 12, and retains no backlog. Dry, short gun transients leave room for filtered metal impacts, low enemy blasts, hull fractures and slipstream rolls. Boss armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. Routine cues have game-owned cooldowns and restrained world-space stereo placement; milestones replace combat tails. Audio initialization failure leaves play available.
 
-The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles and damage flashes are suppressed. Enemy movement, projectiles, attack lanes and the roll/immunity ring remain visible gameplay cues.
+The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles, the roll-ready outline and damage flashes are suppressed. Enemy movement, projectiles, attack lanes, filling muzzle cells, the recharge bar and the roll/immunity ring remain visible gameplay cues. The same tactical Canvas layer supplies firing preparation and roll readiness in Normal, Assets and Quality.
 
 Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; appearance definitions in `themes.ts` and `art/`; image ownership/validation in `assets.ts` and `art-pack.ts`; Canvas drawing/effects in `presentation.ts`, cached Assets scenery in `space-scene.ts`, and Quality rendering/models in `quality/`; the renderer boundary in `flight-presentation.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input and composition in `input.ts` and `app.ts`.
 
