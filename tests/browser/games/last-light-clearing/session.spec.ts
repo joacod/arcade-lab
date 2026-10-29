@@ -373,11 +373,21 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await page.clock.runFor(1700);
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'choosing');
     const time = await page.locator('.timer').textContent();
-    await page.locator('.upgrade-choices button').first().focus();
+    const firstChoice = page.locator('.upgrade-choices button').first();
+    await expect(firstChoice.locator('.choice-category')).toHaveText('New weapon');
+    await expect(firstChoice.locator('strong')).toHaveText('Halo');
+    await expect(page.locator('.choice-context')).toContainText('Equipped: Spark 1');
+    await expect(page.locator('.run-details')).toBeHidden();
+    await firstChoice.focus();
     await page.keyboard.down('Enter');
     await page.clock.runFor(500);
     await expect(page.locator('.timer')).toHaveText(time!);
     await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
+    await expect(firstChoice).toBeFocused();
+    await expect(firstChoice).toHaveAttribute('data-confirmed', 'true');
+    await expect(firstChoice.locator('.choice-category')).toHaveText('✓ Applied');
+    await expect(firstChoice).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('.game-menu-description')).toHaveText('Upgrade applied. Release to continue.');
     if (configuration === 'clearing') await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     await page.keyboard.up('Enter');
     await page.clock.runFor(50);
@@ -648,4 +658,45 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   expect(Math.abs((await keeper(page, true)).x - 240)).toBeLessThan(3);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Game setup' }).click();
+});
+
+
+test('compact upgrade choices explain roles and acknowledge one keyboard decision', async ({ page }, testInfo) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.evaluate(async () => {
+    const path = '/src/games/last-light-clearing/progression.ts';
+    const { grantXP } = await import(path);
+    const run = (window as any).positionProbe;
+    run.player.health = 60;
+    grantXP(run, 10);
+  });
+  await page.clock.runFor(40);
+  const choices = page.locator('.upgrade-choices button');
+  await expect(choices).toHaveCount(3);
+  await expect(choices.nth(0).locator('.choice-category')).toHaveText('Recovery');
+  await expect(choices.nth(1).locator('.choice-category')).toHaveText('New weapon');
+  await expect(choices.nth(2).locator('.choice-category')).toHaveText('Weapon · rank 1 → 2');
+  await expect(page.locator('.choice-context')).toContainText('Lens needed');
+  await choices.last().scrollIntoViewIfNeeded();
+  await expect(choices.last()).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
+  expect(await page.locator('.game-menu').evaluate(menu => menu.scrollWidth <= menu.clientWidth)).toBe(true);
+  await choices.first().focus();
+  await page.screenshot({ path: testInfo.outputPath('upgrade-menu.png') });
+  await page.keyboard.press('ArrowDown');
+  await expect(choices.nth(1)).toBeFocused();
+  await page.keyboard.down('Enter');
+  await page.clock.runFor(200);
+  await expect(choices.nth(1)).toHaveAttribute('data-confirmed', 'true');
+  await expect(choices.nth(1).locator('.choice-category')).toHaveText('✓ Applied');
+  expect(await page.evaluate(() => (window as any).positionProbe.stats.upgrades)).toBe(1);
+  await page.keyboard.up('Enter');
+  await page.clock.runFor(40);
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'playing');
+  await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
 });

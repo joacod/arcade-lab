@@ -14,11 +14,11 @@ interface SelectionOptions {
 export function mountSelection(container: HTMLElement, { select, cancel, state, message }: SelectionOptions): GameSession {
   const root = document.createElement('main'); root.className = 'arcade-selection';
   root.innerHTML = `<div class="arcade-selection-inner">
-    <header class="arcade-selection-header"><div><p class="arcade-eyebrow">ARCADE LAB</p><h1 id="selection-heading">Find your next game.</h1><p class="arcade-intro">Pick a world. Learn the controls. Make another run.</p></div><span class="arcade-count">${games.length} games to explore</span></header>
+    <header class="arcade-selection-header"><div><p class="arcade-eyebrow">ARCADE LAB</p><h1 id="selection-heading">Find your next game.</h1><p class="arcade-intro">Choose a game, then press Play. Controls and themes are in each game menu.</p></div><span class="arcade-count">${games.length} games to explore</span></header>
     <div class="arcade-games" aria-labelledby="selection-heading">${games.map(game => `
       <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Play ${game.title}" aria-describedby="${game.id}-description">
-        <span class="arcade-cover" aria-hidden="true"><img src="${game.cover}" alt="" width="480" height="260" decoding="async"></span>
-        <span class="arcade-card-copy"><span class="arcade-genre">${game.genre}</span><span class="arcade-game-title">${game.title}</span><span id="${game.id}-description" class="arcade-game-description">${game.description}</span><span class="arcade-card-action" aria-hidden="true">Play game <span>→</span></span></span>
+        <span class="arcade-cover" aria-hidden="true">${state.selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${game.cover}" alt="" width="480" height="260" decoding="async"></span>
+        <span class="arcade-card-copy"><span class="arcade-genre">${game.genre}</span><span class="arcade-game-title">${game.title}</span><span id="${game.id}-description" class="arcade-game-description">${game.description}</span><span class="arcade-controls">${game.controls}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-launch-label">Open game</span><span>→</span></span></span>
       </button>`).join('')}</div>
     <div class="arcade-loading" ${message ? '' : 'hidden'}><p class="arcade-selection-status" role="status"></p><button type="button" class="arcade-cancel" hidden>Cancel loading</button></div>
     </div>`;
@@ -34,6 +34,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     state.selected = id; state.scrollTop = root.scrollTop;
     for (const item of buttons) item.disabled = true;
     button.dataset.loading = '';
+    button.querySelector('.arcade-launch-label')!.textContent = 'Loading…';
     root.querySelector('.arcade-games')!.setAttribute('aria-busy', 'true');
     loading.hidden = false; cancelButton.hidden = false;
     status.textContent = `Loading ${games.find(game => game.id === id)!.title}…`;

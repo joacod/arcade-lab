@@ -34,6 +34,12 @@ test('shared menus fit compact screens and keep actions accessible with a single
     await expect(page.getByRole('tab')).toHaveCount(0);
     const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
     await expect(theme).toHaveValue('normal');
+    await expect(page.locator('.menu-theme-note')).toContainText('keeps your run');
+    if (title === 'Blastline') {
+      await expect(theme.locator('option:checked')).toHaveText('Normal · Iron coast');
+      await expect(page.locator('.menu-theme-note')).toContainText('Unavailable: Assets, Quality');
+    }
+    if (title === 'Last Light Clearing') await expect(theme.locator('option[value="quality"]')).toHaveText('Quality · Prism Garden');
     expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg|webp)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
     expect(await theme.locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
     await expect(theme.locator('option[value="quality"]')).toHaveJSProperty('disabled', !['Last Light Clearing', 'Midnight Circuit', 'Skybreak'].includes(title));
@@ -82,6 +88,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect(page.getByRole('button', { name: `Play ${title}`, exact: true })).toBeFocused();
+    await expect(page.getByRole('button', { name: `Play ${title}`, exact: true }).locator('.arcade-return')).toHaveText('Last selected');
   }
   expect(errors).toEqual([]);
 });

@@ -6,7 +6,8 @@
 .game-menu-layer .game-menu-header { padding: 18px 20px 12px; flex: none; border-top: 3px solid var(--menu-accent, #b9efd4); }
 .game-menu-layer .game-menu h1 { font: 650 24px/1.2 system-ui, sans-serif; letter-spacing: -.03em; margin: 0; color: inherit; transform: none; }
 .game-menu-layer .game-menu button { font: 600 13px/1.3 system-ui, sans-serif; letter-spacing: normal; border: 1px solid #65817e88; border-radius: 5px; color: #e6eeed; background: #22363d; padding: 10px 14px; min-height: 42px; cursor: pointer; box-shadow: none; }
-.game-menu-layer .game-menu button:enabled:hover { background: #304b52; }
+.game-menu-layer .game-menu button:enabled:hover { background: #304b52; border-color: var(--menu-accent, #b9efd4); }
+.game-menu-layer .game-menu button:enabled:active { box-shadow: inset 0 0 0 1px currentColor; }
 .game-menu-layer .game-menu button:focus-visible, .game-menu-layer .game-menu :is(select, input):focus-visible { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 2px; }
 .game-menu-layer .game-menu button:disabled { opacity: .5; cursor: wait; }
 .game-menu-layer .game-menu-body { padding: 16px 20px; min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -37,7 +38,7 @@
 [data-menu-owner]:not([data-screen='playing']) [data-menu-stage] > :not(.play-surface, .game-menu-layer, .game-menu-notices) { visibility: hidden; }
 
 
-.game-menu-layer .game-menu-settings { margin-top: 16px; }
+.game-menu-layer .game-menu-settings { margin-top: 16px; padding-top: 16px; border-top: 1px solid #65817e55; }
 .game-menu-layer .game-menu-controls { margin-top: 12px; }
 .game-menu-layer .game-menu-controls summary { cursor: pointer; padding: 8px 0; color: #e6eeed; }
 .game-menu-layer .game-menu-controls > div { padding-top: 8px; }
