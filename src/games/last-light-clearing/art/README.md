@@ -25,38 +25,6 @@ The loader checks all referenced frames against decoded image dimensions and val
 
 Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, Glass accompanies Quality, and Abyss accompanies Custom. Keep the shared menu and native controls consistent. Independent interface and accent selectors are intentionally absent.
 
-## Local Mosslight asset pack
-
-The source is [Free Island Adventure Pixel Top-Down Minigame Kit](https://craftpix.net/freebies/free-island-adventure-pixel-top-down-minigame-kit/) by CraftPix. Archive: `craftpix-net-351300-free-island-adventure-pixel-top-down-minigame-kit.zip`, SHA-256 `0b436bf4193dd116bb1b16c084f4df5bcaa4d284d33655e49b98e8fffeb3d59b`.
-
-The [CraftPix license](https://craftpix.net/file-licenses/) permits use in games but restricts redistribution of usable artwork. Raw redistribution permission for this repository has not been confirmed. Images and the local activation manifest stay in ignored `local-art/`, outside the public source and production bundle. Do not copy the archive, images, or PSD files into `src/games/last-light-clearing/art/` or `public/`.
-
-The shareable, inspected definition is `src/games/last-light-clearing/art/mosslight.ts`. It maps Character_1 to Keeper, Character_7 to crawler, and Character_8 to elite. Their Idle.png and Walk.png are each 128×32, containing four 32×32 sideways frames with horizontal mirroring. The terrain atlas is 624×500. The supplied 160×96 fire sheet contains a five-frame 32×32 campfire row at y=64. Timing and footprints are authored. No attack/hurt/death clips or additional directions are claimed.
-
-To reproduce locally:
-
-1. Download that exact pack through CraftPix and extract it outside the public asset tree.
-2. Create `local-art/mosslight/`. Copy `Tileset/Tiled.png` as `terrain.png` and `Tiled/Tiled_animation_32px.png` as `fire.png`. For characters 1, 7, and 8, copy `Idle.png` as `actor-N-idle.png` and `Walk.png` as `actor-N-walk.png`.
-3. Create `local-art/appearances.ts`:
-
-```ts
-import { createMosslight } from '../src/games/last-light-clearing/art/mosslight.ts';
-export default { mosslight: createMosslight({
-  terrain: new URL('./mosslight/terrain.png', import.meta.url).href,
-  fire: new URL('./mosslight/fire.png', import.meta.url).href,
-  idle1: new URL('./mosslight/actor-1-idle.png', import.meta.url).href,
-  move1: new URL('./mosslight/actor-1-walk.png', import.meta.url).href,
-  idle7: new URL('./mosslight/actor-7-idle.png', import.meta.url).href,
-  move7: new URL('./mosslight/actor-7-walk.png', import.meta.url).href,
-  idle8: new URL('./mosslight/actor-8-idle.png', import.meta.url).href,
-  move8: new URL('./mosslight/actor-8-walk.png', import.meta.url).href,
-}) };
-```
-
-4. Restart `pnpm dev`. `vite.config.ts` substitutes this local manifest only during development when it exists. With no manifest, Assets uses bundled Ember Ruins. Production builds always use the empty `src/games/last-light-clearing/local-appearances.ts`, including on a machine with local artwork installed. Production uses Ember Ruins for Assets. Mosslight replaces the same Assets slot locally; it never adds an option.
-
-This is a local typed-definition workflow. There is no runtime store connection, downloader, ZIP parser, upload editor, or asset auto-detection.
-
 ## Renderers
 
 Assets uses Canvas and the inspected pack's animation, pivots and footprints. Quality uses Prism Garden's procedural 3D actors and needs no image bundle. Both consume the same run through the local presentation contract. Art sizes remain cosmetic.

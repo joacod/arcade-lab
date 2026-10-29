@@ -1,7 +1,7 @@
 import type { Pattern } from './content.ts';
 
 export type AircraftRole = Pattern | 'player';
-/** Rectangles exclude upstream padding; stride advances through the original sheet. */
+/** Visual frame rectangles and horizontal sheet stride, independent of collision bodies. */
 export interface FlightSprite {
   readonly image: string;
   readonly rect: readonly [number, number, number, number];

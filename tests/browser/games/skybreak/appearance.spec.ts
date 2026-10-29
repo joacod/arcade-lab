@@ -9,7 +9,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
     await route.fulfill({ response, body: `${await response.text()}
       const original = createRun; createRun = () => { const run = original(); window.flightProbe = run; return run; };` });
   });
-  // Supply a controlled external sheet independently of optional local installations.
+  // Supply a controlled sheet to exercise delayed and failed preparation.
   await page.route(/\/src\/games\/skybreak\/themes\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}
@@ -72,5 +72,52 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
   await expect(page.locator('.skybreak-app')).toHaveCount(0); await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
+  expect(errors).toEqual([]);
+});
+
+test('bundled Aurora Fleet loads every sheet, preserves the paused run and releases its images', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route(/\/src\/games\/skybreak\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createRun; createRun = () => { const run = original(); window.flightProbe = run; return run; };` });
+  });
+  await page.addInitScript(() => {
+    const images: HTMLImageElement[] = []; (window as any).fleetImages = images;
+    const Original = window.Image;
+    window.Image = class extends Original { constructor() { super(); images.push(this); } };
+  });
+  await page.clock.install(); await page.goto('/');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(2000);
+  await page.keyboard.press('Escape');
+  const state = () => page.evaluate(() => JSON.stringify((window as any).flightProbe));
+  const frozen = await state();
+  const appearance = page.getByRole('combobox', { name: 'Theme', exact: true });
+  await expect(appearance.locator('option[value="assets"]')).toBeEnabled();
+  await appearance.selectOption('assets');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  await page.clock.runFor(50);
+  expect(await state()).toBe(frozen);
+  expect(await page.evaluate(() => (window as any).fleetImages.map((image: HTMLImageElement) =>
+    [image.naturalWidth, image.naturalHeight]))).toEqual([[384, 80], [384, 64], [384, 64], [384, 64], [384, 64], [2016, 168]]);
+  const picture = await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL());
+  await appearance.selectOption('normal'); await page.clock.runFor(50);
+  expect(await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())).not.toBe(picture);
+  expect(await state()).toBe(frozen);
+  expect(await page.evaluate(() => (window as any).fleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
+  await appearance.selectOption('assets');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
+  expect(await state()).not.toBe(frozen);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).fleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
+  await expect(page.locator('canvas')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

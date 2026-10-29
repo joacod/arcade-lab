@@ -1,5 +1,4 @@
 import { still, row, type ActorArt, type ArtPack, type Decoration } from './art-pack.ts';
-import localAppearances from './local-appearances.ts';
 /** Named visual presets combine art/environment, effects and a default interface. */
 interface Appearance {
   readonly name: string;
@@ -54,7 +53,7 @@ export const themes: Readonly<Record<ThemeId, Theme>> = {
     palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#0b171a', floor: '#172e29', boundary: '#708a6c', light: '#f5d58b',
       ground: '#7a9b7440', canopy: '#203d34', spark: '#b7edff', shard: '#d4b7ff', pulse: '#88e0d0', gem: '#9cecaa' },
   },
-  assets: localAppearances.mosslight ?? emberRuins,
+  assets: emberRuins,
   quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', palette: gardenPalette },
   custom: {
     name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
