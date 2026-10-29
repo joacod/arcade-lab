@@ -3,10 +3,16 @@ import { themes, type Appearance } from './themes.ts';
 import { createElementLookup, setText } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
-import { results as summarize, type Run } from './game.ts';
+import { results as summarize, type Failure, type Run } from './game.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat' | 'interlude';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'retry' | 'continue';
+const failureAdvice: Record<Failure, string> = {
+  fall: 'Missed the landing. Hold jump for height; release for a shorter hop.',
+  thorns: 'Caught on copper thorns. Jump over the full thorn bed.',
+  pressure: 'Caught in a pressure vent. Cross on CLEAR while its timer has time to spare.',
+  beetle: 'Bumped a wind-up beetle. Land on its shell from above, or leap over it.',
+};
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void) {
   root.innerHTML = `<header class="hollow-hud"><div class="hollow-brand"><span class="hollow-mark">◷</span><div>CLOCKWORK HOLLOW<small>THE WAKING AQUEDUCT</small></div></div>
     <div class="hollow-instruments"><output aria-label="Motes collected">◇ 0 / 12</output><output class="hollow-progress" aria-label="Journey progress"></output><button data-intent="pause">Pause</button></div></header>
@@ -24,7 +30,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: theme.element,
-    controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Touch: arrows + jump`,
+    controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Vents: cross on CLEAR. The bar drains toward the next phase.<br>Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
@@ -58,6 +64,9 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       setText($('.hollow-location > span'), `0${run.levelIndex + 1}`);
       const location = $('.hollow-location > div');
       const checkpoint = run.level.checkpoints[run.checkpoint];
+      if (run.status === 'defeat' && run.failure) {
+        setText(description, `${failureAdvice[run.failure]} Retry returns to ${checkpoint?.name ?? `the start of ${run.level.name}`}. Collected motes are kept.`);
+      }
       const savedPoint = checkpoint ? `${run.level.name}: ${checkpoint.name} saved.` : '';
       if (savedPoint !== saved) { saved = savedPoint; setText(announcement, saved); }
       const caption = `${run.level.name} · ${checkpoint ? `Saved: ${checkpoint.name}` : run.level.subtitle}`;

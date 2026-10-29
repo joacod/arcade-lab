@@ -1,6 +1,6 @@
 import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
-import type { Run, HollowEvent, Player } from './game.ts';
+import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
 import type { Screen } from './ui.ts';
 
 export interface HollowView { scale: number; width: number; height: number; x: number; y: number }
@@ -227,6 +227,7 @@ export function createPresentation(surface: HTMLElement) {
       });
       run.level.vents.forEach((vent, i) => {
         if (vent.x < view.x - 100 || vent.x > view.x + view.width + 100) return;
+        const cycle = ventCycle(vent, run.levelTime);
         const phase = run.vents[i], active = phase === 'active', warning = phase === 'warning';
         const color = active ? '#ffb294' : warning ? '#ffdb83' : '#9cddd6';
         ctx.fillStyle = '#172c37'; ctx.fillRect(vent.x - 6, vent.y + vent.h - 8, vent.w + 12, 14);
@@ -244,8 +245,17 @@ export function createPresentation(surface: HTMLElement) {
           ctx.setLineDash([4, 7]); ctx.strokeStyle = color; ctx.lineWidth = 2;
           ctx.strokeRect(vent.x, vent.y, vent.w, vent.h); ctx.setLineDash([]);
         }
-        ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = color;
-        ctx.fillText(active ? 'PRESSURE' : warning ? '!' : 'CLEAR', vent.x + vent.w / 2, vent.y + vent.h + 25); ctx.textAlign = 'left';
+        // Keep timing readable at phone scale, below the mouth so upper routes stay visible.
+        // This is gameplay information, so reduced motion retains the draining bar.
+        const labelScale = Math.max(1, 0.85 / view.scale), meterWidth = 100 * labelScale;
+        const center = vent.x + vent.w / 2, left = center - meterWidth / 2, top = vent.y + vent.h + 12 * labelScale;
+        ctx.fillStyle = '#10262fee'; ctx.fillRect(left - 5, top, meterWidth + 10, 32 * labelScale);
+        ctx.font = `bold ${11 * labelScale}px monospace`; ctx.textAlign = 'center'; ctx.fillStyle = color;
+        const seconds = (Math.ceil(cycle.remaining * 10) / 10).toFixed(1);
+        ctx.fillText(`${active ? 'PRESSURE' : warning ? 'FIRE IN' : 'CLEAR'} ${seconds}s`, center, top + 14 * labelScale);
+        ctx.fillStyle = '#536367'; ctx.fillRect(left, top + 22 * labelScale, meterWidth, 5 * labelScale);
+        ctx.fillStyle = color; ctx.fillRect(left, top + 22 * labelScale, meterWidth * cycle.fraction, 5 * labelScale);
+        ctx.textAlign = 'left';
       });
       run.enemies.forEach(enemy => {
         if (enemy.x < view.x - 60 || enemy.x > view.x + view.width + 60) return;

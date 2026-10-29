@@ -82,8 +82,14 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   // Focused outcome fixtures exercise composition; the invariant suite traverses the entire authored route.
   await page.evaluate(() => { const p = (window as any).hollowProbe.player; p.x = 1930; p.y = 650; });
   await page.clock.runFor(50); await expect(page.getByRole('heading', { name: 'Defeat' })).toBeVisible();
+  await expect(page.locator('.game-menu-description')).toContainText('Caught on copper thorns.');
+  await expect(page.locator('.game-menu-description')).toContainText('the start of The Waking Aqueduct');
   await page.getByRole('button', { name: 'Retry checkpoint', exact: true }).click(); await page.clock.runFor(50);
-  expect((await state()).player.x).toBe(110);
+  expect((await state()).player.x).toBe(110); expect((await state()).failure).toBeNull();
+  await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, { x: run.enemies[0].x, y: run.enemies[0].y, vx: 0, vy: 0 }); });
+  await page.clock.runFor(50);
+  await expect(page.locator('.game-menu-description')).toContainText('Bumped a wind-up beetle.');
+  await page.getByRole('button', { name: 'Retry checkpoint', exact: true }).click(); await page.clock.runFor(50);
   // Reach a lantern through the rule owner, die, and return without erasing discoveries.
   await page.evaluate(() => { const run = (window as any).hollowProbe; const mote = run.level.motes[0]; run.player.x = mote.x - 13; run.player.y = mote.y - 20; });
   await page.clock.runFor(50); expect((await state()).collected[0]).toBe(true);
@@ -92,6 +98,8 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   await expect(page.getByLabel('Checkpoint', { exact: true })).toContainText('Moss lantern saved');
   await page.evaluate(() => { const run = (window as any).hollowProbe; run.player.y = run.level.height + 100; });
   await page.clock.runFor(50); const beforeRetry = await state();
+  await expect(page.locator('.game-menu-description')).toContainText('Missed the landing.');
+  await expect(page.locator('.game-menu-description')).toContainText('Retry returns to Moss lantern. Collected motes are kept.');
   await page.getByRole('button', { name: 'Retry checkpoint', exact: false }).click(); await page.clock.runFor(50);
   expect((await state()).player.x).toBe(3690); expect((await state()).deaths).toBe(beforeRetry.deaths);
   expect((await state()).elapsed).toBeGreaterThanOrEqual(beforeRetry.elapsed); expect((await state()).collected[0]).toBe(true);
@@ -107,6 +115,17 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
       await page.getByRole('button', { name: level === 0 ? 'Continue to The Emberworks' : 'Continue to The Starlit Belfry', exact: false }).click();
       await page.clock.runFor(50); expect((await state()).levelIndex).toBe(level + 1); expect((await state()).checkpoint).toBe(-1);
       expect((await state()).player.x).toBe(110);
+      if (level === 0) {
+        await page.evaluate(() => {
+          const run = (window as any).hollowProbe, vent = run.level.vents[0];
+          run.levelTime = vent.period * 0.8 - vent.offset;
+          Object.assign(run.player, { x: vent.x, y: vent.y + vent.h - 40, vx: 0, vy: 0 });
+        });
+        await page.clock.runFor(50);
+        await expect(page.locator('.game-menu-description')).toContainText('Caught in a pressure vent.');
+        await page.getByRole('button', { name: 'Retry checkpoint', exact: true }).click(); await page.clock.runFor(50);
+        expect((await state()).failure).toBeNull(); expect((await state()).levelTime).toBeLessThan(0.1);
+      }
       await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, run.level.checkpoints[1], { vx: 0, vy: 0 }); });
       await page.clock.runFor(1500);
       await page.screenshot({ path: info.outputPath(`hollow-level-${level + 2}.png`) });
