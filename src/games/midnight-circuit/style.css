@@ -66,3 +66,11 @@
   .circuit-app .circuit-coach { bottom: 112px; font-size: 9px; max-width: 70%; }
   .circuit-app .circuit-boss:not([hidden]) ~ .circuit-coach { bottom: 112px; }
 }
+
+/* Signal / Rain carries the ink-and-paper palette into the shared menu and instruments. */
+.circuit-app:has(canvas[data-renderer="assets"]) { --menu-accent: #e8c28a; background: #10282e; color: #f5e3b9; }
+.circuit-app:has(canvas[data-renderer="assets"]) .circuit-hud,
+.circuit-app:has(canvas[data-renderer="assets"]) .circuit-footer { background: #10282e; border-color: #a1a48b66; }
+.circuit-app:has(canvas[data-renderer="assets"]) .circuit-wordmark { color: #f5e3b9; }
+.circuit-app:has(canvas[data-renderer="assets"]) .circuit-coach { background: #10282eeb; color: #f5e3b9; border-color: #d3ad6a80; }
+.circuit-app:has(canvas[data-renderer="assets"]) .circuit-boss small { color: #ffd3a5; }

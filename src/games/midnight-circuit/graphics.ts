@@ -1,6 +1,6 @@
 import type { BrawlerEvent, Run } from './game.ts';
 import type { Screen } from './ui.ts';
-export const appearances = { normal: 'Normal', quality: 'Quality' } as const;
+export const appearances = { normal: 'Normal', assets: 'Assets', quality: 'Quality' } as const;
 export type Appearance = keyof typeof appearances;
 export interface CircuitRenderer {
   reset(): void;
