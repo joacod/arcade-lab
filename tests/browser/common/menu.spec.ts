@@ -44,7 +44,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
     expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg|webp)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
     expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
     await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Midnight Circuit', 'Skybreak'].includes(title)));
-    if (['Clockwork Hollow', 'Obsidian Duel', 'Blastline', 'Midnight Circuit'].includes(title)) await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'true');
+    await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Skybreak', 'Midnight Circuit'].includes(title)));
     await theme.focus();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeFocused();
@@ -215,15 +215,15 @@ test('web options preview without applying, dismiss cleanly and stay usable in f
   await theme.focus(); await page.keyboard.press('ArrowDown');
   await expect(options).toBeVisible();
   await expect(theme).toHaveAttribute('aria-expanded', 'true');
-  await page.keyboard.press('ArrowDown'); // Assets is disabled, so preview Quality.
+  await page.keyboard.press('ArrowDown'); // Preview the newly available Assets without applying it.
   const activeId = await theme.getAttribute('aria-activedescendant');
-  await expect(page.locator(`[id="${activeId}"]`)).toContainText('Quality');
+  await expect(page.locator(`[id="${activeId}"]`)).toContainText('Assets');
   await expect(theme).toHaveAttribute('value', 'normal');
   await page.keyboard.press('Escape');
   await expect(options).toBeHidden(); await expect(theme).toBeFocused();
   await expect(theme).toHaveAttribute('value', 'normal');
   await theme.click();
-  await page.getByRole('option', { name: 'Assets (not available)', exact: true }).click({ force: true });
+  await expect(page.getByRole('option', { name: 'Assets · Signal / Rain', exact: true })).toHaveAttribute('aria-disabled', 'false');
   await expect(theme).toHaveAttribute('value', 'normal'); await expect(options).toBeVisible();
   await page.keyboard.press('Home'); await page.keyboard.press('q');
   await page.keyboard.press('Enter');

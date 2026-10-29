@@ -23,7 +23,11 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
     const failed = () => { if (!disposed && current === next) fallback('Graphics became unavailable. Normal restored.'); };
     try {
       if (value === 'normal') next = createPresentation(staging);
-      else {
+      else if (value === 'assets') {
+        const { createAssets } = await import('./assets.ts');
+        if (!request.current()) return;
+        next = await createAssets(staging, request.signal);
+      } else {
         // Both backends present the same scene. WebGPU adds a finish when available.
         try {
           const { createCinema } = await import('./vgpu/cinema.ts');

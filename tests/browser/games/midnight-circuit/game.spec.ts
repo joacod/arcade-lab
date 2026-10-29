@@ -39,13 +39,14 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
   await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(700);
-  await page.screenshot({ path: info.outputPath('midnight-street.png') });
-  // The long rules/lifecycle traversal uses Canvas after exercising the default 3D scene.
-  // Dedicated appearance coverage below owns GPU switching and failure recovery.
+  // Exercise Assets through movement, combat, mobile layout, the station and restart.
   await page.keyboard.press('Escape');
 
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(250);
+  await page.screenshot({ path: info.outputPath('midnight-street.png') });
+  await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
@@ -127,6 +128,9 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   expect(await state()).toBe(paused);
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
+  expect(await state()).toBe(paused);
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
   expect(await state()).toBe(paused);
@@ -160,6 +164,67 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await page.waitForTimeout(200);
+  await expect(page.locator('canvas')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+
+test('Midnight Circuit Assets failures and cancelled preparation retain the working presentation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    const Original = window.Image;
+    (window as any).circuitImages = [];
+    window.Image = class extends Original {
+      constructor() { super(); (window as any).circuitImages.push(this); }
+    };
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
+  // A decoded image with the wrong layout must fail before activation.
+  await page.route('**/signal-rain/fighters.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await expect(page.locator('.game-menu-display-status')).toContainText('Assets unavailable. Normal retained.');
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  const released = () => page.evaluate(() => (window as any).circuitImages.every((image: HTMLImageElement) => image.getAttribute('src') === null));
+  expect(await released()).toBe(true);
+  await page.unroute('**/signal-rain/fighters.svg');
+  let release!: () => void;
+  const delayed = new Promise<void>(resolve => { release = resolve; });
+  let arrived!: () => void;
+  const requested = new Promise<void>(resolve => { arrived = resolve; });
+  await page.route('**/signal-rain/fighters.svg', async route => {
+    arrived(); await delayed; await route.continue().catch(() => {});
+  });
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await requested;
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
+  expect(await released()).toBe(true);
+  release(); await page.unroute('**/signal-rain/fighters.svg');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  expect(await released()).toBe(true);
+  // Unmounting while decoding also invalidates every late completion.
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => { finish = resolve; });
+  const started = new Promise<void>(resolve => { arrived = resolve; });
+  await page.route('**/signal-rain/fighters.svg', async route => {
+    arrived(); await pending; await route.continue().catch(() => {});
+  });
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await started;
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  expect(await released()).toBe(true);
+  finish(); await page.unroute('**/signal-rain/fighters.svg');
+  await page.waitForTimeout(100);
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

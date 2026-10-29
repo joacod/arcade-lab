@@ -18,7 +18,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
-  const style = createThemeSelect({ names: { normal: 'Illustrated arcade', quality: 'Neon diorama' }, modes: appearances, value: 'normal', signal, onChange: appearance });
+  const style = createThemeSelect({ names: { normal: 'Illustrated arcade', assets: 'Signal / Rain', quality: 'Neon diorama' }, modes: appearances, value: 'normal', signal, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
