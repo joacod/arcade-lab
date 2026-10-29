@@ -7,7 +7,10 @@ export default defineConfig({
     return wgsl.transform.call(this, source, id.replace(/\?import$/, ''));
   } }],
   // Optimize the lazy dependency upfront on the server, avoiding a mid-run dev reload.
-  optimizeDeps: { include: ['three', 'three/addons/geometries/RoundedBoxGeometry.js', 'three/addons/utils/BufferGeometryUtils.js', 'vgpu', 'audiobits'] },
+  optimizeDeps: { include: ['three', 'three/addons/geometries/RoundedBoxGeometry.js', 'three/addons/utils/BufferGeometryUtils.js',
+    'three/addons/postprocessing/EffectComposer.js', 'three/addons/postprocessing/RenderPass.js',
+    'three/addons/postprocessing/UnrealBloomPass.js', 'three/addons/postprocessing/OutputPass.js',
+    'three/addons/postprocessing/ShaderPass.js', 'vgpu', 'audiobits'] },
   // Allow the optional Three.js renderer while retaining warnings above 600 kB.
   build: { chunkSizeWarningLimit: 600 },
 });

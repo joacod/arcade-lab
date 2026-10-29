@@ -34,7 +34,7 @@ Build the readable scene first, then add polish. Detailed silhouettes and materi
 
 Drive effects from semantic events and age them in active simulation time. Pausing freezes gameplay effects and environmental drift. Title animation can use separate cosmetic time. Reduced motion suppresses decorative drift, spin, trails, shockwaves and flashes while preserving gameplay-critical movement, warnings and state cues. Do not freeze a gameplay position because it looks like animation.
 
-Bound particles, trails, temporary lights and history buffers. Cache expensive scenery, share geometry/materials, batch compatible static parts and recycle actors where this saves allocation. Cap render-target resolution independently of display DPR, especially for bloom. Optimizations must preserve visual hierarchy and collision alignment.
+Bound particles, trails, temporary lights and history buffers. Cache expensive scenery, share geometry/materials, batch compatible static parts and recycle actors where this saves allocation. Size procedurally generated textures from their displayed footprint and cap both axes. Cap render-target resolution independently of display DPR, especially for bloom. Optimizations must preserve visual hierarchy and collision alignment.
 
 ## Replace and recover safely
 

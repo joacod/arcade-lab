@@ -74,3 +74,26 @@
 .circuit-app:has(canvas[data-renderer="assets"]) .circuit-wordmark { color: #f5e3b9; }
 .circuit-app:has(canvas[data-renderer="assets"]) .circuit-coach { background: #10282eeb; color: #f5e3b9; border-color: #d3ad6a80; }
 .circuit-app:has(canvas[data-renderer="assets"]) .circuit-boss small { color: #ffd3a5; }
+
+/* Afterglow: ivory instruments and warm signal accents over the graphite streets. */
+.circuit-app:has(canvas[data-renderer="three"]) { --menu-accent: #e3bf8c; background: #101f25; color: #e9e3cf; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-hud { background: #101f25; border-bottom: 1px solid #c6b7934d; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-footer { background: #101f25; border-color: #c6b79333; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-wordmark { color: #e6d7b5; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-wordmark span { color: #afbaae; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-score { color: #efe0bd; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-vitals meter::-webkit-meter-optimum-value { background: #a9c9b1; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-location { color: #f2d7ab; text-shadow: 0 2px 8px #071b21; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-location small { color: #c6d0bc; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-coach { background: #14292cec; color: #e4d9bb; border-color: #bfa87b66; box-shadow: 0 4px 20px #091d2455; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-combo { color: #ffe0a0; text-shadow: 2px 3px #6f4233; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-boss small { color: #f1c297; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-boss meter::-webkit-meter-optimum-value { background: #df946b; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu-layer { background: #08191f88; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu { background: #15282ded; border-color: #8e927c; border-radius: 3px; box-shadow: 0 20px 90px #06151ccc; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu h1 { color: #f0dfbb; font-weight: 750; letter-spacing: -.04em; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu :is(.game-menu-description, .game-menu-name, .menu-note) { color: #bcc6b8; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu-actions { border-color: #8e927c44; }
+.circuit-app:has(canvas[data-renderer="three"]) .game-menu button:not(.game-menu-primary) { background: #243a3d; border-color: #a6ac8d55; }
+.circuit-app:has(canvas[data-renderer="three"]) .circuit-attack-buttons button { color: #e4ceb0; border-color: #b99c70; }
+.circuit-app:has(canvas[data-renderer="three"]) [data-control="light"] { color: #cbe3cc; border-color: #9ac1a5; }

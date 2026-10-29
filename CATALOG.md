@@ -7,7 +7,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 | Last Light Clearing | Procedural clearing | Ember Ruins | Prism Garden, sculpted and lit in 3D |
 | Skybreak | Pacific Run | Bundled original Aurora Fleet | Orbital Foundry, sculpted ships and illuminated orbital scenery |
 | Clockwork Hollow | Verdant clockwork | Not available | Not available |
-| Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Neon 3D scene, with WebGPU finish when supported |
+| Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, a sculpted rain-soaked city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Not available | Not available |
 | Blastline | Iron coast | Not available | Not available |
 
@@ -86,7 +86,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | P / Pause | P pauses/resumes; Pause opens the menu |
 | F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal uses the original illustrated Canvas presentation. Assets uses Signal / Rain: original inked fighters, radio-shop facades, transformer bays and repair cases in teal, vermilion and warm cream. Quality combines the modeled Neon diorama scene with the Neon cinema finish when WebGPU is supported. Modeled fighters, neon facades, rain, shadows and bright impacts bring the streets to life, with distance-driven walking across all modes and procedural AudioBits sound. See the [artwork guide](src/games/midnight-circuit/art/README.md) for the bundled image treatment. Theme changes preserve the paused run; unavailable graphics retain a working presentation or restore Normal. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
+Normal uses the original illustrated Canvas presentation. Assets uses Signal / Rain: original inked fighters, radio-shop facades, transformer bays and repair cases in teal, vermilion and warm cream. Quality uses Afterglow: sculpted fighters, an elevated railway, warm noodle shops and industrial transformer banks, wet-road reflections, soft shadows and restrained bloom, with distance-driven walking across all modes and procedural AudioBits sound. See the [artwork guide](src/games/midnight-circuit/art/README.md) for the bundled image treatment. Theme changes preserve the paused run; unavailable graphics retain a working presentation or restore Normal. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
 
 ## Obsidian Duel
 
