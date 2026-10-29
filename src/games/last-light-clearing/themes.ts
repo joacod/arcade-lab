@@ -45,7 +45,7 @@ export const emberRuins: Theme = {
   palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#19151b', floor: '#302a2b', boundary: '#92775c', light: '#ffdc8e',
     ground: '#88674740', canopy: '#3a3033', spark: '#ffe5a1', shard: '#bfc8ff', pulse: '#ff9b66', gem: '#87ffb6' },
 };
-const gardenPalette: Theme['palette'] = { enemy: '#e7809b', elite: '#b285f0', halo: '#ffefb2', hit: '#fff3dc', damage: '#ffa5ae', background: '#080f22', floor: '#18283a', boundary: '#6198ad', light: '#a9fcff',
+const gardenPalette: Theme['palette'] = { enemy: '#e7809b', elite: '#b285f0', halo: '#ffefb2', hit: '#fff3dc', damage: '#ffa5ae', background: '#08171f', floor: '#203c3d', boundary: '#6198ad', light: '#ffdfa0',
       ground: '#52788c', canopy: '#324c70', spark: '#fcf0af', shard: '#c8a6ff', pulse: '#7bdcff', gem: '#73ffc7' };
 export const themes: Readonly<Record<ThemeId, Theme>> = {
   normal: {

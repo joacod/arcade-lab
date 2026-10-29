@@ -41,7 +41,17 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 Each mode includes its matching HUD styling. The menu offers one Theme selector; the camera follows the Keeper in every mode. Replacements retain the entire run, including active time, positions, health, upgrades and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints and scenery never change physics or targeting.
 
-Prism Garden frames a luminous, petal-caged lantern against cool stone, quiet circular engravings and perimeter crystals. Directional light reveals faceted bodies and grounds their shadows; creature limbs and the charger’s crest separate enemies from gems. Large scenery remains outside traversable ground. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring. The result flourish may finish after gameplay stops; it never advances the run. Reduced motion keeps static state cues while suppressing the added gait and expanding milestone flourishes.
+### Quality direction: Prism Garden
+
+An overgrown moonlit sanctuary of jade stone, gold inlays and violet crystal blossoms. The warm, petal-caged lantern Keeper is the focal point. Rose-armored thorn creatures have articulated dark legs and bright paired eyes; the elite wears a crown, while chargers retain their forked crest. Mint gems remain small, angular and distinct from creatures.
+
+Weathered paving, engraved circles and luminous botanical roots give the ground depth inside the following camera. Broad low-contrast forms leave combat readable. Raised crystal gardens stay outside traversable ground. Directional shadows, a moving lantern light pool and restrained bloom separate solid materials from luminous cores. Spell trails, contact glints and dissolving fragments carry the same crystal vocabulary. Glass UI uses warm gold accents against deep jade surfaces.
+
+Movement drives petal sway and alternating creature legs. Environmental motes and crystal glints use active run time, so pause freezes them. Reduced motion suppresses decorative drift, bobbing, spin and fragments while preserving actors, projectiles, warnings and state cues. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring. The result flourish may finish after gameplay stops; it never advances the run.
+
+Quality lazily prepares Three.js geometry, a generated floor texture and a bounded bloom pipeline. No external artwork is required. Failed preparation retains the current theme; graphics failure restores Normal on the same paused run.
+
+![Prism Garden: a gold lantern Keeper, orbiting lights, thorn creatures and mint gems on engraved jade paving](prism-garden.png)
 
 [Combat cue preview](combat-feedback.png): a locked charger lane, shield readout and Arc Spark awakening in Prism Garden.
 
@@ -72,7 +82,7 @@ Paths below are relative to `src/games/last-light-clearing/`.
 
 `world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality lazily loads `three/garden.ts`; it uses the host frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom lazily loads `vgpu/bloom.ts` and its WGSL field and organism shaders. It uses the same host loop and world-to-CSS transform, with bounded instance, ripple and particle buffers. Renderers own backing resolution.
 
-Garden batches immutable scenery by geometry, material and shadow settings at construction. Each instance retains its authored transform and the batch owns its bounds; actor animation remains independent. Transient gems, shots and effects reuse bounded instance buffers. This keeps repeated scenery from adding one draw submission per prop.
+Garden batches immutable scenery by geometry, material and shadow settings at construction. Each instance retains its authored transform and the batch owns its bounds. Detached actor pose trees animate independently, then copy visible parts into shared instance buffers, keeping dense crowds from adding draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` creates the cached paving and botanical texture without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution. Bloom passes, render targets and the generated texture are session-owned and released on replacement or failure.
 
 `prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Normal.
 
