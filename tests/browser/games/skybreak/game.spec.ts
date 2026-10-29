@@ -134,6 +134,18 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await expect(page.getByLabel('Aircraft weapons')).toContainText('GUN II');
   await expect(page.getByLabel('Iron Tempest hull')).toBeVisible();
   await page.evaluate(() => {
+    const boss = (window as any).flightProbe.boss;
+    boss.age = 4; boss.y = 150; boss.charge = 0; boss.fireIn = 1;
+  });
+  await page.clock.runFor(50);
+  await expect(page.locator('.skybreak-boss-pattern')).toHaveText('KEEP FIRING · AIM FOR THE LIGHTS');
+  await page.evaluate(() => {
+    const run = (window as any).flightProbe, boss = run.boss;
+    boss.attack = 'aim'; boss.charge = 0.9; boss.aimX = run.player.x; boss.aimY = run.player.y;
+  });
+  await page.clock.runFor(50);
+  await expect(page.locator('.skybreak-boss-pattern')).toHaveText('TARGET LOCK · LEAVE THE MARKER');
+  await page.evaluate(() => {
     const run = (window as any).flightProbe, boss = run.boss;
     boss.age = 4; boss.health = 1; boss.y = 150;
     run.bullets.push({ x: boss.x, y: 280, vx: 0, vy: -10000, radius: 3, owner: 'player' });

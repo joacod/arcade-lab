@@ -14,6 +14,8 @@ export const aircraft = {
   swoop: { health: 4, radius: 21, speed: 104, score: 200, fireInterval: 2.5, bulletSpeed: 155 },
   interceptor: { health: 5, radius: 18, speed: 180, score: 300, fireInterval: 1.8, bulletSpeed: 215 },
 } as const;
+/** Dangerous volleys retain a visible preparation window after entering firing space. */
+export const volleyWindup: Readonly<Partial<Record<Pattern, number>>> = { swoop: 0.55, interceptor: 0.4 };
 export interface Wave { at: number; pattern: Pattern; count: number; side: -1 | 1; label: string }
 export const waves: readonly Wave[] = [
   { at: 1, pattern: 'straight', count: 5, side: 1, label: 'First contact' },

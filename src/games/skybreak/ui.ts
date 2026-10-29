@@ -65,7 +65,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       if (run.boss) {
         setProperty($<HTMLProgressElement>('[aria-label="Iron Tempest hull"]'), 'value', Math.max(0, run.boss.health));
         setText($('[aria-label="Fortress phase"]'), `PHASE ${run.boss.phase} / 2`);
-        setText($('.skybreak-boss-pattern'), run.boss.age < fortress.entrance ? 'APPROACHING · AIM FOR THE LIGHTS' : run.boss.charge > 0 ? ({ fan: 'FAN VOLLEY · FIND A GAP', aim: 'TARGET LOCK · KEEP MOVING', lanes: 'BARRAGE · LEAVE THE MARKED LANES' } as const)[run.boss.attack] : 'REACTORS EXPOSED');
+        setText($('.skybreak-boss-pattern'), run.boss.age < fortress.entrance ? 'APPROACHING · AIM FOR THE LIGHTS' : run.boss.charge > 0 ? ({ fan: 'FAN VOLLEY · FIND A GAP', aim: 'TARGET LOCK · LEAVE THE MARKER', lanes: 'BARRAGE · LEAVE THE MARKED LANES' } as const)[run.boss.attack] : 'KEEP FIRING · AIM FOR THE LIGHTS');
       }
       const minutes = Math.floor(run.elapsed / 60), seconds = String(Math.floor(run.elapsed % 60)).padStart(2, '0');
       results.update(`${String(run.score).padStart(6, '0')} POINTS · ${minutes}:${seconds}\n${run.stats.kills} aircraft down · ${run.stats.pickups} supplies\n${run.status === 'active' || run.status === 'paused' ? '' : run.status === 'victory' ? `${run.bonus} survival bonus · ${run.player.lives} lives home` : run.elapsed >= flight.duration ? 'Time limit reached · Fortress escaped' : 'All aircraft lost'}`);

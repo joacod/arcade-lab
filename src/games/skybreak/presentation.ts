@@ -1,5 +1,5 @@
 import { flight, fortress, waves, type Pattern } from './content.ts';
-import { bossLanes, type Boss, type FlightEvent, type Run } from './game.ts';
+import { bossLanes, enemyCharge, type Boss, type Enemy, type FlightEvent, type Point, type Run } from './game.ts';
 import { flightFrame, type FlightSprite } from './art-pack.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import type { FlightTheme } from './themes.ts';
@@ -23,6 +23,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   const space = !overlay && theme.scene !== 'ocean' ? createSpaceScene(theme) : undefined;
   let visualTime = 0;
   let particles: Particle[] = [], lastTime = 0, width = 0, height = 0, damageFlash = 0;
+  let lastRecharge = 0, rollReadyAt = -Infinity;
   const flashes = new Map<number | 'boss', number>();
   function sprite(art: FlightSprite) {
     const image = images[art.image];
@@ -110,6 +111,42 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       for (let j = 0; j < 4; j++) { c.beginPath(); c.ellipse(x + j * 25, y + Math.sin(j) * 12, 45, 25, -0.3, 0, Math.PI * 2); c.fill(); }
     }
   }
+  function drawEnemyCharge(enemy: Enemy, player: Point) {
+    const charge = enemyCharge(enemy, player);
+    if (charge === undefined) return;
+    c.save(); c.translate(enemy.x, enemy.y + 20);
+    c.rotate(-Math.atan2(player.x - enemy.x, player.y - enemy.y));
+    // Three spreading muzzles for bombers, two narrow muzzles for interceptors.
+    const muzzles = enemy.pattern === 'swoop' ? [-12, 0, 12] : [-7, 7];
+    c.lineWidth = 1.5; c.strokeStyle = '#ffd49e';
+    if (!motion.matches) { c.shadowColor = '#ff9b59'; c.shadowBlur = 4 + charge * 7; }
+    for (const x of muzzles) {
+      c.fillStyle = '#102638'; c.fillRect(x - 3, 3, 6, 10);
+      c.strokeRect(x - 3, 3, 6, 10);
+      c.fillStyle = '#ffd49e'; c.fillRect(x - 2, 12 - charge * 8, 4, 1 + charge * 8);
+    }
+    c.restore();
+  }
+  function drawRollReadiness(run: Run) {
+    const p = run.player, ready = p.recharge <= 0;
+    if (lastRecharge > 0 && ready) rollReadyAt = run.elapsed;
+    lastRecharge = p.recharge;
+    if (run.elapsed <= 0 || run.status === 'defeat' || run.status === 'victory') return;
+    const x = Math.max(34, Math.min(flight.width - 34, p.x)), y = p.y > 720 ? p.y - 49 : p.y + 43;
+    const progress = 1 - Math.min(1, p.recharge / flight.evade.recharge);
+    c.save(); c.translate(x, y);
+    c.fillStyle = '#061b2aee'; c.fillRect(-24, -4, 48, 17);
+    c.fillStyle = '#507581'; c.fillRect(-20, -1, 40, 3);
+    c.fillStyle = ready ? '#baffec' : '#83c5cf'; c.fillRect(-20, -1, progress * 40, 3);
+    c.font = 'bold 8px monospace'; c.textAlign = 'center';
+    c.fillText(ready ? 'ROLL READY' : 'ROLL', 0, 10);
+    const sinceReady = run.elapsed - rollReadyAt;
+    if (ready && !motion.matches && sinceReady < 0.7) {
+      c.strokeStyle = `rgba(186, 255, 236, ${1 - sinceReady / 0.7})`; c.lineWidth = 1.5;
+      c.strokeRect(-26 - sinceReady * 7, -6 - sinceReady * 4, 52 + sinceReady * 14, 21 + sinceReady * 8);
+    }
+    c.restore();
+  }
   function drawFortress(b: Boss) {
     const dead = b.health <= 0;
     if (b.charge > 0 && !dead) {
@@ -179,7 +216,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   }
   return {
     element: canvas,
-    reset() { particles = []; lastTime = 0; damageFlash = 0; flashes.clear(); },
+    reset() { particles = []; lastTime = 0; damageFlash = 0; lastRecharge = 0; rollReadyAt = -Infinity; flashes.clear(); },
     consume(events: readonly FlightEvent[]) {
       for (const event of events) {
         if (event.type === 'hit' && event.target !== undefined) flashes.set(event.target, 0.09);
@@ -215,6 +252,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       for (const e of run.enemies) {
         const bank = e.pattern === 'crossing' ? e.side * 0.5 : e.pattern === 'swoop' ? e.side * Math.cos(e.age * 1.8) * 0.7 : 0;
         plane(e.x + 10, e.y + 18, e.pattern, bank, 0, true); plane(e.x, e.y, e.pattern, bank, 0, false, flashes.has(e.id));
+        drawEnemyCharge(e, run.player);
       }
       if (run.boss) drawFortress(run.boss);
       for (const item of run.pickups) {
@@ -229,6 +267,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
         else { for (const x of [-10, 0, 10]) { c.moveTo(x, 8); c.lineTo(x * 0.4, -7); } }
         c.stroke(); c.fillStyle = color; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillText(item.kind.toUpperCase(), 0, 32); c.restore();
       }
+      drawRollReadiness(run);
       for (const b of run.bullets) {
         c.fillStyle = b.owner === 'player' ? '#a8ffff33' : '#ff8c6933'; c.beginPath(); c.arc(b.x, b.y, b.radius + 4, 0, Math.PI * 2); c.fill();
         c.fillStyle = b.owner === 'player' ? '#c1ffff' : '#ffd48e';
