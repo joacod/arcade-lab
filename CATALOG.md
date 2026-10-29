@@ -11,9 +11,9 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 | Obsidian Duel | Tempest citadel | Not available | Not available |
 | Blastline | Iron coast | Not available | Not available |
 
-All games start in Normal. None currently needs a Custom exception. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+All games start in Normal. Normal, Assets and Quality are the three standard modes. Custom is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
-All enabled presentations use bundled artwork. The six covers, procedural visuals and [Aurora Fleet](src/games/skybreak/art/README.md) are original artwork under the repository's MIT license. The only bundled third-party artwork is [Ember Ruins' CC0 atlas](src/games/last-light-clearing/art/ember-ruins/PROVENANCE.md), retained with its upstream metadata and provenance. Documentation screenshots capture these original or CC0 presentations.
+All artwork required by enabled presentations is committed. The six covers, procedural visuals and [Aurora Fleet](src/games/skybreak/art/README.md) are original artwork under the repository's MIT license. The only bundled third-party artwork is [Ember Ruins' CC0 atlas](src/games/last-light-clearing/art/ember-ruins/PROVENANCE.md), retained with its upstream metadata and provenance. Documentation screenshots capture these original or CC0 presentations.
 
 
 ## Last Light Clearing
@@ -24,7 +24,7 @@ All enabled presentations use bundled artwork. The six covers, procedural visual
 
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution and a late elite encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
-Normal uses procedural Canvas art without image loads. Assets supplies animated pixel characters and scenery, while Quality uses Prism Garden. Each mode includes matching HUD styling. The camera follows the Keeper consistently across modes. Round selection stays available before starting; theme selection survives restarts within the session. Failed replacements retain the working presentation; graphics loss restores Normal.
+Normal uses procedural Canvas art without image loads. Assets supplies animated pixel characters and scenery, while Quality uses Prism Garden. The optional Custom presentation, Abyssal Bloom, uses a procedural luminous field and shader-rendered organisms and requires WebGPU. Each mode includes matching HUD styling. The camera follows the Keeper consistently across modes. Round selection stays available before starting; theme selection survives restarts within the session. Failed replacements retain the working presentation; graphics loss restores Normal.
 
 | Control | Action |
 | --- | --- |
@@ -35,13 +35,13 @@ Normal uses procedural Canvas art without image loads. Assets supplies animated 
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md).
+See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork definitions and provenance](src/games/last-light-clearing/art/README.md).
 
 ## Skybreak
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet in development and production; see [art setup and provenance](src/games/skybreak/art/README.md). Quality is not yet available. All artwork and synthesized sound require no additional downloads.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet in development and production; see [artwork definitions and provenance](src/games/skybreak/art/README.md). Quality is not yet available. All artwork and synthesized sound require no additional downloads.
 
 | Control | Action |
 | --- | --- |

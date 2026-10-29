@@ -17,6 +17,8 @@ Open the local URL printed by Vite, then choose a game. **Game selection** in th
 
 See the [game catalog](CATALOG.md) for the collection, screenshots and controls.
 
+All enabled presentations include their required artwork in the repository; no manual asset downloads are needed.
+
 `pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
 
 ## Learn more

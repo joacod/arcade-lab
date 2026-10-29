@@ -2,7 +2,7 @@
 
 `cover.svg` is original Arcade Lab vector artwork under the repository's MIT license. Normal draws actors, ground marks, gems and spell effects procedurally without image assets.
 
-**Ember Ruins** uses the original CC0 0x72 DungeonTileset II v1.7, downloaded from its official source. The unmodified atlas, supplied frame list, author README, and [provenance](ember-ruins/PROVENANCE.md) live together. All runtime images are local.
+**Ember Ruins** uses the original CC0 0x72 DungeonTileset II v1.7, downloaded from its official source. The unmodified atlas, supplied frame list, author README, and [provenance](ember-ruins/PROVENANCE.md) live together. All runtime images are committed and bundled for development and production.
 
 ## Add an art pack or replace one role
 
