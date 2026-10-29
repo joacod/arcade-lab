@@ -2,15 +2,27 @@
 
 [Source](../../../src/games/skybreak/) | [Catalog](../../../CATALOG.md)
 
-An original Canvas 2D vertical arcade shooter with interchangeable appearances. The procedural artwork, bundled Aurora Fleet sprites, synthesized cues, formations and sortie are original Arcade Lab work under the repository's MIT license. See [artwork definitions and provenance](../../../src/games/skybreak/art/README.md) and the [game catalog](../../../CATALOG.md) for controls.
+A vertical arcade shooter with interchangeable Canvas 2D and Three.js appearances. See [artwork guide](../../../src/games/skybreak/art/README.md) and the [game catalog](../../../CATALOG.md) for controls.
 
 ## Theme modes
 
-**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects bundled Aurora Fleet, combining six committed, original animated SVG sprite sheets with the existing orbital scenery. Deep Space and Redshift were alternate treatments and no longer add menu entries. Normal and Assets are available from a fresh clone in development and production. **Quality** is not implemented. Theme selection is directly in the menu.
+**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects bundled Aurora Fleet, combining six committed, original animated SVG sprite sheets with orbital scenery. **Quality** selects Orbital Foundry: sculpted Three.js ships, an original deep-space background, illuminated machinery and combat effects. All artwork ships with the repository. Theme selection is directly in the menu.
 
 Switching keeps the current sortie, score, health, weapons, formation progress and boss state. Resume continues from the same moment. Restart begins a fresh sortie while retaining the selected appearance. Image preparation leaves the current renderer active; failed loads restore the selected field and report a notice. Later selections and disposal invalidate pending image work. Appearance choices last for the session.
 
 ![Aurora Fleet: ivory fighter and distinct enemy ships above a blue planet](skybreak-starfall.png)
+
+## Orbital Foundry art direction
+
+Quality places the sortie above an icy planet and a vast orbital shipyard. A dark navy combat corridor separates the ivory fighter, gunmetal hostile fleet and warm hostile rounds from the cyan planetary rim. An AI-generated background supplies distant atmospheric detail; editable geometry supplies the moving station fragments and all six ship roles. The models preserve the fleet's authored proportions.
+
+Beveled armor, inset canopies, gold trim, vents, emissive drives and role-specific wings give the fleet a cohesive material language. Banking and evasive rolls reveal decorative depth. The flagship adds segmented armor, engine housings that follow the actual moving weak points, and a shrinking wreck during destruction. Cyan drive plumes, a short flight trail and event-driven expanding shockwaves complement existing impacts and fire blooms. Restrained bloom touches bright propulsion and impacts; crisp Canvas projectiles, supply symbols, protection rings and attack warnings remain above it. The HUD and menus use matching dark metal surfaces and pale cyan accents.
+
+The orthographic camera shares `flightView` with the Canvas tactical layer. Depth never changes projected collision centers or physical bodies. The host owns one loop. Cosmetic motion and effects use active sortie time, freeze on pause and reset on restart. Reduced motion freezes scenery, exhaust variation and banking, removes trails/shockwaves/flashes, and keeps moving threats, fortress weak points, warnings and immunity cues visible.
+
+Quality lazily imports `quality/foundry.ts` and loads its validated background. A detached renderer draws the current sortie before activation. Failure keeps the current mode; superseding, starting/resuming or leaving invalidates pending work. WebGL context loss or draw failure pauses the sortie and restores Normal with a status notice. Quality can then be selected again. Models share geometry and materials, ship parts batch by material, actors are pooled, trails and shockwaves are bounded, and bloom buffers have a capped resolution. Geometry, textures, passes, buffers, listeners, image sources and graphics contexts are released when replaced or unmounted.
+
+![Orbital Foundry: sculpted fighters in a readable dark orbital corridor](skybreak-quality.png)
 
 ## Operation Iron Tempest
 
@@ -46,13 +58,13 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 The session reuses the browser host, fixed-step clock, and shared AudioBits session owner. Collision math comes from the shared pure helper. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
 
-One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Fullscreen is available from the menus when supported and includes the playfield, HUD and controls. Pause, hidden pages, focus loss, layout changes and fullscreen transitions clear input and catch-up time. Only explicit Resume continues. A rejected fullscreen request reports a notice and leaves viewport play available. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. No Three.js or vgpu code is needed by Skybreak.
+One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Fullscreen is available from the menus when supported and includes the playfield, HUD and controls. Pause, hidden pages, focus loss, layout changes and fullscreen transitions clear input and catch-up time. Only explicit Resume continues. A rejected fullscreen request reports a notice and leaves viewport play available. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. Normal and Assets load no graphics library. Only Quality imports Three.js and its postprocessing passes.
 
 Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating nacelle rings, glow, and flashes are procedural Canvas cosmetics. Particles are capped at 180; fortress destruction adds only nine analytic fire blooms. Effects age in active run time, so pause freezes them. Sound coalesces each cue per frame, caps total voices at 12, and retains no backlog. Dry, short gun transients leave room for filtered metal impacts, low enemy blasts, hull fractures and slipstream rolls. Boss armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. Routine cues have game-owned cooldowns and restrained world-space stereo placement; milestones replace combat tails. Audio initialization failure leaves play available.
 
 The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles and damage flashes are suppressed. Enemy movement, projectiles, attack lanes and the roll/immunity ring remain visible gameplay cues.
 
-Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; appearance definitions in `themes.ts` and `art/`; image ownership/validation in `assets.ts` and `art-pack.ts`; drawing/effects in `presentation.ts` and cached space scenery in `space-scene.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input and composition in `input.ts` and `app.ts`.
+Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; appearance definitions in `themes.ts` and `art/`; image ownership/validation in `assets.ts` and `art-pack.ts`; Canvas drawing/effects in `presentation.ts`, cached Assets scenery in `space-scene.ts`, and Quality rendering/models in `quality/`; the renderer boundary in `flight-presentation.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input and composition in `input.ts` and `app.ts`.
 
 ## Local verification
 

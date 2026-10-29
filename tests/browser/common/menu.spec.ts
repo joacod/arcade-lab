@@ -34,9 +34,9 @@ test('shared menus fit compact screens and keep actions accessible with a single
     await expect(page.getByRole('tab')).toHaveCount(0);
     const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
     await expect(theme).toHaveValue('normal');
-    expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
+    expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg|webp)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
     expect(await theme.locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
-    await expect(theme.locator('option[value="quality"]')).toHaveJSProperty('disabled', !['Last Light Clearing', 'Midnight Circuit'].includes(title));
+    await expect(theme.locator('option[value="quality"]')).toHaveJSProperty('disabled', !['Last Light Clearing', 'Midnight Circuit', 'Skybreak'].includes(title));
     if (['Clockwork Hollow', 'Obsidian Duel', 'Blastline', 'Midnight Circuit'].includes(title)) await expect(theme.locator('option[value="assets"]')).toHaveJSProperty('disabled', true);
     await theme.focus();
     await page.keyboard.press('Tab');

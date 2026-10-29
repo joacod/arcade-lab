@@ -1,10 +1,10 @@
 # Artwork and visual definitions
 
-`cover.svg`, Pacific Run's aircraft and ocean, the orbital scenery, Aurora Fleet's ships, combat warnings and effects are original Arcade Lab artwork under the repository's [MIT license](../../../../LICENSE). All artwork is committed. Normal and Assets use the same simulation, collision geometry, formations, supply schedule and fortress weak points in development and production.
+Skybreak combines procedural scenery, editable SVG sprites, 3D models and an AI-generated orbital background. All artwork ships with the game. Normal, Assets and Quality use the same simulation, collision geometry, formations, supply schedule and fortress weak points in development and production.
 
 ## Aurora Fleet
 
-The Assets presentation uses six original transparent SVG sprite sheets in `aurora-fleet/`. They were authored programmatically from geometric paths and colors for Arcade Lab. No external images, downloaded packs, tracing, AI image service or third-party artwork were used as inputs. The source generator uses only Node's standard library, with no service terms or third-party asset restrictions on its output. Both the drawings and generator are distributed under the repository's MIT license, which permits modification and redistribution.
+The Assets presentation uses six transparent SVG sprite sheets in `aurora-fleet/`. Their generator builds editable geometric paths and colors for each role.
 
 The ivory/teal player has paired swept wings, a narrow canopy and animated twin drives. The hostile fleet shares layered gunmetal armor, with distinct amber forked scouts, coral crescent raiders, violet twin-boom gunships and needle interceptors. The broad flagship supplies the fortress hull; existing procedural turrets, reactor and attack telegraphs remain above it. The original planet, orbital structures, pickups, projectiles, effects and accessible UI complete the presentation without another image pack.
 
@@ -27,6 +27,6 @@ Generation is an artwork maintenance step. Running or building the game never re
 
 ## Presentation ownership
 
-`../themes.ts` maps Normal to Pacific Run and Assets to `aurora-fleet.ts`. Quality remains unavailable. `../art-pack.ts` defines sprite rectangles, frame stride and timing, source rotation and authored visual footprints. These values never determine physical geometry. `../assets.ts` reuses the shared image loader and validates every frame before replacing the active appearance. A failed selection retains the working images and current run. New selections and session disposal invalidate pending work and release image sources.
+`../themes.ts` maps Normal to Pacific Run and Assets to `aurora-fleet.ts`. Quality maps to Orbital Foundry, with editable models and an AI-generated background. See [its artwork template and prompt](orbital-foundry/README.md). `../art-pack.ts` defines sprite rectangles, frame stride and timing, source rotation and authored visual footprints. These values never determine physical geometry. `../assets.ts` reuses the shared image loader and validates every frame before replacing the active appearance. A failed selection retains the working images and current run. New selections and session disposal invalidate pending work and release image sources.
 
-Replacement art must be committed with redistribution rights and provenance. Define its image URLs and roles in the game, preserving the same appearance preparation and ownership boundaries.
+Commit replacement art with its role mappings and useful generation or editing instructions. Define its image URLs and roles in the game, preserving the same appearance preparation and ownership boundaries.

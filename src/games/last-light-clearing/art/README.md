@@ -1,12 +1,12 @@
 # Artwork and visual definitions
 
-`cover.svg` is original Arcade Lab vector artwork under the repository's MIT license. Normal draws actors, ground marks, gems and spell effects procedurally without image assets.
+`cover.svg` is an editable vector illustration. Normal draws actors, ground marks, gems and spell effects procedurally without image assets.
 
-**Ember Ruins** uses the original CC0 0x72 DungeonTileset II v1.7, downloaded from its official source. The unmodified atlas, supplied frame list, author README, and [provenance](ember-ruins/PROVENANCE.md) live together. All runtime images are committed and bundled for development and production.
+**Ember Ruins** uses 0x72 DungeonTileset II v1.7. The atlas, frame list, upstream README, and [source credit and license](ember-ruins/PROVENANCE.md) live together. All runtime images are committed and bundled for development and production.
 
 ## Add an art pack or replace one role
 
-`src/games/last-light-clearing/art-pack.ts` defines `ArtPack`, `ActorArt`, `Clip`, and `Decoration`. `src/games/last-light-clearing/themes.ts` owns the mode definitions: image bundle, semantic Keeper/crawler/elite actors, environment, effect palette, and default interface. Replace the Assets definition there after inspecting source files and license terms; keep the same mode selector.
+`src/games/last-light-clearing/art-pack.ts` defines `ArtPack`, `ActorArt`, `Clip`, and `Decoration`. `src/games/last-light-clearing/themes.ts` owns the mode definitions: image bundle, semantic Keeper/crawler/elite actors, environment, effect palette, and default interface. Replace the Assets definition there after inspecting its frames and animation layout; keep the same mode selector.
 
 - Give each local image a stable key in `images`, using `new URL('./art/file.png', import.meta.url).href`.
 - Define explicit `[x, y, width, height]` frame rectangles with `still()` or `frame()`. `row()` is a small helper for an inspected regular row with known frame count and stride.
