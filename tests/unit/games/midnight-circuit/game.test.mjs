@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun, stepRun, takeEvents, pauseRun, nextStage, stageOf, canHit, attackPhase, idle } from '../../../../src/games/midnight-circuit/game.ts';
+import { createRun, stepRun, takeEvents, pauseRun, nextStage, stageOf, canHit, attackPhase, attackWarning, idle } from '../../../../src/games/midnight-circuit/game.ts';
 import { attacks, stages, fighter } from '../../../../src/games/midnight-circuit/content.ts';
 import { circuitView } from '../../../../src/games/midnight-circuit/presentation.ts';
 const dt = 1 / 60;
@@ -47,6 +47,89 @@ test('brawler targeting uses facing, authored reach, lane depth and airborne eli
   e.elevation = 0; p.elevation = 70; assert.equal(canHit(e, p, 'quake'), false);
   p.elevation = 0; assert.equal(canHit(e, p, 'quake'), true); p.lane += 100; assert.equal(canHit(e, p, 'quake'), false);
   e.immune = 1; assert.equal(canHit(p, e, 'heavy'), false);
+});
+
+test('quick light taps retain one follow-up through each light strike, while holds and expired heavy presses do not repeat', () => {
+  const run = arena([]);
+  stepRun(run, { ...idle, light: true }, dt);
+  stepRun(run, { ...idle, light: true }, dt); // A second tap just after startup used to expire before recovery ended.
+  for (let frame = 0; frame < 60 && run.nextSwing < 3; frame++) stepRun(run, idle, dt);
+  assert.equal(run.player.attack.kind, 'cross');
+  stepRun(run, { ...idle, light: true }, dt);
+  for (let frame = 0; frame < 60 && run.nextSwing < 4; frame++) stepRun(run, idle, dt);
+  assert.equal(run.player.attack.kind, 'finisher');
+  advance(run, 90); assert.equal(run.nextSwing, 4); assert.equal(run.player.attack, null);
+
+  stepRun(run, { ...idle, heavy: true }, dt);
+  stepRun(run, { ...idle, light: true }, dt); // A tap at the beginning of a long heavy does not linger.
+  advance(run, 60); assert.equal(run.nextSwing, 5); assert.equal(run.player.attack, null);
+
+  stepRun(run, { ...idle, light: true }, dt); stepRun(run, { ...idle, light: true }, dt);
+  pauseRun(run, true); pauseRun(run, false); advance(run, 60);
+  assert.equal(run.nextSwing, 6); assert.equal(run.buffer, null);
+});
+
+test('ground attacks commit through contact, then allow bounded recovery movement without cancelling the swing', () => {
+  for (const kind of ['jab', 'heavy']) {
+    const run = arena([]), p = run.player;
+    swing(run, p, kind); const start = p.x, id = p.attack.id;
+    for (let frame = 0; frame < 60 && p.attack && attackPhase(p.attack) !== 'recovery'; frame++) stepRun(run, { ...idle, x: 1 }, dt);
+    assert.equal(p.x, start);
+    const lane = p.lane;
+    stepRun(run, { ...idle, x: 1, lane: 1 }, dt);
+    assert.equal(p.attack.id, id); assert.equal(attackPhase(p.attack), 'recovery');
+    assert.ok(p.x > start); assert.ok(p.x - start < fighter.speed * dt);
+    assert.ok(p.lane > lane); assert.ok(p.lane - lane < fighter.laneSpeed * dt);
+    assert.ok(Math.hypot((p.x - start) / fighter.speed, (p.lane - lane) / fighter.laneSpeed) <= dt);
+    advance(run, 60); assert.equal(p.attack, null);
+  }
+});
+
+test('single-target punches hit the nearest eligible opponent regardless of spawn order', () => {
+  for (const facing of [-1, 1]) {
+    const run = arena(['striker', 'striker', 'striker']), p = run.player;
+    p.facing = facing; p.x = 400;
+    const [far, near, wrongLane] = run.enemies;
+    far.x = p.x + facing * 65; near.x = p.x + facing * 35; wrongLane.x = p.x + facing * 15;
+    wrongLane.lane = 170;
+    stepRun(run, { ...idle, light: true }, dt); advance(run, 5);
+    assert.equal(near.health, near.maxHealth - attacks.jab.damage);
+    assert.equal(far.health, far.maxHealth); assert.equal(wrongLane.health, wrongLane.maxHealth);
+  }
+});
+
+test('quake corners are safe and enemy warnings describe the actual ground danger in both directions', () => {
+  const run = arena(['warden']), boss = run.enemies[0], p = run.player;
+  for (const facing of [-1, 1]) {
+    boss.facing = facing; boss.x = 450; boss.lane = 90;
+    for (const kind of ['strike', 'smash', 'quake']) {
+      swing(run, boss, kind); const area = attackWarning(boss);
+      for (const [x, lane] of [[0, 0], [.9, 0], [0, .9], [.9, .9], [1.01, 0], [0, 1.01], [-.9, -.9]]) {
+        p.x = area.x + x * area.width / 2; p.lane = area.lane + lane * area.depth / 2;
+        assert.equal(canHit(boss, p, kind), area.shape === 'ellipse' ? x * x + lane * lane <= 1 : Math.abs(x) <= 1 && Math.abs(lane) <= 1);
+      }
+      p.x = area.x; p.lane = area.lane;
+      p.elevation = 80; assert.equal(canHit(boss, p, kind), false); p.elevation = 0;
+      boss.attack.time = attacks[kind].startup + attacks[kind].active;
+      assert.equal(attackWarning(boss), null);
+    }
+    swing(run, boss, 'charge'); const before = attackWarning(boss);
+    const leadingEdge = area => area.x + facing * area.width / 2;
+    // As the charge advances, the warning shrinks toward its original endpoint.
+    boss.attack.time = attacks.charge.startup + .2; boss.x += facing * 490 * .2;
+    const during = attackWarning(boss);
+    assert.ok(during.width < before.width);
+    assert.ok(Math.abs(leadingEdge(before) - leadingEdge(during)) < .0001);
+  }
+});
+
+test('a repair cell waits at full health and restores health and score only once when needed', () => {
+  const run = arena([]), p = run.player;
+  run.pickups.push({ x: p.x, lane: p.lane, health: 30, collected: false });
+  advance(run, 3); assert.equal(run.pickups[0].collected, false); assert.equal(run.score, 0);
+  p.health = 85; advance(run, 1);
+  assert.equal(p.health, 100); assert.equal(run.pickups[0].collected, true); assert.equal(run.score, 75);
+  p.health = 60; advance(run, 3); assert.equal(p.health, 60); assert.equal(run.score, 75);
 });
 
 test('jabs isolate one target while heavy attacks control crowds; hitstun cancels windups and knockback recovers', () => {

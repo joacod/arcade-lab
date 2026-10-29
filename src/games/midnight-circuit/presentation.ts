@@ -1,6 +1,6 @@
 import { createGait, fighterPose } from './animation.ts';
 import { attacks } from './content.ts';
-import { attackPhase, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
+import { attackPhase, attackWarning, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
 import type { Screen } from './ui.ts';
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 export function circuitView(width: number, height: number, run: Run) {
@@ -217,19 +217,19 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   function telegraph(a: Actor, ground: number) {
-    const s = a.attack; if (!s || a.health <= 0 || a.kind === 'player') return;
-    const phase = attackPhase(s), d = attacks[s.kind]; if (phase === 'recovery') return;
+    const s = a.attack, area = attackWarning(a); if (!s || !area || a.kind === 'player') return;
+    const phase = attackPhase(s), d = attacks[s.kind];
     const active = phase === 'active', color = active ? '#ffb797' : '#ed7c99';
     const x = a.x, y = ground + a.lane;
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(active ? [] : [8, 5]);
     ctx.globalAlpha = active ? .7 : .35 + .35 * Math.min(1, s.time / d.startup);
-    if (s.kind === 'quake') {
-      ellipse(x + a.facing * 40, y, d.reach, d.lane, '#e86e8b1c');
-      ctx.beginPath(); ctx.ellipse(x + a.facing * 40, y, d.reach, d.lane, 0, 0, Math.PI * 2); ctx.stroke();
-      text('JUMP / STEP OUT', x, y + d.lane + 17, 9, color, 'center');
+    if (area.shape === 'ellipse') {
+      ellipse(area.x, y, area.width / 2, area.depth / 2, '#e86e8b1c');
+      ctx.beginPath(); ctx.ellipse(area.x, y, area.width / 2, area.depth / 2, 0, 0, Math.PI * 2); ctx.stroke();
+      text('JUMP / STEP OUT', area.x, y + area.depth / 2 + 17, 9, color, 'center');
     } else {
-      const length = s.kind === 'charge' ? 350 : d.reach + 22, start = a.facing > 0 ? x : x - length;
-      rect(start, y - d.lane, length, d.lane * 2, '#e86e8b19'); ctx.strokeRect(start, y - d.lane, length, d.lane * 2);
+      const start = area.x - area.width / 2;
+      rect(start, y - area.depth / 2, area.width, area.depth, '#e86e8b19'); ctx.strokeRect(start, y - area.depth / 2, area.width, area.depth);
       if (s.kind === 'charge') text(a.facing > 0 ? 'CHARGE →' : '← CHARGE', x + a.facing * 140, y - d.lane - 10, 9, color, 'center');
     }
     ctx.setLineDash([]); ctx.globalAlpha = 1;

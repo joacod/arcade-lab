@@ -1,4 +1,4 @@
-import { attacks, enemies, fighter, stages as campaign, type AttackKind, type EnemyKind, type Stage } from './content.ts';
+import { attacks, chargeSpeed, enemies, fighter, stages as campaign, type AttackKind, type EnemyKind, type Stage } from './content.ts';
 export interface Action { x: number; lane: number; light: boolean; heavy: boolean; jump: boolean }
 export const idle: Readonly<Action> = { x: 0, lane: 0, light: false, heavy: false, jump: false };
 export interface Swing { id: number; kind: AttackKind; time: number; hits: number[]; sounded: boolean }
@@ -54,15 +54,32 @@ export function nextStage(run: Run) {
 export function attackPhase(swing: Swing): 'startup' | 'active' | 'recovery' {
   const d = attacks[swing.kind]; return swing.time < d.startup ? 'startup' : swing.time < d.startup + d.active ? 'active' : 'recovery';
 }
+const lightChain = ['jab', 'cross', 'finisher'] as const;
+function isLight(kind: AttackKind) { return lightChain.some(light => light === kind); }
+/** Ground footprints include the target's body margin; warnings describe danger to Rook's feet. */
+function attackArea(source: Actor, kind: AttackKind, radius: number, travel = 0) {
+  const d = attacks[kind];
+  if (kind === 'quake') return { shape: 'ellipse' as const, x: source.x + source.facing * 40, lane: source.lane,
+    width: (d.reach + radius) * 2, depth: d.lane * 2 };
+  const back = -radius * .35, front = d.reach + radius + travel;
+  return { shape: 'box' as const, x: source.x + source.facing * (front + back) / 2, lane: source.lane,
+    width: front - back, depth: (d.lane + radius * .2) * 2 };
+}
+export function attackWarning(source: Actor) {
+  const s = source.attack;
+  if (!s || source.health <= 0 || attackPhase(s) === 'recovery') return null;
+  const d = attacks[s.kind];
+  const travel = s.kind === 'charge' ? chargeSpeed * Math.max(0, d.startup + d.active - Math.max(d.startup, s.time)) : 0;
+  return attackArea(source, s.kind, fighter.radius, travel);
+}
 /** Ground-depth and elevation eligibility are independent of rendered pose and camera. */
 export function canHit(source: Actor, target: Actor, kind: AttackKind): boolean {
   if (source.health <= 0 || target.health <= 0 || target.immune > 0) return false;
-  const d = attacks[kind], dx = (target.x - source.x) * source.facing;
-  if (kind === 'quake') return Math.abs(target.x - (source.x + source.facing * 40)) <= d.reach + target.radius
-    && Math.abs(source.lane - target.lane) <= d.lane && target.elevation < 30;
+  const area = attackArea(source, kind, target.radius);
+  const x = (target.x - area.x) / (area.width / 2), lane = (target.lane - area.lane) / (area.depth / 2);
+  if (kind === 'quake') return x * x + lane * lane <= 1 && target.elevation < 30;
   if (kind === 'air' && (source.elevation < 8 || source.elevation > 150)) return false;
-  return dx >= -target.radius * .35 && dx <= d.reach + target.radius
-    && Math.abs(source.lane - target.lane) <= d.lane + target.radius * .2
+  return Math.abs(x) <= 1 && Math.abs(lane) <= 1
     && target.elevation < (kind === 'charge' ? 72 : kind === 'air' ? 110 : 48);
 }
 function begin(run: Run, a: Actor, kind: AttackKind) {
@@ -109,11 +126,13 @@ function swingStep(run: Run, a: Actor, dt: number) {
   if (s.time >= d.startup && previous < d.startup + d.active) {
     if (!s.sounded && a.kind === 'player') emit(run, 'swing', a, 1, s.kind);
     s.sounded = true;
-    if (s.kind === 'charge') a.x += a.facing * 490 * Math.max(0, Math.min(s.time, d.startup + d.active) - Math.max(previous, d.startup));
-    const targets = a.kind === 'player' ? run.enemies : [run.player];
+    if (s.kind === 'charge') a.x += a.facing * chargeSpeed * Math.max(0, Math.min(s.time, d.startup + d.active) - Math.max(previous, d.startup));
+    const targets = (a.kind === 'player' ? run.enemies : [run.player])
+      .filter(target => !s.hits.includes(target.id) && canHit(a, target, s.kind))
+      .sort((first, second) => Math.abs(first.x - a.x) - Math.abs(second.x - a.x)
+        || Math.abs(first.lane - a.lane) - Math.abs(second.lane - a.lane) || first.id - second.id);
     for (const target of targets) {
       if ((s.kind === 'jab' || s.kind === 'cross') && s.hits.length > 0) break;
-      if (s.hits.includes(target.id) || !canHit(a, target, s.kind)) continue;
       s.hits.push(target.id); damage(run, a, target, s.kind);
       // Jabs isolate one opponent; finishers, aerial kicks and heavy strikes control crowds.
       if (s.kind === 'jab' || s.kind === 'cross') break;
@@ -145,7 +164,12 @@ function playerStep(run: Run, action: Action, dt: number) {
   const p = run.player;
   if (action.jump) run.jumpBuffer = .18;
   else run.jumpBuffer = Math.max(0, run.jumpBuffer - dt);
-  if (action.light || action.heavy) run.buffer = { kind: action.heavy ? 'heavy' : 'light', ttl: .28 };
+  if (action.light || action.heavy) {
+    // Remember one quick combo tap through the current light strike, without queuing a whole string.
+    const s = p.attack, d = s && attacks[s.kind];
+    const remaining = s && d && isLight(s.kind) && !action.heavy ? d.startup + d.active + d.recovery - s.time + .1 : 0;
+    run.buffer = { kind: action.heavy ? 'heavy' : 'light', ttl: Math.max(.28, remaining) };
+  }
   if (run.buffer) { run.buffer.ttl -= dt; if (run.buffer.ttl <= 0) run.buffer = null; }
   run.chainTime = Math.max(0, run.chainTime - dt);
   if (!p.attack && run.chainTime === 0) run.chain = 0;
@@ -160,10 +184,10 @@ function playerStep(run: Run, action: Action, dt: number) {
     if (moveX) p.facing = moveX > 0 ? 1 : -1;
     if (p.elevation > 0) begin(run, p, 'air');
     else if (kind === 'heavy') { begin(run, p, 'heavy'); run.chain = 0; }
-    else { begin(run, p, (['jab', 'cross', 'finisher'] as const)[run.chain % 3]!); run.chain = (run.chain + 1) % 3; }
+    else { begin(run, p, lightChain[run.chain % 3]!); run.chain = (run.chain + 1) % 3; }
     run.buffer = null;
   }
-  const mobility = !p.attack ? 1 : p.elevation > 0 ? .7 : 0;
+  const mobility = !p.attack ? 1 : p.elevation > 0 ? .7 : attackPhase(p.attack) === 'recovery' ? isLight(p.attack.kind) ? .55 : .3 : 0;
   const length = Math.max(1, Math.hypot(moveX, moveLane));
   p.x += moveX / length * fighter.speed * mobility * dt;
   p.lane += moveLane / length * fighter.laneSpeed * mobility * dt;
@@ -213,7 +237,7 @@ function progress(run: Run, dt: number) {
     }
   }
   for (const pickup of run.pickups) {
-    if (pickup.collected || run.player.elevation > 18 || Math.abs(run.player.x - pickup.x) > 32 || Math.abs(run.player.lane - pickup.lane) > 26) continue;
+    if (pickup.collected || run.player.health >= fighter.health || run.player.elevation > 18 || Math.abs(run.player.x - pickup.x) > 32 || Math.abs(run.player.lane - pickup.lane) > 26) continue;
     pickup.collected = true; run.player.health = Math.min(fighter.health, run.player.health + pickup.health); run.score += 75; emit(run, 'pickup', run.player);
   }
   if (!encounter && run.player.x >= stage.width - 130) {

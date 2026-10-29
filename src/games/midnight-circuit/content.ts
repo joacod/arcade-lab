@@ -17,6 +17,7 @@ export const attacks: Readonly<Record<AttackKind, AttackDefinition>> = {
   quake:    { startup: 1.08, active: .18, recovery: 1.15, reach: 180, lane: 87, damage: 23, knockback: 250, stun: .48 },
 };
 export const fighter = { health: 100, lives: 3, speed: 225, laneSpeed: 147, radius: 17, jump: 465, gravity: 1100, immunity: .85 } as const;
+export const chargeSpeed = 490;
 export const enemies: Readonly<Record<EnemyKind, { health: number; speed: number; laneSpeed: number; radius: number; points: number }>> = {
   striker: { health: 68, speed: 136, laneSpeed: 98, radius: 17, points: 180 },
   bruiser: { health: 148, speed: 84, laneSpeed: 68, radius: 24, points: 350 },

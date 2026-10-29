@@ -20,6 +20,8 @@
 .circuit-app .circuit-canvas { display: block; width: 100%; height: 100%; }
 .circuit-app .circuit-location { position: absolute; top: 20px; left: clamp(16px, 3vw, 38px); pointer-events: none; text-shadow: 0 2px 6px #07101c; font: 11px monospace; letter-spacing: .1em; }
 .circuit-app .circuit-location small { display: block; font: 9px monospace; color: #9cc4c9; margin-top: 7px; letter-spacing: .04em; }
+.circuit-app .circuit-coach { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 8px 12px; border: 1px solid #8be4d54d; border-radius: 3px; background: #0b1829e6; color: #d5fff1; font: 10px/1.5 monospace; text-align: center; pointer-events: none; }
+.circuit-app .circuit-boss:not([hidden]) ~ .circuit-coach { bottom: 65px; }
 .circuit-app .circuit-combo { position: absolute; top: 76px; right: 28px; font: italic 800 32px system-ui; color: #fff0b5; pointer-events: none; text-shadow: 3px 3px #ba4d76; }
 .circuit-app .circuit-combo.is-hot { color: #83ffe3; }
 .circuit-app .circuit-boss { position: absolute; left: 25%; right: 25%; bottom: 22px; pointer-events: none; }
@@ -61,4 +63,6 @@
   .circuit-app .circuit-touch button { pointer-events: auto; }
   .circuit-app .circuit-footer { padding: 5px; }
   .circuit-app .circuit-boss { bottom: 10px; left: 28%; right: 28%; }
+  .circuit-app .circuit-coach { bottom: 112px; font-size: 9px; max-width: 70%; }
+  .circuit-app .circuit-boss:not([hidden]) ~ .circuit-coach { bottom: 112px; }
 }
