@@ -5,6 +5,7 @@
 - Build complete, enjoyable browser games and improve the internal engine that supports them. Maintain game-type foundations that coding agents can adapt from supplied themes, artwork, assets, stories and gameplay requirements. Gameplay quality and architecture quality are equal objectives. Keep one private application/package; this is not a library, SDK or general-purpose engine product.
 - For each new game or substantial feature, evaluate existing infrastructure, duplication, ownership and awkward abstractions. Refactor when concrete requirements make development simpler or more maintainable. Do not avoid a useful abstraction just to minimize code or wait for two identical implementations. Avoid speculative packages and architecture.
 - Reuse and improve applicable shared infrastructure. Keep fundamentally different game mechanics local. Read the relevant owners and [architecture](docs/architecture.md) before changing a system; keep those documents aligned with the resulting implementation.
+- Use the repository's official [arcade-lab Skill](.agents/skills/arcade-lab/SKILL.md) for creating, improving, customizing or polishing games and their engine foundations. It routes tasks to canonical guides and optional game-design references; keep its use proportional to the task.
 
 ## Ownership
 
