@@ -2,6 +2,7 @@ import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
 import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
 import type { Screen } from './ui.ts';
+import { createKeeperAnimation, type KeeperPose } from './animation.ts';
 
 export interface HollowView { scale: number; width: number; height: number; x: number; y: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -24,6 +25,8 @@ export function createPresentation(surface: HTMLElement) {
   let theme = themes.normal;
   let palette = theme.districts.aqueduct;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const animation = createKeeperAnimation();
+  let cosmeticTime = 0;
   function circle(x: number, y: number, r: number, fill: string | CanvasGradient) {
     ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
@@ -139,14 +142,17 @@ export function createPresentation(surface: HTMLElement) {
       leaf(x, s.y + 2, 12 + i % 4 * 4, -0.5, theme.foliage[i % 3 ? 1 : 0]);
       leaf(x, s.y + 1, 10, -2.3, theme.foliage[1]);
     }
+    // Keep the physical landing edge continuous above the decorative moss.
+    line(s.x, s.y + 3, s.x + s.w, s.y + 3, palette.edge, 2);
+    for (const x of [s.x + 1, s.x + s.w - 1]) line(x, s.y + 3, x, s.y + Math.min(15, s.h), palette.edge, 2);
     if (index % 3 === 0) vine(s.x + s.w - 12, s.y + 5, Math.min(110, s.h + 60), index);
     if (s.h > 80) {
       const x = s.x + Math.min(s.w * 0.6, 230), y = s.y + 90;
       gear(x, y, 31, index, '#5c6650'); circle(x, y, 7, '#d6bb7d'); glow(x, y, 40, '#f3cb7930');
     }
   }
-  function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, time: number, defeated: boolean) {
-    const walk = p.grounded ? Math.sin(time * 22) * Math.min(1, Math.abs(p.vx) / 120) : 0;
+  function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, time: number, defeated: boolean, pose: KeeperPose = { stride: 0, bob: 0, lean: 0 }) {
+    const walk = p.grounded ? pose.stride : 0, bob = p.grounded ? pose.bob : 0;
     ctx.save(); ctx.translate(p.x + m.width / 2, p.y + m.height);
     const squash = motion.matches ? 0 : landing * 0.17;
     ctx.scale(p.facing * (1 + squash), 1 - squash);
@@ -155,12 +161,17 @@ export function createPresentation(surface: HTMLElement) {
     const spread = p.grounded ? walk * 7 : p.vy < 0 ? 7 : -4;
     line(-6, -14, -7 + spread, -3, '#866649', 5); line(6, -14, 7 - spread, -3, '#b39b67', 5);
     line(-10 + spread, -2, -4 + spread, -2, '#d8ba7d', 5); line(4 - spread, -2, 10 - spread, -2, '#ecd299', 5);
+    // A darker rim separates brass from bright motes and moss without hiding the feet.
+    ctx.translate(motion.matches ? 0 : pose.lean * p.facing * 2, -bob);
+    ctx.shadowColor = '#09272c'; ctx.shadowBlur = 0; ctx.shadowOffsetX = -1.5; ctx.shadowOffsetY = 1.5;
     // The contrasting scarf makes direction and speed readable.
-    ctx.fillStyle = theme.scarf; ctx.beginPath(); ctx.moveTo(-6, -30); ctx.quadraticCurveTo(-18, -30, -24 - Math.abs(p.vx) * 0.02, -22 + Math.sin(time * 12) * 3); ctx.lineTo(-19, -32); ctx.lineTo(-6, -35); ctx.fill();
+    ctx.fillStyle = theme.scarf; ctx.beginPath(); ctx.moveTo(-6, -30); ctx.quadraticCurveTo(-18, -30, -24 - Math.abs(p.vx) * 0.02, -22 + (motion.matches ? 0 : Math.sin(time * 12) * 3)); ctx.lineTo(-19, -32); ctx.lineTo(-6, -35); ctx.fill();
     ctx.fillStyle = theme.brass; ctx.beginPath(); ctx.roundRect(-11, -31 + walk, 22, 20, 6); ctx.fill();
     line(-8, -29 + walk, 8, -29 + walk, '#edd093', 2);
     circle(0, -21 + walk, 6, '#514d3d'); circle(0, -21 + walk, 3, '#afe6c9');
-    line(-11, -26, -16, -17 + walk * 3, '#b29a6b', 4); line(11, -26, 15, -19 - walk * 3, '#d4b77c', 4);
+    const armY = p.grounded ? -18 : p.vy < 0 ? -30 : -24;
+    const reach = p.grounded ? 15 : 19;
+    line(-11, -26, -reach, armY + walk * 3, '#b29a6b', 4); line(11, -26, reach, armY - walk * 3, '#d4b77c', 4);
     ctx.fillStyle = '#e0bf7d'; ctx.beginPath(); ctx.roundRect(-14, -50 + Math.abs(walk), 29, 22, 9); ctx.fill();
     ctx.fillStyle = '#f0d69c'; ctx.fillRect(-9, -50 + Math.abs(walk), 18, 3);
     ctx.fillStyle = '#233f40'; ctx.beginPath(); ctx.roundRect(-8, -43 + Math.abs(walk), 21, 10, 4); ctx.fill();
@@ -178,7 +189,7 @@ export function createPresentation(surface: HTMLElement) {
   }
   return {
     applyTheme(next: HollowTheme) { theme = next; },
-    reset() { particles = []; lastFrame = undefined; landing = 0; camera = undefined; },
+    reset() { particles = []; lastFrame = undefined; landing = 0; camera = undefined; cosmeticTime = 0; animation.reset(); },
     consume(events: readonly HollowEvent[]) {
       for (const event of events) {
         if (camera && (event.x < camera.x - 100 || event.x > camera.x + camera.width + 100)) continue;
@@ -200,6 +211,8 @@ export function createPresentation(surface: HTMLElement) {
       // Cosmetic tails keep moving after an outcome; pause and hidden-page gaps never advance them.
       const dt = screen === 'paused' || screen === 'title' || lastFrame === undefined ? 0 : clamp(now - lastFrame, 0, 0.05);
       lastFrame = now;
+      cosmeticTime += dt;
+      const pose = animation.observe(run.player, dt);
       const follow = motion.matches ? 1 : 1 - Math.exp(-8 * dt);
       if (!camera) camera = { ...target };
       camera = { ...target, x: camera.x + (target.x - camera.x) * follow, y: motion.matches ? target.y : camera.y + (Math.abs(target.y - camera.y) > 45 ? (target.y - camera.y - Math.sign(target.y - camera.y) * 45) * follow * 0.55 : 0) };
@@ -237,7 +250,7 @@ export function createPresentation(surface: HTMLElement) {
           plume.addColorStop(0, '#ffb29499'); plume.addColorStop(1, '#fff1bbee');
           ctx.fillStyle = plume; ctx.fillRect(vent.x, vent.y, vent.w, vent.h);
           for (let j = 0; j < 4; j++) {
-            const y = vent.y + ((j * 37 - (motion.matches ? 0 : now * 160)) % vent.h + vent.h) % vent.h;
+            const y = vent.y + ((j * 37 - (motion.matches ? 0 : cosmeticTime * 160)) % vent.h + vent.h) % vent.h;
             line(vent.x + 7, y, vent.x + vent.w - 7, y - 9, '#fff0cabb', 3);
           }
         } else if (warning) {
@@ -264,14 +277,18 @@ export function createPresentation(surface: HTMLElement) {
         const stride = motion.matches || !enemy.alive ? 0 : Math.sin(run.levelTime * 18) * 3;
         for (let j = -1; j <= 1; j++) { line(j * 11 - 3, -9, j * 11 - 7, -1 + stride, '#edb47e', 3); }
         ctx.fillStyle = enemy.alive ? '#da9272' : '#766462'; ctx.beginPath(); ctx.roundRect(-18, -25, 36, 20, 9); ctx.fill();
+        // The broad shell crown is the safe stomp surface; pointed thorns remain distinct.
+        line(-11, -26, 8, -26, enemy.alive ? '#fff0c7' : '#9a8980', 4);
         line(-12, -23, 10, -23, '#ffe2b0', 3); gear(-5, -15, 8, motion.matches ? 0 : run.levelTime * 3, '#86513e');
         circle(12, -17, 3, '#241e31'); circle(13, -18, 1, '#fff5cf');
         line(-2, -24, -2, -32, '#c7af85', 2); line(-7, -32, 3, -32, '#c7af85', 2); ctx.restore();
       });
       for (const s of run.level.hazards) {
         glow(s.x + s.w / 2, s.y + 8, 65, '#df916d20');
+        ctx.fillStyle = '#3c2830'; ctx.fillRect(s.x - 2, s.y + s.h - 5, s.w + 4, 6);
         ctx.fillStyle = '#f3a18b'; ctx.beginPath();
-        for (let x = s.x; x < s.x + s.w; x += 15) { ctx.moveTo(x, s.y + s.h); ctx.lineTo(x + 7, s.y); ctx.lineTo(x + 15, s.y + s.h); }
+        const teeth = Math.ceil(s.w / 15), toothWidth = s.w / teeth;
+        for (let i = 0; i < teeth; i++) { const x = s.x + i * toothWidth; ctx.moveTo(x, s.y + s.h); ctx.lineTo(x + toothWidth / 2, s.y); ctx.lineTo(x + toothWidth, s.y + s.h); }
         ctx.fill(); line(s.x, s.y + s.h, s.x + s.w, s.y + s.h, '#6b4944', 3);
       }
       const goal = run.level.goal, gx = goal.x + goal.w / 2;
@@ -280,7 +297,7 @@ export function createPresentation(surface: HTMLElement) {
       line(gx - 64, goal.y - 62, gx + 64, goal.y - 62, '#c8b57e', 12);
       vine(gx + 59, goal.y - 65, 155, 2);
       glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
-      ctx.save(); ctx.translate(gx, goal.y + 10); if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(now * 5) * 0.18);
+      ctx.save(); ctx.translate(gx, goal.y + 10); if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(cosmeticTime * 5) * 0.18);
       line(0, -68, 0, -23, '#bdb480', 3); ctx.fillStyle = '#e3bb78'; ctx.beginPath();
       ctx.moveTo(-25, 15); ctx.quadraticCurveTo(-13, 0, -15, -18); ctx.quadraticCurveTo(0, -38, 15, -18); ctx.quadraticCurveTo(13, 0, 25, 15); ctx.closePath(); ctx.fill();
       circle(0, 18, 6, '#f4de9b'); line(-22, 12, 22, 12, '#776342', 2); ctx.restore();
@@ -296,7 +313,7 @@ export function createPresentation(surface: HTMLElement) {
       if (ground) {
         ctx.fillStyle = '#061e2577'; ctx.beginPath(); ctx.ellipse(p.x + m.width / 2, ground.y - 1, Math.max(6, 18 - (ground.y - p.y - m.height) * 0.05), 4, 0, 0, Math.PI * 2); ctx.fill();
       }
-      glow(p.x + m.width / 2, p.y + 20, 50, '#b4edce12'); keeper(p, run.elapsed, run.status === 'defeat');
+      glow(p.x + m.width / 2, p.y + 20, 50, '#b4edce12'); keeper(p, cosmeticTime, run.status === 'defeat', pose);
       for (const particle of particles) {
         particle.life -= dt; particle.x += particle.vx * dt; particle.y += particle.vy * dt; particle.vy += 240 * dt;
         ctx.globalAlpha = Math.max(0, particle.life / particle.max); circle(particle.x, particle.y, 2.5, particle.color);

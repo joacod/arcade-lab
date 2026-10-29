@@ -9,6 +9,9 @@
 .hollow-app .hollow-mark { font-size: 36px; font-weight: 400; line-height: 1; color: var(--gold); }
 .hollow-app .hollow-brand small { display: block; color: var(--dim); font: 8px monospace; letter-spacing: .14em; margin-top: 7px; }
 .hollow-app .hollow-instruments { display: flex; align-items: center; gap: 28px; font: 12px monospace; color: var(--gold); }
+.hollow-app .hollow-tallies { display: flex; align-items: center; gap: 28px; }
+.hollow-app .hollow-progress { color: var(--dim); font-size: 10px; }
+.hollow-app .hollow-time { color: var(--dim); }
 .hollow-app kbd { margin-left: 12px; font: 12px monospace; color: var(--dim); }
 .hollow-app .hollow-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; isolation: isolate; }
 .hollow-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; }
@@ -16,6 +19,7 @@
 .hollow-app .hollow-location { position: absolute; left: clamp(18px, 4vw, 48px); top: 24px; pointer-events: none; display: flex; align-items: center; gap: 13px; font: 10px monospace; letter-spacing: .08em; color: #c0d2bb; }
 .hollow-app .hollow-location > span { border: 1px solid #9cbaaa40; border-radius: 50%; padding: 8px; color: var(--gold); }
 .hollow-app .hollow-location small { display: block; font: 11px 'Avenir Next', system-ui, sans-serif; color: var(--dim); margin-top: 5px; letter-spacing: 0; }
+.hollow-app .hollow-location-title { font-weight: 500; }
 .hollow-app .hollow-footer { position: relative; min-height: 47px; padding: 12px clamp(18px, 4vw, 48px); display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #10292d; border-top: 1px solid #a8c7ad1f; }
 .hollow-app .hollow-hint, .hollow-app .hollow-footer-note { font: 8px monospace; letter-spacing: .08em; color: var(--dim); }
 .hollow-app .hollow-touch { display: none; }
@@ -32,6 +36,9 @@
   .hollow-app .hollow-brand { font-size: 9px; letter-spacing: .08em; gap: 7px; }
   .hollow-app .hollow-brand small { font-size: 7px; }
   .hollow-app .hollow-instruments { gap: 10px; font-size: 10px; }
+  .hollow-app .hollow-tallies { flex-direction: column; align-items: flex-end; gap: 5px; white-space: nowrap; }
+  .hollow-app .hollow-progress { font-size: 8px; }
+  .hollow-app .hollow-time { display: none; }
   .hollow-app .hollow-instruments button { padding: 8px 12px; font-size: 11px; }
   .hollow-app kbd { display: none; }
   .hollow-app .hollow-location { top: 15px; font-size: 8px; }
@@ -42,8 +49,8 @@
   .hollow-app .hollow-touch button { height: 42px; }
 }
 .hollow-app .hollow-location > div { max-width: min(480px, 70vw); line-height: 1.7; text-shadow: 0 1px 6px #071e29; }
-@media (max-width: 760px) {
-  .hollow-app .hollow-progress { display: none; }
+.hollow-app .hollow-announcement { position: absolute; bottom: 28px; left: 50%; transform: translate(-50%, 6px); width: max-content; max-width: calc(100% - 36px); padding: 12px 18px; border: 1px solid #a6e9bc70; border-radius: 6px; background: #102e2df2; box-shadow: 0 8px 24px #051d2844; color: #d9f9d8; font-size: 12px; line-height: 1.5; text-align: center; pointer-events: none; opacity: 0; transition: opacity .18s, transform .18s; }
+.hollow-app[data-screen="playing"] .hollow-announcement.is-visible { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) {
+  .hollow-app .hollow-announcement { transition: none; transform: translate(-50%, 0); }
 }
-
-.hollow-app .hollow-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

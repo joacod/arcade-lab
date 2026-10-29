@@ -18,6 +18,8 @@ Thin ledges are solid on every side. Wind-up beetles patrol between fixed endpoi
 
 Falling, thorns, active pressure or beetle contact ends an attempt. The defeat menu identifies the cause, offers a relevant movement or timing tip and names the retry destination. Each district has two lantern checkpoints. Touching a lantern lights it, plays a chime and announces the saved return point. **Retry checkpoint** returns to the latest lantern, or the district start before reaching one. Retry resets velocity, jump buffers, enemies, vent phase, camera and cosmetics, while retaining collected motes, active journey time and missed steps. Checkpoints last only for this session.
 
+The HUD shows collected motes and awakened bells, including on narrow screens. The district caption introduces jump height in the aqueduct and mirrors nearby vent countdowns, keeping those instructions readable above the scenery. Lighting a lantern shows a short return-point notice; its name remains in the district caption afterward.
+
 Every bell ends its district and freezes simulation. An explicit **Continue toâ€¦** action starts the next district. The third bell completes the journey. Results show bells, motes, active time, missed steps, points and a completion distinction for full collection or a clean journey. Optional motes and bells award points; missed steps reduce them. Neither retrying enemies nor revisiting collected motes awards extra points. Scoring amounts live in `game.ts`.
 
 **Restart** creates an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in the menu when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
@@ -38,6 +40,7 @@ Every bell ends its district and freezes simulation. An explicit **Continue toâ€
 | Movement and jump feel | `movement` in `content.ts`; explicit acceleration, collision and jump behavior in `game.ts` |
 | Enemy and obstacle behaviors, vent cycle timing, failure causes, checkpoints, progression and scoring | `game.ts`; no generic AI or entity framework |
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`; `keeper`, `scenery`, `stone` and the local enemy/vent drawings are the artwork entry points |
+| Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
@@ -52,6 +55,8 @@ Simulation uses top-left player positions and authored rectangles. Swept edge cr
 The camera uses one uniform world transform, minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize pauses play and resets framing. Reduced motion removes follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, landing squash and bell swinging.
 
 Parallax arches, foreground canopy, drifting lights, foundry pipes and belfry stars give the districts distinct depth. Platform edges, thorns, shells and pressure columns render in front of scenery. Landing squash, jump dust, shell impacts, lantern sparks and bell celebrations consume semantic events. Particles are capped and viewport-admitted, with finite lifetimes. Cosmetic tails can finish after defeat or completion without advancing rules; pause freezes them and frame deltas are bounded. Artwork and the selection cover use editable geometry; sound uses procedural recipes.
+
+The keeper's stride follows ground distance, settles when stopping and resets on retry. Lifted arms on ascent and braced arms on descent distinguish jump phases. Continuous landing lips remain visible above moss; broad beetle shell crowns contrast with pointed copper thorns. Pressure motion, scarf flutter and bell swings share presentation time, so pausing freezes the entire scene. Reduced motion also removes scarf flutter.
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain. Only nearby vents are audible. Routine cues are coalesced and throttled; outcomes replace lesser tails. The existing shared AudioBits owner provides lazy gesture activation, bounded voices, cancellation, suspension, mute and disposal.
 

@@ -3,12 +3,38 @@ import assert from 'node:assert/strict';
 import { createRun, stepRun, pauseRun, takeEvents, idle, retryRun, nextLevel, results, ventCycle } from '../../../../src/games/clockwork-hollow/game.ts';
 import { hollow, journey, movement as m } from '../../../../src/games/clockwork-hollow/content.ts';
 import { hollowView } from '../../../../src/games/clockwork-hollow/presentation.ts';
+import { createKeeperAnimation } from '../../../../src/games/clockwork-hollow/animation.ts';
 const dt = 1 / 60;
 const level = (solids, extra = {}) => ([{ ...hollow, name: 'Fixture', width: 1200, height: 900, patrols: [], vents: [], checkpoints: [],
   start: { x: 100, y: 460 }, solids, hazards: [], motes: [], goal: { x: 1150, y: 0, w: 20, h: 20 }, ...extra }]);
 const floor = { x: 0, y: 500, w: 1200, h: 200 };
 function advance(run, frames, action = idle) { for (let i = 0; i < frames; i++) { stepRun(run, action, dt); takeEvents(run); } }
 const press = { ...idle, jumpPressed: true, jumpHeld: true };
+
+test('keeper gait follows ground travel, freezes with paused time and resets across retries', () => {
+  function gait(steps) {
+    const animation = createKeeperAnimation();
+    const player = { x: 100, vx: 300, grounded: true };
+    for (let i = 0; i < 120; i++) animation.observe(player, dt);
+    let pose;
+    for (let i = 0; i < steps; i++) { player.x += 18 / steps; pose = animation.observe(player, dt); }
+    return { animation, player, pose };
+  }
+  const slow = gait(12), fast = gait(6);
+  assert.ok(Math.abs(slow.pose.stride - fast.pose.stride) < 1e-8);
+  assert.ok(slow.pose.stride > 0.99);
+  assert.deepEqual(slow.animation.observe(slow.player, 0), slow.pose);
+  // Air travel and discontinuous repositioning never drive a footstep.
+  slow.player.grounded = false; slow.player.x += 30;
+  assert.equal(slow.animation.observe(slow.player, 0).stride, slow.pose.stride);
+  slow.player.grounded = true; slow.player.x = 3000;
+  assert.equal(slow.animation.observe(slow.player, 0).stride, slow.pose.stride);
+  slow.player.vx = 0;
+  for (let i = 0; i < 90; i++) slow.pose = slow.animation.observe(slow.player, dt);
+  assert.ok(Math.abs(slow.pose.stride) < 1e-8);
+  slow.animation.reset();
+  assert.deepEqual(slow.animation.observe(slow.player, dt), { stride: 0, bob: 0, lean: 0 });
+});
 
 test('platformer remains grounded, stops promptly, blocks both walls and ceilings, and resolves the nearest surface', () => {
   const run = createRun(level([floor, { x: 230, y: 370, w: 40, h: 130 }, { x: 60, y: 370, w: 130, h: 20 }]));
