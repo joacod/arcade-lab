@@ -7,6 +7,7 @@ import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
 import { clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
 import { actorAnimation, createAnimationObservations } from './animation.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
+import { haloLights } from './weapon-stats.ts';
 
 export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
   const artPack = theme.art;
@@ -18,6 +19,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
   const ctx = context;
   let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
   const observations = createAnimationObservations();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let effects: Extract<GameEvent, { x: number }>[] = [];
   const { width, height } = clearing.arena;
 
@@ -43,8 +45,25 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     const observation = observations.get(id);
     if (!artPack) {
       ctx.save(); ctx.rotate(observation.angle);
-      circle(0, 0, fallbackRadius, color);
-      circle(fallbackRadius * 0.4, 0, 3, theme.palette.hit);
+      if (role === 'keeper') {
+        // A hood, shoulders and a lantern distinguish the Keeper from round creatures.
+        ctx.fillStyle = theme.palette.boundary;
+        ctx.beginPath(); ctx.moveTo(-15, -10); ctx.quadraticCurveTo(-4, -17, 10, -6);
+        ctx.lineTo(13, 0); ctx.lineTo(10, 6); ctx.quadraticCurveTo(-4, 17, -15, 10); ctx.closePath(); ctx.fill();
+        circle(0, 0, fallbackRadius, color); circle(7, 0, 4, theme.palette.hit);
+      } else {
+        ctx.strokeStyle = theme.palette.canopy; ctx.lineWidth = 4;
+        for (const side of [-1, 1]) for (const x of [-6, 5]) {
+          const gait = observation.moving && !reducedMotion.matches ? Math.sin(time * 13 + x) * 2 : 0;
+          ctx.beginPath(); ctx.moveTo(x, side * 6); ctx.lineTo(x - 4 + gait, side * (fallbackRadius + 4)); ctx.stroke();
+        }
+        ctx.save(); ctx.scale(1.1, 0.85); circle(0, 0, fallbackRadius, color); ctx.restore();
+        for (const y of [-4, 4]) circle(fallbackRadius * 0.5, y, 2, theme.palette.hit);
+        if (role === 'elite') {
+          ctx.strokeStyle = theme.palette.elite; ctx.lineWidth = 3;
+          for (const y of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-12, y * 10); ctx.lineTo(-22, y * 20); ctx.lineTo(-3, y * 17); ctx.stroke(); }
+        }
+      }
       ctx.restore(); return;
     }
     const art = artPack.actors[role];
@@ -216,11 +235,13 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         ctx.fillStyle = palette.hit; ctx.fillRect(-3, -3, 3, 3); ctx.restore();
       }
       for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
-        const at = orbitPosition(run, slot);
         ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
-        circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
-        circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
+        for (let index = 0; index < haloLights(slot.rank); index++) {
+          const at = orbitPosition(run, slot, index);
+          circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
+          circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
+        }
       }
       for (const projectile of run.projectiles) {
         if (projectile.weapon === 'shard') {
@@ -229,10 +250,12 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -4); ctx.lineTo(-2, 0); ctx.lineTo(-5, 4); ctx.closePath(); ctx.fill();
           ctx.restore(); continue;
         }
-        ctx.strokeStyle = palette.spark; ctx.lineWidth = 3;
+        const arc = projectile.chainLimit > 1;
+        ctx.strokeStyle = arc ? palette.shard : palette.spark; ctx.lineWidth = arc ? 4 : 3;
         ctx.beginPath(); ctx.moveTo(projectile.x - projectile.dx * 12, projectile.y - projectile.dy * 12);
+        if (arc) ctx.lineTo(projectile.x - projectile.dx * 6 - projectile.dy * 4, projectile.y - projectile.dy * 6 + projectile.dx * 4);
         ctx.lineTo(projectile.x, projectile.y); ctx.stroke();
-        circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, palette.spark);
+        circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, arc ? palette.shard : palette.spark);
       }
       for (const effect of effects) {
         const age = run.elapsed - effect.at;

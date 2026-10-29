@@ -1,8 +1,9 @@
 import { clearing, evolution, upgrades, weapons, type UpgradeDefinition, type WeaponId } from './content.ts';
 import type { RunState, WeaponInstance } from './game-state.ts';
+import { cadence, damage, weaponSummary } from './weapon-stats.ts';
 
 export function equip(base: WeaponId): WeaponInstance {
-  return { base, id: base, rank: 1, cooldown: weapons[base].cadence, orbitAngle: 0, nextHit: new Map() };
+  return { base, id: base, rank: 1, cooldown: cadence(base, 1), orbitAngle: 0, nextHit: new Map() };
 }
 export function xpThreshold(run: RunState): number {
   return clearing.progression.firstCost + (run.progression.level - 1) * clearing.progression.increment;
@@ -20,19 +21,45 @@ export function eligible(run: RunState, upgrade: UpgradeDefinition): boolean {
   }
   return upgrade.kind !== 'lens' || !run.modifiers.lens;
 }
+function describeUpgrade(run: RunState, upgrade: UpgradeDefinition): string {
+  if (upgrade.kind === 'weapon') {
+    const current = run.loadout.find(slot => slot.base === upgrade.weapon)?.rank ?? 0;
+    const next = weaponSummary(upgrade.weapon, current + 1, run.modifiers.power);
+    return current ? `${weaponSummary(upgrade.weapon, current, run.modifiers.power)} → ${next}` : `Unlock: ${next}.`;
+  }
+  if (upgrade.kind === 'recovery') {
+    const healing = Math.min(upgrade.amount, clearing.keeper.maxHealth - run.player.health);
+    return `Restore ${healing} HP · gain ${upgrade.amount - healing} shield. Shield absorbs damage first.`;
+  }
+  if (upgrade.kind === 'reach' || upgrade.kind === 'lens') {
+    const next = upgrade.kind === 'reach' ? pickupRadius(run) + upgrade.amount : upgrade.amount + run.modifiers.reach;
+    return `Pickup radius ${pickupRadius(run)} → ${next}.${upgrade.kind === 'lens' ? ' Spark rank 3 + Lens evolves into Arc Spark.' : ''}`;
+  }
+  return run.loadout.map(slot => `${slot.id === 'arc_spark' ? 'Arc Spark' : weapons[slot.base].name} ${damage(slot.base, slot.rank, run.modifiers.power)} → ${damage(slot.base, slot.rank, run.modifiers.power + upgrade.amount)} damage`).join(' · ');
+}
 function presentChoices(run: RunState): void {
   const offered: UpgradeDefinition[] = [];
   const add = (upgrade: UpgradeDefinition | undefined) => {
     if (upgrade && eligible(run, upgrade) && !offered.includes(upgrade)
       && offered.length < clearing.progression.choiceCount) offered.push(upgrade);
   };
+  const level = choiceLevel(run);
+  // One support slot is always available. Injury takes priority over acquisition order.
+  const support = run.player.health <= clearing.keeper.maxHealth * 0.7 ? 'recovery'
+    : !run.modifiers.lens && level >= clearing.progression.lensPriorityLevel
+      && (level % 2 === 1 || run.loadout.some(slot => slot.base === 'spark' && slot.rank === 3)) ? 'lens'
+    : ['power', 'reach', 'recovery'][(level - 2) % 3]!;
+  if (run.player.health <= clearing.keeper.maxHealth * 0.7) add(upgrades.find(upgrade => upgrade.kind === 'recovery'));
   add(upgrades.find(upgrade => upgrade.kind === 'weapon' && !run.loadout.some(slot => slot.base === upgrade.weapon)));
-  if (choiceLevel(run) >= clearing.progression.lensPriorityLevel) add(upgrades.find(upgrade => upgrade.kind === 'lens'));
-  add(upgrades.find(upgrade => upgrade.kind === 'weapon' && upgrade.weapon === evolution.weapon));
+  const weaponChoices = upgrades.filter(upgrade => upgrade.kind === 'weapon' && run.loadout.some(slot => slot.base === upgrade.weapon) && eligible(run, upgrade));
+  add(weaponChoices.find(upgrade => upgrade.kind === 'weapon' && upgrade.weapon === evolution.weapon)
+    ?? weaponChoices[(level - 2) % Math.max(1, weaponChoices.length)]);
+  add(upgrades.find(upgrade => upgrade.kind === support));
   for (const upgrade of upgrades) add(upgrade);
-  run.progression.choices = offered.map(({ id, name, description, ...definition }) => {
+  run.progression.choices = offered.map(upgrade => {
+    const { id, name, ...definition } = upgrade;
     const rank = definition.kind === 'weapon' ? (run.loadout.find(slot => slot.base === definition.weapon)?.rank ?? 0) + 1 : 0;
-    return { id, name: rank ? `${name} · Rank ${rank}` : name, description };
+    return { id, name: rank ? `${name} · Rank ${rank}` : name, description: describeUpgrade(run, upgrade) };
   });
   run.status = 'choosing';
 }

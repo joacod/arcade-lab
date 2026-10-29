@@ -29,6 +29,12 @@
 :where(.clearing-app) .hud { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; padding: 8px 14px; border-bottom: var(--border-width, 1px) solid var(--border); font-size: 14px; }
 :where(.clearing-app) .brand { color: var(--accent); text-decoration: none; font: 20px var(--heading-font); margin-right: auto; }
 :where(.clearing-app) .vitals { display: flex; align-items: center; gap: 8px; }
+:where(.clearing-app) .health-value { min-width: 12ch; }
+:where(.clearing-app) .shield-value { color: var(--xp); font-size: 12px; white-space: nowrap; width: 10ch; }
+:where(.clearing-app) .evolution-progress, :where(.clearing-app) .field-message { position: absolute; z-index: 2; pointer-events: none; font-size: 12px; line-height: 1.5; color: var(--text); background: color-mix(in srgb, var(--background) 88%, transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; }
+:where(.clearing-app) .evolution-progress { top: 10px; left: 10px; }
+:where(.clearing-app) .field-message { bottom: 16px; left: 50%; transform: translateX(-50%); margin: 0; width: max-content; max-width: calc(100% - 24px); text-align: center; color: var(--accent); }
+.clearing-app:not([data-screen='playing']) .evolution-progress, .clearing-app:not([data-screen='playing']) .field-message { display: none; }
 :where(.clearing-app) .health-meter { width: 80px; height: 14px; }
 :where(.clearing-app) .health-meter::-webkit-meter-bar { background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); }
 :where(.clearing-app) .health-meter::-webkit-meter-optimum-value { background: var(--health); }
@@ -68,6 +74,15 @@
 }
 @media (max-height: 550px) {
   :where(.clearing-app) .hud { padding-block: 4px; }
+}
+@media (max-width: 480px) {
+  :where(.clearing-app) .hud { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'brand actions' 'vitals vitals' 'timer progress'; gap: 5px 10px; }
+  :where(.clearing-app) .brand { grid-area: brand; margin: 0; }
+  :where(.clearing-app) .hud-actions { grid-area: actions; margin: 0; justify-self: end; }
+  :where(.clearing-app) .vitals { grid-area: vitals; margin: 0; }
+  :where(.clearing-app) .shield-value { margin-left: auto; text-align: right; }
+  :where(.clearing-app) .timer { grid-area: timer; min-width: 0; font-size: 12px; }
+  :where(.clearing-app) .progress { grid-area: progress; min-width: 0; margin: 0; font-size: 12px; text-align: right; }
 }
 /* Actual layout differences stay focused, sharing the same controls and state. */
 :where(.clearing-app)[data-skin='rune'] .hud { box-shadow: inset 0 -3px #17151b; }

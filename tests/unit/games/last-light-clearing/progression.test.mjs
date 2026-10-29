@@ -11,7 +11,7 @@ import { fireShard } from '../../../../src/games/last-light-clearing/weapons/sha
 
 const idle = { x: 0, y: 0 }, dt = 1 / 60;
 const enemy = (id, x, y, kind = 'crawler') => ({ id, x, y, kind, health: enemies[kind].maxHealth, entryDelay: 0 });
-function isolated() { const run = createRun(123); run.enemies = []; run.nextSpawn = Infinity; return run; }
+function isolated() { const run = createRun(123); run.enemies = []; run.gems = []; run.nextSpawn = Infinity; return run; }
 function choose(run, id) { assert.ok(selectUpgrade(run, id), `${id} should be offered`); releaseChoice(run); }
 function earn(run, id) { grantXP(run, xpThreshold(run) - run.progression.xp); choose(run, id); }
 function autoChoose(run) {
@@ -27,7 +27,7 @@ test('batched gems preserve excess XP, queue levels in order, and freeze until s
   assert.equal(run.progression.xp, 20);
   assert.equal(run.progression.pending, 3);
   assert.equal(choiceLevel(run), 2);
-  assert.deepEqual(run.progression.choices.map(choice => choice.id), ['upgrade_halo', 'upgrade_spark', 'upgrade_pulse']);
+  assert.deepEqual(run.progression.choices.map(choice => choice.id), ['upgrade_halo', 'upgrade_spark', 'power']);
   assert.equal(run.gems.length, 0);
   const before = structuredClone(run);
   assert.equal(selectUpgrade(run, 'lens'), false); // Defined, but not offered at level 2.
@@ -44,7 +44,7 @@ test('batched gems preserve excess XP, queue levels in order, and freeze until s
   assert.equal(run.status, 'choosing');
   releaseChoice(run);
   assert.equal(choiceLevel(run), 3);
-  assert.deepEqual(run.progression.choices.map(choice => choice.id), ['upgrade_halo', 'lens', 'upgrade_spark']);
+  assert.deepEqual(run.progression.choices.map(choice => choice.id), ['upgrade_halo', 'upgrade_spark', 'lens']);
   choose(run, 'lens');
   choose(run, 'upgrade_spark');
   assert.equal(run.status, 'active');
@@ -148,7 +148,7 @@ test('Halo keeps per-target windows through rank/power changes; Pulse samples on
   run.loadout = []; stepRun(run, idle, dt);
   assert.equal(run.enemies.find(enemy => enemy.id === 2).health, 20);
   fireShard(run, equip('shard'));
-  assert.deepEqual(run.projectiles.map(shot => [shot.dx, shot.dy]), [[0, -1], [1, 0], [0, 1], [-1, 0]]);
+  assert.deepEqual(run.projectiles.map(shot => [Math.round(shot.dx) || 0, Math.round(shot.dy) || 0]), [[0, -1], [1, 0], [0, 1], [-1, 0]]);
   assert.ok(run.projectiles.every(shot => shot.damage === 9));
 });
 
@@ -177,11 +177,12 @@ test('a complete progressed round wins, idle play can lose, and retry reconstruc
   for (let i = 0; i < 180 * 60 && !run.outcome; i++) {
     autoChoose(run);
     let [x, y] = waypoints[next];
+    if (run.gems.length) { const gem = run.gems.reduce((a, b) => Math.hypot(a.x - run.player.x, a.y - run.player.y) < Math.hypot(b.x - run.player.x, b.y - run.player.y) ? a : b); x = gem.x; y = gem.y; }
     if (Math.hypot(x - run.player.x, y - run.player.y) < 3) { next = (next + 1) % 4; [x, y] = waypoints[next]; }
     const dx = x - run.player.x, dy = y - run.player.y, length = Math.max(1, Math.hypot(dx, dy));
     stepRun(run, { x: dx / length, y: dy / length }, dt); takeEvents(run);
     sawElite ||= run.enemies.some(enemy => enemy.kind === 'elite_crawler');
-    assert.ok(run.enemies.filter(enemy => enemy.kind === 'crawler').length + run.entries.length <= 60);
+    assert.ok(run.enemies.filter(enemy => !enemies[enemy.kind].elite).length + run.entries.length <= 60);
   }
   assert.equal(run.outcome, 'victory'); assert.ok(sawElite);
   assert.ok(run.progression.level > 1); assert.ok(run.stats.upgrades > 0);
@@ -194,7 +195,7 @@ test('a complete progressed round wins, idle play can lose, and retry reconstruc
   assert.equal(fresh.loadout.length, 1); assert.equal(fresh.loadout[0].id, 'spark');
   assert.equal(fresh.progression.level, 1); assert.equal(fresh.progression.pending, 0);
   assert.equal(fresh.player.shield, 0); assert.equal(fresh.eliteSpawned, false);
-  assert.deepEqual(fresh.gems, []); assert.deepEqual(fresh.events, []);
+  assert.deepEqual(fresh.gems, [{ ...clearing.openingGem, attracted: false }]); assert.deepEqual(fresh.events, []);
   assert.notEqual(fresh.loadout[0].nextHit, run.loadout[0].nextHit);
 });
 

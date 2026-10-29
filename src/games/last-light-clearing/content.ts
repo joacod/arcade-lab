@@ -1,6 +1,6 @@
 export type WeaponId = 'spark' | 'halo' | 'pulse' | 'shard';
 export type EquippedId = WeaponId | 'arc_spark';
-export type EnemyId = 'crawler' | 'elite_crawler';
+export type EnemyId = 'crawler' | 'charger' | 'elite_crawler';
 export interface RoundDefinition {
   readonly duration: number; readonly ordinaryCap: number; readonly eliteAt: number;
   readonly entryWarning: number; readonly entryInset: number; readonly entryMinDistance: number;
@@ -34,9 +34,20 @@ export const weapons: Readonly<Record<WeaponId, WeaponDefinition>> = {
 };
 export const enemies: Readonly<Record<EnemyId, EnemyDefinition>> = {
   crawler: { name: 'Crawler', speed: 45, radius: 11, maxHealth: 20, contactDamage: 10, xp: 5, elite: false },
+  charger: { name: 'Briar charger', speed: 52, radius: 12, maxHealth: 32, contactDamage: 14, xp: 10, elite: false },
   elite_crawler: { name: 'Elite crawler', speed: 38, radius: 18, maxHealth: 240, contactDamage: 20, xp: 50, elite: true },
 };
-// Authored order also defines the reference's deterministic offer priorities.
+export const encounters = {
+  charger: { windup: 0.9, strike: 0.65, recovery: 1.2, cooldown: 3.2, range: 245, speed: 310 },
+  elite: { windup: 1.15, strike: 0.2, recovery: 1.45, cooldown: 3.4, range: 155, radius: 90, damage: 24 },
+  // Introduce the lane attack alone, then combine it with denser pursuit.
+  chargerAtFraction: 0.18, chargerEvery: [7, 5, 4],
+} as const;
+export const weaponRanks = {
+  sparkCadence: [0.7, 0.6, 0.5], haloLights: [1, 2, 3],
+  pulseRadius: [72, 88, 104], shardShots: [4, 6, 8],
+} as const;
+// Authored order provides the acquisition and fallback order; progression reserves support.
 export const upgrades: readonly UpgradeDefinition[] = [
   { id: 'upgrade_spark', name: 'Spark', description: 'Improve the nearest-target shot.', kind: 'weapon', weapon: 'spark', maxRank: 3 },
   { id: 'upgrade_halo', name: 'Halo', description: 'Unlock or improve an orbiting light.', kind: 'weapon', weapon: 'halo', maxRank: 3 },
@@ -54,7 +65,8 @@ export const evolution = {
 export const clearing = {
   arena: { width: 960, height: 640 },
   keeper: { speed: 150, radius: 10, maxHealth: 100, contactCooldown: 0.7 },
-  initialEnemy: { x: 640, y: 320 },
+  initialEnemy: { x: 680, y: 320 },
+  openingGem: { x: 540, y: 320, amount: 3 },
   startingWeapon: 'spark' as WeaponId,
   progression: { firstCost: 10, increment: 5, pickupRadius: 48, gemSpeed: 240, collectRadius: 12, choiceCount: 3, lensPriorityLevel: 3 },
   round: {

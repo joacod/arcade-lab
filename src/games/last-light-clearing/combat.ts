@@ -1,6 +1,7 @@
 import { sweptCircle } from '../../engine/collision.ts';
-import { enemies, weapons } from './content.ts';
+import { clearing, enemies, weapons } from './content.ts';
 import type { Enemy, Point, RunState, WeaponInstance } from './game-state.ts';
+import { damage } from './weapon-stats.ts';
 
 export const distanceSquared = (a: Point, b: Point): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 export const targetable = (enemy: Enemy): boolean => enemy.health > 0 && enemy.entryDelay <= 1e-9;
@@ -13,8 +14,16 @@ export function nearest(run: RunState, point: Point, exclude: readonly number[] 
   return found;
 }
 export function weaponDamage(run: RunState, slot: WeaponInstance): number {
-  const data = weapons[slot.base];
-  return Math.ceil(data.damage[slot.rank - 1]! + data.damage[0] * run.modifiers.power);
+  return damage(slot.base, slot.rank, run.modifiers.power);
+}
+export function hurtKeeper(run: RunState, amount: number): void {
+  if (run.player.invulnerability > 1e-9) return;
+  const absorbed = Math.min(run.player.shield, amount);
+  run.player.shield -= absorbed;
+  const damage = Math.min(run.player.health, amount - absorbed);
+  run.player.health -= damage; run.stats.damageTaken += damage;
+  run.player.invulnerability = clearing.keeper.contactCooldown;
+  run.events.push({ type: 'player-hit', x: run.player.x, y: run.player.y, at: run.elapsed, absorbed, damage });
 }
 export function hitEnemy(run: RunState, enemy: Enemy, amount: number): void {
   if (!targetable(enemy)) return;

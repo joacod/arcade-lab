@@ -7,6 +7,7 @@ import { clearing, enemies, weapons } from '../content.ts';
 import type { GameEvent } from '../game-state.ts';
 import { createAnimationObservations } from '../animation.ts';
 import { orbitPosition } from '../weapons/halo.ts';
+import { haloLights } from '../weapon-stats.ts';
 import type { Theme } from '../themes.ts';
 import { visualTiming } from '../themes.ts';
 import type { DisplaySize, WorldPresentation } from '../world-presentation.ts';
@@ -161,7 +162,7 @@ export async function createBloom(theme: Theme, signal: AbortSignal, onFailure: 
         for (const event of events) {
           const age = run.elapsed - event.at;
           if (event.type === 'pulse' && age < visualTiming.pulse) {
-            const radius = event.radius * (0.15 + 0.85 * age / visualTiming.pulse);
+            const radius = event.radius;
             ring(event.x, event.y, radius, c('pulse'), 1 - age / visualTiming.pulse, 2.8);
             ring(event.x, event.y, radius * 0.94, c('light'), (1 - age / visualTiming.pulse) * 0.4);
           }
@@ -170,14 +171,16 @@ export async function createBloom(theme: Theme, signal: AbortSignal, onFailure: 
           }
         }
         for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
-          const at = orbitPosition(run, slot);
           ring(run.player.x, run.player.y, weapons[slot.base].radius, c('halo'), 0.14, 0.6);
-          for (let j = 12; j >= 1; j--) {
-            const angle = slot.orbitAngle - j * 0.065;
-            add(run.player.x + Math.cos(angle) * weapons[slot.base].radius, run.player.y + Math.sin(angle) * weapons[slot.base].radius,
-              3, 3, 8, c('halo'), (1 - j / 13) * 0.5);
+          for (let index = 0; index < haloLights(slot.rank); index++) {
+            const at = orbitPosition(run, slot, index);
+            for (let j = 8; j >= 1; j--) {
+              const angle = slot.orbitAngle + index * Math.PI * 2 / haloLights(slot.rank) - j * 0.065;
+              add(run.player.x + Math.cos(angle) * weapons[slot.base].radius, run.player.y + Math.sin(angle) * weapons[slot.base].radius,
+                3, 3, 8, c('halo'), (1 - j / 9) * 0.35);
+            }
+            add(at.x, at.y, 11, 11, 6, c('halo'), 1, time * 1.5);
           }
-          add(at.x, at.y, 11, 11, 6, c('halo'), 1, time * 1.5);
         }
         for (const gem of run.gems) {
           const scale = gem.attracted ? 8 : gem.amount > 5 ? 7 : 5;
@@ -204,7 +207,7 @@ export async function createBloom(theme: Theme, signal: AbortSignal, onFailure: 
         for (const projectile of run.projectiles) {
           const shard = projectile.weapon === 'shard';
           add(projectile.x - (shard ? 0 : projectile.dx * 8), projectile.y - (shard ? 0 : projectile.dy * 8),
-            shard ? 12 : 22, shard ? 5 : 7, shard ? 4 : 3, c(shard ? 'shard' : 'spark'), 1, Math.atan2(projectile.dy, projectile.dx));
+            shard ? 12 : 22, shard ? 5 : 7, shard ? 4 : 3, c(shard || projectile.chainLimit > 1 ? 'shard' : 'spark'), 1, Math.atan2(projectile.dy, projectile.dx));
         }
         particles = particles.filter(p => run.elapsed - p.at < p.life);
         for (const p of particles) {

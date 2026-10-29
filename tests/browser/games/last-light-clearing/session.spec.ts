@@ -52,6 +52,69 @@ function expectStationary(actual: { x: number; y: number }, expected: { x: numbe
   expect(Math.hypot(actual.x - expected.x, actual.y - expected.y)).toBeLessThan(1);
 }
 
+test('opening guidance, shield layout, evolution feedback and dawn preserve session timing', async ({ page }, testInfo) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.clock.runFor(50);
+  await expect(page.locator('.field-message')).toContainText('Follow the green gems');
+  await page.keyboard.down('d'); await page.clock.runFor(400); await page.keyboard.up('d');
+  await page.clock.runFor(400);
+  await expect(page.locator('.health-value')).toHaveText('100 / 100 HP');
+  await expect(page.locator('.progress')).toContainText('XP 3 / 10');
+  const surfaceBefore = await page.locator('.play-surface').boundingBox();
+  // Feed the actual presentation the same semantic event and state produced by progression.
+  // Rule-level acquisition order and damage are covered by simulation invariants.
+  await page.evaluate(() => {
+    const run = (window as any).positionProbe;
+    run.player.shield = 20;
+    run.loadout[0].id = 'arc_spark'; run.loadout[0].rank = 3; run.modifiers.lens = true;
+    run.events.push({ type: 'evolution', at: run.elapsed });
+  });
+  await page.clock.runFor(40);
+  await expect(page.locator('.shield-value')).toHaveText('+20 shield');
+  await expect(page.locator('.evolution-progress')).toHaveText('Arc Spark · chain lightning');
+  await expect(page.locator('.field-message')).toContainText('Arc Spark awakened');
+  expect(await page.locator('.play-surface').boundingBox()).toEqual(surfaceBefore);
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'playing');
+  await page.keyboard.press('Escape');
+  const frozen = await page.evaluate(() => (window as any).positionProbe.elapsed);
+  await page.clock.runFor(4000);
+  expect(await page.evaluate(() => (window as any).positionProbe.elapsed)).toBe(frozen);
+  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.evaluate(async () => {
+    const run = (window as any).positionProbe;
+    const path = '/src/games/last-light-clearing/encounters.ts';
+    const { prepareAttack } = await import(path);
+    const charger = { id: 1, kind: 'charger', x: run.player.x - 110, y: run.player.y, health: 32, entryDelay: 0 };
+    prepareAttack(charger);
+    (charger as any).attack.phase = 'windup'; (charger as any).attack.remaining = 0.9;
+    run.enemies = [charger];
+  });
+  await page.clock.runFor(80);
+  await expect(page.locator('.field-message')).toContainText('Arc Spark awakened');
+  expect(await page.locator('.screen-overlay').evaluate(canvas => {
+    const ctx = canvas.getContext('2d')!;
+    return ctx.getImageData(0, 0, canvas.width, canvas.height).data.some((value, index) => index % 4 === 3 && value > 0);
+  })).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('clearing-feedback.png') });
+  await page.evaluate(() => {
+    const run = (window as any).positionProbe;
+    run.elapsed = run.round.duration - 0.5; run.enemies = []; run.gems = []; run.nextSpawn = Infinity; run.eliteSpawned = true;
+  });
+  await page.clock.runFor(650);
+  await expect(page.getByRole('heading', { name: 'Victory', exact: true })).toBeVisible();
+  await expect(page.locator('.game-menu-description')).toContainText('first light');
+  const outcome = await page.evaluate(() => JSON.stringify((window as any).positionProbe, (_, value) => value instanceof Map ? [...value] : value));
+  await page.clock.runFor(2000);
+  expect(await page.evaluate(() => JSON.stringify((window as any).positionProbe, (_, value) => value instanceof Map ? [...value] : value))).toBe(outcome);
+});
+
 test('movement, resize, pause, repeated restart, suspension and scoped keys', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
