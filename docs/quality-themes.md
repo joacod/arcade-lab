@@ -1,8 +1,8 @@
 # Creating a Quality theme
 
-Quality is a complete visual direction for an existing game: composition, actors, environment, animation, materials, lighting, effects and interface. A renderer upgrade or a new palette alone does not complete it. Follow the [mode and ownership contracts](architecture.md#appearance-changes); keep game-specific art direction and implementation details in the owning game's guide and `art/` documentation.
+Quality is the most ambitious standard visual presentation for an existing game: composition, actors, environment, animation, materials, lighting, effects and interface. Its objective is exceptional quality, cohesion, visual impact and polish, with a noticeable leap beyond Assets. It can deepen that artistic direction or establish a different identity. A renderer upgrade or a new palette alone does not complete it, and it need not be the most technically complicated mode. Follow the [development progression and mode contracts](architecture.md#appearance-changes), normally after gameplay is established and the Assets direction has been explored. Keep game-specific art direction and implementation details in the owning game's guide and `art/` documentation.
 
-When creating or improving a Quality presentation, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, renderers and generation tools. Record game-specific decisions in the owning game's documentation. Refine or replace outdated guidance rather than continually appending new rules.
+When implementing or improving Quality, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, rendering technologies, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
 
 ## Establish the direction
 
