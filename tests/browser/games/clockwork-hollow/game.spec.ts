@@ -32,6 +32,8 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   expect(await page.evaluate(() => (window as any).hollowContexts.length)).toBe(0);
   await page.screenshot({ path: info.outputPath('hollow-title.png') });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
+  await expect(page.locator('.hollow-location-title')).toHaveText('The Waking Aqueduct');
+  await expect(page.locator('.hollow-location-detail')).toContainText('Hold Jump for height');
   await page.keyboard.down('d'); await page.clock.runFor(250); await page.keyboard.up('d');
   expect((await state()).player.x).toBeGreaterThan(160);
   await page.clock.runFor(150); const stopped = (await state()).player.x;
@@ -73,6 +75,8 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   const released = await state(); expect(released.player.vx).toBe(0); expect(released.player.grounded).toBe(true);
   await page.clock.runFor(100); expect((await state()).player.x).toBe(released.player.x);
   await page.screenshot({ path: info.outputPath('hollow-narrow.png') });
+  await expect(page.getByLabel('Bells awakened', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Bells awakened', { exact: true })).toHaveText('0 / 3 BELLS');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
@@ -95,7 +99,8 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   await page.clock.runFor(50); expect((await state()).collected[0]).toBe(true);
   await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, run.level.checkpoints[0], { vx: 0, vy: 0 }); });
   await page.clock.runFor(50); expect((await state()).checkpoint).toBe(0);
-  await expect(page.getByLabel('Checkpoint', { exact: true })).toContainText('Moss lantern saved');
+  await expect(page.getByLabel('Checkpoint', { exact: true })).toContainText('Moss lantern lit. Return point saved.');
+  await expect(page.getByLabel('Checkpoint', { exact: true })).toHaveCSS('opacity', '1');
   await page.evaluate(() => { const run = (window as any).hollowProbe; run.player.y = run.level.height + 100; });
   await page.clock.runFor(50); const beforeRetry = await state();
   await expect(page.locator('.game-menu-description')).toContainText('Missed the landing.');
@@ -128,6 +133,23 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
       }
       await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, run.level.checkpoints[1], { vx: 0, vy: 0 }); });
       await page.clock.runFor(1500);
+      if (level === 0) {
+        // Inspect active pressure from a safe apron, then freeze every cosmetic as well as the rules.
+        await page.evaluate(() => {
+          const run = (window as any).hollowProbe, vent = run.level.vents[3];
+          run.levelTime = vent.period * 0.8 - vent.offset;
+          run.player.x = vent.x - 180;
+        });
+        await page.clock.runFor(50);
+        await expect(page.locator('.hollow-location-detail')).toContainText('PRESSURE');
+        await page.keyboard.press('p'); await page.clock.runFor(50);
+        const pausedRun = await state();
+        const pixels = await page.locator('.hollow-canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+        await page.clock.runFor(500);
+        expect(await page.locator('.hollow-canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(pixels);
+        expect(await state()).toEqual(pausedRun);
+        await page.keyboard.press('p'); await page.clock.runFor(50);
+      }
       await page.screenshot({ path: info.outputPath(`hollow-level-${level + 2}.png`) });
     }
   }
