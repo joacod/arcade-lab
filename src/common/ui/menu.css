@@ -50,7 +50,10 @@
   .game-menu-layer .game-menu { width: min(860px, 100%); }
   .game-menu-layer .game-menu-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
   .game-menu-layer .game-menu-description, .game-menu-layer .game-menu-content { grid-column: 1; }
-  .game-menu-layer .game-menu-settings { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+  .game-menu-layer .game-menu-settings { grid-column: 2; grid-row: 1 / 3; margin-top: 0; padding-top: 0; border-top: 0; }
   [data-menu-owner][data-screen='choosing'] .game-menu-body { display: block; }
 }
 @media (forced-colors: active) { .game-menu-layer .game-menu-actions .game-menu-primary { border: 2px solid Highlight; } }
+
+/* Do not leave a divider and empty gap when a game has no setup/results to show. */
+.game-menu-layer .game-menu-body:not(:has(.game-menu-content > :not([hidden]))) .game-menu-settings { margin-top: 0; padding-top: 0; border-top: 0; }

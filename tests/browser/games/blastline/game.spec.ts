@@ -1,4 +1,4 @@
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and disposes its session', async ({ page }, info) => {
@@ -43,7 +43,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
   await page.clock.runFor(50);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await skyPixel()).toEqual(beforeTheme);

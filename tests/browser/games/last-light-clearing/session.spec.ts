@@ -1,4 +1,4 @@
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption, chooseRound } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
@@ -85,7 +85,7 @@ test('opening guidance, shield layout, evolution feedback and dawn preserve sess
   const frozen = await page.evaluate(() => (window as any).positionProbe.elapsed);
   await page.clock.runFor(4000);
   expect(await page.evaluate(() => (window as any).positionProbe.elapsed)).toBe(frozen);
-  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.evaluate(async () => {
@@ -126,6 +126,8 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
 
   await expect(page.getByRole('heading', { name: 'Last Light Clearing' })).toBeVisible();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
+  // Keep this movement path independent of random enemy drops opening an upgrade menu.
+  await page.evaluate(() => { (window as any).positionProbe.randomState = 1; });
   await page.clock.runFor(50);
   const start = await keeper(page);
   await page.keyboard.down('d');
@@ -366,8 +368,8 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 
   await expect(page.locator('.asset-status')).toBeHidden();
   for (const [configuration, theme] of [['clearing', 'normal'], ['dusk', 'normal']]) {
-    await page.getByLabel('Round configuration').selectOption(configuration!);
-    await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption(theme!);
+    await chooseRound(page, configuration!);
+    await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), theme!);
     await expect(page.locator('.asset-status')).toBeHidden();
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', theme!);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -421,10 +423,10 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       });
       expect(fetched.some(url => ['/three/', '/three.js', '/vgpu/', '/vgpu.js'].some(path => url.includes(path)))).toBe(false);
       const shell = page.locator('.clearing-app');
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('assets');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(shell).toHaveAttribute('data-theme', 'quality');
       await page.clock.runFor(20);
       expect(await snapshot()).toBe(retained);
@@ -463,14 +465,14 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
           return original.call(this, type, ...args);
         } as typeof original;
       });
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
       await page.evaluate(() => (window as unknown as { restoreContext: () => void }).restoreContext());
       await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
       expect(await snapshot()).toBe(progressed);
       // Supersede an in-flight lazy appearance without committing or retaining its resources.
       await openMenu(page); await page.getByLabel('Theme', { exact: true }).evaluate(select => {
-        for (const value of ['quality', 'assets']) { select.value = value; select.dispatchEvent(new Event('change')); }
+        for (const value of ['quality', 'assets']) select.parentElement!.querySelector<HTMLElement>(`[data-value="${value}"]`)!.click();
       });
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(page.locator('.play-surface canvas')).toHaveCount(2);
@@ -480,9 +482,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       expect(lifetimes.resources).toBe(lifetimes.released);
       await page.clock.runFor(40);
       expect(await page.evaluate(() => (window as unknown as { pendingFrames: () => number }).pendingFrames())).toBe(1);
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('normal');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
       await expect(shell).toHaveAttribute('data-theme', 'normal');
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('assets');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
       await page.clock.fastForward(60000);
@@ -508,10 +510,10 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await expect(page.locator('.loadout')).toHaveText('Spark 1');
     if (configuration === 'clearing') {
       await page.keyboard.press('Escape');
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
       await page.clock.runFor(20);
-      await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('normal');
+      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
       await expect(page.locator('.play-surface canvas')).toHaveCount(2);
       await page.getByRole('button', { name: 'Resume' }).click();
@@ -556,7 +558,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.reload();
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   for (const configuration of ['clearing', 'dusk']) {
-    await page.getByLabel('Round configuration').selectOption(configuration);
+    await chooseRound(page, configuration);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.clock.runFor(100);
     await expect(page.getByRole('heading', { name: 'Defeat' })).toBeVisible();
@@ -578,7 +580,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.reload();
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
 
-  await page.getByLabel('Theme', { exact: true }).selectOption('assets');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);

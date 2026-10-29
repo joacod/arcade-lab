@@ -35,7 +35,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const description = menu.description;
   let current: Screen = 'title';
   return { controls,
-    appearanceStatus(value: Appearance, message: string) { style.input.value = value; menu.displayStatus(message); },
+    appearanceStatus(value: Appearance, message: string) { style.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {

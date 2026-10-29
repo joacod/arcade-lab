@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption } from '../../menu.ts';
 
 test('Skybreak retains its run through failed, superseded and disposed appearance loads', async ({ page }) => {
   const errors: string[] = [];
@@ -33,10 +33,10 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
   const frozen = await state();
   await openMenu(page);
   const appearance = page.getByRole('combobox', { name: 'Theme', exact: true });
-  await appearance.selectOption('assets');
+  await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-asset-status')).toContainText('Preparing');
   await expect.poll(() => !!finish).toBe(true);
-  await appearance.selectOption('normal');
+  await chooseOption(appearance, 'normal');
   await finish!();
   await page.clock.runFor(100);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
@@ -45,12 +45,12 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
 
   await page.route('**/flight-failure.svg', route => route.abort());
   await page.evaluate(async () => { const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path); themes.assets.art.images.ship = '/flight-failure.svg'; });
-  await appearance.selectOption('assets');
+  await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-asset-status')).toContainText('Keeping Pacific Run');
-  await expect(appearance).toHaveValue('normal'); expect(await state()).toBe(frozen);
+  await expect(appearance).toHaveAttribute('value', 'normal'); expect(await state()).toBe(frozen);
   await page.evaluate(async () => { const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path); themes.assets.art.images.ship = '/flight-ready.svg'; });
   await page.route('**/flight-ready.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path fill="white" d="M8 0 16 16 0 16Z"/></svg>' }));
-  await appearance.selectOption('assets');
+  await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   expect(await state()).toBe(frozen);
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
@@ -58,7 +58,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
   expect(await page.evaluate(() => (window as any).flightProbe.elapsed)).toBeLessThan(0.1);
   await page.keyboard.press('Escape'); await openMenu(page);
 
-  await appearance.selectOption('normal');
+  await chooseOption(appearance, 'normal');
   finish = undefined;
   await page.route('**/flight-disposal.svg', route => new Promise<void>(resolve => {
     finish = async () => {
@@ -66,7 +66,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
     };
   }));
   await page.evaluate(async () => { const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path); themes.assets.art.images.ship = '/flight-disposal.svg'; });
-  await appearance.selectOption('assets'); await expect.poll(() => !!finish).toBe(true);
+  await chooseOption(appearance, 'assets'); await expect.poll(() => !!finish).toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await finish!(); await page.clock.runFor(100);
   await expect(page.locator('.skybreak-app')).toHaveCount(0); await expect(page.locator('canvas')).toHaveCount(0);
@@ -96,19 +96,19 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   const state = () => page.evaluate(() => JSON.stringify((window as any).flightProbe));
   const frozen = await state();
   const appearance = page.getByRole('combobox', { name: 'Theme', exact: true });
-  await expect(appearance.locator('option[value="assets"]')).toBeEnabled();
-  await appearance.selectOption('assets');
+  await expect(appearance.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'false');
+  await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(50);
   expect(await state()).toBe(frozen);
   expect(await page.evaluate(() => (window as any).fleetImages.map((image: HTMLImageElement) =>
     [image.naturalWidth, image.naturalHeight]))).toEqual([[384, 80], [384, 64], [384, 64], [384, 64], [384, 64], [2016, 168]]);
   const picture = await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL());
-  await appearance.selectOption('normal'); await page.clock.runFor(50);
+  await chooseOption(appearance, 'normal'); await page.clock.runFor(50);
   expect(await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())).not.toBe(picture);
   expect(await state()).toBe(frozen);
   expect(await page.evaluate(() => (window as any).fleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
-  await appearance.selectOption('assets');
+  await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
   expect(await state()).not.toBe(frozen);

@@ -69,3 +69,8 @@
  .duel-app .duel-touch { position: absolute; left: 12px; right: 12px; bottom: 10px; opacity: .8; pointer-events: none; }
  .duel-app .duel-touch button { pointer-events: auto; } .duel-app .duel-footer { padding: 4px; }
 }
+
+.duel-app .duel-roster button { position: relative; }
+.duel-app .duel-roster b { padding-right: 20px; }
+.duel-app .duel-roster button[aria-pressed='true']::after { content: '✓'; position: absolute; right: 12px; top: 14px; color: var(--menu-accent); }
+@media (max-width: 360px) { .duel-app .duel-roster { grid-template-columns: 1fr; } }

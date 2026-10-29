@@ -1,6 +1,5 @@
 import { createThemeSelect } from '../../common/ui/theme-select.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
-import { createSelectField } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, upgrades, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
@@ -54,19 +53,24 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   let configuration: ConfigurationId = 'clearing';
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="menu-setup"><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
-  const round = createSelectField({
-    label: 'Round', accessibleLabel: 'Round configuration', signal,
-    choices: Object.fromEntries(Object.entries(configurations).map(([id, config]) => [id, config.name])) as Record<ConfigurationId, string>,
-    value: configuration,
-    onChange(id) {
-      configuration = id;
-      gameContent.querySelector('.menu-note')!.textContent = configurations[id].description;
-      menu.description.textContent = roundDescription();
-      onConfiguration(id);
-    },
-  });
-  gameContent.querySelector('.menu-setup')!.prepend(round.element);
+  gameContent.innerHTML = `<div class="menu-setup"></div><div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
+  const rounds = document.createElement('fieldset'); rounds.className = 'menu-choice-group';
+  rounds.innerHTML = '<legend>Choose your round</legend><div class="menu-choice-grid"></div>';
+  for (const [id, config] of Object.entries(configurations)) {
+    const card = document.createElement('label'); card.className = 'menu-choice';
+    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'clearing-round';
+    radio.value = id; radio.checked = id === configuration; radio.setAttribute('aria-label', config.name);
+    const title = document.createElement('strong'); title.textContent = config.name;
+    const detail = document.createElement('small'); detail.textContent = config.description;
+    detail.id = `clearing-round-${id}-description`; radio.setAttribute('aria-describedby', detail.id);
+    card.append(radio, title, detail); rounds.querySelector('.menu-choice-grid')!.append(card);
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      configuration = id as ConfigurationId;
+      menu.description.textContent = roundDescription(); onConfiguration(configuration);
+    }, { signal });
+  }
+  gameContent.querySelector('.menu-setup')!.append(rounds);
   const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: 'normal', onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
@@ -136,7 +140,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     preparing(value: boolean) {
       for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.menuAction!)) button.disabled = value;
     },
-    appearance(id: ThemeId) { appearance.input.value = id; },
+    appearance(id: ThemeId) { appearance.setValue(id); },
     fullscreen: menu.fullscreen,
     displayStatus: menu.displayStatus,
     soundStatus: menu.soundStatus,

@@ -21,10 +21,9 @@ export function createThemeSelect<Mode extends ThemeMode>(config: {
     const name = config.names?.[mode as Mode];
     return [mode, available(mode) ? `${labels[mode]}${name && name !== labels[mode] ? ` · ${name}` : ''}` : `${labels[mode]} (not available)`];
   })) as Record<ThemeMode, string>;
-  const field = createSelectField({ label: 'Theme', choices, value: config.value, signal: config.signal,
+  const field = createSelectField({ label: 'Theme', choices, value: config.value, signal: config.signal, disabled: modes.filter(mode => !available(mode)),
     onChange(mode) { if (available(mode)) config.onChange(mode as Mode); },
   });
-  for (const option of field.input.options) option.disabled = !available(option.value as ThemeMode);
   const note = document.createElement('small'); note.className = 'menu-theme-note';
   const unavailable = modes.filter(mode => !available(mode));
   note.textContent = `Visuals only · keeps your run.${unavailable.length ? ` Unavailable: ${unavailable.map(mode => labels[mode]).join(', ')}.` : ''}`;
