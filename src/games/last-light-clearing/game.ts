@@ -1,6 +1,7 @@
-import { clearing, enemies, type EnemyId, type RoundDefinition } from './content.ts';
+import { clearing, encounters, enemies, type EnemyId, type RoundDefinition } from './content.ts';
 import { content, validateContent } from './content-validation.ts';
-import { advanceProjectiles, distanceSquared, targetable } from './combat.ts';
+import { advanceProjectiles, distanceSquared, hurtKeeper, targetable } from './combat.ts';
+import { advanceEnemies, prepareAttack, resolveAttacks } from './encounters.ts';
 import { advanceWeapons } from './weapons.ts';
 import { advanceGems, equip } from './progression.ts';
 import type { GameEvent, MoveAction, Outcome, Point, RunState } from './game-state.ts';
@@ -14,7 +15,7 @@ export function createRun(seed = Math.floor(Math.random() * 0x100000000), round:
     player: { x: clearing.arena.width / 2, y: clearing.arena.height / 2,
       health: clearing.keeper.maxHealth, shield: 0, invulnerability: 0 },
     enemies: [{ id: 1, kind: 'crawler', ...clearing.initialEnemy, health: enemies.crawler.maxHealth, entryDelay: 0 }],
-    projectiles: [], gems: [], entries: [], loadout: [equip(clearing.startingWeapon)],
+    projectiles: [], gems: [{ ...clearing.openingGem, attracted: false }], entries: [], loadout: [equip(clearing.startingWeapon)],
     progression: { level: 1, xp: 0, pending: 0, choices: [], confirming: false },
     modifiers: { lens: false, reach: 0, power: 0 }, elapsed: 0, status: 'active', outcome: null,
     nextSpawn: round.phases[0]!.interval, eliteSpawned: false,
@@ -43,7 +44,8 @@ function finish(run: RunState, outcome: Outcome): void {
   run.events.push({ type: 'outcome', outcome, at: run.elapsed });
 }
 function spawn(run: RunState, kind: EnemyId, at: Point, entryDelay = 0): void {
-  run.enemies.push({ id: run.nextEnemyId++, kind, x: at.x, y: at.y, health: enemies[kind].maxHealth, entryDelay });
+  const enemy = { id: run.nextEnemyId++, kind, x: at.x, y: at.y, health: enemies[kind].maxHealth, entryDelay };
+  prepareAttack(enemy); run.enemies.push(enemy);
   run.stats.spawned++;
 }
 function requestEntry(run: RunState, kind: EnemyId): void {
@@ -57,8 +59,8 @@ function requestEntry(run: RunState, kind: EnemyId): void {
   }
   const safe = candidates.filter(point => distanceSquared(point, run.player) >= entryMinDistance ** 2);
   // Choose safe world edges independently of the camera. Presentation cues mark offscreen entries.
-  const farthest = Math.max(...safe.map(point => distanceSquared(point, run.player)));
-  const choices = safe.filter(point => Math.abs(distanceSquared(point, run.player) - farthest) < 1e-9);
+  // Vary approach angles without placing a new body beside the Keeper.
+  const choices = safe;
   const at = choices[Math.floor(random(run) * choices.length)]!;
   // The elite appears at the profile's deadline, invulnerable/harmless during its warning.
   if (enemies[kind].elite) spawn(run, kind, at, run.round.entryWarning);
@@ -76,7 +78,13 @@ function advanceSpawns(run: RunState, seconds: number): void {
   }
   while (run.nextSpawn <= run.elapsed + 1e-9) {
     const ordinaryCount = run.enemies.filter(enemy => !enemies[enemy.kind].elite).length + run.entries.length;
-    if (ordinaryCount < run.round.ordinaryCap) requestEntry(run, 'crawler');
+    let phaseIndex = 0;
+    for (let index = 0; index < run.round.phases.length; index++) if (run.nextSpawn >= run.round.phases[index]!.start) phaseIndex = index;
+    const chargerEvery = encounters.chargerEvery[Math.min(phaseIndex, encounters.chargerEvery.length - 1)]!;
+    const specialCount = run.enemies.filter(enemy => enemy.kind === 'charger').length + run.entries.filter(entry => entry.kind === 'charger').length;
+    const charger = run.elapsed >= run.round.duration * encounters.chargerAtFraction
+      && run.stats.spawned % chargerEvery === 0 && specialCount < 4;
+    if (ordinaryCount < run.round.ordinaryCap) requestEntry(run, charger ? 'charger' : 'crawler');
     let interval: number = run.round.phases[0]!.interval;
     for (const phase of run.round.phases) if (run.nextSpawn >= phase.start) interval = phase.interval;
     let following = run.nextSpawn + interval;
@@ -94,31 +102,18 @@ export function stepRun(run: RunState, move: MoveAction, seconds: number): void 
   run.player.y = Math.max(radius, Math.min(clearing.arena.height - radius, run.player.y + move.y / magnitude * distance));
   run.player.invulnerability = Math.max(0, run.player.invulnerability - dt);
   run.elapsed = Math.min(run.round.duration, run.elapsed + dt);
-  for (const enemy of run.enemies) {
-    if (enemy.entryDelay > 1e-9) { enemy.entryDelay = Math.max(0, enemy.entryDelay - dt); continue; }
-    if (!targetable(enemy)) continue;
-    const data = enemies[enemy.kind];
-    const dx = run.player.x - enemy.x, dy = run.player.y - enemy.y, length = Math.hypot(dx, dy);
-    const travel = Math.min(length, data.speed * dt);
-    if (length > 0) {
-      enemy.x = Math.max(data.radius, Math.min(clearing.arena.width - data.radius, enemy.x + dx / length * travel));
-      enemy.y = Math.max(data.radius, Math.min(clearing.arena.height - data.radius, enemy.y + dy / length * travel));
-    }
-  }
+  const charges = advanceEnemies(run, dt);
   advanceWeapons(run, dt);
   advanceProjectiles(run, dt);
   run.enemies = run.enemies.filter(enemy => enemy.health > 0);
+  resolveAttacks(run, charges);
   for (const enemy of run.enemies) {
     if (run.player.invulnerability > 1e-9) break;
     if (!targetable(enemy)) continue;
+    if (enemy.attack && enemy.attack.phase !== 'approach') continue;
     const data = enemies[enemy.kind];
     if (distanceSquared(enemy, run.player) <= (radius + data.radius) ** 2) {
-      const absorbed = Math.min(run.player.shield, data.contactDamage);
-      run.player.shield -= absorbed;
-      const damage = Math.min(run.player.health, data.contactDamage - absorbed);
-      run.player.health -= damage; run.stats.damageTaken += damage;
-      run.player.invulnerability = clearing.keeper.contactCooldown;
-      run.events.push({ type: 'player-hit', x: run.player.x, y: run.player.y, at: run.elapsed });
+      hurtKeeper(run, data.contactDamage);
     }
   }
   // Outcome takes precedence over drops/choices/spawns on the final tick.

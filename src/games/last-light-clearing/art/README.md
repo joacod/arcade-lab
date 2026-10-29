@@ -1,6 +1,6 @@
 # Artwork and visual definitions
 
-`cover.svg` is an editable vector illustration. Normal draws actors, ground marks, gems and spell effects procedurally without image assets.
+`cover.svg` is an editable vector illustration. Normal draws a hooded lantern Keeper, crawling silhouettes, ground marks, gems and spell effects procedurally without image assets. Briar chargers use the existing crawler treatment with a forked procedural crest; the persistent overlay carries that identity and locked attack warnings across every theme.
 
 **Ember Ruins** uses 0x72 DungeonTileset II v1.7. The atlas, frame list, upstream README, and [source credit and license](ember-ruins/PROVENANCE.md) live together. All runtime images are committed and bundled for development and production.
 
@@ -27,4 +27,4 @@ Each mode chooses its matching interface in `themes.ts`; `style.css` defines its
 
 ## Renderers
 
-Assets uses Canvas and the inspected pack's animation, pivots and footprints. Quality uses Prism Garden's procedural 3D actors and needs no image bundle. Both consume the same run through the local presentation contract. Art sizes remain cosmetic.
+Assets uses Canvas and the inspected pack's animation, pivots and footprints. Quality uses Prism Garden’s procedural 3D actors and needs no image bundle. A petal-caged lantern, faceted creatures, etched floor seal and perimeter crystals form its visual vocabulary. Broad, cool stone stays quiet underneath attack cues, while directional shadows and warm dawn lighting establish depth. Engravings are flat decoration, and substantial crystals remain outside traversable ground. Both consume the same run through the local presentation contract. Art sizes remain cosmetic.

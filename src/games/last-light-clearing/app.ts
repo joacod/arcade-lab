@@ -64,7 +64,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       signal: host.signal, onAction: act, onChoose: choose, onExit,
       onConfiguration(id) {
         if (screen !== 'title') return;
-        configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); ui.update(run);
+        configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); overlay.reset(); ui.reset(); ui.update(run);
       },
       onTheme: selectTheme,
       onMute: value => sound.setMuted(value),
@@ -159,14 +159,14 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         if (document.hidden || !document.hasFocus()) return;
         sound.reset(); sound.activate();
         run = newRun(); suspendedChoice = false;
-        presentation.reset(run); transition('playing');
+        presentation.reset(run); overlay.reset(); ui.reset(); transition('playing');
       } else if (action === 'pause' && screen === 'playing') {
         pauseRun(run, true); syncScreen();
       } else if (action === 'resume' && screen === 'paused') {
         if (!document.hidden && document.hasFocus()) { sound.activate(); pauseRun(run, false); syncScreen(); }
       } else if (action === 'title') {
         sound.reset(); run = newRun(); pauseRun(run, true); suspendedChoice = false;
-        presentation.reset(run); transition('title');
+        presentation.reset(run); overlay.reset(); ui.reset(); transition('title');
       }
     }
     function suspend() {
@@ -208,10 +208,10 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         syncScreen();
       }
       const events = takeEvents(run);
-      presentation.consume(events); sound.consume(events);
+      presentation.consume(events); overlay.consume(events); ui.consume(events); sound.consume(events);
       const view = createViewport(clearing.arena, host, run.player, viewMode);
       try { presentation.resize(host); presentation.draw(run, view, screen === 'title' ? { titleTime: now / 1000 } : undefined); } catch { graphicsFailure(); }
-      overlay.draw(run, view, host, input.stick);
+      overlay.draw(run, view, host, themes[appearance], input.stick, now / 1000);
       ui.update(run);
     });
     return { dispose };

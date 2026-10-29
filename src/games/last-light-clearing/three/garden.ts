@@ -9,6 +9,7 @@ import type { Viewport } from '../view.ts';
 import type { ActorRole } from '../art-pack.ts';
 import { createAnimationObservations } from '../animation.ts';
 import { orbitPosition } from '../weapons/halo.ts';
+import { haloLights } from '../weapon-stats.ts';
 
 /** XY ground: (x, -worldY, elevation). Camera looks down -Z, so elevation never shifts XY. */
 export function createGarden(theme: Theme, onFailure: () => void): WorldPresentation {
@@ -51,9 +52,9 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
     }, { signal: listeners.signal });
     const camera = new THREE.OrthographicCamera(0, 1, 0, -1, 0.1, 2000);
     camera.position.set(0, 0, 1000);
-    scene.add(new THREE.HemisphereLight(p.light, p.canopy, 2.1));
-    const sun = new THREE.DirectionalLight(p.hit, 3.1);
-    sun.position.set(180, 200, 600); sun.target.position.set(width / 2, -height / 2, 0);
+    const sky = new THREE.HemisphereLight(p.light, p.canopy, 1.5); scene.add(sky);
+    const sun = new THREE.DirectionalLight(p.hit, 2.5);
+    sun.position.set(100, 60, 650); sun.target.position.set(width / 2, -height / 2, 0);
     sun.castShadow = true;
     Object.assign(sun.shadow.camera, { left: -720, right: 720, top: 720, bottom: -720, near: 1, far: 1600 });
     sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.001; sun.shadow.normalBias = 1;
@@ -77,11 +78,14 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
     for (const [x, y, w, h] of [[width / 2, -3, width + 6, 5], [width / 2, height + 3, width + 6, 5], [-3, height / 2, 5, height], [width + 3, height / 2, 5, height]]) {
       mesh(box, edge, x!, y!, 0).scale.set(w!, h!, 4);
     }
-    const panel = geometry(new THREE.CircleGeometry(1, 6));
-    const panelMat = lit(p.floor);
-    for (let i = 0; i < 40; i++) {
-      const x = 30 + (i * 173) % (width - 60), y = 30 + (i * 97) % (height - 60);
-      const item = mesh(panel, panelMat, x, y, 0.05); item.scale.setScalar(10 + i % 4 * 4); item.rotation.z = i;
+    // Quiet engravings read as traversable floor; substantial crystals stay outside.
+    const engraving = lit(p.ground);
+    const seal = geometry(new THREE.TorusGeometry(1, 0.006, 3, 80));
+    for (const radius of [64, 78, 110]) mesh(seal, engraving, width / 2, height / 2, 0.05).scale.set(radius, radius, 0.1);
+    for (let i = 0; i < 24; i++) {
+      const angle = i * Math.PI / 12, radius = i % 2 ? 96 : 102;
+      const inlay = mesh(box, engraving, width / 2 + Math.cos(angle) * radius, height / 2 + Math.sin(angle) * radius, 0.08);
+      inlay.scale.set(i % 2 ? 6 : 12, 1, 0.1); inlay.rotation.z = -angle;
     }
     const crystal = geometry(new THREE.OctahedronGeometry(1));
     const crystalMat = lit(p.ground, p.boundary, 0.25), violet = lit(p.canopy, p.canopy, 0.2);
@@ -116,7 +120,7 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       batch.computeBoundingSphere(); scene.add(batch);
     }
 
-    const keeperMat = lit(p.light, p.light, 1.2), enemyMat = lit(p.enemy, p.enemy, 0.12);
+    const keeperMat = lit(p.light, p.light, 0.32), enemyMat = lit(p.enemy, p.enemy, 0.06);
     const eliteMat = lit(p.elite, p.elite, 0.3), dark = lit(p.canopy), core = lightMaterial(p.hit);
     const ringGeometry = geometry(new THREE.TorusGeometry(1, 0.035, 5, 48));
     const sphere = geometry(new THREE.IcosahedronGeometry(1, 0));
@@ -133,6 +137,16 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       body.scale.set(radius, radius * (keeper ? 0.78 : 0.9), keeper ? 24 : radius * 0.85);
       body.rotation.set(0.24, 0.18, 0); body.castShadow = true; model.add(body);
       if (keeper) {
+        for (let index = 0; index < 4; index++) {
+          const angle = index * Math.PI / 2;
+          const petal = mesh(crystal, keeperMat, Math.cos(angle) * 10, Math.sin(angle) * 10, 17, model);
+          petal.scale.set(6, 6, 10); petal.castShadow = true;
+        }
+        // Four dark ribs frame a luminous lantern, readable directly from above.
+        for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+          const rib = mesh(box, dark, Math.cos(angle) * 8, Math.sin(angle) * 8, 28, model);
+          rib.scale.set(5, 5, 16); rib.castShadow = true;
+        }
         const cap = mesh(crystal, core, 0, 0, 36, model); cap.scale.set(4, 4, 5);
         const frame = mesh(ringGeometry, edge, 0, 0, 12, model); frame.scale.setScalar(15);
       } else {
@@ -170,7 +184,7 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       slot.health.scale.set(slot.radius * 2 * health, 2, 1);
       slot.health.position.x = -slot.radius * (1 - health);
       slot.group.scale.setScalar(entry ? 0.8 : 1);
-      slot.model.rotation.z = id === 'keeper' ? time * 0.3 : -observation.angle + Math.PI / 2;
+      slot.model.rotation.z = -observation.angle + Math.PI / 2;
     }
 
     // Fixed instance capacity covers authored round limits; no allocation per transient or per frame.
@@ -188,16 +202,22 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
     const gems = instances(crystal, lit(p.gem, p.gem, 0.6), 2048);
     const spark = instances(sphere, lightMaterial(p.spark), 256);
     const trails = instances(box, lightMaterial(p.spark), 256);
+    const arcSpark = instances(crystal, lightMaterial(p.shard), 256);
+    const arcTrails = instances(box, lightMaterial(p.shard), 256);
     const shards = instances(crystal, lit(p.shard, p.shard, 0.7), 256);
     const fragments = instances(crystal, lit(p.enemy, p.enemy, 0.5), MAX_EFFECTS * 6);
     const rings = instances(ringGeometry, lightMaterial('#ffffff'), MAX_EFFECTS);
     const warningRings = instances(ringGeometry, lightMaterial(p.damage), 64);
-    const halo = mesh(crystal, lit(p.halo, p.halo, 1.2), 0, 0, 14); halo.scale.set(9, 9, 16);
+    const haloMaterial = lit(p.halo, p.halo, 1.2);
+    const halos = Array.from({ length: 3 }, () => {
+      const halo = mesh(crystal, haloMaterial, 0, 0, 14); halo.scale.set(9, 9, 16); return halo;
+    });
     const haloTrack = mesh(ringGeometry, lit(p.halo, p.halo, 0.3), 0, 0, 1); haloTrack.scale.setScalar(weapons.halo.radius);
     const keeperRing = mesh(ringGeometry, lightMaterial(p.light), 0, 0, 1); keeperRing.scale.setScalar(20);
     const shieldRing = mesh(ringGeometry, lightMaterial(p.shard), 0, 0, 2); shieldRing.scale.setScalar(24);
     const effectColor = new THREE.Color();
-    const batches = [gems, spark, trails, shards, fragments, rings, warningRings];
+    const batches = [gems, spark, trails, arcSpark, arcTrails, shards, fragments, rings, warningRings];
+    const dawnColor = new THREE.Color('#ffda9b');
     let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
     return {
       canvas,
@@ -214,6 +234,9 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       },
       draw(run: Readonly<RunState>, view: Viewport) {
         if (lost || renderer!.getContext().isContextLost()) throw new Error('Graphics context lost');
+        const dawn = Math.max(0, 1 - (run.round.duration - run.elapsed) / 30);
+        sky.intensity = 1.5 + dawn * 0.4; sun.intensity = 2.5 + dawn * 0.8;
+        sun.color.set(p.hit).lerp(dawnColor, dawn);
         // Same affine mapping as Canvas. Negative world Y is deliberate, elevation has no parallax.
         camera.left = -view.x / view.scale; camera.right = (size.width - view.x) / view.scale;
         camera.top = view.y / view.scale; camera.bottom = -(size.height - view.y) / view.scale; camera.updateProjectionMatrix();
@@ -224,7 +247,10 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
         let count = 0;
         for (const enemy of run.enemies) {
           const info = enemies[enemy.kind], slot = info.elite ? eliteActor : crawlers[count++];
-          if (slot) drawActor(slot, enemy.id, enemy.x, enemy.y, run.elapsed, enemy.health / info.maxHealth, enemy.entryDelay > 0);
+          if (slot) {
+            drawActor(slot, enemy.id, enemy.x, enemy.y, run.elapsed, enemy.health / info.maxHealth, enemy.entryDelay > 0);
+            slot.model.scale.set(enemy.kind === 'charger' ? 1.25 : 1, enemy.kind === 'charger' ? 0.8 : 1, 1);
+          }
         }
         for (const batch of batches) batch.count = 0;
         for (const gem of run.gems) add(gems, gem.x, gem.y, 7 + Math.sin(run.elapsed * 2.8 + gem.x * 0.07) * 1.5, gem.amount > 5 ? 8 : 5, gem.amount > 5 ? 8 : 5, 8, run.elapsed * 0.5);
@@ -232,15 +258,16 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
           const angle = -Math.atan2(projectile.dy, projectile.dx);
           if (projectile.weapon === 'shard') add(shards, projectile.x, projectile.y, 7, 10, 4, 5, angle);
           else {
-            add(spark, projectile.x, projectile.y, 8, 5, 4, 4, angle);
+            const arc = projectile.chainLimit > 1;
+            add(arc ? arcSpark : spark, projectile.x, projectile.y, 8, arc ? 8 : 5, 4, 4, angle);
             // Velocity-aligned cosmetic tail, never an index-based history of unrelated projectiles.
-            add(trails, projectile.x - projectile.dx * 13, projectile.y - projectile.dy * 13, 6, 22, 1.5, 1, angle);
+            add(arc ? arcTrails : trails, projectile.x - projectile.dx * 13, projectile.y - projectile.dy * 13, 6, 22, arc ? 2.5 : 1.5, 1, angle);
           }
         }
         for (const effect of effects) {
           const age = run.elapsed - effect.at;
           if (effect.type === 'pulse' && age < visualTiming.pulse) {
-            const radius = effect.radius * (0.15 + 0.85 * age / visualTiming.pulse);
+            const radius = effect.radius; // The whole circle hits at activation.
             add(rings, effect.x, effect.y, 2, radius, radius, 0.5);
             rings.setColorAt(rings.count - 1, effectColor.set(p.pulse));
           } else if (effect.type === 'enemy-defeated' && age < visualTiming.defeat) {
@@ -259,9 +286,12 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
           add(warningRings, entry.x, entry.y, 1, radius, radius, 0.5);
         }
         const orbit = run.loadout.find(slot => weapons[slot.base].behavior === 'orbit');
-        halo.visible = haloTrack.visible = Boolean(orbit);
+        haloTrack.visible = Boolean(orbit);
+        for (const [index, halo] of halos.entries()) halo.visible = !!orbit && index < haloLights(orbit.rank);
         if (orbit) {
-          const at = orbitPosition(run, orbit); halo.position.set(at.x, -at.y, 16); halo.rotation.z = run.elapsed * 2;
+          for (const [index, halo] of halos.entries()) {
+            const at = orbitPosition(run, orbit, index); halo.position.set(at.x, -at.y, 16); halo.rotation.z = run.elapsed * 2;
+          }
           haloTrack.position.set(run.player.x, -run.player.y, 1);
         }
         keeperRing.position.set(run.player.x, -run.player.y, 1);

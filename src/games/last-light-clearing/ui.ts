@@ -5,6 +5,7 @@ import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
+import type { GameEvent } from './game-state.ts';
 import { themes, type ThemeId } from './themes.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
@@ -26,13 +27,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     <main class="game-shell">
       <header class="hud">
         <span class="brand">Last Light Clearing</span>
-        <div class="vitals"><meter class="health-meter" min="0" max="100" value="100" aria-label="Keeper health"></meter><output class="health-value">100 / 100 HP</output></div>
+        <div class="vitals"><meter class="health-meter" min="0" max="100" value="100" aria-label="Keeper health"></meter><output class="health-value">100 / 100 HP</output><output class="shield-value"></output></div>
         <output class="timer" aria-label="Active time">00:00</output>
         <output class="progress">Level 1 · XP 0 / 10</output>
         <div class="hud-actions"><button data-action="pause" hidden>Pause</button></div>
       </header>
       <div class="xp-track" aria-hidden="true"><span></span></div>
-      <div class="stage"></div>
+      <div class="stage"><output class="evolution-progress"></output><p class="field-message" role="status" hidden></p></div>
     </main>`;
   const $ = createElementLookup(root);
   const pause = $<HTMLButtonElement>('[data-action="pause"]');
@@ -104,8 +105,16 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   health.max = clearing.keeper.maxHealth;
   const healthValue = $<HTMLOutputElement>('.health-value');
   const kills = $<HTMLOutputElement>('.kills');
+  const shieldValue = $<HTMLOutputElement>('.shield-value');
+  const evolutionProgress = $<HTMLOutputElement>('.evolution-progress');
+  const fieldMessage = $<HTMLElement>('.field-message');
+  let evolutionAt = -Infinity;
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   return {
+    reset() { evolutionAt = -Infinity; },
+    consume(events: readonly GameEvent[]) {
+      for (const event of events) if (event.type === 'evolution') evolutionAt = event.at;
+    },
     preparing(value: boolean) {
       for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.menuAction!)) button.disabled = value;
     },
@@ -119,6 +128,17 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       setProperty(health, 'value', run.player.health);
       setProperty(xpBar.style, 'width', `${Math.round(10000 * run.progression.xp / xpThreshold(run)) / 100}%`);
       setProperty(healthValue, 'value', `${run.player.health} / ${clearing.keeper.maxHealth} HP`);
+      setProperty(shieldValue, 'value', `+${run.player.shield} shield`);
+      setProperty(shieldValue.style, 'visibility', run.player.shield === 0 ? 'hidden' : 'visible');
+      const spark = run.loadout.find(slot => slot.base === 'spark');
+      const evolved = spark?.id === evolution.replacement;
+      setProperty(evolutionProgress, 'value', evolved ? 'Arc Spark · chain lightning'
+        : `Arc Spark: Spark ${spark?.rank ?? 0}/3 · Lens ${run.modifiers.lens ? 'ready' : 'needed'}`);
+      const message = run.elapsed - evolutionAt < 3 ? 'Arc Spark awakened · shots chain through three enemies'
+        : run.progression.level === 1 ? 'Follow the green gems · collect XP to grow stronger'
+        : run.round.duration - run.elapsed <= 30 && !run.outcome ? 'Dawn approaches · keep moving'
+        : '';
+      setText(fieldMessage, message); setProperty(fieldMessage, 'hidden', !message);
       setProperty(loadout, 'value', run.loadout.map(slot => `${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · '));
       setProperty(progress, 'value', `Level ${run.progression.level} · XP ${run.progression.xp} / ${xpThreshold(run)}`);
       setProperty(modifiers, 'value', `Shield ${run.player.shield} · Power +${Math.round(run.modifiers.power * 100)}% · Pickup ${pickupRadius(run)}`);
@@ -143,7 +163,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       setProperty(kills, 'value', `${run.stats.kills} defeated`);
       root.classList.toggle('in-danger', run.player.health <= clearing.keeper.maxHealth * 0.3);
       if (run.outcome) {
-        setText(description, `${formatTime(Math.floor(run.elapsed))} survived · ${run.stats.kills} enemies defeated · ${run.stats.eliteKills} elite defeated · Level ${run.progression.level} · ${run.player.health} HP remaining.`);
+        setText(description, `${run.outcome === 'victory' ? 'The clearing welcomes the first light. ' : ''}${formatTime(Math.floor(run.elapsed))} survived · ${run.stats.kills} enemies defeated · ${run.stats.eliteKills} elite defeated · Level ${run.progression.level} · ${run.player.health} HP remaining.`);
       }
     },
     show(screen: Screen, focus = true) {

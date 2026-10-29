@@ -1,6 +1,6 @@
-import { clearing, enemies, evolution, upgrades, weapons, type RoundDefinition } from './content.ts';
+import { clearing, encounters, enemies, evolution, upgrades, weaponRanks, weapons, type RoundDefinition } from './content.ts';
 
-export const content = { clearing, enemies, evolution, upgrades, weapons };
+export const content = { clearing, encounters, enemies, evolution, upgrades, weaponRanks, weapons };
 /** Small checks for this game's authored data; diagnostics name the field to repair. */
 export function validateContent(data: Omit<typeof content, 'clearing'> & { clearing: Omit<typeof clearing, 'round'> & { round: RoundDefinition } } = content): string[] {
   const errors: string[] = [];
@@ -11,6 +11,17 @@ export function validateContent(data: Omit<typeof content, 'clearing'> & { clear
     if (!Number.isFinite(value) || value < 0) errors.push(`${path}: expected a nonnegative finite number`);
   };
   const { clearing: rules } = data;
+  for (const [key, values] of Object.entries(data.weaponRanks)) {
+    if (values.length !== 3) errors.push(`weaponRanks.${key}: require three ranks`);
+    values.forEach((value, index) => positive(value, `weaponRanks.${key}[${index}]`, key === 'haloLights' || key === 'shardShots'));
+  }
+  for (const [kind, tuning] of Object.entries({ charger: data.encounters.charger, elite: data.encounters.elite })) {
+    for (const [key, value] of Object.entries(tuning)) positive(value, `encounters.${kind}.${key}`);
+  }
+  positive(rules.openingGem.amount, 'openingGem.amount', true);
+  for (const [axis, maximum] of [['x', rules.arena.width], ['y', rules.arena.height]] as const) {
+    if (!Number.isFinite(rules.openingGem[axis]) || rules.openingGem[axis] < 0 || rules.openingGem[axis] > maximum) errors.push(`openingGem.${axis}: must fit arena`);
+  }
   for (const [key, value] of Object.entries(rules.arena)) positive(value, `arena.${key}`);
   for (const [key, value] of Object.entries(rules.keeper)) positive(value, `keeper.${key}`, key === 'maxHealth');
   for (const [key, value] of Object.entries(rules.progression)) positive(value, `progression.${key}`, ['firstCost', 'increment', 'choiceCount'].includes(key));

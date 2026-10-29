@@ -2,7 +2,10 @@ import type { EnemyId, EquippedId, WeaponId, RoundDefinition } from './content.t
 
 export interface MoveAction { readonly x: number; readonly y: number }
 export interface Point { x: number; y: number }
-export interface Enemy extends Point { id: number; kind: EnemyId; health: number; entryDelay: number }
+export interface Enemy extends Point {
+  id: number; kind: EnemyId; health: number; entryDelay: number;
+  attack?: { phase: 'approach' | 'windup' | 'strike' | 'recover'; remaining: number; origin: Point; direction: Point };
+}
 export interface Projectile extends Point {
   weapon: WeaponId; dx: number; dy: number; remaining: number; damage: number;
   chainLimit: number; hitTargets: number[];
@@ -16,7 +19,7 @@ export interface UpgradeChoice { readonly id: string; readonly name: string; rea
 export type Outcome = 'victory' | 'defeat';
 export type GameEvent =
   | { type: 'shot'; weapon: EquippedId; x: number; y: number; at: number }
-  | { type: 'player-hit'; x: number; y: number; at: number }
+  | { type: 'player-hit'; x: number; y: number; at: number; absorbed: number; damage: number }
   | { type: 'pulse'; x: number; y: number; radius: number; at: number }
   | { type: 'enemy-hit' | 'enemy-defeated'; x: number; y: number; enemyId: number; at: number }
   | { type: 'evolution' | 'elite' | 'halo'; at: number }
