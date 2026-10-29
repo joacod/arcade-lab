@@ -11,9 +11,9 @@
   --font: ui-monospace, 'Courier New', monospace; --heading-font: ui-monospace, 'Courier New', monospace;
 }
 .clearing-app[data-skin='glass'] {
-  --background: #101923; --surface: #151f2b; --button: #213246d9; --hover: #30475e; --text: #e9f4ff; --muted: #aec2d6;
-  --accent: #a3e5ef; --danger: #ffa3af; --border: #8299b657;
-  --health: #9dd6d9; --xp: #a5bcff; --radius: 12px; --font: 'Segoe UI', system-ui, sans-serif; --heading-font: 'Segoe UI', system-ui, sans-serif;
+  --background: #0b1b23; --surface: #10272d; --button: #203b40ed; --hover: #315057; --text: #e9f4ff; --muted: #aec2d6;
+  --accent: #f2d393; --danger: #ffa3af; --border: #91afa052;
+  --health: #a7d8b3; --xp: #90e1c3; --radius: 12px; --font: 'Segoe UI', system-ui, sans-serif; --heading-font: 'Segoe UI', system-ui, sans-serif;
 }
 :where(.clearing-app), :where(.clearing-app) * { box-sizing: border-box; }
 :where(.clearing-app) button, :where(.clearing-app) select, :where(.clearing-app) input { font: inherit; }

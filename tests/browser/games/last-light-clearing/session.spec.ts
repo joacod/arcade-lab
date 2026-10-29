@@ -338,8 +338,8 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       .replaceAll('textures.add(value);', "textures.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
       .replace("renderer.outputColorSpace =", "window.gardenLifetimes.created++; renderer.outputColorSpace =")
       .replace('renderer?.dispose();', 'if (renderer) window.gardenLifetimes.disposed++; renderer?.dispose();')
-      .replace('renderer.render(scene, camera);', `
-        renderer.render(scene, camera);
+      .replace('composer.render();', `
+        composer.render();
         const projected = new THREE.Vector3(run.player.x, -run.player.y, 0).project(camera);
         window.gardenEvidence = {
           projected: { x: (projected.x + 1) * size.width / 2, y: (1 - projected.y) * size.height / 2 },
@@ -702,4 +702,88 @@ test('compact upgrade choices explain roles and acknowledge one keyboard decisio
   await page.clock.runFor(40);
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'playing');
   await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
+});
+
+test('Prism Garden bounds dense rendering and freezes decorative motion on pause and reduced motion', async ({ page }, testInfo) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  // Construct the demanding run before presentation.reset observes its actor identities.
+  await page.route(/\/src\/games\/last-light-clearing\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const originalCrowdRun = createRun;
+      createRun = (...args) => {
+        const run = originalCrowdRun(...args);
+        run.player.invulnerability = 1000; run.nextSpawn = Infinity; run.eliteSpawned = true; run.gems = [];
+        run.enemies = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, kind: i % 5 ? 'crawler' : 'charger',
+          x: 480 + Math.cos(i * 2.4) * (120 + i * 2), y: 320 + Math.sin(i * 2.4) * (120 + i * 2),
+          health: 20, entryDelay: 0 }));
+        window.positionProbe = run; return run;
+      };
+    ` });
+  });
+  await page.route(/\/src\/games\/last-light-clearing\/three\/garden\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace('composer.render();', `
+      renderer.info.autoReset = false; renderer.info.reset(); composer.render();
+      window.prismProbe = {
+        motes: Array.from(motes.instanceMatrix.array),
+        petals: keeper.petals.map(petal => petal.rotation.x),
+        legs: crawlers[0].limbs.map(limb => limb.rotation.z),
+        facing: new THREE.Vector3(0, 1, 0).transformDirection(crawlers[0].model.matrixWorld)
+          .dot(new THREE.Vector3(Math.cos(observations.get(1).angle), -Math.sin(observations.get(1).angle), 0)),
+        keeper: [keeper.group.position.x, keeper.group.position.y],
+        calls: renderer.info.render.calls, geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures, bloomWidth: bloom.renderTargetsHorizontal[0].width,
+      };
+      renderer.info.autoReset = true;
+    `).replace('composer.addPass(output);', `
+      composer.addPass(output);
+      const targets = [composer.renderTarget1, composer.renderTarget2, bloom.renderTargetBright,
+        ...bloom.renderTargetsHorizontal, ...bloom.renderTargetsVertical];
+      window.prismTargets = { created: targets.length, released: 0 };
+      targets.forEach(target => target.addEventListener('dispose', () => { if (disposed) window.prismTargets.released++; }));
+    `);
+    await route.fulfill({ response, body });
+  });
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  const probe = () => page.evaluate(() => (window as any).prismProbe);
+  await page.keyboard.down('a'); await page.clock.runFor(180); await page.keyboard.up('a');
+  const active = await probe();
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
+  expect(active.calls).toBeLessThan(100);
+  expect(active.facing).toBeCloseTo(1, 8);
+  expect(active.bloomWidth).toBeLessThanOrEqual(400);
+  await page.clock.runFor(180);
+  const later = await probe();
+  expect(later.motes).not.toEqual(active.motes);
+  expect(later.geometries).toBe(active.geometries);
+  expect(later.textures).toBe(active.textures);
+  await page.screenshot({ path: testInfo.outputPath('prism-garden-crowd.png') });
+  await page.keyboard.press('Escape'); await page.clock.runFor(20);
+  const paused = await probe();
+  await page.clock.runFor(1000);
+  expect(await probe()).toEqual(paused);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.runFor(20);
+  const reduced = await probe();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.keyboard.down('a'); await page.clock.runFor(300); await page.keyboard.up('a');
+  const moving = await probe();
+  expect(moving.motes).toEqual(reduced.motes);
+  expect(moving.petals).toEqual(reduced.petals);
+  expect(moving.legs.every((angle: number) => angle === 0)).toBe(true);
+  expect(moving.keeper).not.toEqual(reduced.keeper);
+  await page.keyboard.press('Escape');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
+  const targets = await page.evaluate(() => (window as any).prismTargets);
+  expect(targets.released).toBe(targets.created);
+  expect(errors).toEqual([]);
 });
