@@ -4,14 +4,16 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
-| Last Light Clearing | Procedural clearing | Mosslight locally; bundled Ember Ruins otherwise | Prism Garden, sculpted and lit in 3D |
-| Skybreak | Pacific Run | Starfall Fleet with the local installation; unavailable in production | Not available |
+| Last Light Clearing | Procedural clearing | Bundled CC0 Ember Ruins | Prism Garden, sculpted and lit in 3D |
+| Skybreak | Pacific Run | Bundled original Aurora Fleet | Not available |
 | Clockwork Hollow | Verdant clockwork | Not available | Not available |
 | Midnight Circuit | Illustrated arcade | Not available | Neon 3D scene, with WebGPU finish when supported |
 | Obsidian Duel | Tempest citadel | Not available | Not available |
 | Blastline | Iron coast | Not available | Not available |
 
 All games start in Normal. None currently needs a Custom exception. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+
+All enabled presentations use bundled artwork. The six covers, procedural visuals and [Aurora Fleet](src/games/skybreak/art/README.md) are original artwork under the repository's MIT license. The only bundled third-party artwork is [Ember Ruins' CC0 atlas](src/games/last-light-clearing/art/ember-ruins/PROVENANCE.md), retained with its upstream metadata and provenance. Documentation screenshots capture these original or CC0 presentations.
 
 
 ## Last Light Clearing
@@ -33,13 +35,13 @@ Normal uses procedural Canvas art without image loads. Assets supplies animated 
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md), including the development-only Mosslight asset pack.
+See [game rules and implementation](docs/games/last-light-clearing/README.md) and [art setup and provenance](src/games/last-light-clearing/art/README.md).
 
 ## Skybreak
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses Starfall Fleet when its local images are installed; see [art setup and provenance](src/games/skybreak/art/README.md). Quality is not yet available. Bundled procedural Canvas artwork and synthesized sound require no downloads.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet in development and production; see [art setup and provenance](src/games/skybreak/art/README.md). Quality is not yet available. All artwork and synthesized sound require no additional downloads.
 
 | Control | Action |
 | --- | --- |

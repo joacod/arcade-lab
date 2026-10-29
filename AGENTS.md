@@ -18,6 +18,7 @@
 
 ## Technologies
 
+- All game artwork required by Arcade Lab must be committed to the repository and legally redistributable with it. Verify asset licenses before downloading or integrating external artwork. Prefer original artwork or assets with clear redistribution permissions such as CC0. Free downloads, commercial-use permissions and AI-generated derivatives do not automatically establish redistribution rights. Reject incompatible sources rather than introducing local-only asset dependencies.
 - Canvas 2D, Three.js and vgpu/WebGPU are valid rendering choices. Each game uses the renderer or renderers its design needs. Keep unrelated games and graphics implementations behind appropriate loading boundaries.
 - Use [AudioBits](.agents/skills/audiobits/SKILL.md) for all game sound. Reuse `src/engine/browser/audio.ts` for session-owned AudioBits lifecycle and bounded playback. Keep recipes, event mapping, cue priorities and throttling local to each game. Activate synchronously in existing user gestures; pause and dispose through the session owner. Current integration status belongs in the architecture document.
 - Add dependencies when their capabilities improve quality or save substantial implementation work. Avoid unnecessary wrappers and large frameworks without a concrete benefit. Do not add publishing/release infrastructure or external API stability guarantees. Add compatibility only for persisted data, an actual external consumer or an explicit requirement.

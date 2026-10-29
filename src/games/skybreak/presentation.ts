@@ -132,11 +132,16 @@ export function createPresentation(surface: HTMLElement, initialTheme: FlightThe
     }
     c.save(); c.translate(b.x, b.y);
     if (dead) { c.translate(Math.sin(b.defeated * 45) * 4, b.defeated * 9); c.globalAlpha = Math.max(0, 1 - b.defeated / fortress.defeatDuration); }
-    // Broad armor, swept wings, independent engine nacelles and a luminous reactor.
+    // Appearance owns the hull; the same animated weak points and warnings stay readable above it.
     c.fillStyle = '#00152355'; c.beginPath(); c.ellipse(12, 30, 168, 70, 0, 0, Math.PI * 2); c.fill();
-    polygon([-168, 12, -155, -18, -56, -50, -23, -82, 23, -82, 56, -50, 155, -18, 168, 12, 112, 35, 43, 19, 25, 68, -25, 68, -43, 19, -112, 35], flashes.has('boss') ? '#ecffff' : theme.palette.armor, '#b1c5c6');
-    polygon([-43, -38, -17, -65, 17, -65, 43, -38, 28, 38, 0, 60, -28, 38], '#18364e', '#8aa7b3');
-    if (theme.art?.flagship) { c.save(); c.rotate(Math.PI); sprite(theme.art.flagship); c.restore(); }
+    if (theme.art?.flagship) {
+      c.save(); c.rotate(Math.PI);
+      if (flashes.has('boss')) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
+      sprite(theme.art.flagship); c.restore();
+    } else {
+      polygon([-168, 12, -155, -18, -56, -50, -23, -82, 23, -82, 56, -50, 155, -18, 168, 12, 112, 35, 43, 19, 25, 68, -25, 68, -43, 19, -112, 35], flashes.has('boss') ? '#ecffff' : theme.palette.armor, '#b1c5c6');
+      polygon([-43, -38, -17, -65, 17, -65, 43, -38, 28, 38, 0, 60, -28, 38], '#18364e', '#8aa7b3');
+    }
     if (theme.scene !== 'ocean') {
       for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
         c.fillStyle = `${theme.palette.accent}88`; c.fillRect(side * (116 + i * 9) - 2, -4 + i * 3, 3, 14);

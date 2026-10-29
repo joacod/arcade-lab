@@ -3,5 +3,3 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
-# Restricted artwork and local-only manifests. Never included in production builds.
-local-art/

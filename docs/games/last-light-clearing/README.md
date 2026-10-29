@@ -32,7 +32,7 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Theme modes
 
-**Normal**, the default, uses the existing procedural clearing, actor silhouettes and spell effects without fetching images. **Assets** uses the installed Mosslight pack during development, or bundled Ember Ruins otherwise. **Quality** uses Prism Garden's sculpted actors, illuminated scenery and Three.js lighting.
+**Normal**, the default, uses the existing procedural clearing, actor silhouettes and spell effects without fetching images. **Assets** uses bundled Ember Ruins in development and production. **Quality** uses Prism Garden's sculpted actors, illuminated scenery and Three.js lighting.
 
 **Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
 

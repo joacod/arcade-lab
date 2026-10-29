@@ -6,11 +6,11 @@ An original Canvas 2D vertical arcade shooter with interchangeable appearances. 
 
 ## Theme modes
 
-**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects Starfall Fleet from the local installation, combining animated pixel ships with the existing orbital scenery. Deep Space and Redshift were alternate treatments and no longer add menu entries. Without local artwork, including production builds, Assets is disabled. **Quality** is not implemented. Theme selection is directly in the menu.
+**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects bundled Aurora Fleet, combining original animated ships with the existing orbital scenery. Deep Space and Redshift were alternate treatments and no longer add menu entries. Normal and Assets are available from a fresh clone in development and production. **Quality** is not implemented. Theme selection is directly in the menu.
 
 Switching keeps the current sortie, score, health, weapons, formation progress and boss state. Resume continues from the same moment. Restart begins a fresh sortie while retaining the selected appearance. Image preparation leaves the current renderer active; failed loads restore the selected field and report a notice. Later selections and disposal invalidate pending image work. Appearance choices last for the session.
 
-![Starfall Fleet: red fighter and enemy ships above a blue planet](skybreak-starfall.png)
+![Aurora Fleet: ivory fighter and distinct enemy ships above a blue planet](skybreak-starfall.png)
 
 ## Operation Iron Tempest
 

@@ -1,4 +1,4 @@
-/** Local artwork only. All sizes here are visual, never physical collision bodies. */
+/** Game-owned artwork. All sizes here are visual, never physical collision bodies. */
 export type ActorRole = 'keeper' | 'crawler' | 'elite';
 export type FrameRect = readonly [x: number, y: number, width: number, height: number];
 export interface ArtFrame { readonly image: string; readonly rect: FrameRect }

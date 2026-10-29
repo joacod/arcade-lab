@@ -1,11 +1,7 @@
 import { wgslVitePlugin } from '@vgpu/wgsl/loader-vite';
 import { defineConfig } from 'vite';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 const wgsl = wgslVitePlugin();
-const localManifest = fileURLToPath(new URL('./local-art/appearances.ts', import.meta.url));
-const localFlightManifest = fileURLToPath(new URL('./local-art/skybreak.ts', import.meta.url));
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   // Vite 8 retains its own ?import marker for unknown extensions in development.
   plugins: [{ ...wgsl, enforce: 'pre', transform(source, id) {
     return wgsl.transform.call(this, source, id.replace(/\?import$/, ''));
@@ -14,8 +10,4 @@ export default defineConfig(({ command }) => ({
   optimizeDeps: { include: ['three', 'three/addons/geometries/RoundedBoxGeometry.js', 'three/addons/utils/BufferGeometryUtils.js', 'vgpu', 'audiobits'] },
   // Allow the optional Three.js renderer while retaining warnings above 600 kB.
   build: { chunkSizeWarningLimit: 600 },
-  resolve: { alias: command === 'serve' ? [
-    ...(existsSync(localManifest) ? [{ find: /^\.\/local-appearances\.ts$/, replacement: localManifest }] : []),
-    ...(existsSync(localFlightManifest) ? [{ find: /^\.\/local-skybreak\.ts$/, replacement: localFlightManifest }] : []),
-  ] : [] },
-}));
+});
