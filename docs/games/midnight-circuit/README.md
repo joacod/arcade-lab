@@ -16,9 +16,9 @@ An original street brawler with illustrated Canvas and modeled Three.js appearan
 | P / Pause | P pauses/resumes; Pause opens the menu |
 | Touch arrows + Strike / Heavy / Jump | Independent captured controls support simultaneous touches |
 
-Align your feet with an opponent's ground lane before attacking. Read the red attack telegraphs and step into another lane, move behind the attacker or jump. Aerial kicks work during the jump's useful height window. Jabs and crosses isolate one opponent; finishers, heavy strikes and flying kicks can hit a crowd. Holding an attack button does not repeat it. Brief input buffering accepts a press during recovery; a short gap after a light strike preserves the next combo move.
+Align your feet with an opponent's ground lane before attacking. Read the red attack telegraphs and step into another lane, move behind the attacker or jump. Aerial kicks work during the jump's useful height window. Jabs and crosses isolate the nearest eligible opponent; finishers, heavy strikes and flying kicks can hit a crowd. Holding an attack button does not repeat it. Tap again during each light strike to queue one follow-up; a short gap after the strike also preserves the next combo move. Ground attacks commit through startup and contact, then allow slower movement during recovery, with heavier strikes retaining more commitment. Contextual prompts introduce alignment and chaining, point toward a nearby opponent's lane and announce the next wave.
 
-Three lives cover the whole run. Losing a life cancels enemy attacks, restores health after a short fall and grants safe recovery time. Green repair cells restore health and score once, including cells awarded after street encounters. Entering the station restores health while preserving lives, elapsed time and scoring. Results show points, hits, best chain, time and remaining lives. Restart creates a fresh run; Game selection disposes the session.
+Three lives cover the whole run. Losing a life cancels enemy attacks, restores health after a short fall and grants safe recovery time. Green repair cells restore health and score once, including cells awarded after street encounters. They remain on the ground while health is full, so walking over one does not waste it. Entering the station restores health while preserving lives, elapsed time and scoring. Results show points, hits, best chain, time and remaining lives. Restart creates a fresh run; Game selection disposes the session.
 
 ## Theme modes
 
@@ -26,7 +26,7 @@ Three lives cover the whole run. Losing a life cancels enemy attacks, restores h
 
 Switching keeps the current stage, enemies, score, health and attack timing. Resume continues the paused run. Choices survive restarts for this session. An unavailable renderer retains the working appearance; graphics loss pauses play and restores Normal for explicit Resume. GPU code loads only when requested, and the shared host remains the sole frame-loop owner.
 
-All appearances use distance-driven walking with a planted stance, lifted return step, bent knees and coordinated arm motion. Blocked input, jumps and hit pushes do not advance the gait. Presentation observes actor positions without modifying movement or combat rules.
+All appearances use distance-driven walking with a planted stance, lifted return step, bent knees and coordinated arm motion. Recovery movement blends attack poses back into stepping. Blocked input, jumps and hit pushes do not advance the gait. Presentation observes actor positions without modifying movement or combat rules.
 
 ## Encounters and combat
 
@@ -34,7 +34,7 @@ Each stage has three authored gated encounters. Streets introduce Strikers, add 
 
 Strikers close quickly and punch after a short warning. Bruisers move slowly, telegraph a committed smash and recover longer. A local attack token admits one startup/active attack at a time while other enemies reposition; a short gap prevents immediate crowd spam. Soft lane separation reduces stacking.
 
-The Warden alternates a lane-locked forward charge and a broad ground impact. Step aside for the charge; jump or leave the marked ground-impact area. Its armor resists damage and stagger during attack commitment. The visible **OPEN** recovery window takes bonus damage. Defeat starts a short city-light restoration sequence before the final results.
+The Warden alternates a lane-locked forward charge and a broad ground impact. Step aside for the charge; jump or leave the elliptical ground-impact area. Both presentations draw warnings from the combat footprint, including Rook's body margin. The charge warning contracts toward its committed endpoint as the Warden advances. The boss bar names the response to each pattern. Its armor resists damage and stagger during attack commitment. The visible **OPEN** recovery window takes bonus damage. Defeat starts a short city-light restoration sequence before the final results.
 
 Every attack has simulation-owned startup, active and recovery durations. Each swing owns a unique identity and hit list, so an active window cannot damage the same target repeatedly. Facing, horizontal range, lane tolerance, target elevation and immunity determine eligibility. Hitstun interrupts regular enemies, knockback decays in the simulation, and player damage grants brief immunity. Cosmetic flashes, impact rings, sparks and camera shake observe semantic events; they never decide hits or advance rules.
 
@@ -64,9 +64,9 @@ The input adapter translates shared captured-button holds and edges into movemen
 
 ## Verification
 
-`tests/unit/games/midnight-circuit/game.test.mjs` checks timing and hit ownership, lane/facing/height eligibility, crowd strikes, interruption, immunity and lives, gated waves, repairs, boss patterns and finale, pause, fresh runs and uniform projection. A deterministic controller completes both authored stages using actions alone and checks bounded crowds and attack coordination throughout.
+`tests/unit/games/midnight-circuit/game.test.mjs` checks timing and hit ownership, quick combo taps, recovery movement, nearest-target selection, lane/facing/height eligibility, crowd strikes, interruption, immunity and lives, gated waves, retained repairs, danger footprints, boss patterns and finale, pause, fresh runs and uniform projection. A deterministic controller completes both authored stages using actions alone and checks bounded crowds and attack coordination throughout.
 
-`tests/unit/games/midnight-circuit/animation.test.mjs` checks displacement-driven gait, planted steps, pause, blocked movement, knockback, teleport handling and read-only observation.
+`tests/unit/games/midnight-circuit/animation.test.mjs` checks displacement-driven gait, planted steps, recovery blending, pause, blocked movement, knockback, teleport handling and read-only observation.
 
 `tests/browser/games/midnight-circuit/game.spec.ts` checks appearance replacement, retained run state, graphics-loss recovery, cancellation, opening, keyboard and simultaneous touch actions, cancellation, display/blur interruption, restart, boss-result composition, audio failure recovery and disposal. The shared construction-failure check includes this game. AudioBits recipes are validated, including JSON round trips, with the existing audio invariants.
 

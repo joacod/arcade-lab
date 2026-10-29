@@ -1,8 +1,7 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { attacks } from '../content.ts';
-import { attackPhase, stageOf, type Actor, type Run, type BrawlerEvent } from '../game.ts';
+import { attackPhase, attackWarning, stageOf, type Actor, type Run, type BrawlerEvent } from '../game.ts';
 import { circuitView } from '../presentation.ts';
 import { createGait, fighterPose, type Point } from '../animation.ts';
 import type { CircuitRenderer } from '../graphics.ts';
@@ -21,6 +20,7 @@ export function createDiorama(surface: HTMLElement, onFailure: () => void): Circ
   const geometries = new Set<T.BufferGeometry>(), materials = new Set<T.Material>(), textures = new Set<T.Texture>();
   const box = own(new T.BoxGeometry(1, 1, 1)), rounded = own(new RoundedBoxGeometry(1, 1, 1, 2, .12)), sphere = own(new T.SphereGeometry(1, 12, 8)), cylinder = own(new T.CylinderGeometry(1, 1, 1, 8));
   const arc = own(new T.TorusGeometry(43, 1.8, 6, 20, Math.PI * .75));
+  const warningRing = own(new T.RingGeometry(.98, 1, 48).rotateX(-Math.PI / 2));
   const cache = new Map<string, T.MeshStandardMaterial>();
   const asphaltCanvas = document.createElement('canvas'); asphaltCanvas.width = asphaltCanvas.height = 256;
   const asphaltContext = asphaltCanvas.getContext('2d')!;
@@ -210,10 +210,12 @@ export function createDiorama(surface: HTMLElement, onFailure: () => void): Circ
       block(transient, x, 2, 150, 3, 2, 310, '#fb84a6', true);
       for (let i=0;i<7;i++) block(transient,x,10, i*50,3,20,7,'#e97b9a',true);
     }
-    for (const a of run.enemies) if (a.health > 0 && a.attack && attackPhase(a.attack) !== 'recovery') {
-      const d=attacks[a.attack.kind], length=a.attack.kind==='charge'?350:a.attack.kind==='quake'?d.reach*2:d.reach+22;
-      const center=a.attack.kind==='quake'?a.x+a.facing*40:a.x+a.facing*length/2, z=a.lane/.6, depth=d.lane*2/.6;
-      for (const edge of [-1,1]) { block(transient,center,2,z+edge*depth/2,length,2,2,'#f77f9f',true); block(transient,center+edge*length/2,2,z,2,2,depth,'#f77f9f',true); }
+    for (const a of run.enemies) {
+      const area = attackWarning(a); if (!area || !a.attack) continue;
+      const z = area.lane / .6, depth = area.depth / .6;
+      const color = attackPhase(a.attack) === 'active' ? '#ffb797' : '#f77f9f';
+      if (area.shape === 'ellipse') mesh(transient, warningRing, material(color, true), area.x, 2, z, area.width / 2, 1, depth / 2);
+      else for (const edge of [-1,1]) { block(transient,area.x,2,z+edge*depth/2,area.width,2,2,color,true); block(transient,area.x+edge*area.width/2,2,z,2,2,depth,color,true); }
       if (attackPhase(a.attack)==='startup') { block(transient,a.x, a.kind==='warden'?255:180,z,4,14,4,'#ffd6ae',true); block(transient,a.x,a.kind==='warden'?242:167,z,4,4,4,'#ffd6ae',true); }
     }
     for (const pickup of run.pickups) if (!pickup.collected) {

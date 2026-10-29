@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, fighterPose } from '../../../../src/games/midnight-circuit/animation.ts';
 import { createRun } from '../../../../src/games/midnight-circuit/game.ts';
+import { attacks } from '../../../../src/games/midnight-circuit/content.ts';
 
 test('gait follows displacement, plants feet, freezes on pause and ignores knockback or teleports', () => {
   const run = createRun(), gait = createGait(); gait.observe(run);
@@ -33,4 +34,27 @@ test('gait distance is independent of sampling rate and never mutates gameplay',
     return gait.get(0).phase;
   };
   assert.ok(Math.abs(sample(30)-sample(144)) < 1e-10);
+});
+
+test('recovery steps blend back into the walking pose while startup and contact keep planted feet', () => {
+  const run = createRun(), p = run.player, gait = createGait(); gait.observe(run);
+  p.moving = true;
+  for (const kind of ['jab', 'heavy', 'finisher']) {
+    gait.reset(); gait.observe(run);
+    const d = attacks[kind];
+    p.attack = { id: 1, kind, time: d.startup, hits: [], sounded: true };
+    p.x += 2; run.elapsed += 1 / 60; gait.observe(run);
+    assert.equal(gait.get(0).phase, 0);
+    for (let frame = 1; frame <= 10; frame++) {
+      p.attack.time = d.startup + d.active + d.recovery * frame / 10;
+      p.x += 2; run.elapsed += 1 / 60; gait.observe(run);
+    }
+    assert.ok(gait.get(0).phase > 0); assert.ok(gait.get(0).weight > 0);
+    const recovered = fighterPose(p, gait.get(0));
+    p.attack = null; const walking = fighterPose(p, gait.get(0));
+    for (const part of ['frontFoot', 'backFoot', 'frontKnee', 'backKnee']) {
+      assert.ok(Math.abs(recovered[part][0] - walking[part][0]) < 1e-10);
+      assert.ok(Math.abs(recovered[part][1] - walking[part][1]) < 1e-10);
+    }
+  }
 });

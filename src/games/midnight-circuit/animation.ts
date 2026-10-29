@@ -2,6 +2,11 @@ import { attacks } from './content.ts';
 import type { Actor, Run } from './game.ts';
 export type Point = [number, number];
 interface Track { x: number; lane: number; phase: number; weight: number }
+function recoveryWeight(a: Actor) {
+  if (!a.attack) return 1;
+  const d = attacks[a.attack.kind];
+  return Math.max(0, Math.min(1, (a.attack.time - d.startup - d.active) / d.recovery));
+}
 /** Distance advances the gait, never wall time. Blocked input, hit pushes and jumps cannot walk. */
 export function createGait() {
   const tracks = new Map<number, Track>();
@@ -15,7 +20,7 @@ export function createGait() {
         ids.add(a.id);
         const old = tracks.get(a.id) ?? { x: a.x, lane: a.lane, phase: 0, weight: 0 };
         const distance = Math.hypot(a.x - old.x, a.lane - old.lane);
-        const walking = a.moving && !a.attack && a.elevation === 0 && a.stun === 0 && a.health > 0 && distance > .01 && distance < 70;
+        const walking = a.moving && recoveryWeight(a) > 0 && a.elevation === 0 && a.stun === 0 && a.health > 0 && distance > .01 && distance < 70;
         if (walking) old.phase += distance / (53.333 * (a.kind === 'warden' ? 1.48 : a.kind === 'bruiser' ? 1.2 : 1)) * Math.PI * 2;
         if (dt > 0) old.weight += ((walking ? 1 : 0) - old.weight) * (1 - Math.exp(-22 * dt));
         old.x = a.x; old.lane = a.lane; tracks.set(a.id, old);
@@ -38,7 +43,8 @@ function knee(hip: Point, ankle: Point): Point {
   return [(hip[0] + ankle[0]) / 2 + dy / distance * bend, (hip[1] + ankle[1]) / 2 - dx / distance * bend];
 }
 export function fighterPose(a: Actor, gait: { phase: number; weight: number }) {
-  const weight = a.attack || a.elevation > 0 || a.stun > 0 || a.health <= 0 ? 0 : gait.weight;
+  const recovery = recoveryWeight(a);
+  const weight = a.elevation > 0 || a.stun > 0 || a.health <= 0 ? 0 : gait.weight * recovery;
   let backFoot = foot(gait.phase, .5, weight), frontFoot = foot(gait.phase, 0, weight);
   let backKnee = knee([-8, -43], backFoot), frontKnee = knee([8, -43], frontFoot);
   let rearElbow: Point = [-26, -59], rearHand: Point = [-17, -73];
@@ -53,7 +59,10 @@ export function fighterPose(a: Actor, gait: { phase: number; weight: number }) {
   const kick = kind === 'finisher' || kind === 'air';
   const heavy = kind === 'heavy' || kind === 'smash' || kind === 'quake';
   if (a.elevation > 0) { backFoot = [-24, -28]; backKnee = [-20, -37]; frontFoot = [24, -14]; frontKnee = [24, -32]; }
-  if (kick && extension > 0) { frontKnee = [13 + extension * 20, -25 - extension * 23]; frontFoot = [17 + extension * 60, -4 - extension * 47]; }
+  if (kick && extension > 0) {
+    frontKnee = [(13 + extension * 20) * (1 - recovery) + frontKnee[0] * recovery, (-25 - extension * 23) * (1 - recovery) + frontKnee[1] * recovery];
+    frontFoot = [(17 + extension * 60) * (1 - recovery) + frontFoot[0] * recovery, (-4 - extension * 47) * (1 - recovery) + frontFoot[1] * recovery];
+  }
   if (kind === 'charge' && extension > 0) { backFoot = [-36, -4]; frontFoot = [35, -8]; }
   if (s && !kick) {
     if (extension < 0 && heavy) { elbow = [10, -85]; hand = [-6, -108]; }

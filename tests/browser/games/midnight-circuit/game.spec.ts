@@ -28,6 +28,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.screenshot({ path: info.outputPath('midnight-title.png') });
   expect((await state()).elapsed).toBe(0); expect(await page.evaluate(() => (window as any).circuitContexts.length)).toBe(0);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
+  await expect(page.getByLabel('Combat tip', { exact: true })).toContainText('MOVE RIGHT');
   await page.keyboard.down('d'); await page.clock.runFor(1150); await page.keyboard.up('d');
   expect((await state()).gated).toBe(true); expect((await state()).enemies.length).toBe(2);
   await page.keyboard.down('j'); await page.clock.runFor(400); await page.keyboard.up('j');
@@ -36,6 +37,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   expect((await state()).player.elevation).toBeGreaterThan(20); expect((await state()).player.attack.kind).toBe('air');
   await page.keyboard.up('Space'); await page.keyboard.up('j');
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
+  await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(700);
   await page.screenshot({ path: info.outputPath('midnight-street.png') });
   // The long rules/lifecycle traversal uses Canvas after exercising the default 3D scene.
@@ -74,6 +76,15 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.evaluate(() => { const r = (window as any).circuitProbe; r.stageIndex = 1; r.encounter = 2; r.gated = false; r.enemies = []; r.player.x = 2380; r.player.lane = 95; });
   await page.clock.runFor(1000); await expect(page.getByLabel('Circuit Warden health', { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath('midnight-station.png') });
+  await page.evaluate(() => {
+    const r = (window as any).circuitProbe, boss = r.enemies[0];
+    r.player.x = boss.x - 110; r.player.lane = boss.lane; r.player.immune = 10;
+    boss.attack = { id: r.nextSwing++, kind: 'quake', time: .2, hits: [], sounded: false };
+  });
+  await page.clock.runFor(50);
+  await expect(page.locator('.circuit-boss small')).toHaveText('JUMP / LEAVE THE RING');
+  await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
+  await page.screenshot({ path: info.outputPath('midnight-warning.png') });
   await page.evaluate(() => { const r = (window as any).circuitProbe, b = r.enemies[0]; b.health = 1; b.cooldown = 999; b.attack = null; r.player.x = b.x - 50; r.player.lane = b.lane; r.player.facing = 1; r.player.immune = 10; r.player.stun = 0; });
   await page.keyboard.press('k'); await page.clock.runFor(3100);
   await expect(page.getByRole('heading', { name: 'Victory' })).toBeVisible();
