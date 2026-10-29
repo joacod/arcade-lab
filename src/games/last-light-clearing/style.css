@@ -53,12 +53,21 @@
 :where(.clearing-app) .play-surface:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 :where(.clearing-app) .run-details output { white-space: pre-line; font: 13px/1.6 ui-monospace, monospace; color: #d2e8dd; }
 :where(.clearing-app) .run-details { display: grid; gap: 6px; font-size: 14px; color: var(--text); margin-top: 16px; }
-:where(.clearing-app) .upgrade-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-:where(.clearing-app) .upgrade-choices button { text-align: left; min-height: 125px; background: var(--button); border-color: var(--border); }
-:where(.clearing-app) .upgrade-choices strong, :where(.clearing-app) .upgrade-choices span { display: block; }
-:where(.clearing-app) .upgrade-choices strong { color: var(--accent); font-size: 16px; margin-bottom: 8px; }
-:where(.clearing-app) .upgrade-choices span { font-size: 14px; line-height: 1.4; color: var(--muted); }
-:where(.clearing-app) .upgrade-choices button[aria-disabled='true'] { opacity: .55; }
+/* Upgrade semantics and expression stay local to the clearing. */
+.clearing-app .game-menu .upgrade-choices { display: grid; gap: 8px; }
+.clearing-app .game-menu .upgrade-choices button { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; text-align: left; background: var(--button); border-color: var(--border); padding: 12px; }
+.clearing-app .game-menu .upgrade-choices button:enabled:hover { background: var(--hover); border-color: var(--accent); }
+.clearing-app .upgrade-choices :is(strong, small, span) { grid-column: 2; }
+.clearing-app .upgrade-choices .choice-icon { grid-column: 1; grid-row: 1 / 5; align-self: center; text-align: center; color: var(--accent); font: 28px/1 Georgia, serif; }
+.clearing-app .upgrade-choices .choice-category { color: var(--accent); font: 600 10px/1.5 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .07em; }
+.clearing-app .upgrade-choices strong { color: var(--text); font-size: 17px; margin: 2px 0 4px; }
+.clearing-app .upgrade-choices .choice-purpose { font-size: 13px; line-height: 1.5; color: var(--text); }
+.clearing-app .upgrade-choices .choice-detail { font: 12px/1.5 system-ui, sans-serif; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+.clearing-app .game-menu .upgrade-choices button[aria-disabled='true'] { opacity: .45; cursor: default; }
+.clearing-app .game-menu .upgrade-choices button[data-confirmed='true'] { opacity: 1; border-color: var(--accent); box-shadow: inset 3px 0 var(--accent); }
+.clearing-app .choice-context { display: block; margin-bottom: 12px; color: var(--muted); font: 12px/1.6 system-ui, sans-serif; }
+.clearing-app .choice-hint { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+@media (forced-colors: active) { .clearing-app .game-menu .upgrade-choices button[data-confirmed='true'] { border: 2px solid Highlight; } }
 :where(.clearing-app).in-danger .health-value { color: var(--danger); }
 :where(.clearing-app).in-danger .health-meter::-webkit-meter-optimum-value { background: var(--danger); }
 @media (max-width: 700px) {
@@ -69,8 +78,6 @@
   :where(.clearing-app) .progress { margin-right: auto; }
   :where(.clearing-app) .hud-actions { margin-left: auto; }
   :where(.clearing-app) .hud-actions button { padding: 8px 10px; }
-  :where(.clearing-app) .upgrade-choices { grid-template-columns: 1fr; }
-  :where(.clearing-app) .upgrade-choices button { min-height: 70px; }
 }
 @media (max-height: 550px) {
   :where(.clearing-app) .hud { padding-block: 4px; }

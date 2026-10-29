@@ -21,7 +21,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
-  const theme = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: { normal: 'Tempest citadel' }, signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),

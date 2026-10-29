@@ -339,6 +339,7 @@ test('collection restores navigation and ignores a cancelled lazy load that fini
   expect(await page.locator('.arcade-selection').evaluate(root => root.scrollTop)).toBeCloseTo(scrollTop, 0);
   await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Loading Skybreak…');
+  await expect(page.locator('[data-game=skybreak] .arcade-launch-label')).toHaveText('Loading…');
   await expect(page.getByRole('button', { name: 'Cancel loading', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Cancel loading', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play Skybreak', exact: true })).toBeFocused();

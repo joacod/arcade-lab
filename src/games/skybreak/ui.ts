@@ -20,7 +20,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const appearance = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: onTheme });
+  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: 'normal', onChange: onTheme });
   const assetStatus = document.createElement('p'); assetStatus.className = 'skybreak-asset-status'; assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,

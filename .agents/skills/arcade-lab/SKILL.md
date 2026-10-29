@@ -1,6 +1,6 @@
 ---
 name: arcade-lab
-description: Create, improve, customize and polish browser games in Arcade Lab using its existing engine and game foundations. Use for new games, gameplay and game feel, Normal/Assets/Quality presentations, game audio, and engine or browser-session maintenance in this repository.
+description: Create, improve, customize and polish browser games in Arcade Lab using its existing engine and game foundations. Use for new games, gameplay and game feel, menus and player-facing UI, Normal/Assets/Quality presentations, game audio, and engine or browser-session maintenance in this repository.
 ---
 
 # Arcade Lab
@@ -26,6 +26,12 @@ Use that guide and the [appearance contract](../../../docs/architecture.md#appea
 Trace the actual actions, content and simulation, then how presentation and sound communicate them. Describe the player-facing problem in a concrete situation: a missed command, an unreadable attack, repetitive decisions, an abrupt difficulty spike or an awkward retry.
 
 Read the relevant sections of [player experience](references/player-experience.md) and, when useful, [genre guidance](references/genre-guidance.md). Use [control](references/player-experience.md#responsiveness-and-perceived-control) for missed commands, [counterplay](references/player-experience.md#combat-spacing-and-counterplay) for ineffective defenses, or [teaching](references/player-experience.md#teaching-through-play) and [pacing](references/player-experience.md#progression-pacing-and-challenge) for progression problems. Form a small hypothesis about the cause and compare behavior before and after the change. Adjust the owning system rather than automatically adding familiar mechanics. A combat-timing change belongs in simulation/content; a clearer contact pose may belong entirely in presentation.
+
+### Improve menus and interaction UI
+
+Read [menu/UI guidance](references/menu-ui.md) for a launcher or catalog pass, game-menu improvements, theme-selection clarity, upgrade or loadout choices, and player prompts or decision overlays. Trace the shared menu/field owners and the affected game's UI and session before editing. Shared navigation prioritizes consistency and low friction; game-specific decisions can express the game's identity while retaining readable controls and explicit consequences.
+
+Keep the pass proportional to the request. Preserve fast entry and good existing simplicity, reuse the common shell, and keep choice semantics with the game. A small label or focus bug needs a local fix, not a broad UX redesign. Load a presentation guide as well only when changing the game presentation itself.
 
 ### Improve the engine
 

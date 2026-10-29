@@ -2,7 +2,7 @@ import { createThemeSelect } from '../../common/ui/theme-select.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createSelectField } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
-import { clearing, configurations, evolution, weapons, type ConfigurationId } from './content.ts';
+import { clearing, configurations, evolution, upgrades, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
 import type { GameEvent } from './game-state.ts';
@@ -21,6 +21,19 @@ interface UIOptions {
   onFullscreen(): void;
   onExit(): void;
 }
+const weaponCues = {
+  spark: { icon: 'ϟ', purpose: 'Automatic shots at the nearest enemy' },
+  halo: { icon: '◎', purpose: 'Orbiting lights protect your close range' },
+  pulse: { icon: '◉', purpose: 'A burst hits enemies around you' },
+  shard: { icon: '✣', purpose: 'Shots spread in several directions' },
+} as const;
+const supportCues = {
+  lens: { icon: '◇', category: 'Evolution ingredient', purpose: 'Collect from farther away · pairs with Spark' },
+  recovery: { icon: '+', category: 'Recovery', purpose: 'Restore health · excess becomes shield' },
+  power: { icon: '↑', category: 'All weapons', purpose: 'Increase every equipped weapon’s damage' },
+  reach: { icon: '⌖', category: 'Gem collection', purpose: 'Attract gems from farther away' },
+} as const;
+
 export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOptions) {
   const { signal, onAction, onChoose, onConfiguration, onTheme, onMute } = options;
   root.innerHTML = `
@@ -41,7 +54,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   let configuration: ConfigurationId = 'clearing';
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="menu-setup"><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-choices" hidden></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
+  gameContent.innerHTML = `<div class="menu-setup"><p class="menu-note">${configurations.clearing.description}</p></div><div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
   const round = createSelectField({
     label: 'Round', accessibleLabel: 'Round configuration', signal,
     choices: Object.fromEntries(Object.entries(configurations).map(([id, config]) => [id, config.name])) as Record<ConfigurationId, string>,
@@ -54,7 +67,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     },
   });
   gameContent.querySelector('.menu-setup')!.prepend(round.element);
-  const appearance = createThemeSelect({ signal, modes: themes, value: 'normal', onChange: onTheme });
+  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: 'normal', onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
@@ -75,17 +88,22 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
   const xpBar = $<HTMLElement>('.xp-track span');
   const choices = $<HTMLElement>('.upgrade-choices');
-  let choiceSignature = '';
+  let choiceSignature = '', chosenId = '';
+  function choose(button: HTMLButtonElement) {
+    if (button.getAttribute('aria-disabled') === 'true') return;
+    chosenId = button.dataset.choice!;
+    onChoose(chosenId);
+  }
   choices.addEventListener('click', event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-choice]');
-    if (button && !button.disabled) onChoose(button.dataset.choice!);
+    if (button && !button.disabled) choose(button);
   }, { signal });
   choices.addEventListener('keydown', event => {
     const buttons = [...choices.querySelectorAll<HTMLButtonElement>('button')];
     const selected = buttons.indexOf(document.activeElement as HTMLButtonElement);
     if (event.code === 'Enter' || event.code === 'Space') {
       event.preventDefault();
-      if (!event.repeat && selected >= 0 && !buttons[selected]!.disabled) onChoose(buttons[selected]!.dataset.choice!);
+      if (!event.repeat && selected >= 0 && !buttons[selected]!.disabled) choose(buttons[selected]!);
     } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
       event.preventDefault();
       const direction = event.code === 'ArrowUp' || event.code === 'ArrowLeft' ? -1 : 1;
@@ -144,18 +162,32 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       setProperty(modifiers, 'value', `Shield ${run.player.shield} · Power +${Math.round(run.modifiers.power * 100)}% · Pickup ${pickupRadius(run)}`);
       if (run.status === 'choosing') {
         setText(heading, `Level ${choiceLevel(run) - Number(run.progression.confirming)} · Choose an upgrade`);
-        setText(description, run.progression.confirming ? 'Release confirmation to continue.'
+        setText(description, run.progression.confirming ? 'Upgrade applied. Release to continue.'
           : `${run.progression.pending} earned ${run.progression.pending === 1 ? 'choice' : 'choices'} remaining. Action is paused.`);
         const signature = `${choiceLevel(run)}:${run.progression.confirming}:${run.progression.choices.map(choice => choice.id).join(',')}`;
-        for (const button of choices.querySelectorAll('button')) setAttribute(button, 'aria-disabled', String(run.progression.confirming));
+        setText($('.choice-context'), `Equipped: ${loadout.value} · ${evolutionProgress.value}`);
+        for (const button of choices.querySelectorAll('button')) {
+          setAttribute(button, 'aria-disabled', String(run.progression.confirming));
+          const confirmed = run.progression.confirming && button.dataset.choice === chosenId;
+          setProperty(button.dataset, 'confirmed', String(confirmed));
+          if (confirmed) setText(button.querySelector('.choice-category')!, '✓ Applied');
+        }
         if (!run.progression.confirming && signature !== choiceSignature) {
           choiceSignature = signature;
+          chosenId = '';
           const focused = choices.contains(document.activeElement);
           choices.replaceChildren(...run.progression.choices.map(choice => {
             const button = document.createElement('button'); button.dataset.choice = choice.id;
-            const title = document.createElement('strong'); setText(title, choice.name);
-            const detail = document.createElement('span'); setText(detail, choice.description);
-            button.append(title, detail); return button;
+            const upgrade = upgrades.find(upgrade => upgrade.id === choice.id)!;
+            const currentRank = upgrade.kind === 'weapon' ? run.loadout.find(slot => slot.base === upgrade.weapon)?.rank ?? 0 : 0;
+            const cue = upgrade.kind === 'weapon' ? weaponCues[upgrade.weapon] : supportCues[upgrade.kind];
+            const category = upgrade.kind === 'weapon' ? currentRank ? `Weapon · rank ${currentRank} → ${currentRank + 1}` : 'New weapon' : supportCues[upgrade.kind].category;
+            const icon = document.createElement('span'); icon.className = 'choice-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = cue.icon;
+            const label = document.createElement('small'); label.className = 'choice-category'; label.textContent = category;
+            const title = document.createElement('strong'); setText(title, upgrade.name);
+            const purpose = document.createElement('span'); purpose.className = 'choice-purpose'; purpose.textContent = cue.purpose;
+            const detail = document.createElement('span'); detail.className = 'choice-detail'; setText(detail, choice.description);
+            button.append(icon, label, title, purpose, detail); return button;
           }));
           if (focused || root.dataset.screen === 'choosing') choices.querySelector('button')?.focus({ preventScroll: true });
         }
@@ -168,8 +200,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     },
     show(screen: Screen, focus = true) {
       $<HTMLElement>('.menu-setup').hidden = screen !== 'title';
-      $<HTMLElement>('.run-details').hidden = screen === 'title';
-      choices.hidden = screen !== 'choosing';
+      $<HTMLElement>('.run-details').hidden = screen === 'title' || screen === 'choosing';
+      $<HTMLElement>('.upgrade-panel').hidden = screen !== 'choosing';
       heading.textContent = screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat'
         : screen === 'choosing' ? 'Choose an upgrade' : screen === 'paused' ? 'Paused' : 'Last Light Clearing';
       description.textContent = screen === 'paused' ? '' : roundDescription();
