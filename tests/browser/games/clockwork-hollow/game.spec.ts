@@ -24,7 +24,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
   await page.screenshot({ path: info.outputPath('collection.png') });
-  await page.getByRole('button', { name: 'Play Clockwork Hollow', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Clockwork Hollow' })).toBeVisible();
   await page.clock.runFor(50);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).hollowProbe)));
@@ -123,7 +123,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   expect(await page.evaluate(() => ({ frames: (window as any).hollowFrames.size, audio: (window as any).hollowContexts.map((c: AudioContext) => c.state) })))
     .toEqual({ frames: 0, audio: ['closed'] });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('button', { name: 'Play Clockwork Hollow', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Clockwork Hollow' })).toBeVisible();
   expect((await state()).elapsed).toBe(0);
   await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal'); expect((await state()).player.x).toBe(110);

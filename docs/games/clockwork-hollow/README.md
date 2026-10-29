@@ -6,7 +6,7 @@ A complete Canvas 2D platform adventure through three mechanical ruins reclaimed
 
 ## Playing
 
-Move with A/D or left/right arrows. Jump with Space, W, Up or Z. Hold to jump higher and release for a short hop. Touch controls allow independent, simultaneous movement and jumping. Escape, P or Pause suspends play. Resume always requires an explicit gesture. There is no automatic repeat jump.
+Move with A/D or left/right arrows. Jump with Space, W, Up or Z. Hold to jump higher and release for a short hop. Touch controls allow independent, simultaneous movement and jumping. P pauses/resumes; Pause opens the menu. Escape also pauses when delivered by the browser. Resume always requires an explicit gesture. There is no automatic repeat jump.
 
 | District | Challenges and identity |
 | --- | --- |

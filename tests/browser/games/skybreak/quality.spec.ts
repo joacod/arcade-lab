@@ -17,7 +17,7 @@ async function probe(page: import('@playwright/test').Page) {
   });
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
 }
 
 test('Quality preserves an ongoing sortie, freezes its output, survives restart and recovers from graphics loss', async ({ page }) => {

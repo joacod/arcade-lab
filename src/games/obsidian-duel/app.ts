@@ -17,7 +17,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput>|undefined, presentation: ReturnType<typeof createPresentation>|undefined, sound: ReturnType<typeof createSound>|undefined;
   const host=createHost(container,{className:'duel-app',label:'Obsidian Duel',
-    surfaceLabel:'Obsidian Duel playfield. A D move, W jump, S crouch, J light, K heavy, L special, Shift guard. Escape pauses.',
+    surfaceLabel:'Obsidian Duel playfield. A D move, W jump, S crouch, J light, K heavy, L special, Shift guard. P pauses or resumes.',
     onDisplayChange:suspend,onFullscreenChange:()=>ui.fullscreen(host.fullscreenAvailable,host.fullscreen)});
   function dispose(){if(disposed)return;disposed=true;disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose());}
   function transition(next: Screen, focus=true){
@@ -55,7 +55,6 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     presentation=createPresentation(host.surface);
     appearance('normal');
     input=bindInput(host.surface,ui.controls,()=>screen==='playing'&&match.phase==='fight',host.signal);
-    host.root.addEventListener('keydown',event=>{if(!event.repeat&&['Escape','KeyP'].includes(event.code)&&screen==='playing'){event.preventDefault();suspend();}},{signal:host.signal});
     bindSessionFocus(host.root,{signal:host.signal,clearInput:()=>input?.clear(),suspend,
       shouldSuspend:()=>screen==='playing'&&document.activeElement!==host.surface&&!Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement)});
     bindPageLifetime({signal:host.signal,suspend,resetTiming:()=>clock.reset(),dispose});

@@ -39,12 +39,19 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
       <p class="game-menu-description"></p><div class="game-menu-content"></div>
       <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-pressed="false">Mute sound</button><button type="button" class="game-menu-fullscreen" hidden>Fullscreen</button></div>
-      <details class="game-menu-controls"><summary>Controls</summary><div>${config.controls}</div></details></div>
+      <details class="game-menu-controls"><summary>Controls <span class="game-menu-shortcut">P · pause / resume</span></summary><div>${config.controls}<p><b>P</b> pauses / resumes. <b>Escape</b> pauses when available; in fullscreen, the browser may use it to exit fullscreen.</p></div></details></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
   </section>`;
-  stage.append(layer);
+  // HUD/footer wrapping must not constrain menu space or move its actions.
+  // The stage retains its geometry while the menu uses the whole game viewport.
+  root.append(layer);
+  config.pause.classList.add('game-pause');
+  config.pause.textContent = 'Pause';
+  config.pause.setAttribute('aria-label', 'Pause');
+  config.pause.setAttribute('aria-keyshortcuts', 'P Escape');
+  config.pause.title = 'Pause (P)';
   const name = layer.querySelector<HTMLElement>('.game-menu-name')!;
   const notices = layer.querySelector<HTMLElement>('.game-menu-notices')!;
   const actionBar = layer.querySelector<HTMLElement>('.game-menu-actions')!;
@@ -59,6 +66,19 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const fullscreen = layer.querySelector<HTMLButtonElement>('.game-menu-fullscreen')!;
   const mute = layer.querySelector<HTMLButtonElement>('.game-menu-mute')!;
   let muted = false, screen = '';
+  root.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey
+      || !['KeyP', 'Escape'].includes(event.code)) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable
+      || target.closest('input, textarea, select, [role="textbox"]'))) return;
+    const button = screen === 'playing' ? config.pause : screen === 'paused' && event.code === 'KeyP'
+      ? actions.find(button => button.dataset.menuAction === 'resume') : undefined;
+    if (!button || button.disabled || button.hidden) return;
+    // Fullscreen Escape belongs to the browser, even when it also reaches us.
+    if (event.code !== 'Escape' || !document.fullscreenElement) event.preventDefault();
+    button.click();
+  }, { signal: config.signal });
   actions.forEach((button, i) => button.addEventListener('click', () => config.onAction(config.actions[i]!.id), { signal: config.signal }));
   mute.addEventListener('click', () => {
     muted = !muted; mute.setAttribute('aria-pressed', String(muted)); mute.textContent = muted ? 'Unmute sound' : 'Mute sound'; config.onMute(muted);

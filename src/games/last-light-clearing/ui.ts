@@ -46,7 +46,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
         <div class="hud-actions"><button data-action="pause" hidden>Pause</button></div>
       </header>
       <div class="xp-track" aria-hidden="true"><span></span></div>
-      <div class="stage"><output class="evolution-progress"></output><p class="field-message" role="status" hidden></p></div>
+      <div class="stage"><div class="field-status"><output class="equipped-weapons" aria-label="Equipped weapons" aria-live="off"></output><output class="evolution-progress"></output></div><p class="field-message" role="status" hidden></p></div>
     </main>`;
   const $ = createElementLookup(root);
   const pause = $<HTMLButtonElement>('[data-action="pause"]');
@@ -75,7 +75,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     onMute, onFullscreen: options.onFullscreen,
     game: gameContent,
     theme: appearance.element,
-    controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p><b>Escape / P</b> pause. Resume after changing display settings or leaving the game window.</p>`,
+    controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       { id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -158,6 +158,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
         : '';
       setText(fieldMessage, message); setProperty(fieldMessage, 'hidden', !message);
       setProperty(loadout, 'value', run.loadout.map(slot => `${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · '));
+      setText($('.equipped-weapons'), run.loadout.map(slot => `${weaponCues[slot.base].icon} ${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · '));
       setProperty(progress, 'value', `Level ${run.progression.level} · XP ${run.progression.xp} / ${xpThreshold(run)}`);
       setProperty(modifiers, 'value', `Shield ${run.player.shield} · Power +${Math.round(run.modifiers.power * 100)}% · Pickup ${pickupRadius(run)}`);
       if (run.status === 'choosing') {

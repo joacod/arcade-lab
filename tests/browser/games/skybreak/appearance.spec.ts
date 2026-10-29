@@ -26,7 +26,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
   }));
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(2000);
   await page.keyboard.press('Escape');
   const state = () => page.evaluate(() => JSON.stringify((window as any).flightProbe));
@@ -70,7 +70,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await finish!(); await page.clock.runFor(100);
   await expect(page.locator('.skybreak-app')).toHaveCount(0); await expect(page.locator('canvas')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   expect(errors).toEqual([]);
 });
@@ -90,7 +90,7 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   });
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(2000);
   await page.keyboard.press('Escape');
   const state = () => page.evaluate(() => JSON.stringify((window as any).flightProbe));

@@ -46,7 +46,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
   }
   try {
     host = createHost(container, { className: 'clearing-app', label: 'Last Light Clearing',
-      surfaceLabel: 'Clearing arena. Move with WASD or arrow keys. Press Escape to pause. Drag to move with touch or mouse.',
+      surfaceLabel: 'Clearing arena. Move with WASD or arrow keys. Press P to pause or resume. Drag to move with touch or mouse.',
       onDisplayChange: suspend,
       onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     const clock = createClock();
@@ -185,13 +185,6 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     window.addEventListener('keyup', event => confirmations.delete(event.code), { signal: host.signal });
     host.root.addEventListener('pointerdown', event => pointers.add(event.pointerId), { signal: host.signal, capture: true });
     for (const name of ['pointerup', 'pointercancel'] as const) window.addEventListener(name, event => pointers.delete(event.pointerId), { signal: host.signal });
-    host.root.addEventListener('keydown', event => {
-      if (event.repeat || (event.code !== 'Escape' && event.code !== 'KeyP')) return;
-      if (screen !== 'playing' && screen !== 'paused' && screen !== 'choosing') return;
-      // Native fullscreen owns Escape; it may exit without dispatching a key event.
-      if (event.code !== 'Escape' || !host.fullscreen) event.preventDefault();
-      if (screen === 'playing') act('pause');
-    }, { signal: host.signal });
     pauseRun(run, true); transition('title', false);
     host.start(now => {
       if (screen === 'choosing' && run.progression.confirming && !confirmations.size && !pointers.size

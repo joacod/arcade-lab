@@ -23,7 +23,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
   await expect(page.locator('[data-game]')).toHaveCount(6);
-  await page.getByRole('button', { name: 'Play Obsidian Duel', exact: true }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Open game: Obsidian Duel', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.getByRole('heading', { name: 'Obsidian Duel' })).toBeVisible(); await page.clock.runFor(50);
   expect(await page.evaluate(() => (window as any).duelContexts.length)).toBe(0);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).duelProbe)));
@@ -97,7 +97,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).duelFrames.size, audio: (window as any).duelContexts.map((c: AudioContext) => c.state) }))).toEqual({ frames: 0, audio: ['closed'] });
-  await page.getByRole('button', { name: 'Play Obsidian Duel', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Obsidian Duel', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Obsidian Duel' })).toBeVisible(); await page.clock.runFor(50);
   expect((await state()).elapsed).toBe(0);
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal'); expect((await state()).fighters[0].kind).toBe('nera');

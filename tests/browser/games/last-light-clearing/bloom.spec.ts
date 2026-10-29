@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 });
 
@@ -34,6 +34,43 @@ const shell = (page: Page) => page.locator('.clearing-app');
 const snapshot = (page: Page) => page.evaluate(() => JSON.stringify((window as any).bloomRun,
   (_, value) => value instanceof Map ? [...value] : value));
 const deviceStates = (page: Page) => page.evaluate(() => ((window as any).bloomDevices ?? []).map((gpu: any) => gpu.disposed));
+
+test('menu geometry uses the game viewport across all four themes', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 620 });
+  await page.clock.runFor(50);
+  const geometry = () => page.locator('.game-menu').evaluate(menu => {
+    const rect = menu.getBoundingClientRect(), actions = menu.querySelector('footer')!.getBoundingClientRect();
+    const body = menu.querySelector('.game-menu-body')!;
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, actionsY: actions.y,
+      scroll: body.scrollHeight - body.clientHeight };
+  });
+  const baseline = await geometry(), retained = await snapshot(page);
+  expect(baseline.scroll).toBe(0);
+  for (const mode of ['assets', 'quality', 'custom', 'normal']) {
+    await theme(page).selectOption(mode);
+    await expect(shell(page)).toHaveAttribute('data-theme', mode);
+    await page.clock.runFor(50);
+    expect(await geometry(), `${mode} menu geometry`).toEqual(baseline);
+    expect(await snapshot(page)).toBe(retained);
+  }
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+  await page.clock.runFor(50);
+  const fullscreen = await geometry();
+  await theme(page).selectOption('assets');
+  await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
+  await page.clock.runFor(50);
+  expect(await geometry()).toEqual(fullscreen);
+  await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+  await page.setViewportSize({ width: 390, height: 460 });
+  await page.locator('.game-menu-controls summary').click();
+  expect((await geometry()).scroll).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
+  await page.getByRole('button', { name: 'Mute sound', exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeInViewport({ ratio: 1 });
+});
 
 test('Custom renders the living field and organisms, retains the run and recovers device loss', async ({ page }) => {
   const errors: string[] = [], requests: string[] = [];

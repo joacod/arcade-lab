@@ -48,7 +48,7 @@ for (const game of [
     expect(result).toEqual({ message: game.message, aborted: true, attached: false, children: 0, observers: 0 });
     expect(errors).toEqual([]);
     // The failed attempt must not prevent a fresh, working session.
-    await page.getByRole('button', { name: game.name === 'Clearing' ? 'Play Last Light Clearing' : `Play ${game.name}`, exact: true }).click();
+    await page.getByRole('button', { name: game.name === 'Clearing' ? 'Open game: Last Light Clearing' : `Open game: ${game.name}`, exact: true }).click();
     await expect(page.locator(game.name === 'Clearing' ? '.world-canvas' : game.name === 'Blastline' ? '.blast-canvas' : game.name === 'Skybreak' ? '.skybreak-canvas' : game.name === 'Midnight Circuit' ? '.circuit-canvas' : game.name === 'Obsidian Duel' ? '.duel-canvas' : '.hollow-canvas')).toBeVisible();
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
@@ -117,7 +117,7 @@ test('partial session setup failures release Clearing and Skybreak resources', a
 
 test('browser host owns one loop and cannot schedule work after disposal', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   const result = await page.evaluate(async () => {
     const path = '/src/engine/browser/host.ts';
     const { createHost } = await import(path);
@@ -174,7 +174,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('.arcade-cover img')).toHaveCount(6);
   await expect.poll(() => page.locator('.arcade-cover img').evaluateAll(images =>
     images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     // Wrap the installed fake clock, whose initialization replaces the native frame methods.
@@ -330,24 +330,24 @@ test('collection restores navigation and ignores a cancelled lazy load that fini
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  const selected = page.getByRole('button', { name: 'Play Blastline', exact: true });
+  const selected = page.getByRole('button', { name: 'Open game: Blastline', exact: true });
   await selected.scrollIntoViewIfNeeded();
   const scrollTop = await page.locator('.arcade-selection').evaluate(root => root.scrollTop);
   await selected.click();
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(selected).toBeFocused();
   expect(await page.locator('.arcade-selection').evaluate(root => root.scrollTop)).toBeCloseTo(scrollTop, 0);
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Loading Skybreak…');
   await expect(page.locator('[data-game=skybreak] .arcade-launch-label')).toHaveText('Loading…');
   await expect(page.getByRole('button', { name: 'Cancel loading', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Cancel loading', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Play Skybreak', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Open game: Skybreak', exact: true })).toBeFocused();
   release();
   // Await that exact import rather than relying on a timeout for the stale completion.
   await page.evaluate(async () => { const path = '/src/games/skybreak/app.ts'; await import(path); });
   await expect(page.locator('.arcade-selection')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Skybreak', exact: true })).toBeVisible();
 });

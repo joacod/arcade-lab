@@ -9,10 +9,10 @@ export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat' | 'in
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'retry' | 'continue';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void) {
   root.innerHTML = `<header class="hollow-hud"><div class="hollow-brand"><span class="hollow-mark">◷</span><div>CLOCKWORK HOLLOW<small>THE WAKING AQUEDUCT</small></div></div>
-    <div class="hollow-instruments"><output aria-label="Motes collected">◇ 0 / 12</output><output class="hollow-progress" aria-label="Journey progress"></output><button data-intent="pause">Pause <kbd>Ⅱ</kbd></button></div></header>
+    <div class="hollow-instruments"><output aria-label="Motes collected">◇ 0 / 12</output><output class="hollow-progress" aria-label="Journey progress"></output><button data-intent="pause">Pause</button></div></header>
     <main class="hollow-stage"><div class="hollow-location" aria-hidden="true"><span>01</span><div>THE WAKING AQUEDUCT<small>Follow the light. Wake the bell.</small></div></div>
     <output class="hollow-announcement" role="status" aria-label="Checkpoint"></output></main>
-    <footer class="hollow-footer"><span class="hollow-hint">A D / ← → MOVE <span>·</span> SPACE TO JUMP</span><div class="hollow-touch"><div><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button></div><button data-control="jump" aria-label="Jump">↑ <small>JUMP</small></button></div><span class="hollow-footer-note">MOTES ARE OPTIONAL. THE BELL IS WAITING.</span></footer>`;
+    <footer class="hollow-footer"><span class="hollow-hint">A D / ← → MOVE <span>·</span> SPACE TO JUMP <span>·</span> P TO PAUSE / RESUME</span><div class="hollow-touch"><div><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button></div><button data-control="jump" aria-label="Jump">↑ <small>JUMP</small></button></div><span class="hollow-footer-note">MOTES ARE OPTIONAL. THE BELL IS WAITING.</span></footer>`;
   const $ = createElementLookup(root);
   $('.hollow-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
@@ -24,7 +24,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: theme.element,
-    controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br><b>Escape / P</b> pause <span>·</span> Touch: arrows + jump`,
+    controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },

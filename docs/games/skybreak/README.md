@@ -56,6 +56,8 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 ## Browser ownership and presentation
 
+P pauses/resumes; the visible Pause button opens the menu. Escape also pauses when delivered by the browser, which may instead use it to leave fullscreen. The HUD emphasizes current hull above remaining lives, with a warm warning at critical hull.
+
 The session reuses the browser host, fixed-step clock, and shared AudioBits session owner. Collision math comes from the shared pure helper. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
 
 One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Fullscreen is available from the menus when supported and includes the playfield, HUD and controls. Pause, hidden pages, focus loss, layout changes and fullscreen transitions clear input and catch-up time. Only explicit Resume continues. A rejected fullscreen request reports a notice and leaves viewport play available. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. Normal and Assets load no graphics library. Only Quality imports Three.js and its postprocessing passes.
