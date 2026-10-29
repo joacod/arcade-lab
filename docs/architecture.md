@@ -122,18 +122,30 @@ Each `app.ts` explicitly connects its run, clock, input, UI, presentation and so
 
 An appearance changes how an existing run is presented. It does not select a new level, reset a clock, change collision geometry or alter combat. Every game exposes the same Theme selector on its title and paused/result menus. Resume is an explicit action. A selection belongs to the mounted session and can survive restarts without becoming persisted data.
 
+### Development progression
+
+For new games and game types, prefer **Normal → Assets → Quality**, giving each stage a separate focused pass:
+
+1. Build the complete, enjoyable game in [Normal](normal-themes.md) first by default. Establish mechanics, controls, simulation, progression and readable feedback with browser-native drawing and simple procedural artwork when feasible.
+2. Once gameplay works, implement [Assets](assets-themes.md) as a cohesive authored visual transformation, reusing the established simulation and physical geometry.
+3. With gameplay established and the Assets direction explored, pursue [Quality](quality-themes.md), the most ambitious standard presentation. Aim for an exceptional visual leap through art direction and polish; technical complexity is not the goal.
+
+Avoid combining all three presentations into one enormous initial task. This is a recommended development process, not a runtime dependency: every implemented mode presents the same simulation and gameplay rules, independently of whether other modes exist. Explicit creative requirements may justify a different order. Missing modes stay visible and unavailable until a dedicated pass implements them.
+
+Existing games developed experimentally may already have Quality without Assets. Preserve those working presentations and useful Normal artwork and animation; future dedicated passes can fill gaps one game at a time. Custom remains outside this progression, reserved for explicitly requested, documented experiments.
+
 ### Mode contract
 
 The menu always shows **Normal**, **Assets**, then **Quality**. A missing definition produces a disabled “(not available)” entry. Availability describes an implemented presentation in the current build, not a promise that a graphics device or image request will succeed. Runtime failures retain the working mode and report a notice. Normal, Assets and Quality are the standard focused presentation modes. Custom is optional and appears only when a game has an explicitly requested, documented experimental presentation. It is not limited to WebGPU and does not imply that other games need Custom. Document the experimental presentation in the game guide. Do not expose palette variants or graphics backends as extra modes.
 
 - **Normal:** the complete, readable baseline drawn with browser primitives, without external image assets or a graphics library. Start here by default when implemented. A fundamentally graphics-dependent game may omit it and start in its first supported mode.
 - **Assets:** one cohesive image-based treatment covering the important actors and environment. Use a cohesive set of generated, authored or downloaded artwork. Effects and UI may remain procedural. Validate frames and keep source dimensions separate from physical geometry. Commit the full bundle so the same mode works from a fresh clone in development and production.
-- **Quality:** a deliberate, game-specific visual pass with detailed composition, animation, lighting, materials, scenery, effects and readable action. Detailed assets, Three.js or vgpu/WebGPU are available tools, not criteria that automatically qualify a mode. Multiple backends may implement the same visual treatment with automatic capability fallback, without adding another selector.
+- **Quality:** the most ambitious standard visual presentation, with exceptional cohesion, impact and polish across composition, animation, lighting, materials, scenery, effects and readable action. It may extend Assets or establish a different identity. Detailed assets, Three.js or vgpu/WebGPU are available tools, not criteria that automatically qualify a mode; added dependencies or complexity are not required. Multiple backends may implement the same visual treatment with automatic capability fallback, without adding another selector.
 - **Custom:** an optional experimental presentation with its own visual identity. It is not overflow for additional palettes.
 
 A mode includes its palette, actor treatment, environment, effects and matching interface styling. Camera policy remains game-owned and consistent across modes. Do not add separate skin, accent or backend selectors. Gameplay setup, such as choosing a fighter or round, stays in game content. Missing modes remain placeholders until a dedicated game-specific task implements them.
 
-For a dedicated Quality pass, follow the [Quality theme creation guide](quality-themes.md) for art direction, asset production, scene hierarchy, motion, resource budgets and verification. Keep the resulting brief, artwork prompts and templates with the game.
+Use the [Normal](normal-themes.md), [Assets](assets-themes.md) and [Quality](quality-themes.md) guides for practical guidance within these contracts. Keep the resulting briefs, artwork prompts and templates with the game.
 
 ### Extending a mode
 
