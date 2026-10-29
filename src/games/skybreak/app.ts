@@ -13,6 +13,8 @@ import { createUI, type Intent, type Screen } from './ui.ts';
 import { themes } from './themes.ts';
 import { prepareFlightArt } from './assets.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
+import { prepareImages } from '../../engine/browser/images.ts';
+import type { FlightPresentation } from './flight-presentation.ts';
 import './style.css';
 
 /** Browser session and composition. Restart replaces the entire mutable run. */
@@ -23,7 +25,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   let sound: ReturnType<typeof createSound>;
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput>;
-  let presentation: ReturnType<typeof createPresentation>;
+  let presentation: FlightPresentation;
   let appearance: ThemeMode = 'normal';
   const preparation = createPreparationScope();
   let activeArt: PreparedImages | undefined;
@@ -55,18 +57,49 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       const request = preparation.begin();
       ui.appearanceStatus(`Preparing ${theme.name}…`);
       let candidate: PreparedImages | undefined;
+      let candidateDisplay: FlightPresentation | undefined;
       try {
-        if (theme.art) candidate = await prepareFlightArt(theme.art, request.signal);
+        const staging = document.createElement('div');
+        if (theme.quality) {
+          const { createFoundry } = await import('./quality/foundry.ts');
+          if (!request.current()) return;
+          candidate = await prepareImages({ backdrop: theme.quality.backdrop }, request.signal, dimensions =>
+            dimensions.backdrop?.width === 1024 && dimensions.backdrop.height === 1536 ? [] : ['Invalid foundry backdrop dimensions.']);
+          if (!request.current()) return;
+          const owner = createFoundry(theme, candidate.images, () => queueMicrotask(() => {
+            if (!disposed && presentation === owner) recoverQuality();
+          }));
+          candidateDisplay = owner;
+        } else {
+          if (theme.art) candidate = await prepareFlightArt(theme.art, request.signal);
+          if (!request.current()) return;
+          candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
+        }
         if (!request.current()) return;
-        presentation.applyTheme(theme, candidate?.images);
+        // A candidate must draw the current sortie successfully before replacing its working owner.
+        candidateDisplay.draw(run, host, screen === 'title' ? performance.now() / 1000 : undefined);
+        const previousDisplay = presentation;
+        host.surface.append(candidateDisplay.element); presentation = candidateDisplay; candidateDisplay = undefined;
         const previous = activeArt; activeArt = candidate; candidate = undefined;
-        appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus(''); previous?.dispose();
+        appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus('');
+        disposeAll(() => previousDisplay.dispose(), () => previous?.dispose());
       } catch {
         if (request.current()) {
           ui.appearance(appearance);
           ui.appearanceStatus(`Could not load ${theme.name}. Keeping ${themes[appearance]!.name}. Your sortie is preserved.`);
         }
-      } finally { candidate?.dispose(); }
+      } finally { disposeAll(() => candidateDisplay?.dispose(), () => candidate?.dispose()); }
+    }
+    function recoverQuality() {
+      if (disposed || appearance !== 'quality') return;
+      suspend(); preparation.begin();
+      const next = createPresentation(document.createElement('div'), themes.normal!);
+      next.draw(run, host);
+      const previous = presentation, previousArt = activeArt;
+      host.surface.append(next.element); presentation = next; activeArt = undefined;
+      appearance = 'normal'; applyPalette(); ui.appearance('normal');
+      ui.appearanceStatus('Orbital Foundry graphics stopped. Pacific Run is ready. Your sortie is preserved.');
+      disposeAll(() => previous.dispose(), () => previousArt?.dispose());
     }
     function transition(next: Screen, focus = true) {
       input.clear(); clock.reset(); screen = next;
@@ -81,6 +114,9 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
       }
       if (document.hidden || !document.hasFocus()) return;
+      if (intent === 'start' || intent === 'restart' || intent === 'resume') {
+        preparation.begin(); ui.appearance(appearance); ui.appearanceStatus('');
+      }
       if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
         sound.reset(); sound.activate(); run = createRun(); presentation.reset(); transition('playing');
       } else if (intent === 'resume' && screen === 'paused') {
@@ -106,7 +142,8 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         const events = takeEvents(run); presentation.consume(events); sound.consume(events);
         if (run.status === 'victory' || run.status === 'defeat') transition(run.status);
       }
-      presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined);
+      try { presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined); }
+      catch (error) { if (appearance === 'quality') recoverQuality(); else throw error; }
       ui.update(run);
     });
     return { dispose };

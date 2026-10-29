@@ -4,8 +4,8 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
-| Last Light Clearing | Procedural clearing | Bundled CC0 Ember Ruins | Prism Garden, sculpted and lit in 3D |
-| Skybreak | Pacific Run | Bundled original Aurora Fleet | Not available |
+| Last Light Clearing | Procedural clearing | Ember Ruins | Prism Garden, sculpted and lit in 3D |
+| Skybreak | Pacific Run | Bundled original Aurora Fleet | Orbital Foundry, sculpted ships and illuminated orbital scenery |
 | Clockwork Hollow | Verdant clockwork | Not available | Not available |
 | Midnight Circuit | Illustrated arcade | Not available | Neon 3D scene, with WebGPU finish when supported |
 | Obsidian Duel | Tempest citadel | Not available | Not available |
@@ -13,7 +13,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 
 All games start in Normal. Normal, Assets and Quality are the three standard modes. Custom is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
-All artwork required by enabled presentations is committed. The six covers, procedural visuals and [Aurora Fleet](src/games/skybreak/art/README.md) are original artwork under the repository's MIT license. The only bundled third-party artwork is [Ember Ruins' CC0 atlas](src/games/last-light-clearing/art/ember-ruins/PROVENANCE.md), retained with its upstream metadata and provenance. Documentation screenshots capture these original or CC0 presentations.
+All artwork required by enabled presentations ships with the repository.
 
 
 ## Last Light Clearing
@@ -35,13 +35,13 @@ Normal uses procedural Canvas art without image loads. Assets supplies animated 
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
 
-See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork definitions and provenance](src/games/last-light-clearing/art/README.md).
+See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork guide](src/games/last-light-clearing/art/README.md).
 
 ## Skybreak
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet in development and production; see [artwork definitions and provenance](src/games/skybreak/art/README.md). Quality is not yet available. All artwork and synthesized sound require no additional downloads.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet. Quality's Orbital Foundry adds sculpted Three.js ships, illuminated machinery, a planetary backdrop and bloom; see [artwork guide](src/games/skybreak/art/README.md). All artwork and synthesized sound ship with the game.
 
 | Control | Action |
 | --- | --- |
@@ -68,7 +68,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | Escape / P / Pause | Pause; use Resume to continue |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
-Normal retains Verdant clockwork; Assets and Quality are not yet available. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Original procedural Canvas artwork and AudioBits sound have no downloaded asset dependencies. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Normal retains Verdant clockwork; Assets and Quality are not yet available. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Procedural Canvas artwork and AudioBits sound complete the presentation. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 

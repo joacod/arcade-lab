@@ -54,7 +54,7 @@ Every attack has simulation-owned startup, active and recovery durations. Each s
 | `src/games/midnight-circuit/sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities, batch coalescing and throttling |
 | `src/games/midnight-circuit/app.ts` | Composition, stepping, interruption, gesture audio activation and disposal |
 
-Artwork dimensions never supply collision geometry. Shadows remain on the ground while elevation moves the painted body. Actors sort by ground lane independently of elevation. The camera frames the whole encounter with a uniform transform, including on narrow screens. Reduced motion suppresses rain, particles and shake. All artwork, cover illustrations and procedural sound recipes are original project-authored assets, covered by the repository MIT license. No external artwork or audio assets are required. The GPU appearances use the installed Three.js and vgpu dependencies.
+Artwork dimensions never supply collision geometry. Shadows remain on the ground while elevation moves the painted body. Actors sort by ground lane independently of elevation. The camera frames the whole encounter with a uniform transform, including on narrow screens. Reduced motion suppresses rain, particles and shake. Artwork, cover illustrations and procedural sound recipes are authored within the game. The GPU appearances use the installed Three.js and vgpu dependencies.
 
 ## Architecture decisions
 

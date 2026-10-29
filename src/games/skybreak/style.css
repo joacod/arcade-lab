@@ -13,6 +13,14 @@
 .skybreak-app .skybreak-stage { min-height: 0; position: relative; overflow: hidden; }
 .skybreak-app .play-surface { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
 .skybreak-app .skybreak-canvas { width: 100%; height: 100%; display: block; }
+.skybreak-app .skybreak-foundry { position: absolute; inset: 0; pointer-events: none; background: var(--sky-background); }
+.skybreak-app .skybreak-foundry .skybreak-canvas { position: absolute; inset: 0; }
+.skybreak-app[data-theme='quality'] { --sky-ink: #e2eee7; --sky-dim: #89b0b8; }
+.skybreak-app[data-theme='quality'] .skybreak-hud,
+.skybreak-app[data-theme='quality'] .skybreak-footer { background: linear-gradient(110deg, #0e2530, #07121d 65%); border-color: #93d5d62b; }
+.skybreak-app[data-theme='quality'] .skybreak-brand { color: #d2eee7; text-shadow: 0 0 20px #8ee9e535; }
+.skybreak-app[data-theme='quality'] .game-menu { background: linear-gradient(145deg, #142d37f5, #06121df5); border-color: #9ce9e44d; box-shadow: 0 24px 100px #000a, inset 0 1px #d2ffff14; }
+.skybreak-app[data-theme='quality'] button { background: #152d38; border-color: #9ce9e440; }
 .skybreak-app .skybreak-footer { padding: 10px max(18px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #789da52b; }
 .skybreak-app .skybreak-footer output { font: 12px monospace; display: block; }
 .skybreak-app .skybreak-wave { font: 9px monospace; letter-spacing: .05em; color: var(--sky-dim); display: block; margin-top: 5px; }

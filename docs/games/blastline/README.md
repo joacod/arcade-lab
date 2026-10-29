@@ -40,7 +40,7 @@ Terrain copies authored materials and health into each run. Axis-separated leadi
 
 Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio coalesces cues, orders milestones and heavy impacts before routine fire, throttles repeats and admits a small number of cues per batch through the shared voice-limited owner.
 
-All visuals, cover artwork and procedural sound recipes were created for this game. There are no downloaded assets or additional art/audio licenses.
+Visuals and cover artwork use editable geometry; sound uses procedural recipes.
 
 ## Architecture decisions
 

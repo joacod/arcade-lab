@@ -2,7 +2,7 @@
 
 [Source](../../../src/games/last-light-clearing/) | [Catalog](../../../CATALOG.md)
 
-The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](../../../src/games/last-light-clearing/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn is a three-minute round; Brief dusk supplies a shorter round through the same implementation. Every appearance uses the same rules. See the [game catalog](../../../CATALOG.md) for controls and [art definitions and provenance](../../../src/games/last-light-clearing/art/README.md) for artwork.
+The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](../../../src/games/last-light-clearing/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn is a three-minute round; Brief dusk supplies a shorter round through the same implementation. Every appearance uses the same rules. See the [game catalog](../../../CATALOG.md) for controls and [artwork guide](../../../src/games/last-light-clearing/art/README.md) for artwork.
 
 ## Gameplay semantics
 
