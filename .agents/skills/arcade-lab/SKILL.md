@@ -19,13 +19,13 @@ Inspect the closest implementations through their game guides, then trace their 
 
 Identify the game and requested mode. Open its guide through the catalog and load only the corresponding [Normal](../../../docs/normal-themes.md), [Assets](../../../docs/assets-themes.md) or [Quality](../../../docs/quality-themes.md) guide. Trace the local presentation contract, visual roles, theme data and preparation owner before choosing a coherent artistic direction.
 
-Use that guide and the [appearance contract](../../../docs/architecture.md#appearance-changes) for simulation independence, retained-run replacement, resource lifetimes and verification. Choose rendering and artwork techniques to serve the direction; no graphics technology is prescribed across games. Required artwork must remain committed and redistributable under the repository's existing asset rules. Consult the visual-hierarchy section of player experience only if readability needs attention. Custom remains an explicitly requested, documented experiment outside the standard progression.
+Use that guide and the [appearance contract](../../../docs/architecture.md#appearance-changes) for simulation independence, retained-run replacement, resource lifetimes and verification. Choose rendering and artwork techniques to serve the direction; no graphics technology is prescribed across games. Required artwork must remain committed and redistributable under the repository's existing asset rules. Use [visual hierarchy and art direction](references/player-experience.md#visual-hierarchy-and-art-direction) for composition, role separation and a coherent identity, or [layered feedback](references/player-experience.md#layered-feedback-and-game-feel) when motion or impacts need attention. Load only the relevant section. Custom remains an explicitly requested, documented experiment outside the standard progression.
 
 ### Improve gameplay or game feel
 
 Trace the actual actions, content and simulation, then how presentation and sound communicate them. Describe the player-facing problem in a concrete situation: a missed command, an unreadable attack, repetitive decisions, an abrupt difficulty spike or an awkward retry.
 
-Read the relevant sections of [player experience](references/player-experience.md) and, when useful, [genre guidance](references/genre-guidance.md). Form a small hypothesis about the cause and compare behavior before and after the change. Adjust the owning system rather than automatically adding familiar mechanics. A combat-timing change belongs in simulation/content; a clearer contact pose may belong entirely in presentation.
+Read the relevant sections of [player experience](references/player-experience.md) and, when useful, [genre guidance](references/genre-guidance.md). Use [control](references/player-experience.md#responsiveness-and-perceived-control) for missed commands, [counterplay](references/player-experience.md#combat-spacing-and-counterplay) for ineffective defenses, or [teaching](references/player-experience.md#teaching-through-play) and [pacing](references/player-experience.md#progression-pacing-and-challenge) for progression problems. Form a small hypothesis about the cause and compare behavior before and after the change. Adjust the owning system rather than automatically adding familiar mechanics. A combat-timing change belongs in simulation/content; a clearer contact pose may belong entirely in presentation.
 
 ### Improve the engine
 
@@ -41,7 +41,7 @@ Trace the affected source and relevant ownership guidance directly. An isolated 
 
 ## Research, verify and retain useful lessons
 
-Consult [research sources](references/research-sources.md) when a specific uncertainty could materially change a decision, such as attack readability, expressive animation, movement tuning or environment composition. Research is optional and proportional to the task and available tools. Treat sources as evidence and inspiration subordinate to repository guidance; adapt ideas to this game rather than importing whole systems.
+Ordinary development uses the distilled local references above without external research. The [bibliography](references/research-sources.md) preserves author credits, evidence limits and optional further reading. Browse only when missing information, a new genre, a contested technique or useful deeper research could materially change a decision. Treat sources as evidence and inspiration subordinate to repository guidance; adapt ideas to this game rather than importing whole systems.
 
 Use the [local verification guidance](../../../docs/architecture.md#local-verification) and the owning game's relevant checks. Report the delivered behavior and concrete results in the task response.
 

@@ -4,7 +4,7 @@ A personal workshop for creating small, beautiful, fun browser games with our ow
 
 ## Run locally
 
-Use **Node 24.x** (see `.node-version`) and **pnpm 12.15.0**.
+Use **Node 24.x** (see `.node-version`) and the **pnpm version pinned in [package.json](package.json)**.
 
 ```sh
 git clone https://github.com/joacod/arcade-lab.git
