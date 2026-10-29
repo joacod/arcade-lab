@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun, stepRun, pauseRun, takeEvents, idle, retryRun, nextLevel, results, ventPhase } from '../../../../src/games/clockwork-hollow/game.ts';
+import { createRun, stepRun, pauseRun, takeEvents, idle, retryRun, nextLevel, results, ventCycle } from '../../../../src/games/clockwork-hollow/game.ts';
 import { hollow, journey, movement as m } from '../../../../src/games/clockwork-hollow/content.ts';
 import { hollowView } from '../../../../src/games/clockwork-hollow/presentation.ts';
 const dt = 1 / 60;
@@ -113,6 +113,7 @@ test('checkpoint retry preserves discoveries and totals, resets threats, and ful
   run.player.y = 1000; stepRun(run, idle, dt); assert.equal(run.deaths, 1);
   const elapsed = run.elapsed; retryRun(run);
   assert.equal(run.status, 'active'); assert.equal(run.player.x, 100); assert.equal(run.player.y, 460);
+  assert.equal(run.failure, null);
   assert.equal(run.player.vx, 0); assert.equal(run.player.buffer, 0); assert.equal(run.elapsed, elapsed);
   assert.equal(run.enemies[0].x, 600); assert.equal(run.collected[0], true);
   advance(run, 5); assert.equal(takeEvents(run).length, 0); assert.equal(results(run).motes, 1);
@@ -128,18 +129,51 @@ test('beetles reverse at authored bounds, stomp bounces once, and side contact e
   assert.equal(takeEvents(run).filter(e => e.type === 'stomp').length, 1);
   const hit = createRun(fixture); hit.player.x = 205; stepRun(hit, idle, dt);
   assert.equal(hit.status, 'defeat'); assert.equal(hit.deaths, 1);
+  assert.equal(hit.failure, 'beetle');
 });
 
 test('vents telegraph before damage, freeze when paused, and emit only at the active edge', () => {
   const vent = { x: 100, y: 345, w: 64, h: 155, period: 4, offset: 0 };
-  assert.equal(ventPhase(vent, 0), 'idle'); assert.equal(ventPhase(vent, 2.2), 'warning'); assert.equal(ventPhase(vent, 3), 'active');
+  assert.equal(ventCycle(vent, 0).phase, 'idle'); assert.equal(ventCycle(vent, 2.2).phase, 'warning'); assert.equal(ventCycle(vent, 3).phase, 'active');
   const run = createRun(level([floor], { vents: [vent] }));
   advance(run, 145); assert.equal(run.status, 'active'); assert.equal(run.vents[0], 'warning');
   pauseRun(run, true); const snapshot = structuredClone(run); advance(run, 1000); assert.deepEqual(run, snapshot);
   pauseRun(run, false);
   let starts = 0;
   for (let i = 0; i < 80; i++) { stepRun(run, idle, dt); starts += takeEvents(run).filter(e => e.type === 'vent').length; }
-  assert.equal(run.status, 'defeat'); assert.equal(starts, 1);
+  assert.equal(run.status, 'defeat'); assert.equal(starts, 1); assert.equal(run.failure, 'pressure');
+});
+
+test('vent countdown follows authored phase boundaries, offsets and wrapping without changing rules', () => {
+  const vent = { x: 100, y: 345, w: 64, h: 155, period: 4, offset: 0 };
+  for (const [time, phase, remaining, fraction] of [
+    [0, 'idle', 2, 1], [1, 'idle', 1, 0.5], [2, 'warning', 0.88, 1],
+    [2.44, 'warning', 0.44, 0.5], [2.88, 'active', 1.12, 1], [3.44, 'active', 0.56, 0.5],
+    [4, 'idle', 2, 1],
+  ]) {
+    const cycle = ventCycle(vent, time);
+    assert.equal(cycle.phase, phase);
+    assert.ok(Math.abs(cycle.remaining - remaining) < 1e-8);
+    assert.ok(Math.abs(cycle.fraction - fraction) < 1e-8);
+    assert.deepEqual(ventCycle({ ...vent, offset: time }, 0), cycle);
+  }
+});
+
+test('failure records the lethal contact once and retry clears it without erasing progress', () => {
+  for (const [fixture, cause] of [
+    [level([], { start: { x: 0, y: 950 } }), 'fall'],
+    [level([floor], { hazards: [{ x: 100, y: 480, w: 30, h: 20 }] }), 'thorns'],
+  ]) {
+    const run = createRun(fixture);
+    assert.equal(run.failure, null);
+    stepRun(run, idle, dt);
+    assert.equal(run.failure, cause); assert.equal(run.deaths, 1);
+    advance(run, 60);
+    assert.equal(run.failure, cause); assert.equal(run.deaths, 1);
+    const elapsed = run.elapsed;
+    retryRun(run);
+    assert.equal(run.failure, null); assert.equal(run.elapsed, elapsed); assert.equal(run.deaths, 1);
+  }
 });
 
 test('authored checkpoints and patrol bounds have safe physical support independent of their art', () => {

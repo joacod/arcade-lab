@@ -9,6 +9,8 @@ export interface Player {
 }
 export interface HollowEvent { type: 'jump' | 'land' | 'damage' | 'interaction' | 'stomp' | 'checkpoint' | 'vent' | 'level' | 'complete'; x: number; y: number; strength: number }
 export interface Enemy extends Rect { x: number; direction: number; alive: boolean }
+export type Failure = 'fall' | 'thorns' | 'pressure' | 'beetle';
+export type VentPhase = 'idle' | 'warning' | 'active';
 export interface Run {
   readonly levels: readonly Level[];
   level: Level;
@@ -18,30 +20,36 @@ export interface Run {
   elapsed: number;
   levelTime: number;
   deaths: number;
+  failure: Failure | null;
   bankedMotes: number;
   completed: number;
   checkpoint: number;
   collected: boolean[];
   enemies: Enemy[];
-  vents: ('idle' | 'warning' | 'active')[];
+  vents: VentPhase[];
   events: HollowEvent[];
 }
 function playerAt(at: { x: number; y: number }): Player {
   return { x: at.x, y: at.y, vx: 0, vy: 0, grounded: false, facing: 1, coyote: 0, buffer: 0, jumpCut: false };
 }
-export function ventPhase(vent: Vent, time: number): 'idle' | 'warning' | 'active' {
-  const phase = ((time + vent.offset) % vent.period) / vent.period;
-  return phase < 0.5 ? 'idle' : phase < 0.72 ? 'warning' : 'active';
+/** Rules and presentation read the same cycle; no separate countdown clock. */
+export function ventCycle(vent: Vent, time: number): { phase: VentPhase; remaining: number; fraction: number } {
+  const elapsed = (time + vent.offset) % vent.period;
+  const position = (elapsed < 0 ? elapsed + vent.period : elapsed) / vent.period;
+  const phase = position < 0.5 ? 'idle' : position < 0.72 ? 'warning' : 'active';
+  const start = phase === 'idle' ? 0 : phase === 'warning' ? 0.5 : 0.72;
+  const end = phase === 'idle' ? 0.5 : phase === 'warning' ? 0.72 : 1;
+  return { phase, remaining: (end - position) * vent.period, fraction: (end - position) / (end - start) };
 }
 function resetThreats(run: Run) {
   run.levelTime = 0;
   run.enemies = run.level.patrols.map(enemy => ({ ...enemy, direction: 1, alive: true }));
-  run.vents = run.level.vents.map(vent => ventPhase(vent, 0));
+  run.vents = run.level.vents.map(vent => ventCycle(vent, 0).phase);
 }
 export function createRun(levels: readonly Level[] = journey): Run {
   const level = levels[0];
   if (!level) throw new Error('A journey needs at least one level.');
-  const run: Run = { levels, level, levelIndex: 0, status: 'active', elapsed: 0, levelTime: 0, deaths: 0,
+  const run: Run = { levels, level, levelIndex: 0, status: 'active', elapsed: 0, levelTime: 0, deaths: 0, failure: null,
     bankedMotes: 0, completed: 0, checkpoint: -1, collected: level.motes.map(() => false), enemies: [], vents: [], events: [], player: playerAt(level.start) };
   resetThreats(run); return run;
 }
@@ -49,13 +57,13 @@ export function createRun(levels: readonly Level[] = journey): Run {
 export function retryRun(run: Run) {
   if (run.status !== 'defeat') return;
   run.player = playerAt(run.level.checkpoints[run.checkpoint] ?? run.level.start);
-  run.status = 'active'; run.events = []; resetThreats(run);
+  run.status = 'active'; run.failure = null; run.events = []; resetThreats(run);
 }
 export function nextLevel(run: Run) {
   if (run.status !== 'interlude') return;
   run.levelIndex++; run.level = run.levels[run.levelIndex]!;
   run.player = playerAt(run.level.start); run.checkpoint = -1;
-  run.collected = run.level.motes.map(() => false); run.events = []; run.status = 'active'; resetThreats(run);
+  run.collected = run.level.motes.map(() => false); run.events = []; run.status = 'active'; run.failure = null; resetThreats(run);
 }
 export function results(run: Run) {
   const motes = run.bankedMotes + (run.status === 'interlude' || run.status === 'victory' ? 0 : run.collected.filter(Boolean).length);
@@ -122,7 +130,7 @@ export function stepRun(run: Run, action: Action, dt: number) {
     else if (enemy.x <= content.x) { enemy.x = content.x; enemy.direction = 1; }
   });
   run.level.vents.forEach((vent, i) => {
-    const phase = ventPhase(vent, run.levelTime);
+    const { phase } = ventCycle(vent, run.levelTime);
     if (phase === 'active' && run.vents[i] !== 'active') run.events.push({ type: 'vent', x: vent.x + vent.w / 2, y: vent.y + vent.h, strength: 1 });
     run.vents[i] = phase;
   });
@@ -141,18 +149,17 @@ export function stepRun(run: Run, action: Action, dt: number) {
     if (!action.jumpHeld) { p.vy *= m.jumpCut; p.jumpCut = true; }
   }
   const body = { x: p.x, y: p.y, w: m.width, h: m.height };
-  function die() { run.status = 'defeat'; run.deaths++; emit(run, 'damage'); }
-  if (p.y > run.level.height + 40 || run.level.hazards.some(h => overlaps(body, h))
-    || run.level.vents.some((vent, i) => run.vents[i] === 'active' && overlaps(body, vent))) {
-    die(); return;
-  }
+  function die(cause: Failure) { run.status = 'defeat'; run.failure = cause; run.deaths++; emit(run, 'damage'); }
+  if (p.y > run.level.height + 40) { die('fall'); return; }
+  if (run.level.hazards.some(h => overlaps(body, h))) { die('thorns'); return; }
+  if (run.level.vents.some((vent, i) => run.vents[i] === 'active' && overlaps(body, vent))) { die('pressure'); return; }
   for (const enemy of run.enemies) {
     if (!enemy.alive || !overlaps(body, enemy)) continue;
     if (p.vy > 0 && previousBottom <= enemy.y + 8) {
       enemy.alive = false; p.y = enemy.y - m.height; p.vy = -m.jumpSpeed * 0.68;
       p.grounded = false; p.coyote = 0; p.jumpCut = true;
       run.events.push({ type: 'stomp', x: enemy.x + enemy.w / 2, y: enemy.y, strength: 1 });
-    } else { die(); return; }
+    } else { die('beetle'); return; }
   }
   run.level.checkpoints.forEach((checkpoint, i) => {
     if (i > run.checkpoint && overlaps(body, { x: checkpoint.x - 20, y: checkpoint.y - 35, w: 66, h: 80 })) {
