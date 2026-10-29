@@ -18,9 +18,9 @@
 
 ## Technologies
 
-- Commit all artwork required by the games. Use game and asset sites as inspiration for visual direction, animation and asset templates. Describe AI-generated images simply as AI-generated; retain useful prompts, dimensions and editable sources without recording the generation tool or model. For third-party files actually included in the repository, check usage permissions and keep required credits and license notices beside those files.
+- Every required asset must be committed and redistributable with this public repository. Check external asset licenses before integration; reject incompatible or unclear sources and create original artwork instead. Preserve legally required third-party credits and notices alongside their assets.
 - Canvas 2D, Three.js and vgpu/WebGPU are valid rendering choices. Each game uses the renderer or renderers its design needs. Keep unrelated games and graphics implementations behind appropriate loading boundaries.
-- For a Quality theme, follow the [Quality theme creation guide](docs/quality-themes.md). Establish a complete game-specific visual direction, preserve combat readability and simulation ownership, retain useful artwork prompts and templates and verify presentation replacement and resource recovery.
+- For a Quality theme, follow the [Quality theme creation guide](docs/quality-themes.md). Establish a complete game-specific visual direction, preserve gameplay readability and simulation ownership and verify presentation replacement and resource recovery.
 - Use [AudioBits](.agents/skills/audiobits/SKILL.md) for all game sound. Reuse `src/engine/browser/audio.ts` for session-owned AudioBits lifecycle and bounded playback. Keep recipes, event mapping, cue priorities and throttling local to each game. Activate synchronously in existing user gestures; pause and dispose through the session owner. Current integration status belongs in the architecture document.
 - Add dependencies when their capabilities improve quality or save substantial implementation work. Avoid unnecessary wrappers and large frameworks without a concrete benefit. Do not add publishing/release infrastructure or external API stability guarantees. Add compatibility only for persisted data, an actual external consumer or an explicit requirement.
 
