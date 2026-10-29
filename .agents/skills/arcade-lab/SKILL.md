@@ -29,7 +29,7 @@ Read the relevant sections of [player experience](references/player-experience.m
 
 ### Improve menus and interaction UI
 
-Read [menu/UI guidance](references/menu-ui.md) for a launcher or catalog pass, game-menu improvements, theme-selection clarity, upgrade or loadout choices, and player prompts or decision overlays. Trace the shared menu/field owners and the affected game's UI and session before editing. Shared navigation prioritizes consistency and low friction; game-specific decisions can express the game's identity while retaining readable controls and explicit consequences.
+Read [menu/UI guidance](references/menu-ui.md) for a launcher or catalog pass, in-game navigation and HUD hierarchy, game-menu improvements, theme-selection clarity, upgrade or loadout choices, and player prompts or decision overlays. Trace the shared menu/field owners and the affected game's UI and session before editing. Shared navigation prioritizes consistency and low friction; game-specific decisions can express the game's identity while retaining readable controls and explicit consequences.
 
 Keep the pass proportional to the request. Preserve fast entry and good existing simplicity, reuse the common shell, and keep choice semantics with the game. A small label or focus bug needs a local fix, not a broad UX redesign. Load a presentation guide as well only when changing the game presentation itself.
 

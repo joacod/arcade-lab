@@ -56,7 +56,7 @@ test('opening guidance, shield layout, evolution feedback and dawn preserve sess
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
@@ -77,6 +77,7 @@ test('opening guidance, shield layout, evolution feedback and dawn preserve sess
   await page.clock.runFor(40);
   await expect(page.locator('.shield-value')).toHaveText('+20 shield');
   await expect(page.locator('.evolution-progress')).toHaveText('Arc Spark · chain lightning');
+  await expect(page.getByLabel('Equipped weapons', { exact: true })).toHaveText('ϟ Arc Spark 3');
   await expect(page.locator('.field-message')).toContainText('Arc Spark awakened');
   expect(await page.locator('.play-surface').boundingBox()).toEqual(surfaceBefore);
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-screen', 'playing');
@@ -120,7 +121,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
   await expect(page.getByRole('heading', { name: 'Last Light Clearing' })).toBeVisible();
@@ -206,7 +207,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -360,7 +361,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   });
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
   await expect(page.locator('.asset-status')).toBeHidden();
@@ -553,7 +554,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 
   lethal = true;
   await page.reload();
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   for (const configuration of ['clearing', 'dusk']) {
     await page.getByLabel('Round configuration').selectOption(configuration);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -575,7 +576,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     window.AudioContext = class { constructor() { throw new Error('Audio unavailable for this check'); } } as unknown as typeof AudioContext;
   });
   await page.reload();
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
 
   await page.getByLabel('Theme', { exact: true }).selectOption('assets');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
@@ -590,7 +591,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
@@ -665,7 +666,7 @@ test('compact upgrade choices explain roles and acknowledge one keyboard decisio
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.evaluate(async () => {

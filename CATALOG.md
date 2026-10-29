@@ -1,6 +1,6 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Each menu has one **Theme** selector, sound/fullscreen controls and expandable control instructions. Theme changes retain the paused run; Resume continues it. Missing modes are visible as disabled options.
+Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Each menu has one **Theme** selector, sound/fullscreen controls and expandable control instructions. Theme changes retain the paused run; Resume or P continues it. P pauses/resumes in every game. Escape pauses when delivered; browsers may use Escape to leave fullscreen. Missing modes are visible as disabled options.
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
@@ -30,7 +30,7 @@ Normal uses procedural Canvas art without image loads. Assets supplies animated 
 | --- | --- |
 | WASD / arrow keys | Move |
 | Hold and drag in the arena | Move with mouse, touch or pen; release to stop |
-| Escape / P / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Click / tap, or arrows + Enter / Space | Choose an upgrade, then release to continue |
 | Tab / Shift+Tab | Focus menu controls |
 | Fullscreen / Exit fullscreen | Change display mode |
@@ -49,7 +49,7 @@ Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an arm
 | Space / J | Hold to fire |
 | Shift / K / Roll button | Evade; recharges between rolls |
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
-| Escape / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and source ownership.
@@ -65,7 +65,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | A/D / left and right arrows | Move |
 | Space / W / Up / Z | Jump; hold for height, release for a short hop |
 | Touch arrows + Jump | Move and jump with independent buttons |
-| Escape / P / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 Normal retains Verdant clockwork; Assets and Quality are not yet available. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Focus loss and display changes pause and clear input. Procedural Canvas artwork and AudioBits sound complete the presentation. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
@@ -83,7 +83,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | K | Heavy strike |
 | Space, then J / K | Jump, then flying kick |
 | Touch arrows + Strike / Heavy / Jump | Independent movement and action buttons |
-| Escape / P / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 Normal uses the original illustrated Canvas presentation. Quality combines the modeled Neon diorama scene with the Neon cinema finish when WebGPU is supported. Modeled fighters, neon facades, rain, shadows and bright impacts bring the streets to life, with distance-driven walking across both modes and procedural AudioBits sound. Assets is not yet available. Theme changes preserve the paused run; unavailable graphics retain a working presentation or restore Normal. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
@@ -103,7 +103,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Crouch + J / airborne J or K | Low sweep / overhead jump attack |
 | Shift | Guard; hold crouch as well to stop sweeps |
 | Touch directions + Light / Heavy / Special / Guard | Independent held controls and attack presses |
-| Escape / P / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 Normal retains Tempest citadel and its original fighter costumes. Assets and Quality are not yet available. Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
@@ -123,7 +123,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | K | Throw a fused grenade |
 | Q | Switch operator after rescuing Bolt |
 | Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
-| Escape / P / Pause | Pause; use Resume to continue |
+| P / Pause | P pauses/resumes; Pause opens the menu |
 | Fullscreen / Exit fullscreen | Change display mode from the menus |
 
 Normal retains Iron coast. Assets and Quality are not yet available. Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).

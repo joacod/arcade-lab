@@ -11,7 +11,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK</div>
     <div class="skybreak-score"><span>SCORE</span><output aria-label="Score">000000</output></div>
-    <div class="skybreak-condition"><output aria-label="Aircraft lives">3 lives</output><output aria-label="Aircraft hull">Hull ●●●</output></div>
+    <div class="skybreak-condition"><output aria-label="Aircraft hull">Hull ●●●</output><output aria-label="Aircraft lives">3 lives</output></div>
     <button data-intent="pause">Pause</button></header>
     <main class="skybreak-stage"><div class="skybreak-boss" hidden><div><strong>IRON TEMPEST</strong><output aria-label="Fortress phase"></output></div><progress aria-label="Iron Tempest hull" max="${fortress.health}" value="${fortress.health}"></progress><span class="skybreak-boss-pattern"></span></div></main>
     <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL <span>READY</span></button></footer>`;
@@ -27,7 +27,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: appearance.element,
-    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll · Escape to pause<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
+    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
@@ -56,6 +56,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     update(run: Run) {
       setText(score, String(run.score).padStart(6, '0')); setText(lives, `${run.player.lives} lives`);
       setText(hull, `Hull ${'●'.repeat(run.player.health)}${'○'.repeat(flight.player.health - run.player.health)}`);
+      hull.classList.toggle('skybreak-critical', run.player.health <= 1);
       setText(progress, `${String(Math.min(flight.duration, Math.floor(run.elapsed))).padStart(2, '0')} / ${flight.duration} s`);
       setText(wave, run.boss ? run.boss.health <= 0 ? 'IRON TEMPEST · DESTROYED' : 'FINAL CONTACT · IRON TEMPEST' : run.nextWave ? `${String(run.nextWave).padStart(2, '0')} / ${waves.length} · ${waves[run.nextWave - 1]!.label.toUpperCase()}` : 'AWAITING TAKEOFF');
       setText($('[aria-label="Aircraft weapons"]'), `GUN ${['I', 'II', 'III'][run.player.power]}${run.player.spread > 0 ? ` + SPREAD ${Math.ceil(run.player.spread)}s` : ''}`);

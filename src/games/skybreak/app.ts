@@ -37,7 +37,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
   }
   try {
     host = createHost(container, { className: 'skybreak-app', label: 'Skybreak',
-      surfaceLabel: 'Skybreak playfield. WASD or arrows to move, Space or J to fire, Shift or K to roll. Drag to steer and fire.',
+      surfaceLabel: 'Skybreak playfield. WASD or arrows to move, Space or J to fire, Shift or K to roll. P pauses or resumes. Drag to steer and fire.',
       onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), selectTheme);
@@ -128,9 +128,6 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       input.clear(); clock.reset(); sound.pause();
       if (screen === 'playing') { pauseRun(run, true); transition('paused', false); }
     }
-    host.root.addEventListener('keydown', event => {
-      if (event.code === 'Escape' && screen === 'playing') { event.preventDefault(); suspend(); }
-    }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });

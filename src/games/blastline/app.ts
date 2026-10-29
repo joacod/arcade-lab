@@ -14,7 +14,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   const host = createHost(container, { className: 'blast-app', label: 'Blastline',
-    surfaceLabel: 'Blastline playfield. A D move, Space jump, J fire, W S aim, K grenade, Q switch operator. Escape pauses.',
+    surfaceLabel: 'Blastline playfield. A D move, Space jump, J fire, W S aim, K grenade, Q switch operator. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   let sound: ReturnType<typeof createSound> | undefined;
   let input: ReturnType<typeof bindInput> | undefined;
@@ -57,7 +57,6 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     presentation = createPresentation(host.surface);
     appearance('normal');
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
-    host.root.addEventListener('keydown', e => { if (!e.repeat && ['Escape', 'KeyP'].includes(e.code) && screen === 'playing') { e.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });

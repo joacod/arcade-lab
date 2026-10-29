@@ -6,7 +6,7 @@ An original Canvas 2D run-and-gun operation through **Border Station** and **Fou
 
 ## Playing
 
-A/D or left/right runs, Space jumps, and releasing Space shortens the jump. Hold J to fire. W/up and S/down aim vertically while stationary and diagonally while moving. K throws a fused grenade. Reach Bolt to rescue him and switch automatically to his launcher; Q then swaps operators. Touch directions, Jump, Fire, Grenade and Switch own independent pointers. Escape/P pauses. Menus offer Resume, Restart, Game selection, sound mute and fullscreen.
+A/D or left/right runs, Space jumps, and releasing Space shortens the jump. Hold J to fire. W/up and S/down aim vertically while stationary and diagonally while moving. K throws a fused grenade. Reach Bolt to rescue him and switch automatically to his launcher; Q then swaps operators. Touch directions, Jump, Fire, Grenade and Switch own independent pointers. P pauses/resumes. Escape pauses when delivered by the browser. Menus offer Resume, Restart, Game selection, sound mute and fullscreen.
 
 Nova's accurate automatic rifle opens small holes through sustained fire. Bolt's slower rockets damage groups of tiles and machines. Operator explosives are safe at close range; volatile barrels and machine attacks hurt. Guards commit to short bursts, while heavy units and the Bastion mark a target before firing stronger shells. Move away from the warning line rather than standing in its path.
 

@@ -23,7 +23,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     window.requestAnimationFrame = callback => { const id = request(now => { pending.delete(id); callback(now); }); pending.add(id); return id; };
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
-  await page.getByRole('button', { name: 'Play Blastline', exact: true }).click(); await page.clock.runFor(50);
+  await page.getByRole('button', { name: 'Open game: Blastline', exact: true }).click(); await page.clock.runFor(50);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).blastProbe)));
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title');
   expect(await page.evaluate(() => (window as any).blastContexts.length)).toBe(0);
@@ -90,7 +90,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   expect(await page.evaluate(() => ({ frames: (window as any).blastFrames.size, audio: (window as any).blastContexts.map((c: AudioContext) => c.state) })))
     .toEqual({ frames: 0, audio: ['closed'] });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('button', { name: 'Play Blastline', exact: true }).click(); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title'); await page.clock.runFor(50); expect((await state()).elapsed).toBe(0);
+  await page.getByRole('button', { name: 'Open game: Blastline', exact: true }).click(); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title'); await page.clock.runFor(50); expect((await state()).elapsed).toBe(0);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);

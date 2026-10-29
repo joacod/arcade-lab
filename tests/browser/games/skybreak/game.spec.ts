@@ -25,7 +25,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
     window.requestAnimationFrame = callback => { const id = request(now => { pending.delete(id); callback(now); }); pending.add(id); return id; };
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Skybreak' })).toBeVisible();
   // Preference changes apply to the already-mounted renderer, without altering the run.
   await page.emulateMedia({ reducedMotion: 'reduce' }); await page.clock.runFor(20);
@@ -144,14 +144,14 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).flightFrames.size, audio: (window as any).flightContexts.map((c: AudioContext) => c.state) })))
     .toEqual({ frames: 0, audio: ['closed'] });
-  await page.getByRole('button', { name: 'Play Last Light Clearing', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('.clearing-app')).toHaveCount(0); await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).flightFrames.size)).toBe(0);
   await page.evaluate(() => { Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: false }); });
-  await page.getByRole('button', { name: 'Play Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Skybreak' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeHidden();
   expect((await state()).elapsed).toBe(0); expect((await state()).player.lives).toBe(3);

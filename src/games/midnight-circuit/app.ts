@@ -15,7 +15,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createAppearance> | undefined, sound: ReturnType<typeof createSound> | undefined;
   const host = createHost(container, { className: 'circuit-app', label: 'Midnight Circuit',
-    surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. Escape pauses.',
+    surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   function dispose() { if (disposed) return; disposed = true; disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose()); }
   function transition(next: Screen, focus = true) {
@@ -46,7 +46,6 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => { suspend(); void presentation?.select(value); });
     presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend);
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
-    host.root.addEventListener('keydown', event => { if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); } }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });

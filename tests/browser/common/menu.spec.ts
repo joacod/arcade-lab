@@ -9,7 +9,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
   const games = ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline'];
   for (const title of games) {
     requests.length = 0;
-    await page.getByRole('button', { name: `Play ${title}`, exact: true }).click();
+    await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.locator('[data-control]:visible')).toHaveCount(0);
     const play = page.getByRole('button', { name: 'Play', exact: true });
@@ -65,8 +65,34 @@ test('shared menus fit compact screens and keep actions accessible with a single
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await page.getByRole('button', { name: 'Play', exact: true }).click();
+    const root = page.locator('[data-menu-owner]');
+    await page.keyboard.down('p');
+    await expect(root).toHaveAttribute('data-screen', 'paused');
+    await page.keyboard.down('p'); // Native repeat must not resume the run.
+    await expect(root).toHaveAttribute('data-screen', 'paused');
+    await page.keyboard.up('p');
+    await theme.focus();
+    await page.keyboard.press('p'); // Native fields keep their own keyboard interaction.
+    await expect(root).toHaveAttribute('data-screen', 'paused');
+    await page.locator('.game-menu-body').focus();
+    await page.keyboard.press('p');
+    await expect(root).toHaveAttribute('data-screen', 'playing');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+    if (title === 'Skybreak') {
+      await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+      await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+      await page.getByRole('button', { name: 'Resume', exact: true }).focus();
+      await page.keyboard.press('p');
+      await expect(root).toHaveAttribute('data-screen', 'playing');
+      await page.keyboard.press('p');
+      await expect(root).toHaveAttribute('data-screen', 'paused');
+      await page.keyboard.press('p');
+      // A browser-owned exit may deliver no Escape keydown at all.
+      await page.evaluate(() => document.exitFullscreen());
+      await expect(root).toHaveAttribute('data-screen', 'paused');
+      await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+    }
     await page.getByRole('button', { name: 'Resume', exact: true }).click();
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
@@ -87,8 +113,8 @@ test('shared menus fit compact screens and keep actions accessible with a single
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeInViewport({ ratio: 1 });
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: `Play ${title}`, exact: true })).toBeFocused();
-    await expect(page.getByRole('button', { name: `Play ${title}`, exact: true }).locator('.arcade-return')).toHaveText('Last selected');
+    await expect(page.getByRole('button', { name: `Open game: ${title}`, exact: true })).toBeFocused();
+    await expect(page.getByRole('button', { name: `Open game: ${title}`, exact: true }).locator('.arcade-return')).toHaveText('Last selected');
   }
   expect(errors).toEqual([]);
 });
@@ -135,4 +161,44 @@ test('composed menu fields retain native labels, values and session-owned listen
     return { events, unchangedMutations };
   });
   expect(result).toEqual({ events: ['brisk'], unchangedMutations: 0 });
+});
+
+test('menu shortcuts respect editing, browser modifiers, disabled Resume and disposal', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const path = '/src/common/ui/menu.ts';
+    const { createGameMenu } = await import(path);
+    const root = document.createElement('div'), stage = document.createElement('div');
+    const surface = document.createElement('div'), pause = document.createElement('button');
+    root.append(stage, pause); stage.append(surface); document.body.replaceChildren(root);
+    const lifetime = new AbortController(), events: string[] = [];
+    const theme = document.createElement('div');
+    for (const tag of ['input', 'textarea', 'select', 'div']) {
+      const editor = document.createElement(tag);
+      if (tag === 'div') { editor.contentEditable = 'true'; editor.innerHTML = '<span>Editing</span>'; }
+      theme.append(editor);
+    }
+    const menu = createGameMenu(root, surface, stage, {
+      id: 'shortcuts', title: 'Shortcut fixture', signal: lifetime.signal, pause, theme, gameplayUI: [], controls: '',
+      actions: [{ id: 'resume', label: 'Resume', screens: ['paused'] }],
+      onAction(action: string) { events.push(action); menu.show('playing', false); }, onMute() {}, onFullscreen() {},
+    });
+    pause.addEventListener('click', () => { events.push('pause'); menu.show('paused', false); }, { signal: lifetime.signal });
+    const key = (target: Element, code = 'KeyP', options = {}) => {
+      const event = new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true, ...options });
+      target.dispatchEvent(event); return event.defaultPrevented;
+    };
+    menu.show('paused', false);
+    for (const editor of theme.querySelectorAll('input, textarea, select, [contenteditable] span')) key(editor);
+    key(root, 'KeyP', { ctrlKey: true }); key(root, 'KeyP', { metaKey: true });
+    const resume = menu.actions[0]!;
+    resume.disabled = true; key(root); resume.disabled = false;
+    const ignored = [...events];
+    key(root); key(root, 'KeyP', { repeat: true });
+    const escapePrevented = key(root, 'Escape');
+    key(root, 'Escape'); // Escape never resumes.
+    const beforeDisposal = [...events]; lifetime.abort(); key(root); pause.click();
+    return { ignored, beforeDisposal, afterDisposal: events, escapePrevented };
+  });
+  expect(result).toEqual({ ignored: [], beforeDisposal: ['resume', 'pause'], afterDisposal: ['resume', 'pause'], escapePrevented: true });
 });

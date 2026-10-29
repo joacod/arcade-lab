@@ -193,7 +193,7 @@ test('cancelled activation cannot play or report late, and a failed gesture can 
 test('game sessions suspend for cached pagehide and dispose on final page exit', async ({ page }) => {
   for (const game of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow']) {
     await page.goto('/');
-    await page.getByRole('button', { name: `Play ${game}`, exact: true }).click();
+    await page.getByRole('button', { name: `Open game: ${game}`, exact: true }).click();
     await page.getByRole('button', { name: 'Play', exact: true }).click();
     await expect.poll(() => page.evaluate(() => (window as any).audioProbe.contexts.at(-1)?.state)).toBe('running');
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));

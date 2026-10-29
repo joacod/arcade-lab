@@ -8,7 +8,7 @@ import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = 'start' | 'resume' | 'restart' | 'continue' | 'pause' | 'quit' | 'fullscreen';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void, appearance: (value: Appearance) => void) {
-  root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Ⅱ</button></header>
+  root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
   </main>
   <footer class="circuit-footer"><div class="circuit-hint">WASD <span>MOVE / ALIGN</span>　J <span>COMBO</span>　K <span>HEAVY</span>　SPACE <span>JUMP</span></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><span>＋</span><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack">K<small>HEAVY</small></button><button data-control="light" aria-label="Light attack">J<small>STRIKE</small></button></div></div></footer>`;
@@ -23,7 +23,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: style.element,
-    controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J IN AIR</b> flying kick<br>Tap J three times for a finisher. Step out of red telegraphs.<p><b>Escape / P</b> pause. Touch: use the on-screen controls.</p>`,
+    controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J IN AIR</b> flying kick<br>Tap J three times for a finisher. Step out of red telegraphs.<p>Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },

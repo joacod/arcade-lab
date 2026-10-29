@@ -31,8 +31,10 @@
 :where(.clearing-app) .vitals { display: flex; align-items: center; gap: 8px; }
 :where(.clearing-app) .health-value { min-width: 12ch; }
 :where(.clearing-app) .shield-value { color: var(--xp); font-size: 12px; white-space: nowrap; width: 10ch; }
-:where(.clearing-app) .evolution-progress, :where(.clearing-app) .field-message { position: absolute; z-index: 2; pointer-events: none; font-size: 12px; line-height: 1.5; color: var(--text); background: color-mix(in srgb, var(--background) 88%, transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; }
-:where(.clearing-app) .evolution-progress { top: 10px; left: 10px; }
+:where(.clearing-app) .field-status, :where(.clearing-app) .field-message { position: absolute; z-index: 2; pointer-events: none; font: 12px/1.5 system-ui, sans-serif; color: var(--text); background: color-mix(in srgb, var(--background) 88%, transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; }
+:where(.clearing-app) .field-status { top: 10px; left: 10px; max-width: calc(100% - 20px); display: grid; gap: 3px; }
+:where(.clearing-app) .equipped-weapons { font-weight: 650; }
+:where(.clearing-app) .evolution-progress { font-size: 11px; color: var(--muted); }
 :where(.clearing-app) .field-message { bottom: 16px; left: 50%; transform: translateX(-50%); margin: 0; width: max-content; max-width: calc(100% - 24px); text-align: center; color: var(--accent); }
 .clearing-app:not([data-screen='playing']) .evolution-progress, .clearing-app:not([data-screen='playing']) .field-message { display: none; }
 :where(.clearing-app) .health-meter { width: 80px; height: 14px; }

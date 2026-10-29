@@ -21,7 +21,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
     window.requestAnimationFrame = callback => { const id = request(now => { frames.delete(id); callback(now); }); frames.add(id); return id; };
     window.cancelAnimationFrame = id => { frames.delete(id); cancel(id); };
   });
-  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Midnight Circuit', exact: true })).toBeVisible(); await page.clock.runFor(50);
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).circuitProbe)));
   await page.screenshot({ path: info.outputPath('midnight-title.png') });
@@ -82,7 +82,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).circuitFrames.size, audio: (window as any).circuitContexts.map((c: AudioContext) => c.state) }))).toEqual({ frames: 0, audio: ['closed'] });
-  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Midnight Circuit', exact: true })).toBeVisible(); await page.clock.runFor(50);
   expect((await state()).elapsed).toBe(0); expect(await page.evaluate(() => (window as any).circuitFrames.size)).toBe(1);
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
@@ -103,7 +103,7 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   });
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined }));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
   await page.getByLabel('Theme', { exact: true }).selectOption('quality');
   await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -143,7 +143,7 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   // A cancelled import/preparation must never attach to the departing session.
-  await page.getByRole('button', { name: 'Play Midnight Circuit', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
 
   await page.getByLabel('Theme', { exact: true }).selectOption('quality');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();

@@ -6,7 +6,7 @@ An original one-on-one fighter set on a storm-lit terrace of the Tempest Citadel
 
 ## Fighting
 
-A/D or left/right moves. W/Up (also Space) jumps. S/Down crouches. J is light, K heavy, L special and Shift guards. Crouching J sweeps; airborne J or K attacks overhead. Escape/P pauses. Touch buttons support independent held movement, crouch and guard alongside attack presses. Release controls during round transitions before pressing again.
+A/D or left/right moves. W/Up (also Space) jumps. S/Down crouches. J is light, K heavy, L special and Shift guards. Crouching J sweeps; airborne J or K attacks overhead. P pauses/resumes. Escape pauses when delivered by the browser. Touch buttons support independent held movement, crouch and guard alongside attack presses. Release controls during round transitions before pressing again.
 
 Standing guard stops ordinary strikes and overheads. Crouching guard stops ordinary strikes and lows, but loses to overheads. Guard prevents damage and briefly locks movement in blockstun. You cannot guard in the air. A sweep catches standing opponents but passes below a jump. Attacks are commitments: wait for a heavy to miss, then approach during recovery. A short press buffer helps time your next action near the end of recovery.
 

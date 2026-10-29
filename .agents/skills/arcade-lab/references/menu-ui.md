@@ -8,6 +8,16 @@ Give the next action a clear place and name. In the catalog, identity, genre and
 
 Keep setup options before play and current-run information beside decisions. Disclose controls and secondary details on demand, but keep required choices, warnings and primary actions visible. A scrollable details area with reachable actions is often enough for compact screens; avoid stacking nested panels and tabs.
 
+## In-game navigation and HUDs
+
+Separate utility navigation from gameplay-critical information. Keep Pause easy to find; group fullscreen, sound and presentation settings in the existing menu. Give important controls predictable names, positions and behavior, with a visible way back to play on keyboard and touch.
+
+Prioritize the HUD by the decisions and genre: survival needs protection and equipment, combat needs health and readiness, exploration needs route and location. Group related resources and make critical state recognizable through shape, text and contrast as well as color. Show temporary prompts and encounter feedback when relevant; avoid permanent counters or repeated instructions that do not help the next decision. Detailed upgrades and results belong beside their menu decisions.
+
+Preserve each game’s artistic hierarchy rather than imposing a universal header. Themes can change palette, texture and expression while keeping critical information and control placement stable. Menu space should follow the game viewport, independently of hidden HUD wrapping or theme font metrics. Keep primary actions reachable when genuinely constrained content needs to scroll.
+
+Respect browser keyboard ownership: P pauses/resumes, repeated keydowns do not toggle repeatedly, and editable fields retain their own input. Escape is useful when delivered, but fullscreen may consume it to exit. Do not rely on intercepting it; display transitions should leave a coherent session that the player deliberately resumes.
+
 ## Can the player compare choices and predict the result?
 
 Lead each choice with its purpose, then its consequence. For Clearing upgrades, distinguish a new weapon, a rank increase, recovery and an evolution ingredient before presenting exact stat changes. Show relevant current equipment or prerequisites beside the choices. Use the simulation's existing summaries and content values so UI does not invent a second balance model. Do not imply an evolution is ready when prerequisites are missing.

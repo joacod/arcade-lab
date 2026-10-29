@@ -15,7 +15,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   const host = createHost(container, { className: 'hollow-app', label: 'Clockwork Hollow',
-    surfaceLabel: 'Clockwork Hollow playfield. A D or arrows to move. Space, W, Up or Z to jump. Hold for height. Escape to pause.',
+    surfaceLabel: 'Clockwork Hollow playfield. A D or arrows to move. Space, W, Up or Z to jump. Hold for height. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   let sound: ReturnType<typeof createSound> | undefined;
   let input: ReturnType<typeof bindInput> | undefined;
@@ -64,9 +64,6 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     presentation = createPresentation(host.surface);
     appearance('normal');
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
-    host.root.addEventListener('keydown', event => {
-      if (!event.repeat && ['Escape', 'KeyP'].includes(event.code) && screen === 'playing') { event.preventDefault(); suspend(); }
-    }, { signal: host.signal });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });

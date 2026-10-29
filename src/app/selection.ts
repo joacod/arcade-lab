@@ -16,7 +16,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
   root.innerHTML = `<div class="arcade-selection-inner">
     <header class="arcade-selection-header"><div><p class="arcade-eyebrow">ARCADE LAB</p><h1 id="selection-heading">Find your next game.</h1><p class="arcade-intro">Choose a game, then press Play. Controls and themes are in each game menu.</p></div><span class="arcade-count">${games.length} games to explore</span></header>
     <div class="arcade-games" aria-labelledby="selection-heading">${games.map(game => `
-      <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Play ${game.title}" aria-describedby="${game.id}-description">
+      <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
         <span class="arcade-cover" aria-hidden="true">${state.selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${game.cover}" alt="" width="480" height="260" decoding="async"></span>
         <span class="arcade-card-copy"><span class="arcade-genre">${game.genre}</span><span class="arcade-game-title">${game.title}</span><span id="${game.id}-description" class="arcade-game-description">${game.description}</span><span class="arcade-controls">${game.controls}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-launch-label">Open game</span><span>→</span></span></span>
       </button>`).join('')}</div>
