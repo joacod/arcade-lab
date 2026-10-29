@@ -1,6 +1,6 @@
 # Midnight Circuit artwork
 
-Normal uses the original procedural Illustrated arcade figures and scenery. Quality models its Neon diorama in Three.js. Assets uses **Signal / Rain**, an original image-based comic treatment distributed under the repository's [MIT license](../../../../LICENSE). All required files ship with the game. No external artwork, downloads or generation service is required.
+Normal uses the original procedural Illustrated arcade figures and scenery. Quality uses **Afterglow**, original sculpted Three.js artwork with a reflected wet street and a bounded bloom finish. Its [creative brief](../../../../docs/games/midnight-circuit/README.md#quality-art-direction-afterglow) describes the palette, silhouettes, stage treatments and animation. The editable sources are `../three/art.ts`, `../three/scenery.ts` and `../three/fighters.ts`; the scene generates all geometry, sign textures and contact-shadow artwork locally. Assets uses **Signal / Rain**, an original image-based comic treatment distributed under the repository's [MIT license](../../../../LICENSE). All required files ship with the game. No external artwork, downloads or generation service is required.
 
 ## Signal / Rain creative brief
 

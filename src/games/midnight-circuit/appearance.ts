@@ -28,19 +28,9 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
         if (!request.current()) return;
         next = await createAssets(staging, request.signal);
       } else {
-        // Both backends present the same scene. WebGPU adds a finish when available.
-        try {
-          const { createCinema } = await import('./vgpu/cinema.ts');
-          if (!request.current()) return;
-          next = await createCinema(staging, request.signal, failed);
-          if (snapshot) next.draw(...snapshot);
-        } catch {
-          next?.dispose(); next = undefined;
-          if (!request.current()) return;
-          const { createDiorama } = await import('./three/diorama.ts');
-          if (!request.current()) return;
-          next = createDiorama(staging, failed);
-        }
+        const { createDiorama } = await import('./three/diorama.ts');
+        if (!request.current()) return;
+        next = createDiorama(staging, failed);
       }
       if (!request.current()) { next.dispose(); return; }
       if (snapshot) next.draw(...snapshot);
