@@ -1,4 +1,4 @@
-import { openMenu } from '../menu.ts';
+import { openMenu, chooseOption } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
 for (const game of [
@@ -189,7 +189,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50); await page.keyboard.press('Escape');
-  await openMenu(page); await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.keyboard.down('d'); await page.clock.runFor(100);

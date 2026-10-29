@@ -1,3 +1,4 @@
+import { chooseOption } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
 // Chromium's software WebGPU adapter exercises the real shaders without a hardware requirement.
@@ -47,7 +48,7 @@ test('menu geometry uses the game viewport across all four themes', async ({ pag
   const baseline = await geometry(), retained = await snapshot(page);
   expect(baseline.scroll).toBe(0);
   for (const mode of ['assets', 'quality', 'custom', 'normal']) {
-    await theme(page).selectOption(mode);
+    await chooseOption(theme(page), mode);
     await expect(shell(page)).toHaveAttribute('data-theme', mode);
     await page.clock.runFor(50);
     expect(await geometry(), `${mode} menu geometry`).toEqual(baseline);
@@ -57,7 +58,7 @@ test('menu geometry uses the game viewport across all four themes', async ({ pag
   await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
   await page.clock.runFor(50);
   const fullscreen = await geometry();
-  await theme(page).selectOption('assets');
+  await chooseOption(theme(page), 'assets');
   await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(50);
   expect(await geometry()).toEqual(fullscreen);
@@ -83,7 +84,7 @@ test('Custom renders the living field and organisms, retains the run and recover
   const retained = await snapshot(page);
   expect(requests.some(url => /\/vgpu\/|\/vgpu\.js/.test(url))).toBe(false);
 
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect(shell(page)).toHaveAttribute('data-theme', 'custom');
   await expect(shell(page)).toHaveAttribute('data-skin', 'abyss');
   await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'vgpu');
@@ -92,10 +93,10 @@ test('Custom renders the living field and organisms, retains the run and recover
   await page.clock.runFor(60);
 
   // Switching away releases the GPU; switching back preserves the paused run.
-  await theme(page).selectOption('assets');
+  await chooseOption(theme(page), 'assets');
   await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
   expect(await deviceStates(page)).toEqual([true]);
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect(shell(page)).toHaveAttribute('data-theme', 'custom');
   expect(await snapshot(page)).toBe(retained);
 
@@ -114,7 +115,7 @@ test('Custom renders the living field and organisms, retains the run and recover
   expect(await snapshot(page)).toBe(progressed);
   expect(await deviceStates(page)).toEqual([true, true]);
 
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect(shell(page)).toHaveAttribute('data-theme', 'custom');
   await page.getByRole('button', { name: 'Restart', exact: true }).click();
   await page.clock.runFor(40);
@@ -127,9 +128,9 @@ test('Custom renders the living field and organisms, retains the run and recover
 
 test('unavailable WebGPU and failed surface preparation retain the working presentation', async ({ page }) => {
   await page.evaluate(() => Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined }));
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect(page.locator('.asset-status')).toContainText('WebGPU is unavailable');
-  await expect(theme(page)).toHaveValue('normal');
+  await expect(theme(page)).toHaveAttribute('value', 'normal');
   await expect(shell(page)).toHaveAttribute('data-theme', 'normal');
   expect(await deviceStates(page)).toEqual([]);
   const retained = await snapshot(page);
@@ -141,9 +142,9 @@ test('unavailable WebGPU and failed surface preparation retain the working prese
       return original.call(this, type, ...args);
     } as typeof original;
   });
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
-  await expect(theme(page)).toHaveValue('normal');
+  await expect(theme(page)).toHaveAttribute('value', 'normal');
   expect(await snapshot(page)).toBe(retained);
   expect(await deviceStates(page)).toEqual([true]);
   await expect(page.locator('.play-surface canvas')).toHaveCount(2);
@@ -151,17 +152,17 @@ test('unavailable WebGPU and failed surface preparation retain the working prese
 
 test('superseded compilation and late acquisition after unmount release their GPU resources', async ({ page }) => {
   await page.evaluate(() => { (window as any).holdBloom = 'compile'; });
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect.poll(() => page.evaluate(() => typeof (window as any).releaseBloom)).toBe('function');
   await expect(shell(page)).toHaveAttribute('data-theme', 'normal');
-  await theme(page).selectOption('assets');
+  await chooseOption(theme(page), 'assets');
   await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
   expect(await deviceStates(page)).toEqual([true]);
   await page.evaluate(() => { (window as any).releaseBloom(); delete (window as any).releaseBloom; });
   await expect(page.locator('.asset-status')).toBeHidden();
 
   await page.evaluate(() => { (window as any).holdBloom = 'device'; });
-  await theme(page).selectOption('custom');
+  await chooseOption(theme(page), 'custom');
   await expect.poll(() => page.evaluate(() => typeof (window as any).releaseBloom)).toBe('function');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await page.evaluate(() => (window as any).releaseBloom());

@@ -14,7 +14,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     <div class="skybreak-condition"><output aria-label="Aircraft hull">Hull ●●●</output><output aria-label="Aircraft lives">3 lives</output></div>
     <button data-intent="pause">Pause</button></header>
     <main class="skybreak-stage"><div class="skybreak-boss" hidden><div><strong>IRON TEMPEST</strong><output aria-label="Fortress phase"></output></div><progress aria-label="Iron Tempest hull" max="${fortress.health}" value="${fortress.health}"></progress><span class="skybreak-boss-pattern"></span></div></main>
-    <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL <span>READY</span></button></footer>`;
+    <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL (K) <span>READY</span></button></footer>`;
   const $ = createElementLookup(root);
   $('.skybreak-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
@@ -41,7 +41,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
-    appearance(id: ThemeMode) { appearance.input.value = id; },
+    appearance(id: ThemeMode) { appearance.setValue(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
     fullscreen: menu.fullscreen,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,

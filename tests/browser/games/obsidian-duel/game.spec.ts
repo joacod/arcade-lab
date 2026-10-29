@@ -1,4 +1,4 @@
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and disposal', async ({ page }, info) => {
@@ -47,7 +47,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
       Math.floor((canvas.height - Math.min(canvas.width / 1000, canvas.height / 560) * 560) / 2) + 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
   await page.clock.runFor(50);
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await skyPixel()).toEqual(beforeTheme);

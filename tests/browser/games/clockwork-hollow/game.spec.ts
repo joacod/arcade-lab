@@ -1,4 +1,4 @@
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Clockwork Hollow movement, touch, outcomes and switching respect session lifetimes', async ({ page }, info) => {
@@ -46,7 +46,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
   await page.clock.runFor(50);
   await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await skyPixel()).toEqual(beforeTheme);

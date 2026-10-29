@@ -1,4 +1,4 @@
-import { openMenu } from '../../menu.ts';
+import { openMenu, chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Skybreak sortie controls, suspension, outcomes, and switching release each session', async ({ page }, info) => {
@@ -57,12 +57,12 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.keyboard.up('Space'); await page.keyboard.press('Escape');
   const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
   await openMenu(page);
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   await page.clock.runFor(30); expect(await state()).toEqual(frozen);
   await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(100);
   await page.keyboard.press('Escape');
-  await openMenu(page); await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('normal');
+  await openMenu(page); await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   const afterTheme = await state();
   await page.evaluate(() => {

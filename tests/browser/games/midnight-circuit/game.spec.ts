@@ -1,3 +1,4 @@
+import { chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Midnight Circuit controls, interruption, restart, finale and switching own one clean session', async ({ page }, info) => {
@@ -41,7 +42,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   // Dedicated appearance coverage below owns GPU switching and failure recovery.
   await page.keyboard.press('Escape');
 
-  await page.getByLabel('Theme', { exact: true }).selectOption('normal');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
@@ -104,7 +105,7 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined }));
   await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
@@ -112,10 +113,10 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   const state = () => page.evaluate(() => JSON.stringify((window as any).circuitProbe));
   let paused = await state();
 
-  await page.getByLabel('Theme', { exact: true }).selectOption('normal');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   expect(await state()).toBe(paused);
-  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
   expect(await state()).toBe(paused);
   // Graphics loss during play must pause and retain the same run for explicit Resume.
@@ -126,13 +127,13 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   });
   await expect(page.locator('.circuit-app')).toHaveAttribute('data-screen', 'paused');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
-  await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('normal');
+  await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'normal');
   expect(await state()).toBe(paused);
   await page.evaluate(() => { delete (navigator as any).gpu; });
-  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.game-menu-display-status')).not.toContainText('Preparing', { timeout: 15000 });
   expect(await state()).toBe(paused);
-  const selected = await page.getByLabel('Theme', { exact: true }).inputValue();
+  const selected = await page.getByLabel('Theme', { exact: true }).getAttribute('value');
   if (selected === 'quality') {
     await expect(page.locator('canvas[data-renderer="vgpu"], canvas[data-renderer="three"]')).toBeVisible();
 
@@ -145,7 +146,7 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   // A cancelled import/preparation must never attach to the departing session.
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
 
-  await page.getByLabel('Theme', { exact: true }).selectOption('quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await page.waitForTimeout(200);
   await expect(page.locator('canvas')).toHaveCount(0);
