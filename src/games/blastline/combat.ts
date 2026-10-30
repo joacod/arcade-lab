@@ -16,7 +16,7 @@ export function firePlayer(run: Run, grenade: boolean) {
     emit(run, 'throw', p); return;
   }
   if (p.cooldown > 0) return;
-  const d = operators[p.operator]; p.cooldown = d.interval;
+  const d = operators[p.operator]; p.cooldown = d.interval; p.fireBuffer = 0;
   // Start inside the physical body; tracing includes the muzzle path and cannot skip adjacent cover.
   spawnProjectile(run, { x: p.x + p.w / 2, y: p.y + 12, vx: p.aimX * d.speedShot, vy: p.aimY * d.speedShot, life: 1.2,
     kind: p.operator === 'nova' ? 'bullet' : 'rocket', friendly: true, damage: d.damage, tileDamage: d.tileDamage, radius: d.radius });

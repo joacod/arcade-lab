@@ -5,6 +5,7 @@ import { missions, TILE, body, limits } from '../../../../src/games/blastline/co
 import { bodyClear, createTerrain, damageTile, indexAt, moveBody, traceTerrain } from '../../../../src/games/blastline/terrain.ts';
 import { queueExplosion, resolveExplosions, spawnProjectile, stepProjectiles, visible } from '../../../../src/games/blastline/combat.ts';
 import { blastView } from '../../../../src/games/blastline/presentation.ts';
+import { movePlayer } from '../../../../src/games/blastline/movement.ts';
 const dt = 1 / 60;
 function fixture(extra = {}) {
   const columns = 40, rows = 20, terrain = Array(columns * rows).fill(0);
@@ -14,6 +15,83 @@ function fixture(extra = {}) {
 function advance(run, count, action = idle) { for (let i = 0; i < count; i++) { stepRun(run, action, dt); takeEvents(run); } }
 const blast = (x, y, radius = 70) => ({ x, y, radius, damage: 1, tileDamage: 8, source: 'player' });
 const shot = (extra = {}) => ({ x: 60, y: 366, vx: 30000, vy: 0, life: 2, kind: 'bullet', friendly: true, damage: 2, tileDamage: 1, radius: 0, ...extra });
+
+for (const operator of ['nova', 'bolt']) test(`${operator} remembers a fresh fire tap near recovery once, but expires early taps and released holds`, () => {
+  const make = () => {
+    const run = createRun([fixture({ relays: [{ x: 850, y: 350 }] })]);
+    run.player.operator = operator;
+    return run;
+  };
+  const run = make(); run.player.cooldown = .08;
+  stepRun(run, { ...idle, fire: true, firePressed: true }, dt);
+  assert.equal(run.projectiles.length, 0);
+  advance(run, 6);
+  assert.equal(run.projectiles.length, 1, 'a released tap fires when recovery ends');
+  takeEvents(run);
+  for (let i = 0; i < 60; i++) {
+    stepRun(run, idle, dt);
+    assert.equal(takeEvents(run).filter(e => e.type === 'shot' || e.type === 'launch').length, 0, 'the tap never repeats');
+  }
+
+  const early = make(); early.player.cooldown = .3;
+  stepRun(early, { ...idle, fire: true, firePressed: true }, dt);
+  advance(early, 20);
+  assert.equal(early.projectiles.length, 0, 'old intent must expire before a long recovery ends');
+
+  const held = make(); held.player.cooldown = .08;
+  stepRun(held, { ...idle, fire: true }, dt);
+  advance(held, 6);
+  assert.equal(held.projectiles.length, 0, 'releasing a hold does not queue a trailing shot');
+});
+
+test('pause, operator switches and death discard queued fire intent', () => {
+  for (const interrupt of ['pause', 'switch', 'death']) {
+    const run = createRun([fixture({ relays: [{ x: 850, y: 350 }] })]);
+    run.player.cooldown = .08;
+    stepRun(run, { ...idle, fire: true, firePressed: true }, dt);
+    assert.ok(run.player.fireBuffer > 0);
+    if (interrupt === 'pause') { pauseRun(run, true); pauseRun(run, false); }
+    if (interrupt === 'switch') { run.rescued = true; stepRun(run, { ...idle, switch: true }, dt); }
+    if (interrupt === 'death') { run.player.immune = 0; run.player.y = 600; stepRun(run, idle, dt); }
+    assert.equal(run.player.fireBuffer, 0, interrupt);
+    advance(run, 100);
+    assert.equal(run.projectiles.length, 0, interrupt);
+  }
+});
+
+test('jump buffering, release height and coyote time survive landing and removed support without repeat jumps', () => {
+  function jumpHeight(held) {
+    const run = createRun([fixture()]);
+    movePlayer(run, idle, dt);
+    const ground = run.player.y;
+    movePlayer(run, { ...idle, jumpPressed: true, jumpHeld: held }, dt);
+    let top = run.player.y, jumps = takeEvents(run).filter(e => e.type === 'jump').length;
+    for (let i = 0; i < 80; i++) {
+      movePlayer(run, { ...idle, jumpHeld: held }, dt);
+      top = Math.min(top, run.player.y);
+      jumps += takeEvents(run).filter(e => e.type === 'jump').length;
+    }
+    assert.equal(jumps, 1); assert.ok(run.player.grounded);
+    return ground - top;
+  }
+  assert.ok(jumpHeight(true) > jumpHeight(false) * 3);
+  const landing = createRun([fixture()]);
+  Object.assign(landing.player, { y: 347, vy: 300 });
+  movePlayer(landing, { ...idle, jumpPressed: true, jumpHeld: true }, dt);
+  assert.ok(landing.player.buffer > 0);
+  movePlayer(landing, { ...idle, jumpHeld: true }, dt);
+  assert.equal(takeEvents(landing).filter(e => e.type === 'jump').length, 1);
+  assert.ok(landing.player.vy < -400); assert.equal(landing.player.buffer, 0);
+
+  for (const delay of [3, 10]) {
+    const run = createRun([fixture()]); movePlayer(run, idle, dt);
+    for (const r of [16, 17]) for (let c = 1; c < 6; c++) damageTile(run.terrain, indexAt(run.terrain, c, r), 9);
+    for (let i = 0; i < delay; i++) movePlayer(run, idle, dt);
+    takeEvents(run);
+    movePlayer(run, { ...idle, jumpPressed: true, jumpHeld: true }, dt);
+    assert.equal(takeEvents(run).filter(e => e.type === 'jump').length, delay === 3 ? 1 : 0);
+  }
+});
 
 test('terrain damage is finite, bounded, idempotent and owned by each fresh run', () => {
   const m = fixture(), a = createRun([m]), b = createRun([m]);

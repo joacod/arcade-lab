@@ -1,5 +1,5 @@
 import { overlaps } from '../../engine/collision.ts';
-import { body, missions, TILE, enemyTypes, fuel, relay, type Mission } from './content.ts';
+import { body, missions, TILE, enemyTypes, fuel, relay, inputTiming, type Mission } from './content.ts';
 import { createTerrain, moveBody } from './terrain.ts';
 import { playerAt, movePlayer } from './movement.ts';
 import { firePlayer, stepProjectiles, resolveExplosions } from './combat.ts';
@@ -34,7 +34,7 @@ export function nextMission(run: Run) {
   run.lives = Math.min(body.lives, run.lives + 1); run.status = 'active'; prepareMission(run);
 }
 export function pauseRun(run: Run, paused: boolean) {
-  if (paused && run.status === 'active') { run.status = 'paused'; run.player.buffer = 0; }
+  if (paused && run.status === 'active') { run.status = 'paused'; run.player.buffer = 0; run.player.fireBuffer = 0; }
   else if (!paused && run.status === 'paused') run.status = 'active';
 }
 export function takeEvents(run: Run) { const events = run.events; run.events = []; return events; }
@@ -59,7 +59,7 @@ export function objectiveText(run: Run): string {
 function objectives(run: Run, dt: number) {
   const p = run.player, m = run.mission;
   if (m.rescue && !run.rescued && overlaps(p, { x: m.rescue.x - 24, y: m.rescue.y - 18, w: 70, h: 54 })) {
-    run.rescued = true; p.operator = 'bolt'; p.cooldown = .3; p.health = body.health; run.grenades = body.grenades;
+    run.rescued = true; p.operator = 'bolt'; p.cooldown = .3; p.fireBuffer = 0; p.health = body.health; run.grenades = body.grenades;
     run.score += 1000; emit(run, 'rescue', p);
   }
   m.checkpoints.forEach((point, i) => {
@@ -100,9 +100,12 @@ export function stepRun(run: Run, action: Action, dt: number) {
   }
   const p = run.player;
   p.immune = Math.max(0, p.immune - dt); p.cooldown = Math.max(0, p.cooldown - dt); p.grenadeCooldown = Math.max(0, p.grenadeCooldown - dt);
-  if (action.switch && run.rescued) { p.operator = p.operator === 'nova' ? 'bolt' : 'nova'; p.cooldown = Math.max(.25, p.cooldown); emit(run, 'switch', p); }
+  p.fireBuffer = Math.max(0, p.fireBuffer - dt);
+  if (action.switch && run.rescued) { p.operator = p.operator === 'nova' ? 'bolt' : 'nova'; p.cooldown = Math.max(.25, p.cooldown); p.fireBuffer = 0; emit(run, 'switch', p); }
+  // Only fresh presses survive release. Holding fire keeps its normal cadence without queuing a trailing shot.
+  if (action.firePressed) p.fireBuffer = inputTiming.fireBuffer;
   movePlayer(run, action, dt);
-  if (action.fire) firePlayer(run, false);
+  if (action.fire || p.fireBuffer > 0) firePlayer(run, false);
   if (action.grenade) firePlayer(run, true);
   stepEnemies(run, dt);
   for (const b of run.barrels) if (!b.detonated) { b.vy = Math.min(body.fall, b.vy + body.gravity * dt); moveBody(run.terrain, b, dt); }
