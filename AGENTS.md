@@ -31,3 +31,8 @@
 - Use CATALOG.md as the shared index for game-specific docs. Keep shared guidance independent of game names, inventories and implementation details. Document decisions where they are owned, avoid duplicating source constants or rules, and remove obsolete reports. Keep artwork docs focused on creating, adapting and integrating assets; label useful reference links as inspiration.
 - Keep verification local, small and meaningful. `pnpm check` runs types, invariant tests and the build. Run `pnpm check:browser` for input or lifecycle changes. Browser automation is Chromium only. Do not add CI, per-interaction suites, screenshot matrices or expand the browser/device matrix without an explicit request.
 - Do not require human playtesting sign-off or record manual-testing status, acceptance checklists or "unverified" caveats in project docs. The user tests games and reports issues as needed. Keep docs focused on usage, design and maintenance; report concrete failures when found.
+
+## Cursor Cloud specific instructions
+
+- Node 26 (`.node-version`) and pnpm 12.16.1 are required. The environment install puts that Node ahead of the platform Node on `PATH`. When `node -v` is older than 26, prepend `$HOME/.nvm/versions/node/v26.*/bin`.
+- `pnpm dev` serves the collection at http://127.0.0.1:5173. `pnpm check` runs types, unit tests, and the production build. `pnpm check:browser` runs the Chromium Playwright suite. Environment setup installs Chromium and points its WebGPU canvas path at SwiftShader via Vulkan; after a fresh `pnpm exec playwright install chromium`, that launch wrapper has to be reapplied or Last Light Clearing's Custom theme reports graphics loss.
