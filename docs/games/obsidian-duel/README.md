@@ -22,9 +22,9 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 ## Theme modes
 
-**Normal** keeps Tempest citadel, storm scenery and the original fighter costumes. **Assets · Eclipse Foundry** replaces the scenery, fighter costumes, Stormglass bolt and contact effects with bundled original SVG artwork. Nera wears ivory panels, turquoise stormglass and a crescent crest. Kael wears broad basalt plates, heavy gauntlets and ember seams. A copper eclipse hangs over the ruined observatory and its engraved dueling floor. **Quality** remains unavailable.
+**Normal** keeps Tempest citadel, storm scenery and the original fighter costumes. **Assets · Eclipse Foundry** replaces the scenery, fighters, Stormglass bolt and contact effects with bundled original artwork. Painted whole-character sprites give Nera an ivory wrap tunic, turquoise sash and flowing dark ponytail. Kael wears a charcoal sleeveless tunic and copper sash, with connected muscular shoulders and bare arms. A copper eclipse hangs over the ruined observatory and its engraved dueling floor. **Quality** remains unavailable.
 
-![Eclipse Foundry: Nera extends a stormglass-armored kick toward Kael's basalt guard beneath the copper orrery](eclipse-foundry.png)
+![Eclipse Foundry: painted Nera extends a kick toward Kael's guard beneath the copper orrery](eclipse-foundry.png)
 
 Choose Theme from setup or a paused match. Preparation keeps the working presentation visible, then replaces it on the same match. Resume continues the current attack, jump, health, cooldowns, timer and round. Restart retains the theme; leaving the game releases its images. See the [artwork guide](../../../src/games/obsidian-duel/art/README.md) for the creative brief, inspiration, cel layout and regeneration.
 
@@ -40,7 +40,7 @@ Choose Theme from setup or a paused match. Preparation keeps the working present
 | `src/games/obsidian-duel/animation.ts` | Cosmetic action observations, authored pose keys, travel-driven gait and fixed-length limb solving |
 | `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, procedural Normal fighters, presentation replacement and bounded contact effects |
 | `src/games/obsidian-duel/asset-art.ts`, `assets.ts` | Whole-body cel layout, dimension validation and shared cancellable image preparation |
-| `src/games/obsidian-duel/asset-presentation.ts` | Complete Eclipse Foundry action cels, bolts and contact artwork |
+| `src/games/obsidian-duel/asset-presentation.ts` | Complete painted Eclipse Foundry action cels, bolts and contact artwork |
 | `src/games/obsidian-duel/ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `src/games/obsidian-duel/sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |
 | `src/games/obsidian-duel/app.ts` | Host, clock, focus, display changes, audio and session disposal |
@@ -51,7 +51,7 @@ The CPU samples visible spacing, telegraphs and incoming bolts, then receives th
 
 Normal uses procedural Canvas geometry; the selection cover is an editable SVG. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Arms and legs retain their segment lengths through wind-up, contact, recoil, guard and falling. Pelvis and shoulder motion transfer weight without rotating a standing fighter away from its supporting feet. Walking follows signed distance travelled, so pressing into a wall does not march in place.
 
-Assets uses 74 complete illustrated cels per fighter across 16 clips. Each cel includes the body, costume, face, hands and cloth in one drawing. The runtime selects a frame with a fixed ground pivot, rather than assembling or stretching body-part images. The original cel sources use authored whole-body keys and pose-specific contours; replacing an individual drawing does not require changing Normal's renderer.
+Assets uses painted whole-character drawings across all 16 clips. Connected anatomy, soft joint volumes, purposeful hand shapes and clothing folds make the idle figure read as one person. Attack sequences include anticipation, contact, retraction and settling drawings. Original transparent source sheets, prompts and selected frame layouts are retained with the artwork. A mechanical packer aligns complete silhouettes to stable pivots and fills the timed atlas slots. Assets shares semantic action samples with Normal, while its illustrations are authored independently of the Normal skeleton.
 
 Both themes observe the same semantic actions. Attack drawings follow authored startup, active and recovery times; contact cels never appear during startup. Jump poses follow ascent, apex and descent, and landing, hit reactions, knockdown and wake-up have dedicated sequences. Theme replacement retains animation observations as well as combat state. Reduced motion removes idle breathing, shake, storm flourishes and Assets embers, and reduces particles while preserving action animation and combat information.
 

@@ -1,5 +1,4 @@
 import { writeFileSync } from 'node:fs';
-import { generateFighters } from './fighters.mjs';
 
 // Original vector artwork. All coordinates are authored here; no external inputs.
 const save = (name, width, height, body, view = `0 0 ${width} ${height}`) => writeFileSync(new URL(`${name}.svg`, import.meta.url),
@@ -69,7 +68,6 @@ for (let i = 0; i < 70; i++) { const x = i * 137 % 1000, y = 435 + i * 31 % 122;
 stage += rect(0, 0, 1000, 560, 'url(#vignette)');
 save('stage', 1600, 896, stage, '0 0 1000 560');
 
-generateFighters();
 let effects = '';
 // Four 128-square cells: bolt, strike, guard, ground seal. Anchors are their centers.
 effects += path('M4 65L44 54 55 35 92 46 122 64 88 80 53 92 43 74Z', '#29778388')

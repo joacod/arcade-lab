@@ -6,7 +6,7 @@ import { createMatch } from '../../../../src/games/obsidian-duel/game.ts';
 import { fighters } from '../../../../src/games/obsidian-duel/content.ts';
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
-test('every cel and interpolated pose preserves anatomy without mutating combat state', () => {
+test('Normal key poses and interpolated poses preserve fixed anatomy', () => {
   for (const kind of ['nera', 'kael']) for (const [clip, count] of Object.entries(duelClips)) {
     for (let frame = 0; frame < count; frame += .1) {
       const p = samplePose(kind, { clip, frame }), arm = kind === 'nera' ? [31, 32] : [35, 37];

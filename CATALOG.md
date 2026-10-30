@@ -106,7 +106,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | P / Pause | P pauses/resumes; Pause opens the menu |
 | F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Tempest citadel and its original fighter costumes, with fixed-length limbs and grounded weight transfer. Assets introduces **Eclipse Foundry**, an original illustrated observatory arena with 74 complete action cels per fighter, ivory stormglass attire for Nera, basalt armor for Kael, and authored bolt and contact artwork. Quality is not yet available. Action-specific poses, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Normal retains Tempest citadel and its original fighter costumes, with fixed-length limbs and grounded weight transfer. Assets introduces **Eclipse Foundry**, an original illustrated observatory arena with painted whole-character animation, ivory and turquoise attire for Nera, a charcoal tunic and copper sash for Kael, and authored bolt and contact artwork. Quality is not yet available. Action-specific poses, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 

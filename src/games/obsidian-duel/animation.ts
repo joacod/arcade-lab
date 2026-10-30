@@ -102,7 +102,7 @@ function poseKeys(kind: FighterId, clip: DuelClip): readonly KeyPose[] {
   }
 }
 
-/** Fixed segment lengths stop elastic punches and disconnected knees, even between key poses. */
+/** Normal's fixed segment lengths stop elastic punches and disconnected knees between keys. */
 export function solveLimb(start: Point, target: Point, upper: number, lower: number, side: number): [Point, Point] {
   const dx = target[0] - start[0], dy = target[1] - start[1], raw = Math.hypot(dx, dy), d = clamp(raw, Math.abs(upper - lower) + .01, upper + lower - .01);
   const ux = raw > .001 ? dx / raw : 1, uy = raw > .001 ? dy / raw : 0;

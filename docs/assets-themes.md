@@ -27,6 +27,8 @@ Keep independently moving actors, articulated parts, interactable objects, attac
 
 Choose the animation representation for the action. Separate part images suit some designs; complete character cels allow pose-specific silhouettes, foreshortening and cloth. Renderers can share semantic action observations without sharing a rig. Align anticipation, contact and recovery drawings to the simulation's actual windows, use a stable pivot across frames, and avoid stretching anatomy to match attack reach. Inspect planted feet and transitions as well as the contact pose.
 
+Full-body cels should read as one drawn figure, including in an idle stance. Continuous contours, connected joint anatomy, garment folds and consistent volume establish that cohesion; storing separately outlined limbs in one cell does not. Let the illustration define its silhouette and proportions while sharing the game's semantic action timing. Assess a representative standing pose and an attack sequence before expanding the complete set.
+
 ## Prepare and replace within existing owners
 
 Commit all required artwork in the owning game's `art/` folder and import its URLs locally. Check redistribution rights and retain required credits and license notices alongside third-party artwork. A fresh clone must run the presentation without regeneration or external services.
