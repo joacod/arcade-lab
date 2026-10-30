@@ -6,6 +6,21 @@ export function duelView(width: number, height: number) {
   const scale = Math.min(width / arena.width, height / arena.height);
   return { scale, left: (width - arena.width * scale) / 2, top: (height - arena.height * scale) / 2 };
 }
+/** Cues follow the actual move windows, including misses, rather than predicting CPU decisions. */
+export function duelCue(f: Fighter): { text: string; opening: boolean } | null {
+  const s = f.attack;
+  if (!s) return null;
+  if (f.state === 'recovery') {
+    return s.kind === 'heavy' || s.kind === 'sweep' || s.kind === 'special' && f.kind === 'kael'
+      ? { text: 'RECOVERING', opening: true } : null;
+  }
+  if (f.state !== 'startup' && f.state !== 'active') return null;
+  if (s.kind === 'sweep') return { text: 'LOW · CROUCH GUARD', opening: false };
+  if (s.kind === 'air') return { text: 'OVERHEAD · STAND GUARD', opening: false };
+  if (s.kind === 'special' && f.kind === 'nera') return { text: 'BOLT · GUARD / JUMP', opening: false };
+  if (s.kind === 'heavy' || s.kind === 'special') return { text: 'HEAVY · GUARD / EVADE', opening: false };
+  return null;
+}
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string }
 interface Impact { x: number; y: number; life: number; blocked: boolean; color: string }
 export function createPresentation(surface: HTMLElement) {
@@ -178,6 +193,18 @@ export function createPresentation(surface: HTMLElement) {
       scenery(now,reduced);
       const t=screen==='title'?now:m.elapsed;
       for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,i,t,reduced);
+      const enemy=m.fighters[1], cue=screen==='playing'&&m.phase==='fight'?duelCue(enemy):null;
+      if(cue){
+        const labelScale=Math.max(1,10/(13*v.scale)), y=Math.max(80,arena.floor-enemy.z-190);
+        const color=cue.opening?'#a5f6e0':'#ffdbad';
+        ctx.font='600 13px system-ui, sans-serif';ctx.textAlign='center';
+        const width=ctx.measureText(cue.text).width+24;
+        const margin=width*labelScale/2+8, x=Math.max(margin,Math.min(arena.width-margin,enemy.x));
+        ctx.save();ctx.translate(x,y);ctx.scale(labelScale,labelScale);
+        rect(-width/2,-17,width,27,'#101520ed');
+        rect(-width/2,10,width,2,color);
+        ctx.fillStyle=color;ctx.fillText(cue.text,0,2);ctx.restore();
+      }
       for(const p of m.projectiles){
         glow(p.x,arena.floor-p.z,44,'#8cffe45a');
         path([p.x-p.facing*44,arena.floor-p.z,p.x,arena.floor-p.z],'#87f5d87a',8);

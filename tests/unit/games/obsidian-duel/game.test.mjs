@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createMatch, stepMatch, takeEvents, pauseMatch, idle, canHit, guards, attackPhase } from '../../../../src/games/obsidian-duel/game.ts';
 import { arena, fighters } from '../../../../src/games/obsidian-duel/content.ts';
 import { cpuAction } from '../../../../src/games/obsidian-duel/cpu.ts';
-import { duelView } from '../../../../src/games/obsidian-duel/presentation.ts';
+import { duelView, duelCue } from '../../../../src/games/obsidian-duel/presentation.ts';
 const dt = 1 / 60;
 function arenaMatch(selected = 'nera', distance = 80) {
   const m = createMatch(selected); m.phase = 'fight'; m.fighters[0].x = 400; m.fighters[1].x = 400 + distance; return m;
@@ -61,12 +61,12 @@ test('hitstun interrupts attacks; knockdown and wake-up release with protected c
   stepMatch(m, idle, dt, { ...idle, block: true }); assert.equal(target.state, 'block');
 });
 
-test('facing, jump height and arena bodies are independent of animation and never cross', () => {
+test('facing, attack height and grounded push bodies are independent of animation', () => {
   const m = arenaMatch(); const [p, e] = m.fighters, d = fighters.nera.attacks.light;
   assert.equal(canHit(p, e, d), true); p.facing = -1; assert.equal(canHit(p, e, d), false);
   advance(m, 1); assert.equal(p.facing, 1); assert.equal(e.facing, -1);
   e.z = 150; assert.equal(canHit(p, e, d), false); e.z = 0;
-  stepMatch(m, { ...idle, jump: true, x: 1 }, dt, { ...idle, x: -1 });
+  stepMatch(m, { ...idle, x: 1 }, dt, { ...idle, x: -1 });
   advance(m, 180, { ...idle, x: 1 }, { ...idle, x: -1 });
   assert.ok(e.x - p.x >= arena.radius * 2 - 1e-8); assert.equal(p.z, 0);
   advance(m, 600, { ...idle, x: -1 }, { ...idle, x: -1 });
@@ -75,15 +75,123 @@ test('facing, jump height and arena bodies are independent of animation and neve
   assert.equal(e.x, arena.right); assert.ok(p.x <= arena.right - arena.radius * 2);
 });
 
-test('jump attack is overhead, sweep misses airborne opponents, and committed attacks restrict movement', () => {
+test('either fighter can jump across either side, land separated and face the opponent', () => {
+  for (const selected of ['nera', 'kael']) for (const direction of [-1, 1]) {
+    const m = arenaMatch(selected), [p, e] = m.fighters;
+    p.x = 500 - direction * 80; e.x = 500;
+    stepMatch(m, { ...idle, x: direction, jump: true }, dt, idle);
+    let passed = false;
+    for (let frame = 0; frame < 65; frame++) {
+      advance(m, 1);
+      if ((p.x - e.x) * direction > 0) passed = true;
+      if (Math.abs(p.z - e.z) < arena.pushHeight) assert.ok(Math.abs(p.x - e.x) >= arena.radius * 2 - 1e-8);
+    }
+    assert.ok(passed, `${selected} / ${direction}`);
+    assert.ok((p.x - e.x) * direction >= arena.radius * 2 - 1e-8);
+    assert.equal(p.z, 0); assert.equal(p.facing, -direction); assert.equal(e.facing, direction);
+    advance(m, 90, { ...idle, x: -direction }, { ...idle, x: direction });
+    assert.ok((p.x - e.x) * direction >= arena.radius * 2 - 1e-8);
+    advance(m, 180, { ...idle, x: direction }, { ...idle, x: direction });
+    for (const f of m.fighters) assert.ok(f.x >= arena.left && f.x <= arena.right);
+    assert.ok(Math.abs(p.x - e.x) >= arena.radius * 2 - 1e-8);
+  }
+});
+
+test('a late aerial strike turns back after a jump-over and defeats crouching guard', () => {
+  for (const selected of ['nera', 'kael']) {
+    const m = arenaMatch(selected), [p, e] = m.fighters, defense = { ...idle, crouch: true, block: true };
+    stepMatch(m, { ...idle, x: 1, jump: true }, dt, defense);
+    for (let frame = 0; frame < 45 && p.x <= e.x; frame++) advance(m, 1, idle, defense);
+    assert.ok(p.x > e.x); assert.equal(p.facing, -1);
+    stepMatch(m, { ...idle, light: true }, dt, defense);
+    assert.equal(p.attack.kind, 'air'); assert.equal(p.facing, -1);
+    const events = advance(m, 12, idle, defense);
+    assert.ok(e.health < 100, selected); assert.ok(events.some(e => e.type === 'hit'));
+    assert.equal(p.facing, -1);
+  }
+});
+
+test('an in-flight bolt keeps its travel and knockback direction after its owner changes sides', () => {
+  const m = arenaMatch('nera', 200), [p, e] = m.fighters;
+  m.projectiles.push({ id: 1, owner: 0, x: e.x - 30, z: 76, facing: 1, life: 1 });
+  p.x = e.x + 100; p.facing = -1;
+  advance(m, 1);
+  assert.equal(e.health, 88); assert.ok(e.vx > 0); assert.equal(m.projectiles.length, 0);
+});
+
+test('jump attack is overhead and keeps its takeoff motion; sweep misses airborne opponents', () => {
   const m = arenaMatch(), p = m.fighters[0];
   stepMatch(m, { ...idle, jump: true, light: true, x: 1 }, dt, idle);
   assert.equal(p.attack.kind, 'air'); assert.ok(p.z > 0); const x = p.x;
-  advance(m, 8, { ...idle, x: 1 }); assert.equal(p.x, x);
+  advance(m, 8, { ...idle, x: -1 }); assert.ok(p.x > x + 30);
   const airborne = { ...m.fighters[1], z: 70, immune: 0 };
   assert.equal(canHit({ ...p, z: 0, attack: null }, airborne, fighters.nera.attacks.sweep), false);
   const f = fighters; assert.ok(f.nera.speed > f.kael.speed); assert.ok(f.nera.attacks.light.recovery < f.kael.attacks.light.recovery);
   assert.ok(f.kael.attacks.heavy.damage > f.nera.attacks.heavy.damage);
+});
+
+test('neutral and attacking jumps share a predictable arc, including backward and vertical takeoffs', () => {
+  for (const selected of ['nera', 'kael']) for (const direction of [-1, 0, 1]) {
+    const jump = arenaMatch(selected, 500), kick = arenaMatch(selected, 500);
+    jump.fighters[0].x = kick.fighters[0].x = 350;
+    stepMatch(jump, { ...idle, x: direction, jump: true }, dt, idle);
+    stepMatch(kick, { ...idle, x: direction, jump: true, heavy: true }, dt, idle);
+    for (let frame = 0; frame < 60; frame++) {
+      // Releasing or reversing direction cannot halt a committed aerial attack.
+      advance(jump, 1); advance(kick, 1);
+      assert.equal(kick.fighters[0].x, jump.fighters[0].x);
+      assert.equal(kick.fighters[0].z, jump.fighters[0].z);
+    }
+    assert.equal(kick.fighters[0].z, 0);
+    assert.equal(kick.fighters[0].airSpeed, 0);
+    const landed = kick.fighters[0].x; advance(kick, 10);
+    assert.equal(kick.fighters[0].x, landed);
+    if (direction) assert.ok((landed - 350) * direction > 140);
+    else assert.equal(landed, 350);
+  }
+});
+
+test('buffered jumping strikes retain both commands through recovery and expire without ghost jumps', () => {
+  for (const kind of ['light', 'heavy']) {
+    const m = arenaMatch('nera', 400), p = m.fighters[0];
+    attack(m, 'heavy', 0, .25 + .10 + .36 - .08);
+    stepMatch(m, { ...idle, jump: true, [kind]: true, x: 1 }, dt, idle);
+    assert.equal(p.z, 0);
+    advance(m, 7, { ...idle, x: 1 });
+    assert.ok(p.z > 0); assert.equal(p.attack.kind, 'air'); assert.equal(p.buffer, null);
+    assert.equal(p.airSpeed, fighters.nera.speed);
+  }
+  const m = arenaMatch('nera', 400), p = m.fighters[0];
+  attack(m, 'heavy');
+  stepMatch(m, { ...idle, jump: true, light: true }, dt, idle);
+  advance(m, 60);
+  assert.equal(p.z, 0); assert.equal(p.buffer, null); assert.equal(p.attack, null);
+});
+
+test('landing buffers preserve heavy intent, and contact interrupts aerial drift', () => {
+  const m = arenaMatch('nera', 400), p = m.fighters[0];
+  p.z = 3.5; p.vz = -100; attack(m, 'air', 0, .3);
+  stepMatch(m, { ...idle, heavy: true }, dt, idle);
+  assert.ok(p.z > 0); assert.equal(p.buffer.kind, 'heavy');
+  advance(m, 8); assert.equal(p.z, 0); assert.equal(p.attack.kind, 'heavy');
+  const hit = arenaMatch(), target = hit.fighters[1];
+  target.z = 40; target.vz = 20; target.airSpeed = -210;
+  attack(hit, 'light', 0, fighters.nera.attacks.light.startup - dt);
+  advance(hit, 1); assert.equal(target.state, 'hitstun'); assert.equal(target.airSpeed, 0);
+});
+
+test('combat cues distinguish guard heights and genuine recovery windows, including misses', () => {
+  const m = arenaMatch('kael', 400), f = m.fighters[0];
+  assert.equal(duelCue(f), null);
+  for (const [kind, text] of [['sweep', 'LOW'], ['air', 'OVERHEAD'], ['heavy', 'HEAVY'], ['special', 'HEAVY']]) {
+    attack(m, kind); assert.ok(duelCue(f).text.startsWith(text)); assert.equal(duelCue(f).opening, false);
+  }
+  attack(m, 'heavy', 0, .34 + .12); f.state = 'recovery';
+  assert.deepEqual(duelCue(f), { text: 'RECOVERING', opening: true });
+  f.state = 'hitstun'; assert.equal(duelCue(f), null);
+  f.kind = 'nera'; attack(m, 'special'); assert.ok(duelCue(f).text.startsWith('BOLT'));
+  f.state = 'recovery'; assert.equal(duelCue(f), null);
+  f.attack = null; assert.equal(duelCue(f), null);
 });
 
 test('Nera projectile can be blocked or jumped, hits once, and has a cooldown; Kael advances inside body bounds', () => {
@@ -139,7 +247,7 @@ test('timeout compares health, ties replay without wins, and the next round rese
 
 test('CPU observes telegraphs with delay and cannot inspect hidden player commands', () => {
   const a = arenaMatch(), b = structuredClone(a);
-  b.fighters[0].buffer = { kind: 'heavy', ttl: .15 };
+  b.fighters[0].buffer = { kind: 'heavy', jump: false, ttl: .15 };
   assert.deepEqual(cpuAction(a,dt),cpuAction(b,dt));
   assert.equal(a.brain.seen.attack,''); assert.ok(a.brain.history[0].at >= .23);
   const m = arenaMatch(); attack(m,'heavy'); cpuAction(m,dt);
@@ -151,12 +259,25 @@ test('CPU observes telegraphs with delay and cannot inspect hidden player comman
   for(let i=0;i<20;i++)stepMatch(m,idle,dt);assert.equal(m.fighters[1].attack,null);
 });
 
+test('CPU observes a side switch with its ordinary reaction delay and approaches from either side', () => {
+  const m = arenaMatch(), [p, e] = m.fighters;
+  p.x = 800; e.x = 400;
+  cpuAction(m, dt); assert.equal(m.brain.seen.side, -1);
+  m.elapsed = .24; m.brain.wait = 0;
+  assert.equal(cpuAction(m, dt).x, 1); assert.equal(m.brain.seen.side, 1);
+  p.x = 100; m.brain.sample = 0;
+  cpuAction(m, dt); assert.equal(m.brain.seen.side, 1);
+  m.elapsed = .48; m.brain.wait = 0;
+  assert.equal(cpuAction(m, dt).x, -1); assert.equal(m.brain.seen.side, -1);
+});
+
 test('real CPU completes matches against idle players with valid combat and bounded state', () => {
   for(const selected of ['nera','kael'])for(const seed of [1,42,803]){
     const m=createMatch(selected,seed);let contacts=0,swings=0;
     for(let i=0;i<18000&&m.status==='active';i++){
       stepMatch(m,idle,dt);for(const e of takeEvents(m)){if(e.type==='hit'||e.type==='heavyHit')contacts++;if(e.type==='swing'||e.type==='heavySwing')swings++;}
-      assert.ok(m.fighters[1].x-m.fighters[0].x>=arena.radius*2-1e-7);
+      if(Math.abs(m.fighters[1].z-m.fighters[0].z)<arena.pushHeight)
+        assert.ok(Math.abs(m.fighters[1].x-m.fighters[0].x)>=arena.radius*2-1e-7);
       assert.ok(m.projectiles.length<=2);assert.ok(m.brain.history.length<=5);
       assert.ok(m.fighters.every(f=>Number.isFinite(f.x)&&f.health>=0&&f.health<=100&&f.z>=0));
     }
@@ -196,7 +317,7 @@ test('both fighters can win complete CPU matches using movement, visible guard r
 });
 
 test('pausing discards buffered presses so resuming cannot start a stale attack or jump', () => {
-  const m=arenaMatch();m.fighters[0].buffer={kind:'special',ttl:.15};m.fighters[1].buffer={kind:'jump',ttl:.13};
+  const m=arenaMatch();m.fighters[0].buffer={kind:'special',jump:false,ttl:.15};m.fighters[1].buffer={kind:'jump',jump:true,ttl:.13};
   pauseMatch(m,true);assert.ok(m.fighters.every(f=>f.buffer===null));
   const paused=structuredClone(m);advance(m,90);assert.deepEqual(m,paused);
   pauseMatch(m,false);advance(m,1);assert.ok(m.fighters.every(f=>f.attack===null&&f.z===0));

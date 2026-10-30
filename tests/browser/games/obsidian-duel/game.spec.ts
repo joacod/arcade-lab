@@ -39,6 +39,36 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   const swing = (await state()).fighters[0].attack;
   await page.clock.runFor(100); expect(swing).toBe(null); expect((await state()).fighters[0].attack).toBe(null);
   await page.screenshot({ path: info.outputPath('obsidian-duel.png') });
+  // A jumping strike pressed near the end of recovery retains both commands.
+  await page.evaluate(() => {
+    const [p, e] = (window as any).duelProbe.fighters;
+    Object.assign(p, { x: 350, z: 0, vz: 0, vx: 0, airSpeed: 0, attack: null, buffer: null, state: 'idle', stateTime: 0 });
+    Object.assign(e, { x: 900, attack: null, state: 'hitstun', stateTime: 10 });
+  });
+  await page.keyboard.press('k'); await page.clock.runFor(600);
+  expect((await state()).fighters[0].state).toBe('recovery');
+  await page.keyboard.down('d'); await page.keyboard.down('w'); await page.keyboard.down('j');
+  await page.clock.runFor(17); await page.keyboard.up('w'); await page.keyboard.up('j');
+  expect((await state()).fighters[0].z).toBe(0);
+  await page.clock.runFor(140); await page.keyboard.up('d');
+  const jumping = (await state()).fighters[0];
+  expect(jumping.z).toBeGreaterThan(0); expect(jumping.attack.kind).toBe('air');
+  await page.clock.runFor(100);
+  expect((await state()).fighters[0].x).toBeGreaterThan(jumping.x + 20);
+  await page.screenshot({ path: info.outputPath('obsidian-jumping-strike.png') });
+  await page.clock.runFor(900);
+  await page.evaluate(() => {
+    const m = (window as any).duelProbe, [p, e] = m.fighters;
+    Object.assign(p, { x: 400, vx: 0 }); Object.assign(e, { x: 480, vx: 0, state: 'idle', stateTime: 0, attack: null, buffer: null });
+    m.brain.wait = 10;
+    m.brain.held = { x: 0, crouch: false, block: false, jump: false, light: false, heavy: false, special: false };
+  });
+  await page.keyboard.down('d'); await page.keyboard.down('w'); await page.clock.runFor(17);
+  await page.keyboard.up('w'); await page.keyboard.up('d'); await page.clock.runFor(1000);
+  const crossed = (await state()).fighters;
+  expect(crossed[0].x).toBeGreaterThan(crossed[1].x + 53);
+  expect(crossed[0].z).toBe(0); expect(crossed[0].facing).toBe(-1); expect(crossed[1].facing).toBe(1);
+  await page.screenshot({ path: info.outputPath('obsidian-side-switch.png') });
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(30000); expect(await state()).toEqual(paused);
   // Replacing presentation must retain the live simulation, including mid-action state.
   await page.evaluate(() => { (window as any).appearanceRun = (window as any).duelProbe; });
@@ -75,6 +105,27 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.clock.runFor(150); expect((await state()).fighters[0].x).toBe(x);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.screenshot({ path: info.outputPath('obsidian-phone.png') });
+  await page.evaluate(() => {
+    const m = (window as any).duelProbe, [p, e] = m.fighters;
+    Object.assign(p, { x: 400, vx: 0 }); Object.assign(e, { x: 480, vx: 0, state: 'idle', stateTime: 0, attack: null, buffer: null });
+    m.brain.wait = 10;
+    m.brain.held = { x: 0, crouch: false, block: false, jump: false, light: false, heavy: false, special: false };
+  });
+  const jump = await point('Jump', 4);
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [right, jump] });
+  await page.clock.runFor(17); await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await page.clock.runFor(1000);
+  const touchCrossed = (await state()).fighters;
+  expect(touchCrossed[0].x).toBeGreaterThan(touchCrossed[1].x + 53);
+  expect(touchCrossed[0].facing).toBe(-1); expect(touchCrossed[1].facing).toBe(1);
+  // Keep a representative cue visible for compact-screen visual review.
+  await page.evaluate(() => {
+    const e = (window as any).duelProbe.fighters[1];
+    e.state = 'startup'; e.stateTime = 0;
+    e.attack = { id: 999, kind: 'sweep', time: .05, hits: [], sounded: false };
+  });
+  await page.clock.runFor(17);
+  await page.screenshot({ path: info.outputPath('obsidian-phone-telegraph.png') });
   // Held inputs cannot survive a timeout, a fresh round, or the match-result menu.
   await page.keyboard.down('d');
   await page.evaluate(() => { const m = (window as any).duelProbe; m.timer = .01; m.fighters[1].health = 50; });

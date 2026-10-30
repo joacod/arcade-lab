@@ -92,7 +92,7 @@ Normal uses the original illustrated Canvas presentation. Assets uses Signal / R
 
 ![Obsidian Duel: Nera and Kael trade strikes on the storm-lit terrace of the Tempest Citadel](docs/games/obsidian-duel/obsidian-duel.png)
 
-Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
+Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps or over your opponent to switch sides, and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
 
 | Control | Action |
 | --- | --- |
