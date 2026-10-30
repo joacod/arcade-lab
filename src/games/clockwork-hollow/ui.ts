@@ -1,5 +1,5 @@
 import { createThemeSelect } from '../../common/ui/theme-select.ts';
-import { themes, type Appearance } from './themes.ts';
+import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
@@ -25,7 +25,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
-  const theme = createThemeSelect({ names: { normal: 'Verdant clockwork', assets: 'Porcelain Bellgarden' }, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),

@@ -42,6 +42,8 @@ Use the session host and its frame loop. Keep the current presentation visible d
 
 Treat image sources, textures, geometries, materials, postprocessing passes, render targets, listeners and graphics contexts as explicit owned resources. Context loss or draw failure must suspend play, restore a working presentation and report recovery through existing status UI. Preserve the run and require explicit Resume. A failed candidate retains the previous mode. A capability fallback within Quality must preserve its visual direction; otherwise restore an available mode and reflect it in the selector.
 
+For Canvas recovery, restore drawing state as well as artwork ownership. An interrupted draw can leave saved transforms or clips on the context stack; reset that state before drawing the retained presentation, while preserving its camera and cosmetic observations.
+
 ## Verify the delivered experience
 
 Run the [shared local checks](architecture.md#local-verification). Extend existing Chromium coverage for the resource boundary rather than building a screenshot matrix. Compare the paused serialized run before/after a theme change, confirm Resume advances it and Restart keeps the selection. Exercise cancellation, failed preparation, completion after unmount, graphics failure, recovery and resource release. Check that Normal does not request the Quality renderer or images.

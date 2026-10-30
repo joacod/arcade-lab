@@ -2,7 +2,7 @@
 
 [Source](../../../src/games/clockwork-hollow/) | [Catalog](../../../CATALOG.md)
 
-A complete Canvas 2D platform adventure through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
+A complete platform adventure with three Canvas 2D presentations through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
 
 ## Playing
 
@@ -30,11 +30,19 @@ Every bell ends its district and freezes simulation. An explicit **Continue to�
 
 ## Theme modes
 
-**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. **Assets** uses **Porcelain Bellgarden**, an original illustrated treatment with a porcelain keeper, coral ribbon, wind-up ladybird shells, glazed masonry, flower lanterns and decorated bells. Jade aqueducts, rose-glazed kilns and indigo leaded-glass towers give each district its own image scenery. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md) records the direction, frame layouts, footprints and editable generator. All required images ship with the repository under MIT. **Quality** remains unavailable.
+**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. **Assets** uses **Porcelain Bellgarden**, an original illustrated treatment with a porcelain keeper, coral ribbon, wind-up ladybird shells, glazed masonry, flower lanterns and decorated bells. Jade aqueducts, rose-glazed kilns and indigo leaded-glass towers give each district its own image scenery. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md) records the direction, frame layouts, footprints and editable generator. All required images ship with the repository under MIT. **Quality** uses **Lumen Conservatory**, with mineral masonry, copper inlay, luminous glass, layered cathedral architecture and an articulated keeper.
 
-Selecting a theme retains the journey, camera, gait and cosmetic effects. Image preparation keeps the active presentation visible; failure restores the active selection with a notice. Selecting another mode, starting, resuming, retrying, continuing or leaving cancels pending preparation. Restart retains the selected theme, while Game selection releases its images and starts the next visit in Normal. Reduced motion freezes decorative motion in both themes and uses a still grounded keeper pose in Assets; pressure timing remains readable.
+Selecting a theme retains the journey, camera, gait and cosmetic effects. Theme preparation keeps the active presentation visible; failure restores the active selection with a notice. Selecting another mode, starting, resuming, retrying, continuing or leaving cancels pending preparation. Restart retains the selected theme, while Game selection releases its artwork and starts the next visit in Normal. Reduced motion freezes decorative motion in every theme and uses a still grounded keeper pose in Assets and Quality; pressure timing remains readable.
 
 ![Porcelain Bellgarden: the ivory keeper at a flower lantern beneath indigo belfry arches, with a wind-up beetle and an active pressure vent](clockwork-bellgarden.png)
+
+### Quality direction: Lumen Conservatory
+
+A moonlit mechanical garden built from oxidized copper, cut jade and warm luminous glass. Layered cathedral ribs frame a monumental waterwheel in the aqueduct, furnace vessels in the Emberworks and an astronomical rose window in the belfry. Distant architecture stays low in contrast; continuous pale landing lips, the keeper's glass heart, rounded beetle crowns and coral thorn tips lead the eye through the physical route.
+
+The keeper has a burnished helmet, inset glass face, articulated piston limbs and a trailing saffron scarf. Foot travel drives its stride, ascent opens its arms and descent braces its legs. Faceted motes, caged lanterns and engraved bells repeat the same copper-and-glass language. Saved lanterns and awakened bells brighten locally, with bounded semantic sparks. The interface uses dark mineral surfaces and fine brass rules.
+
+Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture without a graphics dependency or external artwork. Quality is loaded only when selected, keeps the existing camera and cosmetic state, and retains the active theme if preparation fails. Pause freezes decorative motion; reduced motion holds ornaments, scarf and ground gait still while preserving player positions and vent timing.
 
 ## Source ownership and customization
 
@@ -47,13 +55,14 @@ Selecting a theme retains the journey, camera, gait and cosmetic effects. Image 
 | Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
 | Assets frame layouts, validation, image footprints and artwork drawing | `asset-art.ts`, `assets.ts` and `asset-presentation.ts`; committed images and generator in `art/bellgarden/` |
+| Quality architecture, bevelled materials, articulated actors, lanterns and bells | `quality-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts`, using the shared host, clock, interruption/focus binders and AudioBits lifecycle |
 
-Character and enemy visual dimensions never define their collision bodies. Both themes share simulation, content, input, the presentation camera and host ownership. `assets.ts` reuses `src/engine/browser/images.ts` with local decoded-dimension validation. The browser composition uses the shared preparation scope to cancel superseded work, draws candidates against the current run before committing them, and releases replaced or cancelled images. Normal requires no image loading.
+Character and enemy visual dimensions never define their collision bodies. All themes share simulation, content, input, the presentation camera and host ownership. `assets.ts` reuses `src/engine/browser/images.ts` with local decoded-dimension validation. The browser composition uses the shared preparation scope to cancel superseded work, draws candidates against the current run before committing them, and releases replaced or cancelled artwork. A local replacement transaction retains the previous drawing and its caches until the candidate draws successfully, rolling back on failure. Quality caches only the current district’s background layers and releases them on replacement or disposal. A Quality drawing failure pauses play and restores Normal with the journey intact. Normal requires no image loading.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable. Collision and jump rules use only fixed simulation steps. Content includes all physical dimensions independently of leaves, scarf, glow and animation poses.
 
@@ -62,6 +71,8 @@ The camera uses one uniform world transform, minimum horizontal visibility on na
 Parallax arches, foreground canopy, drifting lights, foundry pipes and belfry stars give the districts distinct depth. Platform edges, thorns, shells and pressure columns render in front of scenery. Landing squash, jump dust, shell impacts, lantern sparks and bell celebrations consume semantic events. Particles are capped and viewport-admitted, with finite lifetimes. Cosmetic tails can finish after defeat or completion without advancing rules; pause freezes them and frame deltas are bounded. Artwork and the selection cover use editable geometry; sound uses procedural recipes.
 
 The keeper's stride follows ground distance, settles when stopping and resets on retry. Lifted arms on ascent and braced arms on descent distinguish jump phases. Continuous landing lips remain visible above moss; broad beetle shell crowns contrast with pointed copper thorns. Pressure motion, scarf flutter and bell swings share presentation time, so pausing freezes the entire scene. Reduced motion also removes scarf flutter.
+
+![Lumen Conservatory: the glass-hearted keeper and a copper beetle beneath layered aqueduct ribs and a monumental waterwheel](clockwork-lumen.png)
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain. Only nearby vents are audible. Routine cues are coalesced and throttled; outcomes replace lesser tails. The existing shared AudioBits owner provides lazy gesture activation, bounded voices, cancellation, suspension, mute and disposal.
 

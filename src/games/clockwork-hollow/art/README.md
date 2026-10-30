@@ -1,6 +1,6 @@
 # Clockwork Hollow artwork
 
-Normal is Verdant clockwork, drawn directly by `presentation.ts`. Assets is **Porcelain Bellgarden**, an original illustrated image treatment. Both use the same simulation, camera and world transform.
+Normal is Verdant clockwork, drawn directly by `presentation.ts`. Assets is **Porcelain Bellgarden**, an original illustrated image treatment. Quality is **Lumen Conservatory**, original code-native copper-and-glass artwork. All three use the same simulation, camera and world transform.
 
 ## Creative direction
 
@@ -32,3 +32,11 @@ node src/games/clockwork-hollow/art/bellgarden/generate.mjs
 ```
 
 Commit the updated SVG outputs alongside the generator. Keep frame anchors stable and update the local layout metadata when changing sheet dimensions or source rectangles. Inspect silhouettes and continuous landing edges at gameplay size, especially thin ledges, beetle crowns and thorn tips. The generator uses only Node built-ins and deterministic geometry.
+
+## Lumen Conservatory
+
+`quality-presentation.ts` is the editable source for Quality. It combines layered cathedral ribs, a mechanical waterwheel, copper pressure vessels and astronomical glass windows with mineral blockwork, bevelled brass landing bands and fine rivets. A glass-hearted keeper uses piston limbs, an inset visor and a saffron scarf. Rounded copper beetles, faceted motes, caged lanterns, engraved bells and pointed coral thorns share the same material language. Brightness is concentrated on the actor, true landing edges, objectives and active danger.
+
+District colors belong to `themes.ts`; material gradients, cosmetic footprints and architectural geometry belong to the Quality drawing. Decorative geometry does not change collisions. Background layers are cached for the current district only, with bounded dimensions independent of display DPR. Changing districts, replacing Quality or disposing the session releases those buffers. No external images, fonts, graphics libraries or generation step are required. The original artwork is distributed under the repository's MIT license.
+
+The session imports this drawing only when Quality is selected and validates it against the current run before releasing the previous artwork. Failed preparation keeps the working theme. Runtime drawing failure pauses and restores Normal. The existing presentation owns the camera, distance-driven gait, landing response and semantic sparks across all themes. Reduced motion suppresses wheel rotation, drifting lights, scarf flutter and decorative ground gait while retaining physical movement and pressure timing.

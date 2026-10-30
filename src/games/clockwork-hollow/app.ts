@@ -1,4 +1,4 @@
-import { themes, type Appearance } from './themes.ts';
+import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope } from '../../engine/browser/preparation.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -9,6 +9,7 @@ import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session
 import { createRun, pauseRun, stepRun, takeEvents, retryRun, nextLevel } from './game.ts';
 import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
+import type { LumenDrawingFactory } from './quality-presentation.ts';
 import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import './style.css';
@@ -45,26 +46,32 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     if (disposed || screen === 'playing') return;
     const request = preparation.begin();
     if (id === activeAppearance) { ui.appearanceStatus(id, ''); return; }
-    ui.appearanceStatus(id, id === 'assets' ? 'Preparing Porcelain Bellgarden…' : '');
+    ui.appearanceStatus(id, id === 'normal' ? '' : `Preparing ${appearanceNames[id]}…`);
     let candidate: PreparedImages | undefined;
+    let candidateQuality: LumenDrawingFactory | undefined;
     try {
       if (id === 'assets') {
         const { prepareBellgarden } = await import('./assets.ts');
         if (!request.current()) return;
         candidate = await prepareBellgarden(request.signal);
         if (!request.current()) return;
+      } else if (id === 'quality') {
+        const { createLumenDrawing } = await import('./quality-presentation.ts');
+        if (!request.current()) return;
+        candidateQuality = createLumenDrawing;
       }
-      // Validate the replacement against the current run before releasing active images.
+      // Validate the replacement against the current run before releasing active artwork.
       // The existing renderer keeps its camera, gait and bounded cosmetic effects.
-      presentation!.applyTheme(themes[id], candidate?.images);
+      const replacement = presentation!.replaceTheme(themes[id], candidate?.images, candidateQuality);
       try { presentation!.draw(run, host, screen, performance.now() / 1000); }
-      catch (error) { presentation!.applyTheme(themes[activeAppearance], activeArt?.images); throw error; }
+      catch (error) { replacement.rollback(); throw error; }
+      replacement.commit();
       const previous = activeArt; activeArt = candidate; candidate = undefined;
       activeAppearance = id; host.root.dataset.appearance = id;
       ui.appearanceStatus(id, ''); previous?.dispose();
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance,
-        `Could not load Porcelain Bellgarden. Keeping ${activeAppearance === 'normal' ? 'Verdant clockwork' : 'Porcelain Bellgarden'}. Your journey is preserved.`);
+        `Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your journey is preserved.`);
     } finally { candidate?.dispose(); }
   }
   function act(intent: Intent) {
@@ -102,7 +109,16 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
         const events = takeEvents(run); presentation!.consume(events); sound!.consume(events, run.player);
         if (run.status === 'defeat' || run.status === 'victory' || run.status === 'interlude') transition(run.status);
       }
-      presentation!.draw(run, host, screen, now / 1000); ui.update(run);
+      try { presentation!.draw(run, host, screen, now / 1000); }
+      catch (error) {
+        if (activeAppearance !== 'quality') throw error;
+        suspend(); preparation.cancel();
+        presentation!.replaceTheme(themes.normal).commit(); activeAppearance = 'normal';
+        host.root.dataset.appearance = 'normal';
+        ui.appearanceStatus('normal', 'Lumen Conservatory could not draw. Restored Verdant clockwork. Your journey is preserved.');
+        presentation!.draw(run, host, screen, now / 1000);
+      }
+      ui.update(run);
     });
     return { dispose };
   } catch (error) { dispose(); throw error; }

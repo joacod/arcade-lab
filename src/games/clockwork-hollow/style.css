@@ -62,3 +62,12 @@
 @media (prefers-reduced-motion: reduce) {
   .hollow-app .hollow-announcement { transition: none; transform: translate(-50%, 0); }
 }
+.hollow-app[data-appearance="quality"] { --menu-accent: #d9bd87; --ink: #e8ead6; --dim: #b4c7c0; --gold: #e0c38d; background: #091c28; }
+.hollow-app[data-appearance="quality"] :is(.hollow-hud, .hollow-footer) { background: linear-gradient(110deg, #102b33, #091c29); border-color: #d9bd8740; }
+.hollow-app[data-appearance="quality"] .hollow-hud { box-shadow: 0 3px 18px #020e1b66; }
+.hollow-app[data-appearance="quality"] button { background: #17323c; border-color: #d9bd874d; border-radius: 3px; }
+.hollow-app[data-appearance="quality"] button:hover { background: #2a4649; border-color: #e0c38d; }
+.hollow-app[data-appearance="quality"] .hollow-location > div { padding: 7px 13px; background: #0b202bd9; border-left: 2px solid #d9bd87; }
+.hollow-app[data-appearance="quality"] .hollow-location > span { border-color: #d9bd8766; background: #0b202baa; }
+.hollow-app[data-appearance="quality"] .hollow-announcement { color: #e4efd6; background: #102d35f2; border-color: #d9bd87; box-shadow: 0 8px 30px #020e1b88, inset 0 0 20px #a2d9bf0a; }
+.hollow-app[data-appearance="quality"] .game-menu { background: linear-gradient(145deg, #18343df7, #091b29fa); border-color: #d9bd8755; box-shadow: 0 24px 80px #020b16aa, inset 0 1px #e0c38d33; }
