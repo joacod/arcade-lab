@@ -8,7 +8,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 | Skybreak | Pacific Run | Bundled original Aurora Fleet | Orbital Foundry, sculpted ships and illuminated orbital scenery |
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Lumen Conservatory, copper-and-glass cathedral gardens |
 | Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, a sculpted rain-soaked city with wet-road reflections |
-| Obsidian Duel | Tempest citadel | Not available | Not available |
+| Obsidian Duel | Tempest citadel | Eclipse Foundry | Not available |
 | Blastline | Iron coast | Not available | Not available |
 
 All games start in Normal. Normal, Assets and Quality are the three standard modes. Custom is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
@@ -106,7 +106,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | P / Pause | P pauses/resumes; Pause opens the menu |
 | F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Tempest citadel and its original fighter costumes. Assets and Quality are not yet available. Original articulated Canvas fighters, citadel scenery, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Normal retains Tempest citadel and its original fighter costumes, with fixed-length limbs and grounded weight transfer. Assets introduces **Eclipse Foundry**, an original illustrated observatory arena with painted whole-character animation, ivory and turquoise attire for Nera, a charcoal tunic and copper sash for Kael, and authored bolt and contact artwork. Quality is not yet available. Action-specific poses, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
 
 ## Blastline
 

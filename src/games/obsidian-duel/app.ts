@@ -1,4 +1,6 @@
-import { themes, type Appearance } from './themes.ts';
+import { themes, appearanceNames, type Appearance } from './themes.ts';
+import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import type { PreparedImages } from '../../engine/browser/images.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
@@ -14,13 +16,16 @@ import './style.css';
 export function mountDuel(container: HTMLElement, onExit: () => void): GameSession {
   let disposed=false, selected: FighterId='nera', match=createMatch(), screen: Screen='title';
   const clock=createClock();
+  const preparation=createPreparationScope();
+  let activeAppearance: Appearance='normal', activeArt: PreparedImages|undefined;
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput>|undefined, presentation: ReturnType<typeof createPresentation>|undefined, sound: ReturnType<typeof createSound>|undefined;
   const host=createHost(container,{className:'duel-app',label:'Obsidian Duel',
     surfaceLabel:'Obsidian Duel playfield. A D move, W jump, S crouch, J light, K heavy, L special, Shift guard. P pauses or resumes.',
     onDisplayChange:suspend,onFullscreenChange:()=>ui.fullscreen(host.fullscreenAvailable,host.fullscreen)});
-  function dispose(){if(disposed)return;disposed=true;disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose());}
+  function dispose(){if(disposed)return;disposed=true;preparation.dispose();disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeArt?.dispose(), () => sound?.dispose(), () => host.dispose());}
   function transition(next: Screen, focus=true){
+    if(next==='playing'){preparation.cancel();ui.appearanceStatus(activeAppearance,'');}
     input?.clear();clock.reset();screen=next;
     if(next==='paused'||next==='title')sound?.pause();
     ui.show(next,focus);ui.update(match);
@@ -29,10 +34,28 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     if(disposed)return;input?.clear();clock.reset();sound?.pause();
     if(screen==='playing'){pauseMatch(match,true);transition('paused',false);}
   }
-  function appearance(id: Appearance) {
+  async function appearance(id: Appearance) {
     if (disposed || screen === 'playing') return;
-    presentation?.applyTheme(themes[id]);
-    host.root.dataset.appearance = id;
+    const request=preparation.begin();
+    if(id===activeAppearance){ui.appearanceStatus(id,'');return;}
+    ui.appearanceStatus(id,id==='assets'?`Preparing ${appearanceNames[id]}…`:'');
+    let candidate: PreparedImages|undefined;
+    try{
+      if(id==='assets'){
+        const {prepareFoundry}=await import('./assets.ts');
+        if(!request.current())return;
+        candidate=await prepareFoundry(request.signal);
+        if(!request.current())return;
+      }
+      const replacement=presentation!.replaceTheme(themes[id],candidate?.images);
+      try{presentation!.draw(match,host,screen,performance.now()/1000);}
+      catch(error){replacement.rollback();presentation!.draw(match,host,screen,performance.now()/1000);throw error;}
+      const previous=activeArt;activeArt=candidate;candidate=undefined;
+      activeAppearance=id;host.root.dataset.appearance=id;
+      input?.clear();clock.reset();ui.appearanceStatus(id,'');previous?.dispose();
+    }catch{
+      if(request.current())ui.appearanceStatus(activeAppearance,`Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your match is preserved.`);
+    }finally{candidate?.dispose();}
   }
   function act(intent: Intent){
     if(disposed)return;
@@ -53,7 +76,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     sound=createSound(message=>{if(!disposed)ui.soundStatus(message);});
     ui=createUI(host.root,host.surface,host.signal,act,id=>{if(screen==='title'){selected=id;match=createMatch(id);presentation?.reset();ui.update(match);}},value=>sound?.setMuted(value),appearance);
     presentation=createPresentation(host.surface);
-    appearance('normal');
+    host.root.dataset.appearance='normal';
     input=bindInput(host.surface,ui.controls,()=>screen==='playing'&&match.phase==='fight',host.signal);
     bindSessionFocus(host.root,{signal:host.signal,clearInput:()=>input?.clear(),suspend,
       shouldSuspend:()=>screen==='playing'&&document.activeElement!==host.surface&&!Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement)});

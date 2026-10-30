@@ -22,7 +22,11 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 ## Theme modes
 
-**Normal** keeps Tempest citadel, storm scenery and the original fighter costumes. Gilded dawn was an alternate palette for the same renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
+**Normal** keeps Tempest citadel, storm scenery and the original fighter costumes. **Assets · Eclipse Foundry** replaces the scenery, fighters, Stormglass bolt and contact effects with bundled original artwork. Painted whole-character sprites give Nera an ivory wrap tunic, turquoise sash and flowing dark ponytail. Kael wears a charcoal sleeveless tunic and copper sash, with connected muscular shoulders and bare arms. A copper eclipse hangs over the ruined observatory and its engraved dueling floor. **Quality** remains unavailable.
+
+![Eclipse Foundry: painted Nera extends a kick toward Kael's guard beneath the copper orrery](eclipse-foundry.png)
+
+Choose Theme from setup or a paused match. Preparation keeps the working presentation visible, then replaces it on the same match. Resume continues the current attack, jump, health, cooldowns, timer and round. Restart retains the theme; leaving the game releases its images. See the [artwork guide](../../../src/games/obsidian-duel/art/README.md) for the creative brief, inspiration, cel layout and regeneration.
 
 ## Source ownership
 
@@ -32,8 +36,11 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 | `src/games/obsidian-duel/game.ts` | Pure fighter states, attack instances, contact, guard, projectiles and match rounds |
 | `src/games/obsidian-duel/cpu.ts` | Seeded decisions using delayed visible observations and ordinary action commands |
 | `src/games/obsidian-duel/input.ts` | Shared captured-button snapshots translated into fighting actions |
-| `src/games/obsidian-duel/themes.ts` | Stage palettes, weather, banners and fighter costume colors |
-| `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, articulated poses, original scenery and bounded contact effects |
+| `src/games/obsidian-duel/themes.ts` | Theme names, stage palettes and fighter costume colors |
+| `src/games/obsidian-duel/animation.ts` | Cosmetic action observations, authored pose keys, travel-driven gait and fixed-length limb solving |
+| `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, procedural Normal fighters, presentation replacement and bounded contact effects |
+| `src/games/obsidian-duel/asset-art.ts`, `assets.ts` | Whole-body cel layout, dimension validation and shared cancellable image preparation |
+| `src/games/obsidian-duel/asset-presentation.ts` | Complete painted Eclipse Foundry action cels, bolts and contact artwork |
 | `src/games/obsidian-duel/ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `src/games/obsidian-duel/sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |
 | `src/games/obsidian-duel/app.ts` | Host, clock, focus, display changes, audio and session disposal |
@@ -42,18 +49,22 @@ Simulation records horizontal position, elevation, velocity and facing independe
 
 The CPU samples visible spacing, telegraphs and incoming bolts, then receives those observations after a reaction delay. Decisions have their own cadence and seeded mistakes. The CPU cannot read player inputs or buffered commands and uses the same movement, guard, cooldown and combat restrictions as the player.
 
-The fighters and scenery use procedural Canvas geometry; the selection cover is an editable SVG. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Poses read simulation states. Reduced motion removes shake and storm flourishes and reduces particles while retaining all combat information.
+Normal uses procedural Canvas geometry; the selection cover is an editable SVG. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Arms and legs retain their segment lengths through wind-up, contact, recoil, guard and falling. Pelvis and shoulder motion transfer weight without rotating a standing fighter away from its supporting feet. Walking follows signed distance travelled, so pressing into a wall does not march in place.
+
+Assets uses painted whole-character drawings across all 16 clips. Connected anatomy, soft joint volumes, purposeful hand shapes and clothing folds make the idle figure read as one person. Attack sequences include anticipation, contact, retraction and settling drawings. Original transparent source sheets, prompts and selected frame layouts are retained with the artwork. A mechanical packer aligns complete silhouettes to stable pivots and fills the timed atlas slots. Assets shares semantic action samples with Normal, while its illustrations are authored independently of the Normal skeleton.
+
+Both themes observe the same semantic actions. Attack drawings follow authored startup, active and recovery times; contact cels never appear during startup. Jump poses follow ascent, apex and descent, and landing, hit reactions, knockdown and wake-up have dedicated sequences. Theme replacement retains animation observations as well as combat state. Reduced motion removes idle breathing, shake, storm flourishes and Assets embers, and reduces particles while preserving action animation and combat information.
 
 ## Architecture decisions
 
 Guard height, projectiles, bilateral trades, stun exits and best-of-three ownership are local fighting rules. Their contact and progression semantics differ from a scrolling brawler's lane geometry, crowd coordination and encounter gates.
 
-Browser composition reuses the shared host, clock, input, focus/lifetime bindings and bounded AudioBits owner. Appearance changes update the existing renderer through `applyTheme`; costume colors are independent of move tuning and fighter collision bodies. New artwork belongs in this renderer or a game-local replacement, with image preparation shared only when needed.
+Browser composition reuses the shared host, clock, input, focus/lifetime bindings, preparation scope, image loader and bounded AudioBits owner. Appearance changes update the existing renderer through `replaceTheme`, drawing the candidate against the retained match before releasing the previous image bundle. Failed preparation or drawing rolls back to the working theme. Resuming, a newer selection or disposal cancels pending preparation. Costume dimensions remain independent of move tuning and fighter collision bodies.
 
 The session clears input and resets timing at round-phase, display and menu transitions.
 
 ## Local verification
 
-Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions and complete CPU matches. Chromium verifies the paused match remains intact, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
+Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions, complete CPU matches, artwork dimensions, cel coverage, constant limb lengths, planted feet, travel-driven gait and animation timing. Chromium verifies retained match identity across themes, restart selection, failed and cancelled preparation, image release, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
 
 See the [shared commands](../../architecture.md#local-verification).
