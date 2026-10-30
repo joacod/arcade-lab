@@ -5,6 +5,7 @@ import type { Screen } from './ui.ts';
 import { createKeeperAnimation, type KeeperPose } from './animation.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { createBellgardenDrawing } from './asset-presentation.ts';
+import type { LumenDrawing, LumenDrawingFactory } from './quality-presentation.ts';
 
 export interface HollowView { scale: number; width: number; height: number; x: number; y: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -26,6 +27,7 @@ export function createPresentation(surface: HTMLElement) {
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
   let theme = themes.normal;
   let art: ReturnType<typeof createBellgardenDrawing> | undefined;
+  let quality: LumenDrawing | undefined, qualityFactory: LumenDrawingFactory | undefined;
   let palette = theme.districts.aqueduct;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const animation = createKeeperAnimation();
@@ -66,6 +68,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   function scenery(view: HollowView, time: number, level: Level) {
+    if (quality) { quality.scenery(view, level.id, time, motion.matches); return; }
     if (art) { art.scenery(view, level.id, theme); return; }
     const { width: w, height: h } = view;
     const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, palette.sky); sky.addColorStop(0.48, palette.middle); sky.addColorStop(1, palette.deep);
@@ -121,6 +124,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   function stone(s: Rect, index: number, level: Level, view: HollowView) {
+    if (quality) { quality.stone(s, level.id, index, view); return; }
     if (art) { art.stone(s, level.id, index, view); return; }
     const fill = ctx.createLinearGradient(s.x, s.y, s.x, s.y + Math.min(s.h, 250));
     fill.addColorStop(0, palette.stone); fill.addColorStop(1, palette.deep); ctx.fillStyle = fill; ctx.fillRect(s.x, s.y, s.w, s.h);
@@ -157,6 +161,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, time: number, defeated: boolean, pose: KeeperPose = { stride: 0, bob: 0, lean: 0 }) {
+    if (quality) { quality.keeper(p, pose, defeated, time, motion.matches, landing); return; }
     if (art) { art.keeper(p, pose, defeated, motion.matches, landing); return; }
     const walk = p.grounded ? pose.stride : 0, bob = p.grounded ? pose.bob : 0;
     ctx.save(); ctx.translate(p.x + m.width / 2, p.y + m.height);
@@ -194,7 +199,27 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = '8px monospace'; ctx.fillStyle = art ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
   }
   return {
-    applyTheme(next: HollowTheme, images?: ImageBundle) { theme = next; art = images ? createBellgardenDrawing(ctx, images) : undefined; },
+    replaceTheme(next: HollowTheme, images?: ImageBundle, factory?: LumenDrawingFactory) {
+      const previous = { theme, art, quality, qualityFactory };
+      const replacement = factory === qualityFactory ? quality : factory?.(ctx);
+      const nextArt = images ? createBellgardenDrawing(ctx, images) : undefined;
+      theme = next; art = nextArt; quality = replacement; qualityFactory = factory;
+      // A failed candidate may have interrupted a saved drawing scope. Keep the
+      // camera/cosmetics, but start the replacement with a clean Canvas state.
+      ctx.reset();
+      let finished = false;
+      return {
+        commit() {
+          if (finished) return; finished = true;
+          if (previous.quality !== replacement) previous.quality?.dispose();
+        },
+        rollback() {
+          if (finished) return; finished = true;
+          if (previous.quality !== replacement) replacement?.dispose();
+          ({ theme, art, quality, qualityFactory } = previous); ctx.reset();
+        },
+      };
+    },
     reset() { particles = []; lastFrame = undefined; landing = 0; camera = undefined; cosmeticTime = 0; animation.reset(); },
     consume(events: readonly HollowEvent[]) {
       for (const event of events) {
@@ -227,7 +252,7 @@ export function createPresentation(surface: HTMLElement) {
       scenery(view, run.elapsed, run.level);
       ctx.save(); ctx.translate(-view.x, -view.y);
       // Abandoned flywheels are scenery only, safely behind physical platforms.
-      for (let i = Math.max(0, Math.floor((view.x - 760) / 610)); !art && i < Math.ceil((view.x + view.width) / 610); i++) {
+      for (let i = Math.max(0, Math.floor((view.x - 760) / 610)); !art && !quality && i < Math.ceil((view.x + view.width) / 610); i++) {
         const x = 560 + i * 610, y = 560 + i % 2 * 150;
         if (x < view.x - 200 || x > view.x + view.width + 200) continue;
         gear(x, y, 110, motion.matches ? 0 : run.elapsed * 0.06 * (i % 2 ? -1 : 1), '#4a665166');
@@ -238,7 +263,8 @@ export function createPresentation(surface: HTMLElement) {
       run.level.checkpoints.forEach((point, i) => {
         const x = point.x + 13, y = point.y, lit = run.checkpoint >= i;
         glow(x, y - 25, lit ? 105 : 45, lit ? '#a6ffcc55' : '#f4d8a922');
-        if (art) art.object(lit ? 'savedLantern' : 'lantern', x - 40, y + m.height - 100, 80, 100);
+        if (quality) quality.checkpoint(x, y, lit);
+        else if (art) art.object(lit ? 'savedLantern' : 'lantern', x - 40, y + m.height - 100, 80, 100);
         else {
           line(x, y + m.height, x, y - 35, '#b9a576', 5);
           ctx.fillStyle = lit ? '#b9ffcf' : '#a28c6c'; ctx.fillRect(x - 9, y - 42, 18, 26);
@@ -254,6 +280,7 @@ export function createPresentation(surface: HTMLElement) {
         const color = active ? '#ffb294' : warning ? '#ffdb83' : '#9cddd6';
         ctx.fillStyle = '#172c37'; ctx.fillRect(vent.x - 6, vent.y + vent.h - 8, vent.w + 12, 14);
         for (let x = vent.x; x < vent.x + vent.w; x += 12) line(x, vent.y + vent.h - 7, x + 5, vent.y + vent.h + 3, color, 3);
+        if (quality) quality.vent(vent, color);
         if (art) art.object('vent', vent.x - 6, vent.y + vent.h - 7, vent.w + 12, 22);
         if (active) {
           const plume = ctx.createLinearGradient(0, vent.y, 0, vent.y + vent.h);
@@ -283,6 +310,7 @@ export function createPresentation(surface: HTMLElement) {
       run.enemies.forEach(enemy => {
         if (enemy.x < view.x - 60 || enemy.x > view.x + view.width + 60) return;
         const x = enemy.x + enemy.w / 2, y = enemy.y + enemy.h;
+        if (quality) { quality.beetle(x, y, enemy.direction, enemy.alive, run.levelTime, motion.matches); return; }
         if (art) { art.beetle(x, y, enemy.direction, enemy.alive, run.levelTime, motion.matches); return; }
         ctx.save(); ctx.translate(x, y); ctx.scale(enemy.direction, enemy.alive ? 1 : 0.25);
         const stride = motion.matches || !enemy.alive ? 0 : Math.sin(run.levelTime * 18) * 3;
@@ -295,6 +323,8 @@ export function createPresentation(surface: HTMLElement) {
         line(-2, -24, -2, -32, '#c7af85', 2); line(-7, -32, 3, -32, '#c7af85', 2); ctx.restore();
       });
       for (const s of run.level.hazards) {
+        if (s.x + s.w < view.x || s.x > view.x + view.width) continue;
+        if (quality) { quality.thorns(s); continue; }
         if (art) { art.object('thorns', s.x, s.y, s.w, s.h); continue; }
         glow(s.x + s.w / 2, s.y + 8, 65, '#df916d20');
         ctx.fillStyle = '#3c2830'; ctx.fillRect(s.x - 2, s.y + s.h - 5, s.w + 4, 6);
@@ -304,7 +334,8 @@ export function createPresentation(surface: HTMLElement) {
         ctx.fill(); line(s.x, s.y + s.h, s.x + s.w, s.y + s.h, '#6b4944', 3);
       }
       const goal = run.level.goal, gx = goal.x + goal.w / 2;
-      if (art) {
+      if (quality) quality.bell(goal, ['victory', 'interlude'].includes(run.status), cosmeticTime, motion.matches);
+      else if (art) {
         art.object('gate', gx - 76, goal.y + goal.h - 190, 152, 190);
         glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
         ctx.save(); ctx.translate(gx, goal.y - 30);
@@ -325,6 +356,7 @@ export function createPresentation(surface: HTMLElement) {
       run.level.motes.forEach((mote, i) => {
         if (run.collected[i] || mote.x < view.x - 30 || mote.x > view.x + view.width + 30) return;
         const y = mote.y + (motion.matches ? 0 : Math.sin(run.elapsed * 2.5 + i) * 4);
+        if (quality) { quality.mote(mote.x, y); return; }
         glow(mote.x, y, 33, '#f6ce7f40');
         if (art) { art.object('mote', mote.x - 9, y - 11, 18, 22); return; }
         ctx.save(); ctx.translate(mote.x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = '#edc582'; ctx.fillRect(-6, -6, 12, 12); ctx.fillStyle = '#fff3c2'; ctx.fillRect(-2, -2, 4, 4); ctx.restore();
@@ -349,6 +381,6 @@ export function createPresentation(surface: HTMLElement) {
         leaf(-50, 15, 45, -0.6, '#729666'); leaf(48, 18, 38, -2.4, '#4f8060'); ctx.restore();
       }
     },
-    dispose() { if (disposed) return; disposed = true; particles = []; art = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; particles = []; art = undefined; quality?.dispose(); quality = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

@@ -6,7 +6,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 | --- | --- | --- | --- |
 | Last Light Clearing | Procedural clearing | Ember Ruins | Prism Garden, sculpted and lit in 3D |
 | Skybreak | Pacific Run | Bundled original Aurora Fleet | Orbital Foundry, sculpted ships and illuminated orbital scenery |
-| Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Not available |
+| Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Lumen Conservatory, copper-and-glass cathedral gardens |
 | Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, a sculpted rain-soaked city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Not available | Not available |
 | Blastline | Iron coast | Not available | Not available |
@@ -68,7 +68,7 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | P / Pause | P pauses/resumes; Pause opens the menu |
 | F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Verdant clockwork. Assets uses Porcelain Bellgarden: an ivory keeper with a coral ribbon, glazed botanical aqueducts, rose-colored kilns and indigo stained-glass towers. All original image artwork ships with the repository; see the [artwork guide](src/games/clockwork-hollow/art/README.md). Quality is not yet available. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Theme changes retain the paused journey and camera; failed image loads keep the working presentation. Focus loss and display changes pause and clear input. AudioBits sound completes both presentations. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Normal retains Verdant clockwork. Assets uses Porcelain Bellgarden: an ivory keeper with a coral ribbon, glazed botanical aqueducts, rose-colored kilns and indigo stained-glass towers. All original image artwork ships with the repository; see the [artwork guide](src/games/clockwork-hollow/art/README.md). Quality uses Lumen Conservatory, with layered cathedral gardens, burnished copper, luminous glass and an articulated keeper. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Theme changes retain the paused journey and camera; failed image loads keep the working presentation. Focus loss and display changes pause and clear input. AudioBits sound completes all three presentations. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
 
 ## Midnight Circuit
 

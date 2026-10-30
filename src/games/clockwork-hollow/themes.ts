@@ -12,7 +12,10 @@ export interface HollowTheme {
   readonly scarf: string;
   readonly atmosphere: 'motes' | 'snow';
 }
-export type Appearance = 'normal' | 'assets';
+export type Appearance = 'normal' | 'assets' | 'quality';
+export const appearanceNames: Readonly<Record<Appearance, string>> = {
+  normal: 'Verdant clockwork', assets: 'Porcelain Bellgarden', quality: 'Lumen Conservatory',
+};
 export const themes: Readonly<Record<Appearance, HollowTheme>> = {
   normal: {
     districts: {
@@ -29,5 +32,13 @@ export const themes: Readonly<Record<Appearance, HollowTheme>> = {
       belfry: { environment: 'belfry', sky: '#1c2545', middle: '#555c89', deep: '#242d50', stone: '#656e99', edge: '#fff0cf', light: '#d9ddf5' },
     },
     foliage: ['#59b8b2', '#387b83'], brass: '#fff0cf', scarf: '#ec7968', atmosphere: 'motes',
+  },
+  quality: {
+    districts: {
+      aqueduct: { environment: 'garden', sky: '#071d2b', middle: '#264b51', deep: '#091f29', stone: '#254a4a', edge: '#bcdbc1', light: '#85d9be' },
+      emberworks: { environment: 'foundry', sky: '#201b2b', middle: '#65434b', deep: '#231e2c', stone: '#50414b', edge: '#efc994', light: '#efae73' },
+      belfry: { environment: 'belfry', sky: '#101a33', middle: '#404768', deep: '#141e34', stone: '#354359', edge: '#cdd7ef', light: '#afbdf5' },
+    },
+    foliage: ['#568d79', '#407268'], brass: '#efd5a0', scarf: '#e9b466', atmosphere: 'motes',
   },
 };
