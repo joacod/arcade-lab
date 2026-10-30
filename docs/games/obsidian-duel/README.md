@@ -26,7 +26,7 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 ![Eclipse Foundry: Nera extends a stormglass-armored kick toward Kael's basalt guard beneath the copper orrery](eclipse-foundry.png)
 
-Choose Theme from setup or a paused match. Preparation keeps the working presentation visible, then replaces it on the same match. Resume continues the current attack, jump, health, cooldowns, timer and round. Restart retains the theme; leaving the game releases its images. See the [artwork guide](../../../src/games/obsidian-duel/art/README.md) for the creative brief, inspiration, part layout and regeneration.
+Choose Theme from setup or a paused match. Preparation keeps the working presentation visible, then replaces it on the same match. Resume continues the current attack, jump, health, cooldowns, timer and round. Restart retains the theme; leaving the game releases its images. See the [artwork guide](../../../src/games/obsidian-duel/art/README.md) for the creative brief, inspiration, cel layout and regeneration.
 
 ## Source ownership
 
@@ -37,9 +37,10 @@ Choose Theme from setup or a paused match. Preparation keeps the working present
 | `src/games/obsidian-duel/cpu.ts` | Seeded decisions using delayed visible observations and ordinary action commands |
 | `src/games/obsidian-duel/input.ts` | Shared captured-button snapshots translated into fighting actions |
 | `src/games/obsidian-duel/themes.ts` | Theme names, stage palettes and fighter costume colors |
-| `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, shared articulated poses, presentation replacement and bounded contact effects |
-| `src/games/obsidian-duel/asset-art.ts`, `assets.ts` | Game-local part layout, dimension validation and shared cancellable image preparation |
-| `src/games/obsidian-duel/asset-presentation.ts` | Eclipse Foundry image parts attached to observed joints, bolts and contact artwork |
+| `src/games/obsidian-duel/animation.ts` | Cosmetic action observations, authored pose keys, travel-driven gait and fixed-length limb solving |
+| `src/games/obsidian-duel/presentation.ts` | Uniform arena transform, procedural Normal fighters, presentation replacement and bounded contact effects |
+| `src/games/obsidian-duel/asset-art.ts`, `assets.ts` | Whole-body cel layout, dimension validation and shared cancellable image preparation |
+| `src/games/obsidian-duel/asset-presentation.ts` | Complete Eclipse Foundry action cels, bolts and contact artwork |
 | `src/games/obsidian-duel/ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `src/games/obsidian-duel/sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |
 | `src/games/obsidian-duel/app.ts` | Host, clock, focus, display changes, audio and session disposal |
@@ -48,7 +49,11 @@ Simulation records horizontal position, elevation, velocity and facing independe
 
 The CPU samples visible spacing, telegraphs and incoming bolts, then receives those observations after a reaction delay. Decisions have their own cadence and seeded mistakes. The CPU cannot read player inputs or buffered commands and uses the same movement, guard, cooldown and combat restrictions as the player.
 
-Normal uses procedural Canvas geometry; the selection cover is an editable SVG. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Assets attaches independent illustrated parts to those same observed joints. Poses read simulation states. Reduced motion removes shake, storm flourishes and Assets mantle flutter and embers, and reduces particles while retaining all combat information.
+Normal uses procedural Canvas geometry; the selection cover is an editable SVG. The scarf, split coat, light wraps and fast kicks distinguish Nera from Kael's broad mantle, armored shoulder, greaves and committed punches. Arms and legs retain their segment lengths through wind-up, contact, recoil, guard and falling. Pelvis and shoulder motion transfer weight without rotating a standing fighter away from its supporting feet. Walking follows signed distance travelled, so pressing into a wall does not march in place.
+
+Assets uses 74 complete illustrated cels per fighter across 16 clips. Each cel includes the body, costume, face, hands and cloth in one drawing. The runtime selects a frame with a fixed ground pivot, rather than assembling or stretching body-part images. The original cel sources use authored whole-body keys and pose-specific contours; replacing an individual drawing does not require changing Normal's renderer.
+
+Both themes observe the same semantic actions. Attack drawings follow authored startup, active and recovery times; contact cels never appear during startup. Jump poses follow ascent, apex and descent, and landing, hit reactions, knockdown and wake-up have dedicated sequences. Theme replacement retains animation observations as well as combat state. Reduced motion removes idle breathing, shake, storm flourishes and Assets embers, and reduces particles while preserving action animation and combat information.
 
 ## Architecture decisions
 
@@ -60,6 +65,6 @@ The session clears input and resets timing at round-phase, display and menu tran
 
 ## Local verification
 
-Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions, complete CPU matches and artwork dimensions. Chromium verifies retained match identity across themes, restart selection, failed and cancelled preparation, image release, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
+Focused invariants cover attack timing and single-hit ownership, guards, interruption and wake-up, body bounds, specials, trades, timer decisions, complete CPU matches, artwork dimensions, cel coverage, constant limb lengths, planted feet, travel-driven gait and animation timing. Chromium verifies retained match identity across themes, restart selection, failed and cancelled preparation, image release, the session lifecycle and independent touch holds; the shared audio check also exercises every duel recipe's output, burst admission and adapter coalescing.
 
 See the [shared commands](../../architecture.md#local-verification).

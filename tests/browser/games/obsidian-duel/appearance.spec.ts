@@ -47,7 +47,7 @@ test('Eclipse Foundry replaces the complete presentation while retaining the due
   expect(await page.evaluate(() => (window as any).retainedDuel === (window as any).duelProbe)).toBe(true);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).not.toBe(normal);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
-    .toEqual([[1600, 896], [1024, 160], [1024, 160], [512, 128]]);
+    .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [512, 128]]);
   await chooseOption(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);

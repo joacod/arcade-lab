@@ -25,6 +25,8 @@ Record the technical information needed to draw and maintain each asset:
 
 Keep independently moving actors, articulated parts, interactable objects, attack warnings and UI separate from static scenery. Do not bake a dynamic state into a background plate. Define animation from the available artwork and gameplay observations; a larger sheet does not require inventing new mechanics. Inspect the complete treatment in motion at its actual display size, where padding, frame jitter or noisy detail become visible.
 
+Choose the animation representation for the action. Separate part images suit some designs; complete character cels allow pose-specific silhouettes, foreshortening and cloth. Renderers can share semantic action observations without sharing a rig. Align anticipation, contact and recovery drawings to the simulation's actual windows, use a stable pivot across frames, and avoid stretching anatomy to match attack reach. Inspect planted feet and transitions as well as the contact pose.
+
 ## Prepare and replace within existing owners
 
 Commit all required artwork in the owning game's `art/` folder and import its URLs locally. Check redistribution rights and retain required credits and license notices alongside third-party artwork. A fresh clone must run the presentation without regeneration or external services.

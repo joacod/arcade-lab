@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs';
+import { generateFighters } from './fighters.mjs';
 
 // Original vector artwork. All coordinates are authored here; no external inputs.
 const save = (name, width, height, body, view = `0 0 ${width} ${height}`) => writeFileSync(new URL(`${name}.svg`, import.meta.url),
@@ -68,49 +69,7 @@ for (let i = 0; i < 70; i++) { const x = i * 137 % 1000, y = 435 + i * 31 % 122;
 stage += rect(0, 0, 1000, 560, 'url(#vignette)');
 save('stage', 1600, 896, stage, '0 0 1000 560');
 
-for (const nera of [true, false]) {
-  const accent = nera ? '#9bffeb' : '#ffb56b', metal = nera ? '#e2ddc4' : '#69595b', shade = nera ? '#317783' : '#303140', dark = '#172837';
-  const ink = (d, color = metal) => path(d, color, '#101c2b', 3);
-  let sheet = `<defs><linearGradient id="cloth"><stop stop-color="${nera ? '#faf1d4' : '#7b6b68'}"/><stop offset=".45" stop-color="${metal}"/><stop offset="1" stop-color="${shade}"/></linearGradient><linearGradient id="armor" x2="1" y2="1"><stop stop-color="${nera ? '#5c9d9c' : '#8d7a70'}"/><stop offset=".4" stop-color="${shade}"/><stop offset="1" stop-color="#182839"/></linearGradient></defs>`;
-  const parts = [];
-  // Torso: layered asymmetric lapels with an engraved stormglass/furnace core.
-  parts.push(ink(nera ? 'M29 8L83 12 99 34 85 90 99 151 63 139 27 150 37 92 19 30Z' : 'M16 10L95 7 114 34 97 96 108 148 23 151 29 95 7 33Z', 'url(#cloth)')
-    + ink(nera ? 'M39 15L71 27 82 98 49 104 34 70Z' : 'M29 29L83 21 99 55 82 109 36 104 23 63Z', 'url(#armor)')
-    + path('M36 41L65 56 82 37 76 74 56 83Z', shade, '#c2aa7d', 2)
-    + path('M59 50L71 64 60 82 48 65Z', accent, '#eff8cf', 1)
-    + line('M36 23L54 42M83 89L91 131M32 118l16-7', '#e9d9b1', 2)
-    + ink('M26 102L90 99 94 112 24 116Z', dark) + path('M55 102l13-1 4 14-14 1Z', '#d7b77f')
-    + line('M34 122l-4 17M80 121l7 15', accent, 1.5));
-  // Head: right-facing human profile, crescent crest versus squared basalt crown.
-  parts.push(ink('M41 42L76 36 91 58 105 76 94 81 91 105 69 119 43 104 34 75Z', nera ? '#c59a83' : '#b58169')
-    + ink(nera ? 'M29 84L22 48 40 21 74 17 93 39 76 49 52 45 44 70 38 106Z' : 'M27 73L24 37 43 19 80 21 95 44 84 56 51 47 38 82Z', dark)
-    + ink(nera ? 'M27 53L17 29 29 8 30 28 51 33 77 31 90 42 62 48 42 44Z' : 'M22 46L17 15 35 26 50 10 69 28 87 13 94 47 77 53 51 42Z', 'url(#armor)')
-    + path('M62 64L91 63 92 68 65 70Z', '#101b28') + line('M78 65h12', accent, 3)
-    + line('M83 89l10-2', '#543f40', 2)
-    + (nera ? ink('M33 62L22 84 15 131 30 148 27 111 41 80Z', '#28515c') + line('M21 110l6 21', accent, 2) : ink('M48 97L68 106 90 96 88 111 67 124 48 113Z', '#3a3340'))
-    + ink('M38 118L66 128 89 116 94 138 66 153 31 140Z', shade) + line('M38 133l28 9 20-10', accent, 2));
-  // Segments run top to bottom. Angular plates and clear highlights remain readable at arena scale.
-  for (const part of ['arm', 'gauntlet', 'thigh', 'shin']) {
-    let piece = ink('M37 8Q64-2 91 8L97 55 86 146Q63 160 42 146L30 55Z', part === 'thigh' ? shade : 'url(#armor)');
-    piece += path('M39 14L55 10 53 135 43 139 35 54Z', part === 'thigh' ? '#528083' : metal);
-    piece += line('M44 29L82 40 42 56 84 69 43 84', '#b5aa8c', 2);
-    if (part === 'gauntlet' || part === 'shin') {
-      piece += ink('M30 58L64 43 99 59 91 128 65 150 38 128Z', 'url(#armor)');
-      piece += line('M65 61L56 82 72 93 60 124', accent, nera ? 3 : 5);
-      piece += line('M40 69l-1 45M85 73l-2 37', '#a9a18b', 2);
-    }
-    piece += path('M40 136h47v12H40Z', '#b8a67e') + line('M46 142h35', accent, 2);
-    parts.push(piece);
-  }
-  parts.push(ink('M19 23L74 15 81 74 117 106 121 137 13 141 8 119 23 80Z', 'url(#armor)')
-    + path('M15 117L119 115 121 137 13 141Z', '#131e2e') + line('M32 36L62 32 64 78 99 106M18 122h94', metal, 4) + line('M36 47h22M37 57h22', accent, 2));
-  parts.push(ink(nera ? 'M81 9L110 31 83 64 89 143 49 124 30 151 15 133 38 70 17 40 38 20Z' : 'M16 28L49 9 96 13 120 45 104 88 117 146 69 133 19 153 8 112 26 65Z', 'url(#cloth)')
-    + path(nera ? 'M35 31L66 26 55 81 29 129 36 92 19 48Z' : 'M22 34L47 24 56 70 31 136 18 140 22 84Z', shade)
-    + line(nera ? 'M73 29L65 85 73 130M33 53L52 64' : 'M69 24L96 39 85 78 100 133M32 46l15 22', '#c6b995', 3)
-    + path('M55 35L71 45 55 59 43 46Z', 'none', accent, 2));
-  parts.forEach((part, column) => { sheet += `<g transform="translate(${column * 128} 0)">${part}</g>`; });
-  save(nera ? 'nera' : 'kael', 1024, 160, sheet);
-}
+generateFighters();
 let effects = '';
 // Four 128-square cells: bolt, strike, guard, ground seal. Anchors are their centers.
 effects += path('M4 65L44 54 55 35 92 46 122 64 88 80 53 92 43 74Z', '#29778388')
