@@ -167,8 +167,8 @@ importers:
   .:
     dependencies:
       audiobits:
-        specifier: 0.5.0
-        version: 0.5.0
+        specifier: 0.6.0
+        version: 0.6.0
       three:
         specifier: 0.186.1
         version: 0.186.1
@@ -467,8 +467,8 @@ packages:
   '@webgpu/types@0.1.74':
     resolution: {integrity: sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==}
 
-  audiobits@0.5.0:
-    resolution: {integrity: sha512-4kYD98Edn0lv/p3vTBLHg09Gy6OkPQd2ey5gKA0ucnl1/XgVt7pTPiTR1SFecc+WiOJfMdPDlfYV5etr862Dxw==}
+  audiobits@0.6.0:
+    resolution: {integrity: sha512-ikHWy5sOnzLylbmBGLo1pE3E2fv6ZWLiChlWPdbzy3OnBYjctNy9FX+0x4uQO2yXZkiJ1enJsdfblK2ta6oQ/Q==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -866,7 +866,7 @@ snapshots:
 
   '@webgpu/types@0.1.74': {}
 
-  audiobits@0.5.0: {}
+  audiobits@0.6.0: {}
 
   debug@4.4.3:
     dependencies:

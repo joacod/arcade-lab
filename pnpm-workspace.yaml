@@ -3,4 +3,4 @@ allowBuilds:
   '@vgpu/adapter-node': false
   webgpu: false
 minimumReleaseAgeExclude:
-  - audiobits@0.5.0
+  - audiobits@0.5.0 || 0.6.0
