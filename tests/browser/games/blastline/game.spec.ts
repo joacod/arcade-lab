@@ -30,6 +30,14 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   await page.keyboard.press('j'); await page.clock.runFor(100); expect((await state()).elapsed).toBe(0);
   await page.screenshot({ path: info.outputPath('blastline-title.png') });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
+  // A complete press/release between steps must survive the end of weapon recovery.
+  await page.evaluate(() => { (window as any).blastProbe.player.cooldown = .08; });
+  await page.keyboard.press('j'); await page.clock.runFor(20);
+  expect((await state()).player.fireBuffer).toBeGreaterThan(0);
+  expect((await state()).projectiles.length).toBe(0);
+  await page.clock.runFor(100);
+  expect((await state()).projectiles.length).toBe(1);
+  expect((await state()).player.fireBuffer).toBe(0);
   await page.keyboard.down('d'); await page.keyboard.down('j'); await page.clock.runFor(1200);
   await page.keyboard.up('d'); await page.keyboard.up('j'); await page.clock.runFor(100);
   expect((await state()).player.x).toBeGreaterThan(300); expect((await state()).projectiles.length).toBeGreaterThan(0);
@@ -64,6 +72,14 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   const airborne = await state(); expect(airborne.player.x).toBeGreaterThan(150); expect(airborne.player.y).toBeLessThan(600); expect(airborne.projectiles.length).toBeGreaterThan(0);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await page.clock.runFor(800);
   const released = await state(); expect(released.player.vx).toBe(0); expect(released.player.grounded).toBe(true);
+  await page.evaluate(() => { const r = (window as any).blastProbe; r.player.cooldown = .08; r.projectiles = []; });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [fire] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.clock.runFor(20);
+  expect((await state()).player.fireBuffer).toBeGreaterThan(0);
+  await page.clock.runFor(100);
+  expect((await state()).projectiles.length).toBe(1);
+  expect((await state()).player.fireBuffer).toBe(0);
   await page.screenshot({ path: info.outputPath('blastline-touch.png') });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000);

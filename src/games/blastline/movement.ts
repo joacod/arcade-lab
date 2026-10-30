@@ -3,7 +3,7 @@ import { moveBody } from './terrain.ts';
 import { emit, type Run, type Action, type Player } from './state.ts';
 export function playerAt(at: { x: number; y: number }, operator: Player['operator'] = 'nova'): Player {
   return { ...at, w: body.w, h: body.h, vx: 0, vy: 0, grounded: false, operator, facing: 1, health: body.health, immune: 1.8,
-    cooldown: 0, grenadeCooldown: 0, coyote: 0, buffer: 0, aimX: 1, aimY: 0 };
+    cooldown: 0, fireBuffer: 0, grenadeCooldown: 0, coyote: 0, buffer: 0, aimX: 1, aimY: 0 };
 }
 const approach = (v: number, target: number, amount: number) => v < target ? Math.min(target, v + amount) : Math.max(target, v - amount);
 export function movePlayer(run: Run, action: Action, dt: number) {

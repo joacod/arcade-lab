@@ -10,6 +10,7 @@ export const operators = {
   bolt: { name: 'Bolt', role: 'DEMOLITION', speed: 192, interval: .62, damage: 5, tileDamage: 5, speedShot: 650, radius: 83 },
 } as const;
 export const body = { w: 18, h: 30, gravity: 1350, jump: 510, fall: 640, health: 5, lives: 5, grenades: 4 } as const;
+export const inputTiming = { fireBuffer: .12 } as const;
 export const limits = { projectiles: 96, events: 160, particles: 240, explosions: 160 } as const;
 export const enemyTypes = {
   guard: { health: 3, w: 18, h: 30, sight: 390, warning: .35, burst: 3, recovery: 1.7, speedShot: 285, radius: 0 },

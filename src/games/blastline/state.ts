@@ -1,9 +1,9 @@
 import type { Mission, Operator, Point } from './content.ts';
 import { limits } from './content.ts';
 import type { Body, Terrain } from './terrain.ts';
-export interface Action { move: number; aim: number; jumpPressed: boolean; jumpHeld: boolean; fire: boolean; grenade: boolean; switch: boolean }
-export const idle: Readonly<Action> = { move: 0, aim: 0, jumpPressed: false, jumpHeld: false, fire: false, grenade: false, switch: false };
-export interface Player extends Body { operator: Operator; facing: number; health: number; immune: number; cooldown: number; grenadeCooldown: number; coyote: number; buffer: number; aimX: number; aimY: number }
+export interface Action { move: number; aim: number; jumpPressed: boolean; jumpHeld: boolean; fire: boolean; firePressed: boolean; grenade: boolean; switch: boolean }
+export const idle: Readonly<Action> = { move: 0, aim: 0, jumpPressed: false, jumpHeld: false, fire: false, firePressed: false, grenade: false, switch: false };
+export interface Player extends Body { operator: Operator; facing: number; health: number; immune: number; cooldown: number; fireBuffer: number; grenadeCooldown: number; coyote: number; buffer: number; aimX: number; aimY: number }
 export interface Enemy extends Body { id: number; kind: 'guard' | 'heavy' | 'bastion'; health: number; maxHealth: number; home: number; patrol: number; facing: number; cooldown: number; warning: number; burst: number; flash: number; target: Point }
 export interface Barrel extends Body { detonated: boolean; health: number }
 export interface Relay extends Point { health: number }
@@ -27,7 +27,7 @@ export function hurtPlayer(run: Run, damage: number) {
   p.health = Math.max(0, p.health - damage); p.immune = .95;
   emit(run, 'hurt', p);
   if (!p.health) {
-    run.lives--; run.respawn = 1.25; run.projectiles = []; p.vx = 0;
+    run.lives--; run.respawn = 1.25; run.projectiles = []; p.vx = 0; p.fireBuffer = 0; p.buffer = 0;
     emit(run, 'death', p);
     if (run.lives <= 0) { run.status = 'defeat'; emit(run, 'defeat', p); }
   }
