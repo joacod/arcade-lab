@@ -1,5 +1,5 @@
 import { createThemeSelect } from '../../common/ui/theme-select.ts';
-import { themes, type Appearance } from './themes.ts';
+import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
@@ -21,7 +21,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
-  const theme = createThemeSelect({ names: { normal: 'Tempest citadel' }, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
@@ -40,8 +40,16 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   for (const button of roster) button.addEventListener('click', () => {
     for (const b of roster) b.setAttribute('aria-pressed', String(b === button)); select(button.dataset.fighter as FighterId);
   }, { signal });
-  let current: Screen = 'title';
+  let current: Screen = 'title', activeAppearance: Appearance = 'normal';
   return { controls,
+    appearanceStatus(id: Appearance, message: string) {
+      theme.setValue(id);menu.displayStatus(message);
+      if(!message){
+        activeAppearance=id;
+        setText($('.duel-arena-label'), `${appearanceNames[id].toUpperCase()} · OBSIDIAN DUEL`);
+        root.dataset.theme=id;
+      }
+    },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
@@ -67,7 +75,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       const banner = $<HTMLElement>('.duel-announcement');
       setProperty(banner, 'hidden', current !== 'playing' || m.phase === 'fight' && m.timer < 74.3);
       const title = m.phase === 'intro' ? `ROUND ${m.round}` : m.phase === 'roundEnd' ? m.reason === 'draw' ? 'DRAW' : m.reason === 'timeout' ? 'TIME UP' : 'K.O.' : 'FIGHT';
-      const sub = m.phase === 'intro' ? `${Math.ceil(m.phaseTime)}　/　PREPARE` : m.phase === 'roundEnd' ? m.winner === null ? 'EVENLY MATCHED · DUEL AGAIN' : `${fighters[m.fighters[m.winner]!.kind].name.toUpperCase()} TAKES THE ROUND` : 'THE TEMPEST CITADEL';
+      const sub = m.phase === 'intro' ? `${Math.ceil(m.phaseTime)}　/　PREPARE` : m.phase === 'roundEnd' ? m.winner === null ? 'EVENLY MATCHED · DUEL AGAIN' : `${fighters[m.fighters[m.winner]!.kind].name.toUpperCase()} TAKES THE ROUND` : appearanceNames[activeAppearance].toUpperCase();
       // Keep the live region quiet unless the announcement actually changes.
       setText($('.duel-announcement strong'), title);
       setText($('.duel-announcement span'), sub);

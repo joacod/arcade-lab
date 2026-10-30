@@ -2,6 +2,8 @@ import { themes, type DuelTheme } from './themes.ts';
 import { arena, fighters } from './content.ts';
 import type { DuelEvent, Fighter, Match } from './game.ts';
 import type { Screen } from './ui.ts';
+import type { ImageBundle } from '../../engine/browser/images.ts';
+import { drawFoundryFighter, drawFoundryEffect } from './asset-presentation.ts';
 export function duelView(width: number, height: number) {
   const scale = Math.min(width / arena.width, height / arena.height);
   return { scale, left: (width - arena.width * scale) / 2, top: (height - arena.height * scale) / 2 };
@@ -28,6 +30,7 @@ export function createPresentation(surface: HTMLElement) {
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
   let theme = themes.normal;
+  let art: ImageBundle | undefined;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let sparks: Spark[] = [], impacts: Impact[] = [], shake = 0, last = 0, disposed = false;
   function rect(x: number, y: number, w: number, h: number, fill: string | CanvasGradient) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
@@ -45,6 +48,15 @@ export function createPresentation(surface: HTMLElement) {
     rect(x - radius, y - radius, radius * 2, radius * 2, g);
   }
   function scenery(t: number, reduced: boolean) {
+    if (art) {
+      ctx.drawImage(art.stage!, 0, 0, 1000, 560);
+      // Subtle atmospheric motion stays behind the action and honors reduced motion.
+      if (!reduced) for (let i = 0; i < 12; i++) {
+        const x = (i * 89 + t * (3 + i % 3)) % 1000, y = 200 + (i * 47) % 200 - Math.sin(t * .4 + i) * 9;
+        oval(x, y, .8, .8, '#f9cc8a66');
+      }
+      return;
+    }
     const sky = ctx.createLinearGradient(0, 0, 0, 560); sky.addColorStop(0, theme.sky[0]); sky.addColorStop(.6, theme.sky[1]); sky.addColorStop(1, theme.sky[2]); rect(0, 0, 1000, 560, sky);
     glow(570, 143, 240, '#a799d034'); oval(570, 143, 55, 55, theme.orb[0]); oval(570, 143, 48, 48, theme.orb[1]);
     path([524,135,552,148,537,165,574,155,587,177,599,142,621,126], '#9b9aaa55', 2);
@@ -123,6 +135,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     ctx.save();
     oval(f.x,base+4,down?69:48,8, '#080d1e88');
+    if (art && !down) { ctx.save(); ctx.globalAlpha=.24; drawFoundryEffect(ctx,art,3,f.x,base+4,112,20); ctx.restore(); }
     glow(f.x,base+10,76,nera?'#7debdc0d':'#ffc08d0b');
     ctx.translate(f.x,base-f.z);ctx.scale(f.facing,1);ctx.lineCap='round';ctx.lineJoin='round';
     if(down){ctx.translate(0,-12);ctx.rotate(-1.42);}
@@ -130,6 +143,9 @@ export function createPresentation(surface: HTMLElement) {
     ctx.rotate(lean);ctx.translate(0,breathe);
     if(f.immune>0&&!down) { ctx.globalAlpha=reduced?.9:.83+.17*Math.sin(time*35); }
     const { cloth, dark, trim } = theme.fighters[f.kind], skin=nera?'#cda99e':'#d7aa8f';
+    if (art) {
+      drawFoundryFighter(ctx, art, f.kind, { hip, shoulder, head, kneeBack, footBack, kneeFront, footFront, elbowBack, handBack, elbowFront, handFront }, reduced ? 0 : Math.sin(time * 4 + index) * .035);
+    } else {
     // A split, flowing silk coat versus a broad armored mantle creates different silhouettes.
     if(nera){path([-17,-103,-38,-82,-34-Math.sin(time*4)*5,-31,-8,-49,10,-91], '#215767',1,true);path([-16,-107,-46,-117,-72,-106,-47,-108,-27,-95], '#88e0cc',1,true);}
     else {path([-28,-116,21,-112,29,-48,-21,-33,-39,-56], '#3d3246',1,true);path([-28,-116,-39,-87,-28,-78,-17,-105], '#a77d6a',1,true);}
@@ -153,6 +169,7 @@ export function createPresentation(surface: HTMLElement) {
     path([elbowFront[0]*.35+handFront[0]*.65,elbowFront[1]*.35+handFront[1]*.65,...handFront],wrap,nera?13:23);
     oval(handFront[0]+3,handFront[1],nera?8:12,nera?6:10,nera?'#d8c2af':'#bfb3ac');
     path([handFront[0]-7,handFront[1]-4,handFront[0]+7,handFront[1]-4],trim,2);
+    }
     if(active&&s){
       ctx.globalAlpha=.5;ctx.strokeStyle=trim;ctx.lineWidth=s.kind==='heavy'?6:3;ctx.beginPath();
       if(s.kind==='sweep')ctx.ellipse(47,-12,65,15,0,-1.4,1.2);
@@ -162,7 +179,11 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   return {
-    applyTheme(next: DuelTheme) { theme = next; },
+    replaceTheme(next: DuelTheme, images?: ImageBundle) {
+      const previousTheme = theme, previousArt = art;
+      theme = next; art = images;
+      return { rollback() { theme = previousTheme; art = previousArt; ctx.reset(); } };
+    },
     reset() { sparks=[];impacts=[];shake=0;last=0; },
     consume(events: readonly DuelEvent[]) {
       for(const e of events){
@@ -190,7 +211,7 @@ export function createPresentation(surface: HTMLElement) {
       ctx.translate(v.left,v.top);ctx.scale(v.scale,v.scale);
       ctx.beginPath();ctx.rect(0,0,1000,560);ctx.clip();
       if(!reduced&&animate)ctx.translate(Math.sin(now*83)*shake,Math.cos(now*71)*shake*.35);
-      scenery(now,reduced);
+      scenery(screen==='playing'||screen==='title'?now:m.elapsed,reduced);
       const t=screen==='title'?now:m.elapsed;
       for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,i,t,reduced);
       const enemy=m.fighters[1], cue=screen==='playing'&&m.phase==='fight'?duelCue(enemy):null;
@@ -206,15 +227,19 @@ export function createPresentation(surface: HTMLElement) {
         ctx.fillStyle=color;ctx.fillText(cue.text,0,2);ctx.restore();
       }
       for(const p of m.projectiles){
+        if (art) {
+          ctx.save(); ctx.translate(p.x, arena.floor - p.z); ctx.scale(p.facing, 1);
+          drawFoundryEffect(ctx, art, 0, -6, 0, 76, 46); ctx.restore(); continue;
+        }
         glow(p.x,arena.floor-p.z,44,'#8cffe45a');
         path([p.x-p.facing*44,arena.floor-p.z,p.x,arena.floor-p.z],'#87f5d87a',8);
         oval(p.x,arena.floor-p.z,17,10,'#7cead8');oval(p.x+p.facing*4,arena.floor-p.z,9,6,'#efffea');
       }
       ctx.lineCap='round';
       for(const p of sparks){ctx.globalAlpha=Math.min(1,p.life/p.max);path([p.x,p.y,p.x-p.vx*.025,p.y-p.vy*.025],p.color,2);}
-      for(const r of impacts){ctx.globalAlpha=Math.max(0,r.life/.25);ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
+      for(const r of impacts){ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
       ctx.globalAlpha=1;ctx.restore();
     },
-    dispose(){if(disposed)return;disposed=true;sparks=[];impacts=[];canvas.remove();},
+    dispose(){if(disposed)return;disposed=true;art=undefined;sparks=[];impacts=[];canvas.remove();},
   };
 }

@@ -71,6 +71,9 @@
 }
 
 .duel-app .duel-roster button { position: relative; }
+.duel-app[data-theme='assets'] { --menu-accent: #b7e5cf; background: #101e2c; }
+.duel-app[data-theme='assets'] .duel-hud,.duel-app[data-theme='assets'] .duel-footer { background: #101c29; border-color: #c3a77755; }
+.duel-app[data-theme='assets'] .duel-arena-label { color: #dfcc9e; }
 .duel-app .duel-roster b { padding-right: 20px; }
 .duel-app .duel-roster button[aria-pressed='true']::after { content: '✓'; position: absolute; right: 12px; top: 14px; color: var(--menu-accent); }
 @media (max-width: 360px) { .duel-app .duel-roster { grid-template-columns: 1fr; } }
