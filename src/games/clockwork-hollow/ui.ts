@@ -25,7 +25,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
-  const theme = createThemeSelect({ names: { normal: 'Verdant clockwork' }, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: { normal: 'Verdant clockwork', assets: 'Porcelain Bellgarden' }, signal, modes: themes, value: 'normal', onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
@@ -46,6 +46,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const announcement = $('.hollow-announcement');
   let saved = '', savedAt = 0;
   return { controls,
+    appearanceStatus(value: Appearance, message: string) { theme.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {

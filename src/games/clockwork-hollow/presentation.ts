@@ -3,6 +3,8 @@ import { movement as m, type Level, type Rect } from './content.ts';
 import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
 import type { Screen } from './ui.ts';
 import { createKeeperAnimation, type KeeperPose } from './animation.ts';
+import type { ImageBundle } from '../../engine/browser/images.ts';
+import { createBellgardenDrawing } from './asset-presentation.ts';
 
 export interface HollowView { scale: number; width: number; height: number; x: number; y: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -23,6 +25,7 @@ export function createPresentation(surface: HTMLElement) {
   surface.prepend(canvas);
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
   let theme = themes.normal;
+  let art: ReturnType<typeof createBellgardenDrawing> | undefined;
   let palette = theme.districts.aqueduct;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const animation = createKeeperAnimation();
@@ -63,6 +66,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   function scenery(view: HollowView, time: number, level: Level) {
+    if (art) { art.scenery(view, level.id, theme); return; }
     const { width: w, height: h } = view;
     const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, palette.sky); sky.addColorStop(0.48, palette.middle); sky.addColorStop(1, palette.deep);
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
@@ -116,7 +120,8 @@ export function createPresentation(surface: HTMLElement) {
     }
     ctx.restore();
   }
-  function stone(s: Rect, index: number) {
+  function stone(s: Rect, index: number, level: Level, view: HollowView) {
+    if (art) { art.stone(s, level.id, index, view); return; }
     const fill = ctx.createLinearGradient(s.x, s.y, s.x, s.y + Math.min(s.h, 250));
     fill.addColorStop(0, palette.stone); fill.addColorStop(1, palette.deep); ctx.fillStyle = fill; ctx.fillRect(s.x, s.y, s.w, s.h);
     ctx.fillStyle = palette.edge; ctx.fillRect(s.x, s.y, s.w, 5);
@@ -152,6 +157,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, time: number, defeated: boolean, pose: KeeperPose = { stride: 0, bob: 0, lean: 0 }) {
+    if (art) { art.keeper(p, pose, defeated, motion.matches, landing); return; }
     const walk = p.grounded ? pose.stride : 0, bob = p.grounded ? pose.bob : 0;
     ctx.save(); ctx.translate(p.x + m.width / 2, p.y + m.height);
     const squash = motion.matches ? 0 : landing * 0.17;
@@ -182,13 +188,13 @@ export function createPresentation(surface: HTMLElement) {
   }
   function sign(x: number, y: number, title: string, detail: string) {
     line(x, y, x, y + 72, '#7d7860', 5);
-    ctx.fillStyle = '#1d3b3b'; ctx.beginPath(); ctx.roundRect(x - 9, y - 33, 166, 52, 4); ctx.fill();
+    ctx.fillStyle = art ? '#fff0cf' : '#1d3b3b'; ctx.beginPath(); ctx.roundRect(x - 9, y - 33, 166, 52, 4); ctx.fill();
     line(x - 8, y - 33, x + 156, y - 33, '#a6ad7d', 2);
-    ctx.font = '10px monospace'; ctx.fillStyle = '#e6cd93'; ctx.fillText(title, x + 3, y - 12);
-    ctx.font = '8px monospace'; ctx.fillStyle = '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
+    ctx.font = '10px monospace'; ctx.fillStyle = art ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 3, y - 12);
+    ctx.font = '8px monospace'; ctx.fillStyle = art ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
   }
   return {
-    applyTheme(next: HollowTheme) { theme = next; },
+    applyTheme(next: HollowTheme, images?: ImageBundle) { theme = next; art = images ? createBellgardenDrawing(ctx, images) : undefined; },
     reset() { particles = []; lastFrame = undefined; landing = 0; camera = undefined; cosmeticTime = 0; animation.reset(); },
     consume(events: readonly HollowEvent[]) {
       for (const event of events) {
@@ -221,20 +227,23 @@ export function createPresentation(surface: HTMLElement) {
       scenery(view, run.elapsed, run.level);
       ctx.save(); ctx.translate(-view.x, -view.y);
       // Abandoned flywheels are scenery only, safely behind physical platforms.
-      for (let i = Math.max(0, Math.floor((view.x - 760) / 610)); i < Math.ceil((view.x + view.width) / 610); i++) {
+      for (let i = Math.max(0, Math.floor((view.x - 760) / 610)); !art && i < Math.ceil((view.x + view.width) / 610); i++) {
         const x = 560 + i * 610, y = 560 + i % 2 * 150;
         if (x < view.x - 200 || x > view.x + view.width + 200) continue;
         gear(x, y, 110, motion.matches ? 0 : run.elapsed * 0.06 * (i % 2 ? -1 : 1), '#4a665166');
         circle(x, y, 12, '#b7dca188'); glow(x, y, 130, '#a2ddb315');
       }
-      run.level.solids.forEach((s, i) => { if (s.x + s.w >= view.x - 20 && s.x <= view.x + view.width + 20) stone(s, i); });
+      run.level.solids.forEach((s, i) => { if (s.x + s.w >= view.x - 20 && s.x <= view.x + view.width + 20) stone(s, i, run.level, view); });
       for (const item of run.level.signs) if (item.x > view.x - 180 && item.x < view.x + view.width) sign(item.x, item.y, item.title, item.detail);
       run.level.checkpoints.forEach((point, i) => {
         const x = point.x + 13, y = point.y, lit = run.checkpoint >= i;
-        line(x, y + m.height, x, y - 35, '#b9a576', 5);
         glow(x, y - 25, lit ? 105 : 45, lit ? '#a6ffcc55' : '#f4d8a922');
-        ctx.fillStyle = lit ? '#b9ffcf' : '#a28c6c'; ctx.fillRect(x - 9, y - 42, 18, 26);
-        line(x - 13, y - 44, x + 13, y - 44, '#edd9a4', 3);
+        if (art) art.object(lit ? 'savedLantern' : 'lantern', x - 40, y + m.height - 100, 80, 100);
+        else {
+          line(x, y + m.height, x, y - 35, '#b9a576', 5);
+          ctx.fillStyle = lit ? '#b9ffcf' : '#a28c6c'; ctx.fillRect(x - 9, y - 42, 18, 26);
+          line(x - 13, y - 44, x + 13, y - 44, '#edd9a4', 3);
+        }
         ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = lit ? '#b9ffcf' : '#edd9a4';
         ctx.fillText(lit ? 'SAVED' : 'CHECKPOINT', x, y - 62); ctx.textAlign = 'left';
       });
@@ -245,6 +254,7 @@ export function createPresentation(surface: HTMLElement) {
         const color = active ? '#ffb294' : warning ? '#ffdb83' : '#9cddd6';
         ctx.fillStyle = '#172c37'; ctx.fillRect(vent.x - 6, vent.y + vent.h - 8, vent.w + 12, 14);
         for (let x = vent.x; x < vent.x + vent.w; x += 12) line(x, vent.y + vent.h - 7, x + 5, vent.y + vent.h + 3, color, 3);
+        if (art) art.object('vent', vent.x - 6, vent.y + vent.h - 7, vent.w + 12, 22);
         if (active) {
           const plume = ctx.createLinearGradient(0, vent.y, 0, vent.y + vent.h);
           plume.addColorStop(0, '#ffb29499'); plume.addColorStop(1, '#fff1bbee');
@@ -273,6 +283,7 @@ export function createPresentation(surface: HTMLElement) {
       run.enemies.forEach(enemy => {
         if (enemy.x < view.x - 60 || enemy.x > view.x + view.width + 60) return;
         const x = enemy.x + enemy.w / 2, y = enemy.y + enemy.h;
+        if (art) { art.beetle(x, y, enemy.direction, enemy.alive, run.levelTime, motion.matches); return; }
         ctx.save(); ctx.translate(x, y); ctx.scale(enemy.direction, enemy.alive ? 1 : 0.25);
         const stride = motion.matches || !enemy.alive ? 0 : Math.sin(run.levelTime * 18) * 3;
         for (let j = -1; j <= 1; j++) { line(j * 11 - 3, -9, j * 11 - 7, -1 + stride, '#edb47e', 3); }
@@ -284,6 +295,7 @@ export function createPresentation(surface: HTMLElement) {
         line(-2, -24, -2, -32, '#c7af85', 2); line(-7, -32, 3, -32, '#c7af85', 2); ctx.restore();
       });
       for (const s of run.level.hazards) {
+        if (art) { art.object('thorns', s.x, s.y, s.w, s.h); continue; }
         glow(s.x + s.w / 2, s.y + 8, 65, '#df916d20');
         ctx.fillStyle = '#3c2830'; ctx.fillRect(s.x - 2, s.y + s.h - 5, s.w + 4, 6);
         ctx.fillStyle = '#f3a18b'; ctx.beginPath();
@@ -292,20 +304,29 @@ export function createPresentation(surface: HTMLElement) {
         ctx.fill(); line(s.x, s.y + s.h, s.x + s.w, s.y + s.h, '#6b4944', 3);
       }
       const goal = run.level.goal, gx = goal.x + goal.w / 2;
-      line(gx - 58, goal.y + goal.h, gx - 58, goal.y - 62, '#809476', 12);
-      line(gx + 58, goal.y + goal.h, gx + 58, goal.y - 62, '#809476', 12);
-      line(gx - 64, goal.y - 62, gx + 64, goal.y - 62, '#c8b57e', 12);
-      vine(gx + 59, goal.y - 65, 155, 2);
-      glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
-      ctx.save(); ctx.translate(gx, goal.y + 10); if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(cosmeticTime * 5) * 0.18);
-      line(0, -68, 0, -23, '#bdb480', 3); ctx.fillStyle = '#e3bb78'; ctx.beginPath();
-      ctx.moveTo(-25, 15); ctx.quadraticCurveTo(-13, 0, -15, -18); ctx.quadraticCurveTo(0, -38, 15, -18); ctx.quadraticCurveTo(13, 0, 25, 15); ctx.closePath(); ctx.fill();
-      circle(0, 18, 6, '#f4de9b'); line(-22, 12, 22, 12, '#776342', 2); ctx.restore();
+      if (art) {
+        art.object('gate', gx - 76, goal.y + goal.h - 190, 152, 190);
+        glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
+        ctx.save(); ctx.translate(gx, goal.y - 30);
+        if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(cosmeticTime * 5) * .18);
+        art.object('bell', -41, 0, 82, 102); ctx.restore();
+      } else {
+        line(gx - 58, goal.y + goal.h, gx - 58, goal.y - 62, '#809476', 12);
+        line(gx + 58, goal.y + goal.h, gx + 58, goal.y - 62, '#809476', 12);
+        line(gx - 64, goal.y - 62, gx + 64, goal.y - 62, '#c8b57e', 12);
+        vine(gx + 59, goal.y - 65, 155, 2);
+        glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
+        ctx.save(); ctx.translate(gx, goal.y + 10); if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(cosmeticTime * 5) * 0.18);
+        line(0, -68, 0, -23, '#bdb480', 3); ctx.fillStyle = '#e3bb78'; ctx.beginPath();
+        ctx.moveTo(-25, 15); ctx.quadraticCurveTo(-13, 0, -15, -18); ctx.quadraticCurveTo(0, -38, 15, -18); ctx.quadraticCurveTo(13, 0, 25, 15); ctx.closePath(); ctx.fill();
+        circle(0, 18, 6, '#f4de9b'); line(-22, 12, 22, 12, '#776342', 2); ctx.restore();
+      }
       ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#ead7a6'; ctx.fillText('WAKE THE BELL', gx, goal.y + 95); ctx.textAlign = 'left';
       run.level.motes.forEach((mote, i) => {
         if (run.collected[i] || mote.x < view.x - 30 || mote.x > view.x + view.width + 30) return;
         const y = mote.y + (motion.matches ? 0 : Math.sin(run.elapsed * 2.5 + i) * 4);
         glow(mote.x, y, 33, '#f6ce7f40');
+        if (art) { art.object('mote', mote.x - 9, y - 11, 18, 22); return; }
         ctx.save(); ctx.translate(mote.x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = '#edc582'; ctx.fillRect(-6, -6, 12, 12); ctx.fillStyle = '#fff3c2'; ctx.fillRect(-2, -2, 4, 4); ctx.restore();
       });
       const p = run.player;
@@ -320,7 +341,7 @@ export function createPresentation(surface: HTMLElement) {
       }
       ctx.globalAlpha = 1; particles = particles.filter(particle => particle.life > 0); landing = Math.max(0, landing - dt * 5);
       ctx.restore();
-      // An enlarged keeper illustration shares the same original vector drawing on the title.
+      // The title enlarges the active keeper artwork without another asset owner.
       if (screen === 'title' && size.width > 850) {
         ctx.save(); ctx.translate(view.width * 0.77, view.height * 0.62); ctx.scale(2.6, 2.6);
         gear(0, -25, 65, -0.2, '#8eae7a35'); glow(0, -25, 100, '#c7e6ad22');
@@ -328,6 +349,6 @@ export function createPresentation(surface: HTMLElement) {
         leaf(-50, 15, 45, -0.6, '#729666'); leaf(48, 18, 38, -2.4, '#4f8060'); ctx.restore();
       }
     },
-    dispose() { if (disposed) return; disposed = true; particles = []; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; particles = []; art = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }
