@@ -12,7 +12,7 @@ export interface FighterDefinition {
 const strike = (name: string, startup: number, active: number, recovery: number, reach: number, damage: number,
   extra: Partial<AttackDefinition> = {}): AttackDefinition => ({ name, startup, active, recovery, reach, damage,
   height: 'mid', minZ: 0, maxZ: 125, stun: .19, push: 115, knockdown: false, advance: 0, ...extra });
-export const arena = { width: 1000, height: 560, floor: 440, left: 84, right: 916, radius: 27, gravity: 1600, roundTime: 75 } as const;
+export const arena = { width: 1000, height: 560, floor: 440, left: 84, right: 916, radius: 27, pushHeight: 80, gravity: 1600, roundTime: 75 } as const;
 export const fighters: Readonly<Record<FighterId, FighterDefinition>> = {
   nera: { name: 'Nera', title: 'THE STORMWEAVER', speed: 260, jump: 660, cooldown: 1.65, attacks: {
     light: strike('Gale palm', .09, .075, .20, 91, 7),

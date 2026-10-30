@@ -5,9 +5,9 @@ export const idle: Readonly<Action> = { x: 0, crouch: false, block: false, jump:
 export type CombatState = 'idle' | 'move' | 'crouch' | 'jump' | 'block' | 'startup' | 'active' | 'recovery' | 'blockstun' | 'hitstun' | 'knockdown' | 'wakeup' | 'ko';
 export interface Swing { id: number; kind: AttackKind; time: number; hits: number[]; sounded: boolean }
 export interface Fighter {
-  kind: FighterId; x: number; z: number; vz: number; vx: number; facing: 1 | -1; health: number;
+  kind: FighterId; x: number; z: number; vz: number; vx: number; airSpeed: number; facing: 1 | -1; health: number;
   state: CombatState; stateTime: number; crouched: boolean; guarding: boolean; attack: Swing | null;
-  immune: number; specialCooldown: number; buffer: { kind: AttackKind | 'jump'; ttl: number } | null;
+  immune: number; specialCooldown: number; buffer: { kind: Exclude<AttackKind, 'air'> | 'jump'; jump: boolean; ttl: number } | null;
 }
 export type EventType = 'swing' | 'heavySwing' | 'special' | 'hit' | 'heavyHit' | 'block' | 'knockdown' | 'count' | 'fight' | 'ko' | 'timeout' | 'victory' | 'defeat';
 export interface DuelEvent { type: EventType; x: number; z: number; fighter: number; strength: number }
@@ -18,7 +18,7 @@ export interface Match {
   status: 'active' | 'paused' | 'victory' | 'defeat'; nextAttack: number; projectiles: Projectile[]; events: DuelEvent[]; brain: Brain;
 }
 function fighter(kind: FighterId, side: number): Fighter {
-  return { kind, x: side === 0 ? 340 : 660, z: 0, vz: 0, vx: 0, facing: side === 0 ? 1 : -1, health: 100,
+  return { kind, x: side === 0 ? 340 : 660, z: 0, vz: 0, vx: 0, airSpeed: 0, facing: side === 0 ? 1 : -1, health: 100,
     state: 'idle', stateTime: 0, crouched: false, guarding: false, attack: null, immune: 0, specialCooldown: 0, buffer: null };
 }
 export function createMatch(selected: FighterId = 'nera', seed = 803): Match {
@@ -57,8 +57,10 @@ function tick(f: Fighter, dt: number) {
   if (f.buffer) { f.buffer.ttl -= dt; if (f.buffer.ttl <= 0) f.buffer = null; }
   f.x += f.vx * dt; f.vx *= Math.exp(-12 * dt);
   if (f.z > 0 || f.vz > 0) {
+    // Takeoff commits the jump arc. Attacking cannot stop it; contact can interrupt it.
+    f.x += f.airSpeed * dt;
     f.vz -= arena.gravity * dt; f.z = Math.max(0, f.z + f.vz * dt);
-    if (f.z === 0) { f.vz = 0; if (f.attack?.kind === 'air') { f.attack = null; f.state = 'recovery'; f.stateTime = .12; } }
+    if (f.z === 0) { f.vz = 0; f.airSpeed = 0; if (f.attack?.kind === 'air') { f.attack = null; f.state = 'recovery'; f.stateTime = .12; } }
   }
   if (['blockstun', 'hitstun', 'knockdown', 'wakeup'].includes(f.state) || f.state === 'recovery' && !f.attack) {
     f.stateTime = Math.max(0, f.stateTime - dt);
@@ -70,39 +72,42 @@ function tick(f: Fighter, dt: number) {
 }
 function command(m: Match, index: number, a: Action, dt: number) {
   const f = m.fighters[index]!, other = m.fighters[1 - index]!;
-  if (a.special) f.buffer = { kind: 'special', ttl: .15 };
-  else if (a.heavy || a.light) f.buffer = { kind: f.z > 0 || a.jump ? 'air' : a.crouch && a.light ? 'sweep' : a.heavy ? 'heavy' : 'light', ttl: .15 };
-  else if (a.jump) f.buffer = { kind: 'jump', ttl: .13 };
+  if (a.special) f.buffer = { kind: 'special', jump: false, ttl: .15 };
+  else if (a.heavy || a.light) f.buffer = { kind: a.crouch && a.light ? 'sweep' : a.heavy ? 'heavy' : 'light', jump: a.jump, ttl: .15 };
+  else if (a.jump) f.buffer = { kind: 'jump', jump: true, ttl: .13 };
   if (f.attack || ['blockstun', 'hitstun', 'knockdown', 'wakeup', 'ko'].includes(f.state) || f.stateTime > 0) return;
   f.facing = other.x >= f.x ? 1 : -1;
   f.crouched = a.crouch && f.z === 0; f.guarding = a.block && f.z === 0;
-  if ((a.jump || f.buffer?.kind === 'jump') && f.z === 0 && !a.block) {
+  const x = Math.max(-1, Math.min(1, a.x));
+  if (f.buffer?.jump && f.z === 0 && !a.block) {
     f.vz = fighters[f.kind].jump; f.z = .1; f.crouched = false; f.guarding = false;
+    f.airSpeed = x * fighters[f.kind].speed;
     if (f.buffer?.kind === 'jump') f.buffer = null;
   }
   if (f.buffer && !a.block) {
     const kind = f.buffer.kind;
     if (kind !== 'jump' && (kind !== 'special' || f.specialCooldown === 0 && f.z === 0)) {
-      begin(m, f, f.z > 0 ? 'air' : kind === 'air' ? 'light' : kind); f.buffer = null; return;
+      begin(m, f, f.z > 0 ? 'air' : kind); f.buffer = null; return;
     }
   }
-  const x = Math.max(-1, Math.min(1, a.x));
-  if (!f.crouched && !f.guarding) f.x += x * fighters[f.kind].speed * dt;
+  if (f.z === 0 && !f.crouched && !f.guarding) f.x += x * fighters[f.kind].speed * dt;
   f.state = f.guarding ? 'block' : f.z > 0 ? 'jump' : f.crouched ? 'crouch' : x ? 'move' : 'idle';
 }
-/** A fixed left/right order is intentional: jumps attack overhead but never cross up or swap bodies. */
+/** Grounded push bodies prevent walking through; sufficient elevation lets a jump change sides. */
 function separate(m: Match) {
   const [a, b] = m.fighters, gap = arena.radius * 2;
   a.x = Math.max(arena.left, Math.min(arena.right, a.x)); b.x = Math.max(arena.left, Math.min(arena.right, b.x));
-  if (b.x - a.x < gap) {
+  if (Math.abs(a.z - b.z) >= arena.pushHeight) return;
+  if (Math.abs(b.x - a.x) < gap) {
+    const [left, right] = a.x <= b.x ? [a, b] : [b, a];
     const center = Math.max(arena.left + gap / 2, Math.min(arena.right - gap / 2, (a.x + b.x) / 2));
-    a.x = center - gap / 2; b.x = center + gap / 2;
+    left.x = center - gap / 2; right.x = center + gap / 2;
   }
 }
-interface Contact { source: number; target: number; attack: AttackDefinition; blocked: boolean }
+interface Contact { source: number; target: number; attack: AttackDefinition; blocked: boolean; direction: 1 | -1 }
 function contact(m: Match, c: Contact) {
-  const source = m.fighters[c.source]!, target = m.fighters[c.target]!, d = c.attack;
-  target.attack = null; target.buffer = null; target.vx = source.facing * d.push * (c.blocked ? .6 : 1);
+  const target = m.fighters[c.target]!, d = c.attack;
+  target.attack = null; target.buffer = null; target.airSpeed = 0; target.vx = c.direction * d.push * (c.blocked ? .6 : 1);
   if (c.blocked) { target.state = 'blockstun'; target.stateTime = .16; emit(m, 'block', c.target, .65, d.height === 'low' ? 22 : 92); return; }
   target.guarding = false; target.health = Math.max(0, target.health - d.damage);
   target.state = target.health <= 0 ? 'ko' : d.knockdown ? 'knockdown' : 'hitstun';
@@ -118,7 +123,7 @@ function finishRound(m: Match, reason: 'ko' | 'timeout') {
   if (m.winner !== null) m.wins[m.winner] = m.wins[m.winner]! + 1;
   m.phase = 'roundEnd'; m.phaseTime = 2.5; m.projectiles = [];
   for (const f of m.fighters) {
-    f.attack = null; f.buffer = null; f.guarding = false; f.crouched = false; f.stateTime = 0;
+    f.attack = null; f.buffer = null; f.airSpeed = 0; f.guarding = false; f.crouched = false; f.stateTime = 0;
     f.state = f.health <= 0 ? 'ko' : 'idle';
   }
   emit(m, reason, m.winner === null ? 0 : 1 - m.winner);
@@ -172,7 +177,7 @@ export function stepMatch(m: Match, action: Action, elapsed: number, cpuOverride
     const f = m.fighters[index]!, s = f.attack, target = m.fighters[1 - index]!; if (!s) continue;
     const d = fighters[f.kind].attacks[s.kind];
     if (f.state === 'active' && !(s.kind === 'special' && f.kind === 'nera') && !s.hits.includes(1 - index) && canHit(f, target, d)) {
-      s.hits.push(1 - index); contacts.push({ source: index, target: 1 - index, attack: d, blocked: guards(target, d) });
+      s.hits.push(1 - index); contacts.push({ source: index, target: 1 - index, attack: d, blocked: guards(target, d), direction: f.facing });
     }
     if (s.time >= d.startup + d.active + d.recovery) { f.attack = null; f.state = 'idle'; }
   }
@@ -182,7 +187,7 @@ export function stepMatch(m: Match, action: Action, elapsed: number, cpuOverride
     if (target.health > 0 && Math.min(previous, s.x) <= target.x + arena.radius && Math.max(previous, s.x) >= target.x - arena.radius
       && target.z < 85 && target.immune <= 0 && !['knockdown', 'wakeup', 'ko'].includes(target.state)) {
       const d = fighters[source.kind].attacks.special;
-      contacts.push({ source: s.owner, target: targetIndex, attack: d, blocked: guards(target, d) }); s.life = 0;
+      contacts.push({ source: s.owner, target: targetIndex, attack: d, blocked: guards(target, d), direction: s.facing }); s.life = 0;
     }
   }
   m.projectiles = m.projectiles.filter(s => s.life > 0 && s.x > 0 && s.x < arena.width);
