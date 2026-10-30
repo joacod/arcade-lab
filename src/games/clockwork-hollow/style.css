@@ -51,6 +51,14 @@
 .hollow-app .hollow-location > div { max-width: min(480px, 70vw); line-height: 1.7; text-shadow: 0 1px 6px #071e29; }
 .hollow-app .hollow-announcement { position: absolute; bottom: 28px; left: 50%; transform: translate(-50%, 6px); width: max-content; max-width: calc(100% - 36px); padding: 12px 18px; border: 1px solid #a6e9bc70; border-radius: 6px; background: #102e2df2; box-shadow: 0 8px 24px #051d2844; color: #d9f9d8; font-size: 12px; line-height: 1.5; text-align: center; pointer-events: none; opacity: 0; transition: opacity .18s, transform .18s; }
 .hollow-app[data-screen="playing"] .hollow-announcement.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.hollow-app[data-appearance="assets"] { --menu-accent: #ec9a83; --ink: #fff0cf; --dim: #b6ccc9; --gold: #f1c998; background: #1d304c; }
+.hollow-app[data-appearance="assets"] :is(.hollow-hud, .hollow-footer) { background: #23394f; border-color: #e4b76755; }
+.hollow-app[data-appearance="assets"] button { background: #2c455c; border-color: #b6ccc94d; }
+.hollow-app[data-appearance="assets"] button:hover { background: #3d5369; border-color: #ec9a83; }
+.hollow-app[data-appearance="assets"] .hollow-mark { color: #ec9a83; }
+.hollow-app[data-appearance="assets"] .hollow-location { color: #fff0cf; }
+.hollow-app[data-appearance="assets"] .hollow-location > div { background: #23394fd9; padding: 6px 12px; border-left: 2px solid #ec9a83; border-radius: 0 5px 5px 0; }
+.hollow-app[data-appearance="assets"] .hollow-announcement { color: #fff0cf; background: #23394ff2; border-color: #e4b767; }
 @media (prefers-reduced-motion: reduce) {
   .hollow-app .hollow-announcement { transition: none; transform: translate(-50%, 0); }
 }

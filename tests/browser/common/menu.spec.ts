@@ -44,7 +44,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
     expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\/|\/art\/(?!cover\.svg)[^?]+\.(png|svg|webp)/.test(url)), `${title} starts without graphics libraries or image sheets`).toEqual([]);
     expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
     await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Midnight Circuit', 'Skybreak'].includes(title)));
-    await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Skybreak', 'Midnight Circuit'].includes(title)));
+    await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit'].includes(title)));
     await theme.focus();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeFocused();

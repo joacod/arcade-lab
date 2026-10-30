@@ -30,7 +30,11 @@ Every bell ends its district and freezes simulation. An explicit **Continue toâ€
 
 ## Theme modes
 
-**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. Frostbound bells was an alternate palette for this same procedural renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
+**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. **Assets** uses **Porcelain Bellgarden**, an original illustrated treatment with a porcelain keeper, coral ribbon, wind-up ladybird shells, glazed masonry, flower lanterns and decorated bells. Jade aqueducts, rose-glazed kilns and indigo leaded-glass towers give each district its own image scenery. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md) records the direction, frame layouts, footprints and editable generator. All required images ship with the repository under MIT. **Quality** remains unavailable.
+
+Selecting a theme retains the journey, camera, gait and cosmetic effects. Image preparation keeps the active presentation visible; failure restores the active selection with a notice. Selecting another mode, starting, resuming, retrying, continuing or leaving cancels pending preparation. Restart retains the selected theme, while Game selection releases its images and starts the next visit in Normal. Reduced motion freezes decorative motion in both themes and uses a still grounded keeper pose in Assets; pressure timing remains readable.
+
+![Porcelain Bellgarden: the ivory keeper at a flower lantern beneath indigo belfry arches, with a wind-up beetle and an active pressure vent](clockwork-bellgarden.png)
 
 ## Source ownership and customization
 
@@ -42,13 +46,14 @@ Every bell ends its district and freezes simulation. An explicit **Continue toâ€
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`; `keeper`, `scenery`, `stone` and the local enemy/vent drawings are the artwork entry points |
 | Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
+| Assets frame layouts, validation, image footprints and artwork drawing | `asset-art.ts`, `assets.ts` and `asset-presentation.ts`; committed images and generator in `art/bellgarden/` |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts`, using the shared host, clock, interruption/focus binders and AudioBits lifecycle |
 
-Character and enemy visual dimensions never define their collision bodies. A replacement artwork implementation can preserve simulation, content, input and host ownership. If a later adaptation needs image loading, reuse `src/engine/browser/images.ts` with local role/frame validation; this procedural game currently needs no asset loader or asynchronous preparation.
+Character and enemy visual dimensions never define their collision bodies. Both themes share simulation, content, input, the presentation camera and host ownership. `assets.ts` reuses `src/engine/browser/images.ts` with local decoded-dimension validation. The browser composition uses the shared preparation scope to cancel superseded work, draws candidates against the current run before committing them, and releases replaced or cancelled images. Normal requires no image loading.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable. Collision and jump rules use only fixed simulation steps. Content includes all physical dimensions independently of leaves, scarf, glow and animation poses.
 
