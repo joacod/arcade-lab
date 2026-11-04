@@ -85,12 +85,10 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       try {
         if (theme.art) bundle = await prepareAssets(theme.art, request.signal);
         if (!request.current()) return;
-        if (theme.presentation === 'prism') {
-          const { createGarden } = await import('./three/garden.ts');
+        if (theme.presentation === 'ember') {
+          const { createEmberScene } = await import('./ember-scene.ts');
           if (!request.current()) return;
-          next = createGarden(theme, bundle!.images, () => {
-            if (presentation === next) graphicsFailure();
-          });
+          next = createPresentation(theme, bundle!.images, createEmberScene);
         } else if (theme.presentation === 'abyss') {
           const { createBloom } = await import('./vgpu/bloom.ts');
           if (!request.current()) return;

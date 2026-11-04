@@ -196,19 +196,19 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   const replaced = await page.evaluate(() => {
     const w = window as any;
     const oldSurface = document.querySelector('.play-surface')!;
-    const context = document.querySelector<HTMLCanvasElement>('.world-canvas')!.getContext('webgl2')!;
+    const canvas = document.querySelector<HTMLCanvasElement>('.world-canvas')!;
     w.applicationProbe.mount({ mount(host: HTMLElement) {
-      const root = document.createElement('section'); root.dataset.skin = 'glass';
+      const root = document.createElement('section'); root.dataset.skin = 'ember';
       root.innerHTML = '<div class="hud"><button>Fixture control</button></div>';
       host.append(root);
       return { dispose() { w.mountProbe.fixtureDisposals++; root.remove(); } };
     } });
     const button = document.querySelector('button')!;
-    return { detached: !oldSurface.isConnected, contextLost: context.isContextLost(),
+    return { detached: !oldSurface.isConnected, buffer: [canvas.width, canvas.height],
       audio: w.mountProbe.contexts.map((c: AudioContext) => c.state), frames: w.mountProbe.pending.size,
       buttonHeight: getComputedStyle(button).minHeight, hudDisplay: getComputedStyle(button.parentElement!).display };
   });
-  expect(replaced).toEqual({ detached: true, contextLost: true, audio: ['closed'], frames: 0,
+  expect(replaced).toEqual({ detached: true, buffer: [1, 1], audio: ['closed'], frames: 0,
     buttonHeight: '0px', hudDisplay: 'block' });
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.locator('.clearing-app')).toHaveCount(0);

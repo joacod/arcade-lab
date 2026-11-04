@@ -300,33 +300,6 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   });
   const fetched: string[] = [];
   page.on('request', request => fetched.push(request.url()));
-  // Observe the actual camera, atlas UVs and GPU lifetime without a production debug API.
-  await page.route(/\/src\/games\/last-light-clearing\/three\/garden\.ts(?:\?.*)?$/, async route => {
-    const response = await route.fetch();
-    const body = (await response.text())
-      .replace('const scene = new THREE.Scene();', `
-        window.gardenLifetimes ??= { created: 0, disposed: 0, resources: 0, released: 0 };
-        const scene = new THREE.Scene();`)
-      .replaceAll('geometries.add(value);', "geometries.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
-      .replaceAll('materials.add(value);', "materials.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
-      .replaceAll('textures.add(value);', "textures.add(value); window.gardenLifetimes.resources++; value.addEventListener('dispose', () => window.gardenLifetimes.released++);")
-      .replace("renderer.outputColorSpace =", "window.gardenLifetimes.created++; renderer.outputColorSpace =")
-      .replace('renderer?.dispose();', 'if (renderer) window.gardenLifetimes.disposed++; renderer?.dispose();')
-      .replace('composer.render();', `
-        composer.render();
-        const projected = new THREE.Vector3(run.player.x, -run.player.y, 0).project(camera);
-        window.gardenEvidence = {
-          projected: { x: (projected.x + 1) * size.width / 2, y: (1 - projected.y) * size.height / 2 },
-          expected: { x: view.x + run.player.x * view.scale, y: view.y + run.player.y * view.scale },
-          geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
-          calls: renderer.info.render.calls,
-          probes: [[0, 0], [960, 640], [123, 456]].map(([x, y]) => {
-            const p = new THREE.Vector3(x, -y, 0).project(camera);
-            return { actual: [(p.x + 1) * size.width / 2, (1 - p.y) * size.height / 2], expected: [view.x + x * view.scale, view.y + y * view.scale] };
-          }),
-        };`);
-    await route.fulfill({ response, body });
-  });
   // Test-only access to the actual run, without a production debug API.
   await page.route(/\/src\/games\/last-light-clearing\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
@@ -395,6 +368,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
         };
         window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
       });
+      expect(fetched.some(url => url.includes('/rekindled/') || url.includes('/ember-scene.ts'))).toBe(false);
       expect(fetched.some(url => ['/three/', '/three.js', '/vgpu/', '/vgpu.js'].some(path => url.includes(path)))).toBe(false);
       const shell = page.locator('.clearing-app');
       await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
@@ -404,18 +378,13 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await expect(shell).toHaveAttribute('data-theme', 'quality');
       await page.clock.runFor(20);
       expect(await snapshot()).toBe(retained);
-      await expect(shell).toHaveAttribute('data-skin', 'glass');
-      await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'garden');
-      const projection = await page.evaluate(() => (window as unknown as { gardenEvidence: { projected: { x: number; y: number }; expected: { x: number; y: number }; calls: number } }).gardenEvidence);
-      expect(projection.calls).toBeGreaterThan(0);
-      expect(projection.calls).toBeLessThan(100);
-      expect(projection.projected.x).toBeCloseTo(projection.expected.x, 8);
-      expect(projection.projected.y).toBeCloseTo(projection.expected.y, 8);
-
+      await expect(shell).toHaveAttribute('data-skin', 'ember');
+      expect(fetched.some(url => url.includes('/rekindled/ground.webp'))).toBe(true);
+      await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'ember');
+      expect(fetched.some(url => url.includes('/three/') || url.includes('/three.js'))).toBe(false);
       await page.setViewportSize({ width: 780, height: 900 });
       await page.clock.runFor(60);
-      const probes = await page.evaluate(() => (window as unknown as { gardenEvidence: { probes: { actual: number[]; expected: number[] }[] } }).gardenEvidence.probes);
-      for (const probe of probes) for (let i = 0; i < 2; i++) expect(probe.actual[i]).toBeCloseTo(probe.expected[i]!, 8);
+      expect(await snapshot()).toBe(retained);
 
       await page.setViewportSize({ width: 1280, height: 1000 });
       await page.clock.runFor(60);
@@ -424,8 +393,11 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await page.keyboard.press('Escape');
       const progressed = await snapshot();
       expect(progressed).not.toBe(retained);
-      // Real GPU loss restores a separate 2D canvas and preserves the paused run.
-      await page.locator('.world-canvas').evaluate(canvas => canvas.getContext('webgl2')!.getExtension('WEBGL_lose_context')!.loseContext());
+      // An active Canvas draw failure restores Normal and keeps the paused run.
+      await page.locator('.world-canvas').evaluate(canvas => {
+        canvas.getContext('2d')!.drawImage = () => { throw new Error('Lost drawing surface'); };
+      });
+      await page.clock.runFor(20);
       await expect(shell).toHaveAttribute('data-theme', 'normal');
       await expect(page.locator('.asset-status')).toContainText('Restored Normal');
       expect(await snapshot()).toBe(progressed);
@@ -435,7 +407,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
         const original = HTMLCanvasElement.prototype.getContext;
         (window as unknown as { restoreContext: () => void }).restoreContext = () => { HTMLCanvasElement.prototype.getContext = original; };
         HTMLCanvasElement.prototype.getContext = function(type, ...args) {
-          if (type === 'webgl2') return null;
+          if (type === '2d') return null;
           return original.call(this, type, ...args);
         } as typeof original;
       });
@@ -451,9 +423,6 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(page.locator('.play-surface canvas')).toHaveCount(2);
       expect(await page.locator('.play-surface').evaluate(surface => surface === (window as unknown as { retainedSurface: Element }).retainedSurface)).toBe(true);
-      const lifetimes = await page.evaluate(() => (window as unknown as { gardenLifetimes: { created: number; disposed: number; resources: number; released: number } }).gardenLifetimes);
-      expect(lifetimes.created).toBe(lifetimes.disposed);
-      expect(lifetimes.resources).toBe(lifetimes.released);
       await page.clock.runFor(40);
       expect(await page.evaluate(() => (window as unknown as { pendingFrames: () => number }).pendingFrames())).toBe(1);
       await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
@@ -545,7 +514,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   // Vite may inline the sheets, so replace the source with a failed local reference.
   await page.route(/\/src\/games\/last-light-clearing\/themes\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nthemes.assets.art.images = Object.fromEntries(Object.keys(themes.assets.art.images).map(key => [key, '/missing-art.svg']));` });
+    await route.fulfill({ response, body: `${await response.text()}\nthemes.assets.art.images = Object.fromEntries(Object.keys(themes.assets.art.images).map(key => [key, '/missing-art.svg'])); themes.quality.art.images.ground = '/missing-art.svg';` });
   });
   await page.route('**/missing-art.svg', route => route.abort());
   await page.addInitScript(() => {
@@ -556,6 +525,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   await expect(page.locator('.game-menu-sound-status')).toContainText('Sound unavailable');
@@ -678,47 +650,24 @@ test('compact upgrade choices explain roles and acknowledge one keyboard decisio
   await expect(page.locator('.loadout')).toHaveText('Spark 1 · Halo 1');
 });
 
-test('Prism Garden bounds dense rendering and freezes decorative motion on pause and reduced motion', async ({ page }, testInfo) => {
+test('Rekindled animates its modern cast and freezes its scene on pause and reduced motion', async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  // Construct the demanding run before presentation.reset observes its actor identities.
+  // Seed before reset so animation observes every actor before the first draw.
   await page.route(/\/src\/games\/last-light-clearing\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}
       const originalCrowdRun = createRun;
       createRun = (...args) => {
         const run = originalCrowdRun(...args);
-        run.player.invulnerability = 1000; run.nextSpawn = Infinity; run.eliteSpawned = true; run.gems = [];
+        run.player.invulnerability = 1000; run.nextSpawn = Infinity; run.eliteSpawned = true;
+        run.progression.level = 2; run.gems = []; run.loadout = [];
         run.enemies = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, kind: i % 5 ? 'crawler' : 'charger',
-          x: 480 + Math.cos(i * 2.4) * (120 + i * 2), y: 320 + Math.sin(i * 2.4) * (120 + i * 2),
+          x: 480 + Math.cos(i * 2.4) * (90 + i * 2), y: 320 + Math.sin(i * 2.4) * (90 + i * 2),
           health: 20, entryDelay: 0 }));
         window.positionProbe = run; return run;
       };
     ` });
-  });
-  await page.route(/\/src\/games\/last-light-clearing\/three\/garden\.ts(?:\?.*)?$/, async route => {
-    const response = await route.fetch();
-    const body = (await response.text()).replace('composer.render();', `
-      renderer.info.autoReset = false; renderer.info.reset(); composer.render();
-      window.prismProbe = {
-        motes: Array.from(motes.instanceMatrix.array),
-        keeperCel: keeper.cels.findIndex(cel => cel.visible),
-        crawlerCel: crawlers[0].cels.findIndex(cel => cel.visible),
-        facing: new THREE.Vector3(1, 0, 0).transformDirection(crawlers[0].model.matrixWorld)
-          .dot(new THREE.Vector3(Math.cos(observations.get(1).angle), -Math.sin(observations.get(1).angle), 0)),
-        keeper: [keeper.group.position.x, keeper.group.position.y],
-        calls: renderer.info.render.calls, geometries: renderer.info.memory.geometries,
-        textures: renderer.info.memory.textures, bloomWidth: bloom.renderTargetsHorizontal[0].width,
-      };
-      renderer.info.autoReset = true;
-    `).replace('composer.addPass(output);', `
-      composer.addPass(output);
-      const targets = [composer.renderTarget1, composer.renderTarget2, bloom.renderTargetBright,
-        ...bloom.renderTargetsHorizontal, ...bloom.renderTargetsVertical];
-      window.prismTargets = { created: targets.length, released: 0 };
-      targets.forEach(target => target.addEventListener('dispose', () => { if (disposed) window.prismTargets.released++; }));
-    `);
-    await route.fulfill({ response, body });
   });
   await page.clock.install();
   await page.goto('/');
@@ -727,37 +676,29 @@ test('Prism Garden bounds dense rendering and freezes decorative motion on pause
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  const probe = () => page.evaluate(() => (window as any).prismProbe);
   await page.keyboard.down('a'); await page.clock.runFor(180); await page.keyboard.up('a');
-  const active = await probe();
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
-  expect(active.calls).toBeLessThan(100);
-  expect(active.facing).toBeCloseTo(1, 8);
-  expect(active.bloomWidth).toBeLessThanOrEqual(400);
-  await page.clock.runFor(180);
-  const later = await probe();
-  expect(later.motes).not.toEqual(active.motes);
-  expect(later.geometries).toBe(active.geometries);
-  expect(later.textures).toBe(active.textures);
-  await page.screenshot({ path: testInfo.outputPath('prism-garden-crowd.png') });
+  await page.screenshot({ path: testInfo.outputPath('ember-rekindled-crowd.png') });
   await page.keyboard.press('Escape'); await page.clock.runFor(20);
-  const paused = await probe();
-  await page.clock.runFor(1000);
-  expect(await probe()).toEqual(paused);
+  const pixels = () => page.locator('.world-canvas').evaluate(canvas => canvas.toDataURL());
+  const paused = await pixels();
+  await page.clock.runFor(1000); expect(await pixels()).toBe(paused);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.runFor(20);
-  const reduced = await probe();
+  // Change only active time: all decorative animation and sprite cels should remain still.
+  const reduced = await pixels();
+  await page.evaluate(() => { (window as any).positionProbe.elapsed += 1; });
+  await page.clock.runFor(20); expect(await pixels()).toBe(reduced);
+  const position = await keeper(page);
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  await page.keyboard.down('a'); await page.clock.runFor(300); await page.keyboard.up('a');
-  const moving = await probe();
-  expect(moving.motes).toEqual(reduced.motes);
-  expect(moving.keeperCel).toBe(0);
-  expect(moving.crawlerCel).toBe(0);
-  expect(moving.keeper).not.toEqual(reduced.keeper);
+  await page.keyboard.down('a'); await page.clock.runFor(150); await page.keyboard.up('a');
+  expect((await keeper(page)).x).toBeLessThan(position.x);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await page.clock.runFor(30);
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.keyboard.press('Escape');
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
-  const targets = await page.evaluate(() => (window as any).prismTargets);
-  expect(targets.released).toBe(targets.created);
+  await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
+  await expect(page.locator('.play-surface canvas')).toHaveCount(2);
   expect(errors).toEqual([]);
 });

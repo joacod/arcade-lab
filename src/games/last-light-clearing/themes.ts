@@ -1,9 +1,9 @@
-import { still, row, type ActorArt, type ArtPack, type Decoration } from './art-pack.ts';
+import { still, row, frame, type ActorArt, type ArtPack, type Decoration } from './art-pack.ts';
 /** Named visual presets combine art/environment, effects and a default interface. */
 interface Appearance {
   readonly name: string;
   readonly motif: 'grove' | 'crystal' | 'ruins';
-  readonly interface: 'classic' | 'rune' | 'glass' | 'abyss';
+  readonly interface: 'classic' | 'rune' | 'ember' | 'abyss';
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
     readonly light: string; readonly ground: string; readonly canopy: string;
@@ -14,7 +14,7 @@ interface Appearance {
 /** Asset requirements are explicit: procedural worlds never need a dummy atlas. */
 export type Theme = Appearance & (
   | { readonly presentation?: undefined; readonly art?: ArtPack }
-  | { readonly presentation: 'prism' | 'abyss'; readonly art?: ArtPack }
+  | { readonly presentation: 'ember' | 'abyss'; readonly art?: ArtPack }
 );
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
@@ -45,17 +45,47 @@ export const emberRuins: Theme = {
   palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#19151b', floor: '#302a2b', boundary: '#92775c', light: '#ffdc8e',
     ground: '#88674740', canopy: '#3a3033', spark: '#ffe5a1', shard: '#bfc8ff', pulse: '#ff9b66', gem: '#87ffb6' },
 };
-export function groveArt(quality = false): ArtPack {
+function groveArt(): ArtPack {
   const actor = (y: number, size: number): ActorArt => ({
     clips: { idle: still('grove', [0,y,64,64]), move: row('grove',0,y,64,64,4,.12) },
     anchor: [.5,.5], footprint: [size,size], orientation: 'rotate',
   });
-  return { images: { grove: quality ? new URL('./art/grove/actors-quality.svg', import.meta.url).href : new URL('./art/grove/actors.svg', import.meta.url).href,
-    ...(quality ? {gem:new URL('./art/grove/gem.svg',import.meta.url).href} : {}) },
+  return { images: { grove: new URL('./art/grove/actors.svg', import.meta.url).href },
     sampling: 'smooth', actors: { keeper: actor(0,40), crawler: actor(64,38), elite: actor(128,72) } };
 }
-const gardenPalette: Theme['palette'] = { enemy: '#e7809b', elite: '#b285f0', halo: '#ffefb2', hit: '#fff3dc', damage: '#ffa5ae', background: '#08171f', floor: '#203c3d', boundary: '#6198ad', light: '#ffdfa0',
-      ground: '#52788c', canopy: '#324c70', spark: '#fcf0af', shard: '#c8a6ff', pulse: '#7bdcff', gem: '#73ffc7' };
+/** New authored cels preserve the Assets cast, not its low-resolution source pixels. */
+const paintedActor = (image: string, size: number, idleY = 0, moveY = 256): ActorArt => ({
+  clips: { idle: row(image, 0, idleY, 256, 256, 4, .2), move: row(image, 0, moveY, 256, 256, 4, .12) },
+  anchor: [.5, .89], footprint: [size, size], orientation: 'mirror',
+});
+const paintedObject = (x: number, y: number, size: number, anchor: readonly [number, number] = [.5, .89]): Decoration => ({
+  clip: still('props', [x, y, 256, 256]), footprint: [size, size], anchor,
+});
+export const rekindledArt: ArtPack = {
+  images: {
+    keeper: new URL('./art/rekindled/keeper.webp', import.meta.url).href,
+    goblins: new URL('./art/rekindled/goblins.webp', import.meta.url).href,
+    elite: new URL('./art/rekindled/elite.webp', import.meta.url).href,
+    props: new URL('./art/rekindled/props.webp', import.meta.url).href,
+    ground: new URL('./art/rekindled/ground.webp', import.meta.url).href,
+  },
+  sampling: 'smooth',
+  actors: {
+    keeper: paintedActor('keeper', 76),
+    crawler: { ...paintedActor('goblins', 58, 0, 0), clips: { idle: still('goblins', [0, 0, 256, 256]), move: row('goblins', 0, 0, 256, 256, 4, .12) } },
+    charger: { ...paintedActor('goblins', 64), clips: { idle: still('goblins', [0, 256, 256, 256]), move: row('goblins', 0, 256, 256, 256, 4, .1) } },
+    elite: paintedActor('elite', 112),
+  },
+  objects: {
+    gem: paintedObject(0, 256, 19, [.5, .5]),
+    halo: paintedObject(256, 256, 30, [.5, .5]),
+    shard: paintedObject(512, 256, 26, [.5, .5]),
+  },
+  environment: {
+    plate: frame('ground', [0, 0, 1536, 1024]), tileSize: 32, ground: [],
+    perimeter: [paintedObject(0, 0, 112), paintedObject(256, 0, 76), paintedObject(512, 0, 80)],
+  },
+};
 export const themes: Readonly<Record<ThemeId, Theme>> = {
   normal: {
     name: 'Normal', motif: 'grove', interface: 'classic', art: groveArt(),
@@ -63,7 +93,13 @@ export const themes: Readonly<Record<ThemeId, Theme>> = {
       ground: '#7a9b7440', canopy: '#203d34', spark: '#b7edff', shard: '#d4b7ff', pulse: '#88e0d0', gem: '#9cecaa' },
   },
   assets: emberRuins,
-  quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', art: groveArt(true), palette: gardenPalette },
+  quality: {
+    ...emberRuins, name: 'Ember Ruins · Rekindled', presentation: 'ember', interface: 'ember',
+    art: rekindledArt,
+    palette: { ...emberRuins.palette, background: '#10191d', floor: '#202a2d', boundary: '#9c9275',
+      light: '#ffd494', ground: '#879580', canopy: '#273a3d', enemy: '#cc887e', elite: '#f1aa87',
+      spark: '#ffe3a6', halo: '#ffe6ae', shard: '#c7c3ff', pulse: '#ffa578', gem: '#90edbd' },
+  },
   custom: {
     name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
     palette: { background: '#020510', floor: '#080f26', boundary: '#337b9c', ground: '#17345e', canopy: '#573cc0',

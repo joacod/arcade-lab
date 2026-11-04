@@ -10,14 +10,14 @@ The table lists the presentations currently implemented; their artwork and rende
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
-| Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Prism Garden, botanical sprites and lit sanctuary scenery |
+| Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Ember Ruins · Rekindled, new illustrated knight, goblins and demon in a modern painted ruin |
 | Skybreak | Pacific Run | Aurora Fleet, retro aircraft | Tempest Coast, shaded aircraft and storm-sea scenery |
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Lumen Conservatory, copper-and-glass cathedral gardens |
 | Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, painted fighters in a rain-soaked city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Eclipse Foundry | Moonfall Sanctum, painted fighters in an illustrated lunar sanctuary |
 | Blastline | Iron coast | Not available | Not available |
 
-All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** is a polished modern visual interpretation of the game, with exceptional artwork and memorable animation, atmosphere or effects. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. Existing standard presentations follow these roles while sharing their gameplay. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** reinterprets the Assets designs through new or substantially improved artwork and animation, with a coherent modern finish across characters, objects, scenery, effects and interface. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. Existing standard presentations follow these roles while sharing their gameplay. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
 All artwork required by enabled presentations ships with the repository.
 

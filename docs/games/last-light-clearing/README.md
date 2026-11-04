@@ -35,23 +35,21 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Theme modes
 
-**Normal**, the default, uses complete hooded-Keeper and briar-creature sprites over the procedural forest clearing and spell effects. **Assets** uses bundled Ember Ruins in development and production. **Quality** uses Prism Garden's complete botanical sprites, illuminated scenery and Three.js lighting.
+**Normal**, the default, uses complete hooded-Keeper and briar-creature sprites over the procedural forest clearing and spell effects. **Assets** uses bundled Ember Ruins in development and production. **Quality · Ember Ruins · Rekindled** builds on the Assets presentation, redrawing its knight, goblin and demon designs as a cohesive modern illustrated art set, with new full-body animation cels, ruin props, gems and spell objects.
 
 **Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
 
-### Quality direction: Prism Garden
+### Quality direction: Ember Ruins · Rekindled
 
-An overgrown moonlit sanctuary of jade stone, gold inlays and violet crystal blossoms. The warm, cloaked lantern Keeper is the focal point. Rose-armored thorn creatures have connected thorn silhouettes and bright paired eyes; the elite wears a crown, while chargers retain their forked crest. Mint gems remain small, angular and distinct from creatures.
+Ember Ruins supplies the designs, not the finished Quality pixels. The Keeper becomes a dimensional silver-blue spell knight with a teal tabard, crimson plume and cape, warm belt lantern and compact sword. Pursuers are new olive-green goblins in weathered teal hoods and leather, carrying jagged cleavers. Chargers have a separate lean armored silhouette, paired scarlet crest spikes and hooked blades. The elite is a broad crimson demon with curved black horns, basalt armor and molten chest fissures. Complete authored cels carry breathing, cape movement and grounded strides.
 
-Weathered paving, engraved circles and luminous botanical roots give the ground depth inside the following camera. Broad low-contrast forms leave combat readable. Raised crystal gardens stay outside traversable ground. Directional shadows, a moving lantern light pool and restrained bloom separate solid materials from luminous cores. Spell trails, contact glints and dissolving fragments carry the same crystal vocabulary. Glass UI uses warm gold accents against deep jade surfaces.
+Painted limestone, weathered bronze and amber fire connect the new cast to matching intact columns, broken column stumps and ornate braziers. Quality loads none of the Assets pixel atlas. The ground continues beyond the playable area; matching props and restrained corner cuts frame its edges without the old tiled border. Faceted emerald XP crystals, filigree golden Halo bodies and violet Shard projectiles use new image assets from the same family. Red attack commitments remain legible above the artwork. The charger's new illustrated crest replaces the extra procedural crest marker in this mode.
 
-Movement selects authored complete-creature cels. Reduced motion suppresses decorative drift, bobbing, spin and fragments. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring.
+The interface uses warm brass accents, stone surfaces and a serif title. Soft contact shadows, a moving lantern pool and restrained spell illumination support the material detail. The final stretch retains the shared dawn wash and victory ring. Creature and player depth ordering follows ground positions.
 
-Quality prepares validated creature and gem images, Three.js scenery, a generated floor texture and a bounded bloom pipeline.
+Quality uses Canvas 2D and its own [art bundle, sources, prompts and atlas layout](../../../src/games/last-light-clearing/art/rekindled/README.md). Smooth sampling presents the new high-resolution whole-character drawings. All motion follows active run time and freezes on pause. Reduced motion holds the first cel and steady brazier light, suppresses drifting embers and defeat fragments, and retains physical movement, attack warnings and state cues. Ground, props and light stamps are cached per presentation; the ember field has a fixed small budget.
 
-![Prism Garden: a gold lantern Keeper, orbiting lights, thorn creatures and mint gems on engraved jade paving](prism-garden.png)
-
-[Combat cue preview](combat-feedback.png): a locked charger lane, shield readout and Arc Spark awakening in Prism Garden.
+![Ember Ruins · Rekindled: newly illustrated spell knight, goblins and horned demon with matching ruin props and spells](ember-rekindled.png)
 
 ## Sound identity
 
@@ -70,20 +68,18 @@ Paths below are relative to `src/games/last-light-clearing/`.
 | Typed content and validation | `content.ts`, `content-validation.ts` |
 | Physical input | `input.ts` |
 | Camera transform, attack cues and CSS-space overlay | `view.ts`, `screen-overlay.ts` |
-| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `three/garden.ts`, `vgpu/` |
+| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `ember-scene.ts`, `vgpu/` |
 | Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
 | UI and sound adapters | `ui.ts`, `style.css`, `sound.ts` |
 
 ## Renderer composition
 
-`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality loads `three/garden.ts`; its orthographic mapping converts `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom loads `vgpu/bloom.ts` and its WGSL field and organism shaders.
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Assets and Quality use the same Canvas sprite renderer, observations and clip helpers. Quality's local `ember-scene.ts` owns its cached painted floor, new perimeter props, light stamps and fixed ember field. `rekindledArt` in `themes.ts` maps the new actor cels and gem/Halo/Shard images independently of Assets. The preparation transaction validates and loads the Quality ground only when selected. Replacement releases cached canvases and the outgoing image bundle. No Three.js or WebGPU code is needed for Quality.
 
-Garden batches immutable scenery by geometry, material and shadow settings. Complete actor cels copy into shared instance buffers, grouped by sprite frame, so dense crowds do not add draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` generates cached paving and botanical textures without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution.
-
-The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Canvas uses the asset pack’s clip helpers; Garden uses the same semantic observations to select complete sprite cels. Bloom retains its explicitly experimental shader organisms. Palettes live in `themes.ts`, while shader/effect budgets live with their renderer.
+The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Custom loads `vgpu/bloom.ts` and its WGSL field and organism shaders, retaining its explicitly experimental shader organisms. Palettes live in `themes.ts`; effect budgets stay with their presentation owner.
 
 Bloom owns its device, surface, shader draws, effects, uniforms and storage buffers. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. The renderer/resource transaction follows the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery).
 
 ## Renderer verification
 
-The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover uniform projection, renderer replacement and GPU loss. Normal prepares a small local sprite bundle and requests no graphics library. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Custom checks cover GPU loss separately. Normal prepares a small local sprite bundle and requests no graphics library. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
