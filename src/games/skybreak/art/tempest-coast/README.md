@@ -1,13 +1,13 @@
-# Tempest Coast artwork
+# Tempest Coast scenery
 
-[Game art direction](../../../../../docs/games/skybreak/README.md#tempest-coast-art-direction) | [Shared Quality workflow](../../../../../docs/quality-themes.md)
+[Coastal sortie direction and contracts](../coastal-sortie/README.md) | [Shared Quality workflow](../../../../../docs/quality-themes.md)
 
-Quality combines complete aircraft sprites with an AI-generated aerial ocean plate, painted coastal depth and restrained Canvas atmosphere. The central flight corridor stays dark and uncluttered. The original PNG and [prompt](prompt.txt) are retained beside the optimized `backdrop.webp`.
+The AI-generated orthographic ocean tile supplies painted sea, rocky shoals and palms along the margins. The central corridor stays dark and uncluttered. Aircraft, clouds, pickups and combat cues are separate images or semantic overlays. The original PNG and [prompt](prompt.txt) are retained beside the optimized `backdrop.webp`.
 
-The runtime plate is 1024 × 1536, exported as WebP at quality 90. Actors, supplies, projectiles, warning lanes and UI remain independent. The game-local preparation validates decoded dimensions before activation. Re-export complete artwork with local Chromium:
+The runtime image is 1024 × 1536, exported as WebP at quality 90. `../../presentation.ts` scrolls the coast downward through the shared world projection, blending an 80-world-unit incoming edge over the previous tile. This preserves continuous travel instead of stretching a fixed vista behind the aircraft. Reduced motion fixes its travel position.
 
 ```sh
 node src/games/skybreak/art/tempest-coast/pack.mjs
 ```
 
-`../../presentation.ts` owns the layered scenery and complete aircraft cels, with the same uniform projection as every other mode. No graphics backend is needed for this presentation.
+The owning game's preparation validates decoded dimensions before activation. Source export is an artwork maintenance step and is never required at runtime.

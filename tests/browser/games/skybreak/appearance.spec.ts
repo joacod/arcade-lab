@@ -101,9 +101,9 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(50);
   expect(await state()).toBe(frozen);
-  await page.evaluate(() => { (window as any).activeFleetImages = (window as any).fleetImages.filter((image: HTMLImageElement) => image.naturalWidth === 384 || image.naturalWidth === 2016); });
+  await page.evaluate(() => { (window as any).activeFleetImages = (window as any).fleetImages.filter((image: HTMLImageElement) => image.src.includes('/coastal-sortie/')); });
   expect(await page.evaluate(() => (window as any).activeFleetImages.map((image: HTMLImageElement) =>
-    [image.naturalWidth, image.naturalHeight]))).toEqual([[384, 80], [384, 64], [384, 64], [384, 64], [384, 64], [2016, 168]]);
+    [image.naturalWidth, image.naturalHeight]))).toEqual([[384, 288], [288, 96], [480, 1600]]);
   const picture = await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL());
   await chooseOption(appearance, 'normal'); await page.clock.runFor(50);
   expect(await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())).not.toBe(picture);
@@ -111,8 +111,15 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   expect(await page.evaluate(() => (window as any).activeFleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  const coastPixels = () => page.locator('canvas').evaluate(canvas => {
+    const c = canvas as HTMLCanvasElement, scale = Math.min(c.width / 480, c.height / 800);
+    const x = (c.width - 480 * scale) / 2;
+    return Array.from(c.getContext('2d')!.getImageData(x + 5 * scale, 310 * scale, 45 * scale, 45 * scale).data);
+  });
+  const stoppedCoast = await coastPixels();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
   expect(await state()).not.toBe(frozen);
+  expect(await coastPixels(), 'the pixel coast passes beneath the aircraft during active flight').not.toEqual(stoppedCoast);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');

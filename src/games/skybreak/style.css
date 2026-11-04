@@ -55,3 +55,9 @@
 @media (max-height: 680px) {
   .skybreak-app .skybreak-hud { min-height: 55px; padding-block: 8px; }
 }
+.skybreak-app[data-theme='assets'] { --sky-ink: #f4e3bd; --sky-dim: #9fbab2; }
+.skybreak-app[data-theme='assets'] .skybreak-hud,
+.skybreak-app[data-theme='assets'] .skybreak-footer { background: #102c38; border-color: #bca77455; }
+.skybreak-app[data-theme='assets'] button,
+.skybreak-app[data-theme='assets'] .game-menu { border-radius: 2px; box-shadow: inset 0 -3px #020d1855; }
+.skybreak-app[data-theme='assets'] .skybreak-brand { font-family: monospace; text-shadow: 2px 2px #031521; }

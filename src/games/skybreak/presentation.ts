@@ -1,5 +1,6 @@
 import { createImageResource } from '../../engine/browser/images.ts';
-import { validateFlightArt } from './art-pack.ts';
+import { flightImages, validateFlightImages } from './assets.ts';
+import { coastalTiles } from './scenery.ts';
 import { flight, fortress, waves, type Pattern } from './content.ts';
 import { bossLanes, enemyCharge, type Boss, type Enemy, type FlightEvent, type Point, type Run } from './game.ts';
 import { flightFrame, type FlightSprite } from './art-pack.ts';
@@ -14,16 +15,16 @@ export function flightView(width: number, height: number) {
 const noise = (n: number) => { const value = Math.sin(n * 127.1 + 311.7) * 43758.5453; return value - Math.floor(value); };
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number }
 export function createPresentation(surface: HTMLElement, theme: FlightTheme,
-  { overlay = false, images = {} as ImageBundle } = {}): FlightPresentation {
+  { images = {} as ImageBundle } = {}): FlightPresentation {
   const canvas = document.createElement('canvas'); canvas.className = 'skybreak-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable.');
   const c = ctx;
-  const baseline = theme.art && !Object.keys(images).length ? createImageResource(theme.art.images, d => validateFlightArt(theme.art!, d)) : undefined;
-  const objects = createImageResource({ objects: new URL('./art/objects.svg', import.meta.url).href }, d => d.objects?.width === 320 && d.objects.height === 64 ? [] : ['Invalid flight objects']);
+  const baseline = theme.art && !Object.keys(images).length ? createImageResource(flightImages(theme), d => validateFlightImages(theme, d)) : undefined;
+  const objects = !theme.art?.objects ? createImageResource({ objects: new URL('./art/objects.svg', import.meta.url).href }, d => d.objects?.width === 320 && d.objects.height === 64 ? [] : ['Invalid flight objects']) : undefined;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   surface.append(canvas);
-  const ready = Promise.all([baseline?.ready, objects.ready]).then(() => {});
+  const ready = Promise.all([baseline?.ready, objects?.ready]).then(() => {});
   void ready.catch(() => {});
   let visualTime = 0;
   let particles: Particle[] = [], lastTime = 0, width = 0, height = 0, damageFlash = 0;
@@ -33,7 +34,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     const image = images[art.image] ?? baseline?.images[art.image];
     if (!image) return;
     const [, y, w, h] = art.rect, [width, height] = art.footprint;
-    c.save(); c.rotate(art.rotation); c.imageSmoothingEnabled = !!theme.quality; c.imageSmoothingQuality = 'high';
+    c.save(); c.rotate(art.rotation); c.imageSmoothingEnabled = theme.finish === 'painted'; c.imageSmoothingQuality = 'high';
     c.drawImage(image, flightFrame(art, visualTime, motion.matches), y, w, h, -width / 2, -height / 2, width, height);
     c.restore();
   }
@@ -43,31 +44,51 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     c.closePath(); c.fillStyle = fill; c.fill(); c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke();
   }
   function plane(x: number, y: number, kind: Pattern | 'player', bank = 0, roll = 0, shadow = false, flash = false) {
+    if (shadow && !theme.finish) return;
     c.save(); c.translate(x, y);
     if (kind !== 'player') c.rotate(Math.PI);
     if (!motion.matches) {
       c.scale(roll ? Math.cos(roll * Math.PI * 3) * 0.75 : 1 - Math.abs(bank) * 0.12, 1);
       c.rotate(bank * 0.12);
     }
-    if (shadow) { c.globalAlpha = 0.2; c.translate(9, 16); }
+    if (shadow) { c.globalAlpha = theme.finish === 'painted' ? 0.22 : 0.16; c.filter = 'brightness(0)'; }
     const art = theme.art?.actors[kind];
     if (art) {
-      if (shadow) { c.restore(); return; }
-      // Sprites carry their engine animation; a compact halo signals damage without replacing their silhouette.
+      // A compact halo signals damage without replacing the aircraft silhouette.
       if (flash) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
       sprite(art); c.restore(); return;
     }
     c.restore();
   }
+  let coastalTile: HTMLCanvasElement | undefined;
   function ocean(time: number) {
-    if (theme.quality && images.backdrop) {
-      c.drawImage(images.backdrop,0,0,480,800);
-      if (!motion.matches) {
-        c.fillStyle='#c2ded709';
-        for(let i=0;i<8;i++) {
-          const x=i%2?470:10,y=(i*137+time*7)%940-70;
-          c.beginPath();c.ellipse(x,y,45,90, -.45,0,Math.PI*2);c.fill();
+    const backdrop = images.backdrop ?? baseline?.images.backdrop;
+    if (theme.scenery && backdrop) {
+      const tileHeight = 480 * theme.scenery.height / theme.scenery.width;
+      if (!coastalTile) {
+        // Fade only the incoming edge: the preceding tile supplies opaque water underneath.
+        coastalTile = document.createElement('canvas'); coastalTile.width = theme.scenery.width; coastalTile.height = theme.scenery.height;
+        const tile = coastalTile.getContext('2d')!;
+        tile.imageSmoothingEnabled = theme.finish === 'painted';
+        tile.drawImage(backdrop, 0, 0);
+        if (theme.scenery.overlap) {
+          tile.globalCompositeOperation = 'destination-in';
+          const fade = tile.createLinearGradient(0, 0, 0, theme.scenery.overlap * theme.scenery.width / 480);
+          fade.addColorStop(0, '#0000'); fade.addColorStop(1, '#000');
+          tile.fillStyle = fade; tile.fillRect(0, 0, coastalTile.width, coastalTile.height);
         }
+      }
+      c.fillStyle = theme.palette.sea[0]; c.fillRect(0, 0, 480, 800);
+      c.imageSmoothingEnabled = theme.finish === 'painted'; c.imageSmoothingQuality = 'high';
+      for (const y of coastalTiles(time, theme.scenery.speed, tileHeight, theme.scenery.overlap)) {
+        c.drawImage(coastalTile, 0, theme.finish === 'pixel' ? Math.round(y) : y, 480, tileHeight);
+      }
+      // Clouds pass faster than the coast, confined to the margins beneath combat cues.
+      if (theme.art?.objects) for (let i = 0; i < 4; i++) {
+        c.save();
+        c.translate(i % 2 ? 474 : 6, (i * 311 + time * 156) % 1250 - 200);
+        c.scale(2.5, 1.6); c.globalAlpha = theme.finish === 'painted' ? 0.16 : 0.12;
+        sprite(theme.art.objects.cloud); c.restore();
       }
       return;
     }
@@ -161,7 +182,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     if (dead) { if (!motion.matches) c.translate(Math.sin(b.defeated * 45) * 4, b.defeated * 9); c.globalAlpha = Math.max(0, 1 - b.defeated / fortress.defeatDuration); }
     // Appearance owns the hull; the same animated weak points and warnings stay readable above it.
     {
-      c.fillStyle = '#00152355'; c.beginPath(); c.ellipse(12, 30, 168, 70, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#00152335'; c.beginPath(); c.ellipse(12, 30, 168, 70, 0, 0, Math.PI * 2); c.fill();
       if (theme.art?.flagship) {
         c.save(); c.rotate(Math.PI);
         if (flashes.has('boss')) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
@@ -171,24 +192,28 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     for (const side of [-1, 1]) {
       const x = side * 88, y = 16 + Math.sin(b.age * 2) * 8;
       c.save(); c.translate(x, y);
-      const objectImage = objects.images.objects;
-      if (objectImage) c.drawImage(objectImage, 192, 0, 64, 64, -32, -42, 64, 84);
+      const objectImage = objects?.images.objects;
+      if (theme.art?.objects) sprite(theme.art.objects.nacelle);
+      else if (objectImage) c.drawImage(objectImage, 192, 0, 64, 64, -32, -42, 64, 84);
       c.fillStyle = dead ? '#ffbb75' : '#7aeadd'; c.shadowColor = c.fillStyle; c.shadowBlur = 14;
-      if (overlay) {
+      if (theme.finish === 'painted') {
         const reactor = c.createRadialGradient(-5, -6, 1, 0, 0, 19);
         reactor.addColorStop(0, '#effff9'); reactor.addColorStop(0.38, '#9af9e5');
         reactor.addColorStop(0.72, dead ? '#ffbb75' : '#35aeb7'); reactor.addColorStop(1, '#102d3d');
         c.fillStyle = reactor;
       }
-      c.beginPath(); c.arc(0, 0, 17, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
+      c.save();
+      if (theme.art?.objects) c.globalAlpha *= 0.16;
+      c.beginPath(); c.arc(0, 0, 17, 0, Math.PI * 2); c.fill(); c.restore(); c.shadowBlur = 0;
       c.strokeStyle = '#15334d'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 23, b.age * side * 3, b.age * side * 3 + 4.5); c.stroke();
       c.fillStyle = '#ffb576'; c.fillRect(-7, 40, 14, motion.matches ? 10 : 10 + Math.sin(b.age * 29) * 5); c.restore();
       c.strokeStyle = '#aec8c177'; c.lineWidth = 2; c.beginPath(); c.moveTo(side * 44, -21); c.lineTo(side * 143, 0); c.stroke();
     }
     c.fillStyle = dead || b.phase === 2 ? '#ffae85' : '#b2fff2'; c.shadowColor = c.fillStyle; c.shadowBlur = 18;
     c.beginPath(); c.arc(0, 10, 28, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
-    const reactorImage = objects.images.objects;
-    if (reactorImage) c.drawImage(reactorImage,256,0,64,64,-32,-22,64,64);
+    const reactorImage = objects?.images.objects;
+    if (theme.art?.objects) { c.save(); c.translate(0, 10); sprite(theme.art.objects.reactor); c.restore(); }
+    else if (reactorImage) c.drawImage(reactorImage,256,0,64,64,-32,-22,64,64);
     if (dead && !motion.matches) for (let i = 0; i < 9; i++) {
       const age = (b.defeated + i * 0.19) % 0.7, x = noise(i + Math.floor(b.defeated * 4)) * 260 - 130, y = noise(i + 30) * 90 - 40;
       c.globalAlpha = (1 - age / 0.7) * Math.max(0, 1 - b.defeated / fortress.defeatDuration);
@@ -221,12 +246,12 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       if (width !== w || height !== h) { canvas.width = width = w; canvas.height = height = h; }
       c.setTransform(size.ratio, 0, 0, size.ratio, 0, 0);
       c.clearRect(0, 0, size.width, size.height);
-      if (!overlay) { c.fillStyle = theme.palette.background; c.fillRect(0, 0, size.width, size.height); }
+      c.fillStyle = theme.palette.background; c.fillRect(0, 0, size.width, size.height);
       const view = flightView(size.width, size.height);
       c.translate(view.x, view.y); c.scale(view.scale, view.scale);
       c.save(); c.beginPath(); c.rect(0, 0, 480, 800); c.clip();
       visualTime = motion.matches ? 0 : attractTime ?? run.elapsed;
-      if (!overlay) ocean(visualTime);
+      ocean(visualTime);
       if (motion.matches) { particles = []; damageFlash = 0; }
       const dt = Math.max(0, run.elapsed - lastTime); lastTime = run.elapsed;
       for (const [id, life] of flashes) {
@@ -241,9 +266,10 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       for (const item of run.pickups) {
         const color = item.kind === 'power' ? '#ffcf70' : item.kind === 'spread' ? '#d6aaff' : '#a9f3b5';
         c.save(); c.translate(item.x, item.y); if (!motion.matches) c.rotate(Math.sin(item.age * 3) * 0.1);
-        const objectImage = objects.images.objects;
+        const objectImage = objects?.images.objects;
         const frame = item.kind === 'power' ? 0 : item.kind === 'spread' ? 1 : 2;
-        if (objectImage) c.drawImage(objectImage, frame * 64, 0, 64, 64, -22, -22, 44, 44);
+        if (theme.art?.objects) sprite(theme.art.objects[item.kind]);
+        else if (objectImage) c.drawImage(objectImage, frame * 64, 0, 64, 64, -22, -22, 44, 44);
         c.fillStyle = color; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillText(item.kind.toUpperCase(), 0, 32); c.restore();
       }
       drawRollReadiness(run);
@@ -292,6 +318,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       c.restore();
       c.strokeStyle = '#73c7c233'; c.lineWidth = 1; c.strokeRect(0, 0, 480, 800);
     },
-    dispose() { baseline?.dispose(); objects.dispose(); particles = []; flashes.clear(); images = {}; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (coastalTile) { coastalTile.width = coastalTile.height = 1; coastalTile = undefined; } baseline?.dispose(); objects?.dispose(); particles = []; flashes.clear(); images = {}; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }
