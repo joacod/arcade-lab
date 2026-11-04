@@ -10,7 +10,7 @@ Read the game's guide, presentation contract, theme data, animation observations
 
 Write a short creative brief in the owning game's documentation. Choose a setting, perspective, palette, shape language and treatment of materials that work together. Retro, pixel-art, illustrated and other styles are valid; choose what suits the game. Preserve the visual hierarchy that makes its actions readable.
 
-Plan coverage across significant characters, enemies, environments, interactable objects, animations and relevant feedback. Decide which roles need sprites or scenery images and which benefit from procedural drawing. Effects, UI and some scenery can remain procedural if they support the same identity. Cohesion and meaningful coverage matter more than replacing every drawn element with an image.
+Plan custom image coverage across all player characters, enemies and interactable objects, including their significant action and reaction states. Plan scenery images and relevant feedback alongside them. Effects, UI and some scenery can remain procedural if they support the same identity. Cohesion and meaningful coverage matter more than replacing every drawn element with an image.
 
 ## Specify artwork before integrating it
 
@@ -23,9 +23,9 @@ Record the technical information needed to draw and maintain each asset:
 - Anchors or pivots and intended on-screen sizes expressed through visual footprints in world units, including transparent padding.
 - Movement, idle and event-reaction clips where useful, plus mirroring, rotation or directional variants supported by the artwork.
 
-Keep independently moving actors, articulated parts, interactable objects, attack warnings and UI separate from static scenery. Do not bake a dynamic state into a background plate. Define animation from the available artwork and gameplay observations; a larger sheet does not require inventing new mechanics. Inspect the complete treatment in motion at its actual display size, where padding, frame jitter or noisy detail become visible.
+Keep independently moving complete actors, interactable objects, attack warnings and UI separate from static scenery. Do not bake a dynamic state into a background plate. Define animation from the available artwork and gameplay observations; a larger sheet does not require inventing new mechanics. Inspect the complete treatment in motion at its actual display size, where padding, frame jitter or noisy detail become visible.
 
-Choose the animation representation for the action. Separate part images suit some designs; complete character cels allow pose-specific silhouettes, foreshortening and cloth. Renderers can share semantic action observations without sharing a rig. Align anticipation, contact and recovery drawings to the simulation's actual windows, use a stable pivot across frames, and avoid stretching anatomy to match attack reach. Inspect planted feet and transitions as well as the contact pose.
+Prefer complete character cels with pose-specific silhouettes, foreshortening, cloth and connected anatomy. Do not reconstruct characters from independently drawn limbs or mesh parts. Depth can be painted or pre-rendered into sprites. Renderers share semantic action observations and clip timing without requiring a common rig. Align anticipation, contact and recovery drawings to the simulation's actual windows, use a stable pivot across frames, and avoid stretching anatomy to match attack reach. Inspect planted feet and transitions as well as the contact pose.
 
 Full-body cels should read as one drawn figure, including in an idle stance. Continuous contours, connected joint anatomy, garment folds and consistent volume establish that cohesion; storing separately outlined limbs in one cell does not. Let the illustration define its silhouette and proportions while sharing the game's semantic action timing. Assess a representative standing pose and an attack sequence before expanding the complete set.
 
@@ -39,6 +39,6 @@ Source dimensions, anchors, animation timing and draw footprints are cosmetic. N
 
 ## Preserve the direction and assess the result
 
-Keep editable sources or code-native generators, creative briefs, useful prompts, frame layouts, export settings and role specifications with the game. Document how to edit or regenerate committed outputs as an artwork maintenance step, separate from runtime loading. Keep instructions focused on the intended visual result rather than a particular production tool or provider.
+Keep editable illustration sources, creative briefs, useful prompts, frame layouts, export settings and role specifications with the game. Packing, resizing and atlas tools may prepare complete drawings; they should not recreate actors from body parts. Keep scenery/effect generators when useful. Document how to edit or regenerate committed outputs as an artwork maintenance step, separate from runtime loading. Keep instructions focused on the intended visual result rather than a particular production tool or provider.
 
 Compare with Normal at gameplay size: the important roles and environment should now form a distinct, thoughtfully directed presentation while actions and state remain readable. Use the [shared local checks](architecture.md#local-verification) and existing appearance checks to verify retained gameplay state and resource cleanup. An established Assets direction provides the foundation for a later [Quality pass](quality-themes.md).

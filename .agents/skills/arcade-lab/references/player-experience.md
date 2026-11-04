@@ -80,6 +80,8 @@ When action disappears into attractive artwork, inspect a gameplay-sized scene d
 
 Give the direction a concrete visual language: related shapes, material treatment, lighting and motion that suit the fiction. Carry it across actors, environment, feedback and interface. Allocate fine detail and strong accents where attention is useful. Quiet scenery can still have broad, expressive forms; outlining everything brightly often destroys the hierarchy. Valve and Riot show how art and rendering choices can support recognition without prescribing their shaders or aesthetic.
 
+Use custom image assets with cohesive complete silhouettes for players, enemies and interactive objects. Prefer authored action cels over assembled limbs; preserve their anchors and semantic timing so replacing artwork remains straightforward. Convey volume through the artwork and use graphics effects around it where useful.
+
 For an Assets family, compare a representative actor, hazard and terrain piece together over real scenery before expanding production. For Quality, choose the most useful compositional or animation improvement before increasing effect density. Preserve the meaning of safe surfaces, destructible cover and active danger across treatments. A beauty image cannot establish readability in motion. Asset specifications, preparation and replacement stay in the canonical [Assets](../../../../docs/assets-themes.md) and [Quality](../../../../docs/quality-themes.md) workflows.
 
 ## Rewards and replayability

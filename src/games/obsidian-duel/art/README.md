@@ -1,6 +1,6 @@
 # Obsidian Duel artwork
 
-`cover.svg` is the collection cover. `eclipse-foundry/` contains the original Assets theme. Stage and effects have editable SVG sources; fighter art uses painted PNG drawings generated for this project with the built-in ImageGen tool. Project artwork is distributed under the repository's [MIT license](../../../../LICENSE). All required images and source sheets are committed, with no third-party artwork inputs or external downloads.
+`cover.svg` is the collection cover. `eclipse-foundry/` contains the original Assets theme. Stage and effects have editable SVG sources; fighter art uses AI-generated painted PNG drawings. Project artwork is distributed under the repository's [MIT license](../../../../LICENSE). All required images and source sheets are committed, with no third-party artwork inputs or external downloads.
 
 ## Eclipse Foundry creative brief
 
@@ -71,3 +71,23 @@ node src/games/obsidian-duel/art/eclipse-foundry/generate.mjs
 ```
 
 These tools have no runtime role. A fresh checkout loads the committed outputs directly. Keep moving fighters and reaction effects out of the static stage, and preserve quiet space behind the actors.
+
+## Moonfall Sanctum
+
+Quality reuses the complete painted Nera and Kael atlases and their full set of semantic action cels. It adds an AI-generated illustrated arena and transparent effect artwork, with the original PNG sources and prompts in `moonfall-sanctum/sources/`. These project images share the repository's MIT license. The [game guide](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction) owns the creative brief and visual hierarchy.
+
+| Image | Intrinsic size | Role |
+| --- | --- | --- |
+| `moonfall-sanctum/stage.webp` | 1600 × 896 | Moonlit observatory background, quiet mist behind fighters, unobstructed wet floor. Drawn in the same 1000 × 560 arena as the other themes. |
+| `eclipse-foundry/nera.png`, `kael.png` | 2560 × 2240 each | Shared complete-character atlases. Use the existing cel rectangles, stable pivots, authored visual footprints and semantic timing. |
+| `moonfall-sanctum/effects.png` | 768 × 768 | Four transparent 384-square cells in two rows: jade bolt, warm hit burst, blue guard seal, ground aura. Authored contact pivots live in `quality-art.ts`. |
+
+The original stage source is 1659 × 948 and the final transparent effects source is 1254 × 1254. [Stage prompt](moonfall-sanctum/sources/stage.prompt.txt) and [effects prompts](moonfall-sanctum/sources/effects.prompt.txt) preserve the intended artwork and atlas correction. The runtime export scales only the complete images and preserves alpha; it does not draw, assemble or retouch any body parts. Export with local Chromium:
+
+```sh
+node src/games/obsidian-duel/art/moonfall-sanctum/pack.mjs
+```
+
+A fresh checkout loads the shipped runtime files without generation or export services. `quality-assets.ts` prepares and releases images through the common owner. `quality-art.ts` validates decoded dimensions, maps effect cells to their contact points and records the painted Crescent heel contact mark. `quality-presentation.ts` adds subtle low mist, lantern glow, moonlit motes and faint whole-sprite reflections. The common presentation retains the sole arena transform, action observations and bounded contact lifetimes. Decorative motion follows active match time and stops on pause or under reduced motion.
+
+For a new cast, replace the complete fighter drawings and maintain their clip/anchor contract. Improve or replace the background and effects to change the surrounding visual identity. Keep actors and interactive objects separate from scenery; volume and material detail belong in the artwork. Lighting, atmosphere and reflections support those images without requiring a character-model system.

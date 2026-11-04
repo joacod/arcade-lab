@@ -19,8 +19,8 @@ Create a premium, cinematic, richly textured deep-space environment, portrait 10
 No spacecraft, fighters, enemies, projectiles, explosions, interface, text, logos, symbols, watermarks or borders. This is a background layer, NOT a screenshot or complete game composition.
 ```
 
-## Editable model template
+## Current fleet implementation
 
 `createFoundryModels` builds all five aircraft roles and the flagship from authored beveled plates and fittings. Parts batch by material and share their resulting geometry across live ships. Engine plumes remain separate shader planes. Model source coordinates are gameplay-style XY; the helper maps Y to Three.js's upward axis and uses Z only for decorative height. Hostile ships turn south at their root. Articulated flagship nacelles use inverse local offsets so their projected positions match the simulation's weak points.
 
-Extend role silhouettes, panel paths, fittings and material definitions here rather than flattening the models into a new sprite atlas. Preserve Aurora Fleet's separate SVG generator and atlas contract for the Assets mode. The Quality renderer and Canvas tactical overlay share `flightView`; only the session replaces owners and releases prepared image sources.
+The fleet models describe the current implementation. Future actor artwork follows the [image-first theme guidance](../../../../../docs/quality-themes.md#choose-assets-and-rendering-together): replace ship roles with custom image assets, retaining their footprints and semantic observations. Keep useful background machinery, lighting and effect owners. Preserve Aurora Fleet's separate SVG source and atlas contract for the Assets mode. The Quality renderer and Canvas tactical overlay share `flightView`; only the session replaces owners and releases prepared image sources.

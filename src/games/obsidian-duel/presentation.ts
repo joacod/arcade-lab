@@ -4,7 +4,8 @@ import type { DuelEvent, Fighter, Match } from './game.ts';
 import type { Screen } from './ui.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { drawFoundryFighter, drawFoundryEffect } from './asset-presentation.ts';
-import { createDuelAnimation, samplePose, type Point } from './animation.ts';
+import type { SanctumDrawing, SanctumDrawingFactory } from './quality-presentation.ts';
+import { createDuelAnimation, samplePose, type AnimationSample, type Point } from './animation.ts';
 export function duelView(width: number, height: number) {
   const scale = Math.min(width / arena.width, height / arena.height);
   return { scale, left: (width - arena.width * scale) / 2, top: (height - arena.height * scale) / 2 };
@@ -32,9 +33,10 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context; surface.append(canvas);
   let theme = themes.normal;
   let art: ImageBundle | undefined;
+  let quality: SanctumDrawing | undefined;
   const animations = [createDuelAnimation(), createDuelAnimation()];
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let sparks: Spark[] = [], impacts: Impact[] = [], shake = 0, last = 0, disposed = false;
+  let sparks: Spark[] = [], impacts: Impact[] = [], shake = 0, last: number | undefined, disposed = false;
   function rect(x: number, y: number, w: number, h: number, fill: string | CanvasGradient) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
   function path(points: number[], color: string, width = 2, closed = false) {
     ctx.beginPath(); ctx.moveTo(points[0]!, points[1]!);
@@ -118,14 +120,13 @@ export function createPresentation(surface: HTMLElement) {
     if(foot[1]<-12)ctx.rotate(Math.max(-.7,Math.min(.8,Math.atan2(foot[1]-knee[1],foot[0]-knee[0]))));
     path([-8,-8,5,-9,15,-3,16,2,-8,2],color,1,true);ctx.restore();
   }
-  function drawFighter(f: Fighter, index: number, time: number, reduced: boolean) {
+  function drawFighter(f: Fighter, index: number, time: number, reduced: boolean, sample: AnimationSample) {
     const nera=f.kind==='nera', down=f.state==='knockdown'||f.state==='ko';
-    const sample=animations[index]!.sample(f,time,reduced);
     const cycle=reduced?0:Math.sin(time*3.5+index), base=arena.floor;
     const s=f.attack, active=f.state==='active', wind=f.state==='startup';
     ctx.save();
     oval(f.x,base+4,down?69:48,8, '#080d1e88');
-    if (art && !down) { ctx.save(); ctx.globalAlpha=.24; drawFoundryEffect(ctx,art,3,f.x,base+4,112,20); ctx.restore(); }
+    if (art && !down) { ctx.save(); ctx.globalAlpha=quality?.18:.24; if(quality)quality.effect(3,f.x,base+4,155,95);else drawFoundryEffect(ctx,art,3,f.x,base+4,112,20); ctx.restore(); }
     glow(f.x,base+10,76,nera?'#7debdc0d':'#ffc08d0b');
     ctx.translate(f.x,base-f.z);ctx.scale(f.facing,1);ctx.lineCap='round';ctx.lineJoin='round';
     if(f.immune>0&&!down) { ctx.globalAlpha=reduced?.9:.83+.17*Math.sin(time*35); }
@@ -168,31 +169,34 @@ export function createPresentation(surface: HTMLElement) {
     oval(handFront[0]+3,handFront[1],nera?6:9,nera?5:7,nera?'#d8c2af':'#bfb3ac');
     path([handFront[0]-7,handFront[1]-4,handFront[0]+7,handFront[1]-4],trim,2);
     }
-    if(active&&s){
+    if(active&&s&&!quality){
       ctx.globalAlpha=.5;ctx.strokeStyle=trim;ctx.lineWidth=s.kind==='heavy'?6:3;ctx.beginPath();
       if(s.kind==='sweep')ctx.ellipse(47,-12,65,15,0,-1.4,1.2);
       else ctx.arc(12,-92,s.kind==='heavy'?99:76,-.9,.45);ctx.stroke();ctx.globalAlpha=1;
     }
-    if(wind&&s&&(s.kind==='heavy'||s.kind==='special')){oval(-30,-85,3,3,trim);path([-42,-89,-48,-94],trim,2);}
+    if(!quality&&wind&&s&&(s.kind==='heavy'||s.kind==='special')){oval(-30,-85,3,3,trim);path([-42,-89,-48,-94],trim,2);}
     ctx.restore();
   }
   return {
-    replaceTheme(next: DuelTheme, images?: ImageBundle) {
-      const previousTheme = theme, previousArt = art;
-      theme = next; art = images;
-      return { rollback() { theme = previousTheme; art = previousArt; ctx.reset(); } };
+    replaceTheme(next: DuelTheme, images?: ImageBundle, factory?: SanctumDrawingFactory) {
+      const previousTheme = theme, previousArt = art, previousQuality = quality;
+      const drawing = factory && images ? factory(ctx,images) : undefined;
+      theme = next; art = images; quality = drawing; ctx.reset();
+      return { rollback() { theme = previousTheme; art = previousArt; quality = previousQuality; ctx.reset(); } };
     },
-    reset() { sparks=[];impacts=[];shake=0;last=0;for(const animation of animations)animation.reset(); },
-    consume(events: readonly DuelEvent[]) {
+    reset() { sparks=[];impacts=[];shake=0;last=undefined;for(const animation of animations)animation.reset(); },
+    consume(events: readonly DuelEvent[], match: Match) {
       for(const e of events){
         if(!['hit','heavyHit','block','knockdown','special','ko'].includes(e.type))continue;
+        if(quality&&!['hit','heavyHit','block'].includes(e.type))continue;
         const blocked=e.type==='block', color=blocked?'#b4d8ff':e.fighter===0?'#a5f6e0':'#ffcf98';
+        const point=quality?.contact(e,match)??{x:e.x,y:arena.floor-e.z};
         if(e.type==='ko')shake=9;else if(e.type!=='special')shake=Math.max(shake,blocked?2:e.strength*6);
-        if(impacts.length<12)impacts.push({x:e.x,y:arena.floor-e.z,life:.25,blocked,color});
+        if(impacts.length<12)impacts.push({x:point.x,y:point.y,life:.25,blocked,color});
         const count=motion.matches?4:blocked?9:16;
         for(let i=0;i<count&&sparks.length<120;i++){
           const a=i*2.399+e.x, speed=55+(i%5)*32;
-          sparks.push({x:e.x,y:arena.floor-e.z,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-35,life:.22+(i%4)*.08,max:.46,color});
+          sparks.push({x:point.x,y:point.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-35,life:.22+(i%4)*.08,max:.46,color});
         }
       }
     },
@@ -200,7 +204,7 @@ export function createPresentation(surface: HTMLElement) {
       if(disposed)return;
       const {width,height,ratio}=host, pw=Math.round(width*ratio),ph=Math.round(height*ratio);
       if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph;}
-      const dt=last?Math.min(.05,Math.max(0,now-last)):0;last=now;
+      const dt=last===undefined?0:Math.min(.05,Math.max(0,m.elapsed-last));last=m.elapsed;
       const animate=screen==='playing', reduced=motion.matches;
       if(animate){shake=Math.max(0,shake-dt*35);for(const p of sparks){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=400*dt;}for(const r of impacts)r.life-=dt;sparks=sparks.filter(p=>p.life>0);impacts=impacts.filter(p=>p.life>0);}
       const v=duelView(width,height);
@@ -208,10 +212,14 @@ export function createPresentation(surface: HTMLElement) {
       // This single uniform transform owns arena, fighter positions, projectiles and all contact effects.
       ctx.translate(v.left,v.top);ctx.scale(v.scale,v.scale);
       ctx.beginPath();ctx.rect(0,0,1000,560);ctx.clip();
-      if(!reduced&&animate)ctx.translate(Math.sin(now*83)*shake,Math.cos(now*71)*shake*.35);
-      scenery(screen==='playing'||screen==='title'?now:m.elapsed,reduced);
+      if(!quality&&!reduced&&animate)ctx.translate(Math.sin(now*83)*shake,Math.cos(now*71)*shake*.35);
       const t=screen==='title'?now:m.elapsed;
-      for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,i,t,reduced);
+      const samples=m.fighters.map((f,i)=>animations[i]!.sample(f,t,reduced));
+      if(quality) {
+        quality.scenery(t,reduced);
+        for(let i=0;i<2;i++)quality.reflection(m.fighters[i]!,samples[i]!);
+      } else scenery(reduced?0:t,reduced);
+      for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,i,t,reduced,samples[i]!);
       const enemy=m.fighters[1], cue=screen==='playing'&&m.phase==='fight'?duelCue(enemy):null;
       if(cue){
         const labelScale=Math.max(1,10/(13*v.scale)), y=Math.max(80,arena.floor-enemy.z-190);
@@ -225,6 +233,11 @@ export function createPresentation(surface: HTMLElement) {
         ctx.fillStyle=color;ctx.fillText(cue.text,0,2);ctx.restore();
       }
       for(const p of m.projectiles){
+        if(quality) {
+          glow(p.x,arena.floor-p.z,36,'#6df5d52a');
+          ctx.save();ctx.translate(p.x,arena.floor-p.z);ctx.scale(p.facing,1);
+          quality.effect(0,0,0,145,100);ctx.restore();continue;
+        }
         if (art) {
           ctx.save(); ctx.translate(p.x, arena.floor - p.z); ctx.scale(p.facing, 1);
           drawFoundryEffect(ctx, art, 0, -6, 0, 76, 46); ctx.restore(); continue;
@@ -234,10 +247,17 @@ export function createPresentation(surface: HTMLElement) {
         oval(p.x,arena.floor-p.z,17,10,'#7cead8');oval(p.x+p.facing*4,arena.floor-p.z,9,6,'#efffea');
       }
       ctx.lineCap='round';
-      for(const p of sparks){ctx.globalAlpha=Math.min(1,p.life/p.max);path([p.x,p.y,p.x-p.vx*.025,p.y-p.vy*.025],p.color,2);}
-      for(const r of impacts){ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
+      for(const p of sparks){ctx.globalAlpha=Math.min(1,p.life/p.max);if(reduced)oval(p.x,p.y,1,1,p.color);else path([p.x,p.y,p.x-p.vx*.025,p.y-p.vy*.025],p.color,2);}
+      for(const r of impacts){
+        if(quality) {
+          const life=Math.max(0,r.life/.25), size=reduced?108:85+(1-life)*55;
+          ctx.globalAlpha=life;
+          quality.effect(r.blocked?2:1,r.x,r.y,size,r.blocked?size: size*.85);
+          continue;
+        }
+        ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
       ctx.globalAlpha=1;ctx.restore();
     },
-    dispose(){if(disposed)return;disposed=true;art=undefined;sparks=[];impacts=[];canvas.remove();},
+    dispose(){if(disposed)return;disposed=true;art=undefined;quality=undefined;sparks=[];impacts=[];canvas.remove();},
   };
 }

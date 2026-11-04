@@ -14,15 +14,17 @@ Reuse the host, fixed-step clock, action input, menus, focus/lifetime bindings a
 
 Choose a consistent visual vocabulary for the player, enemies, terrain, objectives, interactable objects and actions. Distinguish important roles by silhouette, size, orientation and contrast as well as color. Communicate what can be traversed, touched, collected or threatened; decoration must not imply physical obstacles that do not exist.
 
-Show relevant states clearly: action readiness, anticipation, active danger, contact, damage, protection, progress and outcomes. Responsive controls and immediate visible reactions matter more than elaborate effects. Pose changes, directional marks, compact flashes, rings or small particle bursts can provide expressive feedback without an artwork pipeline. Derive cues from existing gameplay state and events rather than duplicating gameplay timers in the renderer.
+Show relevant states clearly: action readiness, anticipation, active danger, contact, damage, protection, progress and outcomes. Responsive controls and immediate visible reactions matter more than elaborate effects. Pose changes, directional marks, compact flashes, rings or small particle bursts can provide expressive feedback without an elaborate effect system. Derive cues from existing gameplay state and events rather than duplicating gameplay timers in the renderer.
 
 Keep one authoritative uniform world transform, with framing that exposes the space needed for decisions at narrow and fullscreen sizes. Physical geometry comes from gameplay content, independently of decorative extent or camera scale. Keep important boundaries and cues legible above scenery and effects.
 
-## Use expressive procedural drawing
+## Use a lightweight asset presentation
 
-Prefer browser-native drawing without additional graphics dependencies when feasible. Local shapes, paths, gradients, layered silhouettes and a deliberate palette can create attractive characters and environments. Simple articulated poses, movement response, parallax and restrained environmental animation are appropriate when they help the game feel alive and remain easy to maintain.
+Use custom image assets for the player, enemies and interactive objects. Start with a small, coherent sprite set and the action frames needed to communicate the game; complete character cels keep anatomy, clothing and silhouette together. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Browser-native Canvas drawing is usually sufficient to present them without a graphics dependency.
 
-Keep the action visually dominant. Bound temporary effects and avoid spending the initial task on asset production, renderer experiments or elaborate presentation systems. Reuse useful local drawing and animation owners; a procedural presentation does not need a dummy image bundle or a renderer registry.
+Temporary shapes are useful while establishing mechanics. Replace that scaffolding before treating the presentation as finished. Do not build a procedural body-part system or skeleton renderer as the Normal foundation and then carry it into later themes. Existing procedural games can migrate in their own scoped passes.
+
+Keep the action visually dominant. Procedural paths, gradients, parallax and restrained environmental animation can support the sprite artwork. Bound temporary effects and keep the initial asset scope proportional to the game. Reuse image preparation and semantic animation owners rather than building elaborate renderer or rig systems. Use the [Assets guide](assets-themes.md#specify-artwork-before-integrating-it) for image layout and anchor contracts.
 
 Cosmetic motion follows the session's timing and pause rules. Reduced motion should remove decorative movement and flashes while preserving gameplay-critical movement and warnings. Follow the existing ownership contracts for cleanup and display transitions.
 
