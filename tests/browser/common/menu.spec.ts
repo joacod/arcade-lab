@@ -40,7 +40,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
       await expect(theme.locator('..').locator('[role="option"][aria-selected="true"]')).toHaveText('Normal · Iron coast');
       await expect(page.locator('.menu-theme-note')).toContainText('Unavailable: Assets, Quality');
     }
-    if (title === 'Last Light Clearing') await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Prism Garden');
+    if (title === 'Last Light Clearing') await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Ruins · Rekindled');
     expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\//.test(url)), `${title} starts without optional graphics libraries`).toEqual([]);
     expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
     await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Midnight Circuit', 'Skybreak', 'Clockwork Hollow', 'Obsidian Duel'].includes(title)));

@@ -7,18 +7,23 @@ import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
 import { validateArtPack, clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
 import { actorAnimation, createAnimationObservations } from './animation.ts';
 import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
+import type { createEmberScene } from './ember-scene.ts';
 import { haloLights } from './weapon-stats.ts';
 
-export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
+export function createPresentation(theme: Theme, images: ImageBundle = {}, createScene?: typeof createEmberScene): WorldPresentation {
   const artPack = theme.art;
-  const baseline = artPack && !Object.keys(images).length ? createImageResource(artPack.images, d => validateArtPack(artPack,d)) : undefined;
-  const gemArt = createImageResource({gem:new URL('./art/grove/gem.svg',import.meta.url).href}, d => d.gem?.width === 32 && d.gem.height === 32 ? [] : ['Invalid XP gem']);
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
-  canvas.dataset.renderer = 'canvas';
+  const quality = theme.presentation === 'ember';
+  canvas.dataset.renderer = quality ? 'ember' : 'canvas';
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Canvas 2D is required to play.');
   const ctx = context;
+  if (quality && !createScene) throw new Error('Ember scenery must be prepared before activation.');
+  const ember = createScene?.(images, artPack!.environment!);
+  const baseline = artPack && !Object.keys(images).length ? createImageResource(artPack.images, d => validateArtPack(artPack,d)) : undefined;
+  const gemArt = artPack?.objects?.gem ? undefined : createImageResource({gem:new URL('./art/grove/gem.svg',import.meta.url).href}, d => d.gem?.width === 32 && d.gem.height === 32 ? [] : ['Invalid XP gem']);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
   const observations = createAnimationObservations();
   let effects: Extract<GameEvent, { x: number }>[] = [];
@@ -45,7 +50,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
   function sprite(role: ActorRole, id: string | number, time: number, fallbackRadius: number, color: string, hitAt?: number, attackAt?: number) {
     const observation = observations.get(id);
     if (!artPack) return;
-    const art = artPack.actors[role];
+    const art = artPack.actors[role] ?? artPack.actors.crawler;
     const { clip, age } = actorAnimation(art, observation, time, hitAt, attackAt);
     ctx.save();
     if (art.orientation === 'rotate') ctx.rotate(observation.angle);
@@ -53,8 +58,31 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
     if (!Object.keys(images).length && !Object.keys(baseline?.images ?? {}).length) {
       circle(0, 0, fallbackRadius, color);
       circle(fallbackRadius * 0.4, 0, 3, theme.palette.hit);
-    } else stamp({ ...art, clip }, age);
+    } else stamp({ ...art, clip }, quality && reducedMotion.matches ? 0 : age);
     ctx.restore();
+  }
+  function drawKeeper(run: Readonly<RunState>) {
+    const palette = theme.palette;
+    const { x, y } = run.player;
+    const light = ctx.createRadialGradient(x, y, 5, x, y, 90);
+    light.addColorStop(0, palette.light + '22'); light.addColorStop(1, palette.light + '00');
+    circle(x, y, 90, light);
+    if (!quality) { ring(x, y, 19, '#07101c', 3); ring(x, y, 19, palette.light, 1); }
+    if (run.player.shield > 0) ring(x, y, 23, palette.spark, 1.5);
+    if (ember) ember.shadow(ctx, x, y + 6, 13);
+    else circle(x, y + 6, 13, '#09151370');
+    ctx.save();
+    ctx.translate(x, y);
+    if (quality) { ctx.shadowColor = '#ffca7b60'; ctx.shadowBlur = 8; }
+    sprite('keeper', 'keeper', run.elapsed, clearing.keeper.radius, palette.light,
+      effects.findLast(effect => effect.type === 'player-hit')?.at, effects.findLast(effect => effect.type === 'shot')?.at);
+    if (effects.some(effect => effect.type === 'player-hit' && run.elapsed - effect.at < visualTiming.hit)) {
+      ring(0, 0, 16, palette.hit, 3);
+    }
+    ctx.restore();
+
+    // A steady lantern core remains readable at narrow viewport scales.
+    if (!quality && artPack?.sampling !== 'nearest') circle(x, y, 5, palette.light);
   }
   function environment(time: number) {
     const environment = artPack!.environment!;
@@ -99,7 +127,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
     },
-    dispose() { baseline?.dispose(); gemArt.dispose(); canvas.remove(); canvas.width = canvas.height = 1; effects = []; },
+    dispose() { ember?.dispose(); baseline?.dispose(); gemArt?.dispose(); canvas.remove(); canvas.width = canvas.height = 1; effects = []; },
     observe(run: Readonly<RunState>) { observations.observe(run); },
     reset(run: Readonly<RunState>) { effects = []; observations.reset(run); },
     consume(events: readonly GameEvent[]) {
@@ -118,7 +146,8 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       ctx.fillStyle = palette.floor;
       ctx.fillRect(0, 0, width, height);
 
-      if (artPack?.environment) environment(run.elapsed);
+      if (ember) ember.ground(ctx, reducedMotion.matches ? 0 : run.elapsed);
+      else if (artPack?.environment) environment(run.elapsed);
       else {
         const glow = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, 540);
         glow.addColorStop(0, palette.boundary + '25');
@@ -170,8 +199,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       }
 
       }
-      ctx.strokeStyle = palette.boundary; ctx.lineWidth = 2;
-      ctx.strokeRect(-2, -2, width + 4, height + 4);
+      if (!quality) { ctx.strokeStyle = palette.boundary; ctx.lineWidth = 2; ctx.strokeRect(-2, -2, width + 4, height + 4); }
 
       // Warnings are simulation-owned pending entries, not hittable enemies.
       for (const entry of [...run.entries, ...run.enemies.filter(enemy => enemy.entryDelay > 0).map(enemy => ({ ...enemy, remaining: enemy.entryDelay }))]) {
@@ -182,15 +210,18 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         ctx.moveTo(entry.x, entry.y - 8); ctx.lineTo(entry.x, entry.y + 8); ctx.stroke();
       }
       effects = effects.filter(effect => run.elapsed - effect.at < visualTiming.defeat);
-      for (const enemy of run.enemies) {
+      let keeperDrawn = false;
+      for (const enemy of quality ? [...run.enemies].sort((a, b) => a.y - b.y) : run.enemies) {
+        if (quality && !keeperDrawn && enemy.y > run.player.y) { drawKeeper(run); keeperDrawn = true; }
         const hit = effects.some(effect => effect.type === 'enemy-hit'
           && run.elapsed - effect.at < visualTiming.hit
           && effect.enemyId === enemy.id);
         const data = enemies[enemy.kind];
-        circle(enemy.x, enemy.y + data.radius * 0.65, artPack?.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
+        if (ember) ember.shadow(ctx, enemy.x, enemy.y + 5, data.radius);
+        else circle(enemy.x, enemy.y + data.radius * 0.65, artPack?.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
         ctx.save(); ctx.translate(enemy.x, enemy.y);
         if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
-        sprite(data.elite ? 'elite' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? palette.elite : palette.enemy,
+        sprite(data.elite ? 'elite' : enemy.kind === 'charger' ? 'charger' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? palette.elite : palette.enemy,
           effects.findLast(effect => effect.type === 'enemy-hit' && effect.enemyId === enemy.id)?.at);
         if (hit) { ctx.globalAlpha = 0.85; ring(0, 0, data.radius + 2, palette.hit, 2); }
         ctx.restore();
@@ -200,30 +231,43 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art ? art.footprint[1] * art.anchor[1] + 8 : 0));
         }
         if (enemy.health < data.maxHealth) {
-          const art = artPack?.actors[data.elite ? 'elite' : 'crawler'];
+          const art = artPack?.actors[data.elite ? 'elite' : enemy.kind === 'charger' && artPack.actors.charger ? 'charger' : 'crawler'];
           const barY = enemy.y - Math.max(data.radius + 8, art ? art.footprint[1] * art.anchor[1] + 3 : 0);
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2, 3);
           ctx.fillStyle = palette.damage; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
         }
       }
+      if (quality && !keeperDrawn) drawKeeper(run);
+      ember?.atmosphere(ctx, run, reducedMotion.matches);
       for (const gem of run.gems) {
-        const image = gemArt.images.gem;
-        if (image) ctx.drawImage(image, gem.x - 7, gem.y - 7, 14, 14);
+        ember?.light(ctx, gem.x, gem.y, 18, palette.gem, .45);
+        if (artPack?.objects?.gem) {
+          ctx.save(); ctx.translate(gem.x, gem.y); stamp(artPack.objects.gem, run.elapsed); ctx.restore();
+        } else {
+          const image = gemArt?.images.gem;
+          if (image) ctx.drawImage(image, gem.x - 7, gem.y - 7, 14, 14);
+        }
       }
       for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
         ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
         for (let index = 0; index < haloLights(slot.rank); index++) {
           const at = orbitPosition(run, slot, index);
-          circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
-          circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
+          ember?.light(ctx, at.x, at.y, 28, palette.halo, .9);
+          if (artPack?.objects?.halo) {
+            ctx.save(); ctx.translate(at.x, at.y); stamp(artPack.objects.halo, run.elapsed); ctx.restore();
+          } else {
+            circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
+            circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
+          }
         }
       }
       for (const projectile of run.projectiles) {
+        ember?.light(ctx, projectile.x, projectile.y, 24, projectile.weapon === 'shard' ? palette.shard : palette.spark, .8);
         if (projectile.weapon === 'shard') {
           ctx.save(); ctx.translate(projectile.x, projectile.y); ctx.rotate(Math.atan2(projectile.dy, projectile.dx));
-          ctx.fillStyle = palette.shard;
-          ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -4); ctx.lineTo(-2, 0); ctx.lineTo(-5, 4); ctx.closePath(); ctx.fill();
+          if (artPack?.objects?.shard) stamp(artPack.objects.shard, run.elapsed);
+          else { ctx.fillStyle = palette.shard; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -4); ctx.lineTo(-2, 0); ctx.lineTo(-5, 4); ctx.closePath(); ctx.fill(); }
           ctx.restore(); continue;
         }
         const arc = projectile.chainLimit > 1;
@@ -239,6 +283,16 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
           : effect.type === 'pulse' ? visualTiming.pulse
           : effect.type === 'shot' ? visualTiming.shot : visualTiming.hit;
         if (age >= duration) continue;
+        if (ember && !reducedMotion.matches) {
+          ember.light(ctx, effect.x, effect.y, effect.type === 'pulse' ? effect.radius : 32, effect.type === 'pickup' ? palette.gem : palette.pulse, (1 - age / duration) * .75);
+          if (effect.type === 'enemy-defeated') for (let i = 0; i < 6; i++) {
+            const angle = i * Math.PI / 3 + effect.x;
+            const distance = 5 + age * 52;
+            ctx.fillStyle = palette.light; ctx.globalAlpha = (1 - age / duration) * .7;
+            ctx.fillRect(effect.x + Math.cos(angle) * distance, effect.y + Math.sin(angle) * distance, 2, 2);
+          }
+          ctx.globalAlpha = 1;
+        }
         ctx.save(); ctx.globalAlpha = 1 - age / duration;
         ctx.strokeStyle = effect.type === 'player-hit' ? palette.damage
           : effect.type === 'enemy-defeated' ? palette.enemy : effect.type === 'pickup' ? palette.gem : effect.type === 'pulse' ? palette.pulse : palette.spark;
@@ -247,25 +301,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         ctx.restore();
       }
 
-      const { x, y } = run.player;
-      const light = ctx.createRadialGradient(x, y, 5, x, y, 90);
-      light.addColorStop(0, palette.light + '22'); light.addColorStop(1, palette.light + '00');
-      circle(x, y, 90, light);
-      ring(x, y, 19, '#07101c', 3);
-      ring(x, y, 19, palette.light, 1);
-      if (run.player.shield > 0) ring(x, y, 23, palette.spark, 1.5);
-      circle(x, y + 6, 13, '#09151370');
-      ctx.save();
-      ctx.translate(x, y);
-      sprite('keeper', 'keeper', run.elapsed, clearing.keeper.radius, palette.light,
-        effects.findLast(effect => effect.type === 'player-hit')?.at, effects.findLast(effect => effect.type === 'shot')?.at);
-      if (effects.some(effect => effect.type === 'player-hit' && run.elapsed - effect.at < visualTiming.hit)) {
-        ring(0, 0, 16, palette.hit, 3);
-      }
-      ctx.restore();
-
-      // A steady lantern core remains readable at narrow viewport scales.
-      if (artPack?.sampling !== 'nearest') circle(x, y, 5, palette.light);
+      if (!quality) drawKeeper(run);
     },
   };
 }

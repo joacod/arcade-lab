@@ -1,5 +1,5 @@
 /** Game-owned artwork. All sizes here are visual, never physical collision bodies. */
-export type ActorRole = 'keeper' | 'crawler' | 'elite';
+export type ActorRole = 'keeper' | 'crawler' | 'charger' | 'elite';
 export type FrameRect = readonly [x: number, y: number, width: number, height: number];
 export interface ArtFrame { readonly image: string; readonly rect: FrameRect }
 export interface Clip {
@@ -23,8 +23,11 @@ export interface Decoration {
 export interface ArtPack {
   readonly images: Readonly<Record<string, string>>;
   readonly sampling: 'nearest' | 'smooth';
-  readonly actors: Readonly<Record<ActorRole, ActorArt>>;
+  readonly actors: Readonly<Record<'keeper' | 'crawler' | 'elite', ActorArt> & { charger?: ActorArt }>;
+  readonly objects?: Readonly<Partial<Record<'gem' | 'halo' | 'shard', Decoration>>>;
   readonly environment?: {
+    /** Optional full-arena painted ground, separate from collision geometry. */
+    readonly plate?: ArtFrame;
     readonly tileSize: number;
     readonly groundOpacity?: number;
     readonly border?: Decoration;
@@ -59,9 +62,9 @@ export function validateArtPack(pack: ArtPack, dimensions: ImageDimensions): str
     if (!value.anchor.every(v => Number.isFinite(v) && v >= 0 && v <= 1)
       || !value.footprint.every(v => Number.isFinite(v) && v > 0)) errors.push(`${path}: invalid anchor or footprint`);
   }
-  for (const role of ['keeper', 'crawler', 'elite'] as const) {
+  for (const role of ['keeper', 'crawler', 'charger', 'elite'] as const) {
     const actor = pack.actors[role];
-    if (!actor) { errors.push(`${role}: missing actor`); continue; }
+    if (!actor) { if (role !== 'charger') errors.push(`${role}: missing actor`); continue; }
     geometry(actor, role);
     for (const [name, value] of Object.entries(actor.clips)) clip(value, `${role}.${name}`);
     if (typeof actor.orientation === 'object') for (const direction of ['up', 'down', 'left', 'right'] as const) {
@@ -70,8 +73,17 @@ export function validateArtPack(pack: ArtPack, dimensions: ImageDimensions): str
       else { clip(clips.idle, `${role}.${direction}.idle`); clip(clips.move, `${role}.${direction}.move`); }
     }
   }
+  for (const [role, item] of Object.entries(pack.objects ?? {})) {
+    geometry(item, role); clip(item.clip, role);
+  }
   if (pack.environment) {
-    if (!Number.isFinite(pack.environment.tileSize) || pack.environment.tileSize <= 0 || !pack.environment.ground.length) errors.push('environment: invalid tiles');
+    const plate = pack.environment.plate;
+    if (plate) {
+      clip({ frames: [plate], frameSeconds: 1, loop: true }, 'environment.plate');
+      const size = dimensions[plate.image];
+      if (size?.width !== plate.rect[2] || size?.height !== plate.rect[3]) errors.push('environment.plate: invalid decoded dimensions');
+    }
+    if (!Number.isFinite(pack.environment.tileSize) || pack.environment.tileSize <= 0 || (!pack.environment.ground.length && !plate)) errors.push('environment: invalid tiles');
     if (pack.environment.groundOpacity !== undefined && (!Number.isFinite(pack.environment.groundOpacity) || pack.environment.groundOpacity < 0 || pack.environment.groundOpacity > 1)) errors.push('environment: invalid ground opacity');
     const decorations = [...pack.environment.ground, ...pack.environment.perimeter];
     if (pack.environment.border) decorations.push(pack.environment.border);

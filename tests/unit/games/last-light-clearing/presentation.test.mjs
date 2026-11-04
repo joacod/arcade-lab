@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { configurations, clearing, enemies } from '../../../../src/games/last-light-clearing/content.ts';
 import { createRun, stepRun, pauseRun, takeEvents } from '../../../../src/games/last-light-clearing/game.ts';
 import { content, validateContent } from '../../../../src/games/last-light-clearing/content-validation.ts';
-import { themes, emberRuins } from '../../../../src/games/last-light-clearing/themes.ts';
+import { themes, emberRuins, rekindledArt } from '../../../../src/games/last-light-clearing/themes.ts';
 import { validateArtPack, clipFrame, row } from '../../../../src/games/last-light-clearing/art-pack.ts';
 import { createAnimationObservations, actorClip } from '../../../../src/games/last-light-clearing/animation.ts';
 import { prepareAssets } from '../../../../src/games/last-light-clearing/assets.ts';
@@ -33,7 +33,12 @@ test('round profiles validate and preserve start, pause, outcome precedence and 
 });
 
 test('art manifests validate decoded bounds, clips, pivots and visual footprints independently of bodies', () => {
-  for (const theme of [themes.normal, themes.quality]) assert.deepEqual(validateArtPack(theme.art, { grove: {width:256,height:192}, gem: {width:32,height:32} }), []);
+  for (const theme of [themes.normal]) assert.deepEqual(validateArtPack(theme.art, { grove: {width:256,height:192}, gem: {width:32,height:32} }), []);
+  const painted = { keeper: { width: 1024, height: 512 }, goblins: { width: 1024, height: 512 },
+    elite: { width: 1024, height: 512 }, props: { width: 768, height: 512 }, ground: { width: 1536, height: 1024 } };
+  assert.deepEqual(validateArtPack(rekindledArt, painted), []);
+  assert.match(validateArtPack(rekindledArt, { ...painted, ground: { width: 1, height: 1 } }).join(';'), /plate/);
+  assert.match(validateArtPack(rekindledArt, { ...painted, goblins: { width: 1, height: 1 } }).join(';'), /charger/);
   assert.deepEqual(validateArtPack(emberRuins.art, { dungeon: { width: 512, height: 512 } }), []);
   const invalid = structuredClone(emberRuins.art);
   invalid.actors.keeper.clips.move.frames[3].rect[0] = 510;

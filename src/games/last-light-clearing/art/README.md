@@ -23,17 +23,15 @@ The loader validates referenced frames, pivots, footprints and timing. Initial i
 
 ## Interface styling
 
-Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, Glass accompanies Quality, and Abyss accompanies Custom.
+Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, Ember accompanies Quality, and Abyss accompanies Custom.
 
-## Prism Garden sources
+## Rekindled scenery and retained sprites
 
-`../three/floor.ts` generates cached paving, gold rings and botanical roots. The [game guide](../../../../docs/games/last-light-clearing/README.md#quality-direction-prism-garden) owns the Garden brief, scene composition and renderer details.
+Quality uses a new [illustrated actor, prop and spell bundle](rekindled/README.md) based on Ember Ruins' knight, goblin and demon designs. It does not load `dungeon.png`. New complete character cels, a separate charger, bronze-and-stone props, gems, Halo bodies and Shard projectiles share a modern painted finish. `../ember-scene.ts` composes the ground, new perimeter props, cached soft light stamps and a fixed ember field. Authored sprite footprints and animation layout remain separate from physical geometry. The [game guide](../../../../docs/games/last-light-clearing/README.md#quality-direction-ember-ruins--rekindled) owns the presentation brief.
 
-## Grove and Prism Garden sprite sources
+## Normal sprite sources
 
-`grove/generate.mjs` authors connected whole-creature contours. It exports a 256 × 192 sheet: four 64-square cels in each of three rows, Keeper, crawler and elite. Normal uses `actors.svg`; Quality uses the shaded `actors-quality.svg`. The pivot is the cell center. Footprints are 40, 38 and 72 world units respectively; physical radii remain in content. Idle and reduced motion hold the first cel; movement cycles at 0.12 seconds per cel. The gem image is 32-square and drawn at its own gameplay footprint.
-
-Quality puts complete cels on flat image planes and batches them by role/frame. It has no leg joints, pose trees or body-part meshes. Its scenery and spell geometry remain independent. Custom retains the deliberately shader-authored Abyssal Bloom organism experiment.
+`grove/generate.mjs` authors connected whole-creature contours in `actors.svg`. It exports a 256 × 192 sheet: four 64-square cels in each of three rows, Keeper, crawler and elite. The pivot is the cell center. Footprints are 40, 38 and 72 world units respectively; physical radii remain in content. Idle uses the first cel; movement cycles at 0.12 seconds per cel. The shared gem image is 32-square and drawn at its own gameplay footprint.
 
 ```sh
 node src/games/last-light-clearing/art/grove/generate.mjs
