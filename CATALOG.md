@@ -1,6 +1,12 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** in its title, pause or result menu returns to the collection; each visit starts a fresh session. The application fills the browser viewport. Each menu has one **Theme** selector, sound/fullscreen controls and expandable control instructions. Theme changes retain the paused run; Resume or P continues it. P pauses/resumes and F toggles fullscreen in every game. Escape pauses when delivered; browsers may use Escape to leave fullscreen. Missing modes are visible as disabled options.
+Choose a game from the collection screen. **Game selection** returns there; each visit starts a fresh session. Games fill the viewport, with fullscreen including the arena, HUD and menus where supported.
+
+Every game menu provides Theme, sound/fullscreen controls and expandable control instructions. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable.
+
+Theme changes retain the paused run. Restart creates a fresh run while keeping the selected theme for this visit. Missing themes are disabled; a failed replacement keeps the working presentation, and a graphics failure pauses play and restores Normal.
+
+The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
@@ -11,7 +17,7 @@ Choose a game from the collection screen. **Game selection** in its title, pause
 | Obsidian Duel | Tempest citadel | Eclipse Foundry | Moonfall Sanctum, painted fighters in an illustrated lunar sanctuary |
 | Blastline | Iron coast | Not available | Not available |
 
-All games start in Normal. Normal, Assets and Quality are the three standard modes. Custom is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** is a polished modern visual interpretation of the game, with exceptional artwork and memorable animation, atmosphere or effects. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. These are the direction for future work, while the table and game descriptions record today's implementations. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
 All artwork required by enabled presentations ships with the repository.
 
@@ -20,20 +26,15 @@ All artwork required by enabled presentations ships with the repository.
 
 ![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/games/last-light-clearing/last-light-clearing.png)
 
-**Fullscreen** includes the arena, HUD and menus when supported by the browser.
-
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution, lane-charging briar creatures and a late elite ground-slam encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
-Normal uses procedural Canvas art without image loads. Assets supplies animated pixel characters and scenery, while Quality uses Prism Garden. The optional Custom presentation, Abyssal Bloom, uses a procedural luminous field and shader-rendered organisms and requires WebGPU. Each mode includes matching HUD styling. The camera follows the Keeper consistently across modes. Round cards compare both modes before starting; theme selection survives restarts within the session. Failed replacements retain the working presentation; graphics loss restores Normal.
+The camera follows the Keeper. Round cards compare the two round lengths before starting.
 
 | Control | Action |
 | --- | --- |
 | WASD / arrow keys | Move |
 | Hold and drag in the arena | Move with mouse, touch or pen; release to stop |
-| P / Pause | P pauses/resumes; Pause opens the menu |
 | Click / tap, or arrows + Enter / Space | Choose an upgrade, then release to continue |
-| Tab / Shift+Tab | Focus menu controls |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
 See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork guide](src/games/last-light-clearing/art/README.md).
 
@@ -41,7 +42,7 @@ See [game rules and implementation](docs/games/last-light-clearing/README.md) an
 
 ![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
 
-Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus. Normal uses the original Pacific Run. Assets uses the bundled original Aurora Fleet. Quality's Orbital Foundry adds sculpted Three.js ships, illuminated machinery, a planetary backdrop and bloom; see [artwork guide](src/games/skybreak/art/README.md). All artwork and synthesized sound ship with the game.
+Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus.
 
 | Control | Action |
 | --- | --- |
@@ -49,10 +50,8 @@ Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an arm
 | Space / J | Hold to fire |
 | Shift / K / Roll button | Evade; recharges between rolls |
 | Hold and drag on the playfield | Steer and fire with touch, mouse or pen; release to stop |
-| P / Pause | P pauses/resumes; Pause opens the menu |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
-The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. Focus loss or display changes pause play and clear held input. Restart creates fresh gameplay state. Sound can be muted, and unavailable audio never prevents play. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and source ownership.
+The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and [artwork](src/games/skybreak/art/README.md).
 
 ## Clockwork Hollow
 
@@ -65,10 +64,8 @@ Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** 
 | A/D / left and right arrows | Move |
 | Space / W / Up / Z | Jump; hold for height, release for a short hop |
 | Touch arrows + Jump | Move and jump with independent buttons |
-| P / Pause | P pauses/resumes; Pause opens the menu |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Verdant clockwork. Assets uses Porcelain Bellgarden: an ivory keeper with a coral ribbon, glazed botanical aqueducts, rose-colored kilns and indigo stained-glass towers. All original image artwork ships with the repository; see the [artwork guide](src/games/clockwork-hollow/art/README.md). Quality uses Lumen Conservatory, with layered cathedral gardens, burnished copper, luminous glass and an articulated keeper. Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a final result with score and collection/clean-run distinctions. Restart creates a fresh adventure. Theme changes retain the paused journey and camera; failed image loads keep the working presentation. Focus loss and display changes pause and clear input. AudioBits sound completes all three presentations. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md).
+Six checkpoint lanterns shorten retries. Falling or touching danger ends the attempt; retry returns to the latest lantern and keeps motes, time and missed steps. District bells lead to explicit transitions, then a result with score and collection/clean-run distinctions. See [gameplay and source ownership](docs/games/clockwork-hollow/README.md) and the [artwork guide](src/games/clockwork-hollow/art/README.md).
 
 ## Midnight Circuit
 
@@ -83,10 +80,8 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 | K | Heavy strike |
 | Space, then J / K | Jump, then flying kick |
 | Touch arrows + Strike / Heavy / Jump | Independent movement and action buttons |
-| P / Pause | P pauses/resumes; Pause opens the menu |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal uses the original illustrated Canvas presentation. Assets uses Signal / Rain: original inked fighters, radio-shop facades, transformer bays and repair cases in teal, vermilion and warm cream. Quality uses Afterglow: sculpted fighters, an elevated railway, warm noodle shops and industrial transformer banks, wet-road reflections, soft shadows and restrained bloom, with distance-driven walking across all modes and procedural AudioBits sound. See the [artwork guide](src/games/midnight-circuit/art/README.md) for the bundled image treatment. Theme changes preserve the paused run; unavailable graphics retain a working presentation or restore Normal. Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. Restart creates a fresh run. Focus loss and display changes pause play and clear input. See [gameplay and source ownership](docs/games/midnight-circuit/README.md).
+Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. See [gameplay and source ownership](docs/games/midnight-circuit/README.md) and the [artwork guide](src/games/midnight-circuit/art/README.md).
 
 ## Obsidian Duel
 
@@ -103,10 +98,8 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 | Crouch + J / airborne J or K | Low sweep / overhead jump attack |
 | Shift | Guard; hold crouch as well to stop sweeps |
 | Touch directions + Light / Heavy / Special / Guard | Independent held controls and attack presses |
-| P / Pause | P pauses/resumes; Pause opens the menu |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Tempest citadel and its original fighter costumes, with fixed-length limbs and grounded weight transfer. Assets introduces **Eclipse Foundry**, an original illustrated observatory arena with painted whole-character animation, ivory and turquoise attire for Nera, a charcoal tunic and copper sash for Kael, and authored bolt and contact artwork. **Quality · Moonfall Sanctum** sets the complete painted fighters against an illustrated lunar sanctuary, with wet-floor reflections, mist, warm lamps and custom jade-and-gold contact artwork. Action-specific poses, bounded impact effects and AudioBits sound distinguish misses, contact and guard. The entire fixed arena scales uniformly on narrower screens. Restart starts fresh; Game setup returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md).
+Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. **Game setup** returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
 
 ## Blastline
 
@@ -123,10 +116,8 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | K | Throw a fused grenade |
 | Q | Switch operator after rescuing Bolt |
 | Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
-| P / Pause | P pauses/resumes; Pause opens the menu |
-| F / Fullscreen / Exit fullscreen | Change display mode |
 
-Normal retains Iron coast. Assets and Quality are not yet available. Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

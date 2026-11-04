@@ -1,6 +1,8 @@
-# Artwork and visual definitions
+# Skybreak artwork
 
-Skybreak combines procedural scenery, editable SVG sprites, 3D models and an AI-generated orbital background. All artwork ships with the game. Normal, Assets and Quality use the same simulation, collision geometry, formations, supply schedule and fortress weak points in development and production.
+[Game presentations](../../../../docs/games/skybreak/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
+
+Aurora Fleet’s editable SVG sheets live in `aurora-fleet/`; Orbital Foundry’s background specification and prompt live in [its artwork guide](orbital-foundry/README.md).
 
 ## Aurora Fleet
 
@@ -23,10 +25,6 @@ Frames face north, advance horizontally at 0.09 seconds per frame and freeze at 
 node src/games/skybreak/art/aurora-fleet/generate.mjs
 ```
 
-Generation is an artwork maintenance step. Running or building the game never requires it.
-
 ## Presentation ownership
 
-`../themes.ts` maps Normal to Pacific Run and Assets to `aurora-fleet.ts`. Quality maps to Orbital Foundry, with editable models and an AI-generated background. See [its artwork template and prompt](orbital-foundry/README.md). `../art-pack.ts` defines sprite rectangles, frame stride and timing, source rotation and authored visual footprints. These values never determine physical geometry. `../assets.ts` reuses the shared image loader and validates every frame before replacing the active appearance. A failed selection retains the working images and current run. New selections and session disposal invalidate pending work and release image sources.
-
-Commit replacement art with its role mappings and useful generation or editing instructions. Define its image URLs and roles in the game, preserving the same appearance preparation and ownership boundaries.
+`../themes.ts` maps Assets to `aurora-fleet.ts`. `../art-pack.ts` defines sprite rectangles, frame stride/timing, source rotation and visual footprints; `../assets.ts` validates the sheet layout. The [game guide](../../../../docs/games/skybreak/README.md#presentation-and-source-ownership) owns renderer composition; preparation follows the [shared replacement contract](../../../../docs/architecture.md#replacement-and-recovery).

@@ -1,12 +1,12 @@
 # Blastline
 
-[Source](../../../src/games/blastline/) | [Catalog](../../../CATALOG.md)
+[Source](../../../src/games/blastline/) | [Controls](../../../CATALOG.md#blastline) | [Shared contracts](../../architecture.md)
 
 An original Canvas 2D run-and-gun operation through **Border Station** and **Foundry Run**. The intended first-play pace is about 3–5 minutes. Destroy glowing power relays, rescue Bolt at the border, break the foundry's Bastion and reach each extraction pad. Completing a mission's requirements starts the collapse countdown. Extraction includes a short departure before the mission result.
 
 ## Playing
 
-A/D or left/right runs, Space jumps, and releasing Space shortens the jump. Hold J to fire. W/up and S/down aim vertically while stationary and diagonally while moving. K throws a fused grenade. Reach Bolt to rescue him and switch automatically to his launcher; Q then swaps operators. Touch directions, Jump, Fire, Grenade and Switch own independent pointers. P pauses/resumes. Escape pauses when delivered by the browser. Menus offer Resume, Restart, Game selection, sound mute and fullscreen.
+Release Jump for a shorter hop. Reach Bolt to rescue him and switch automatically to his launcher; Switch then swaps operators. Touch movement and actions support simultaneous holds.
 
 Nova's accurate automatic rifle opens small holes through sustained fire. Bolt's slower rockets damage groups of tiles and machines. A quick Fire tap just before weapon recovery ends is remembered briefly and fires once using the current aim. Holding Fire repeats normally; releasing a hold stops it. Pause, death and operator changes clear pending shots. Operator explosives are safe at close range; volatile barrels and machine attacks hurt. Guards commit to short bursts, while heavy units and the Bastion mark a target before firing stronger shells. Move away from the warning line rather than standing in its path.
 
@@ -16,7 +16,9 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 
 ## Theme modes
 
-**Normal** keeps Iron coast, the original industrial skies, weather and operator colors. Arctic relay was an alternate palette for the same renderer and has been consolidated into Normal. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
+Artwork must distinguish breakable brick and armored cover from structural steel, with aim, warnings and extraction cues visible through debris. The industrial coast is the starting setting for future art direction.
+
+**Normal** keeps Iron coast, the original industrial skies, weather and operator colors. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
 
 ## Source ownership
 
@@ -38,18 +40,18 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 
 Terrain copies authored materials and health into each run. Axis-separated leading-edge sweeps query the current grid. Projectile segments test the occupied tiles in their swept bounds and choose the earliest terrain or actor contact. Contact removes or damages tiles before subsequent shots query them. Explosions use circle/rectangle intersection and an iterative barrel queue. A barrel is marked before enqueue, preventing cycles and repeated detonation. The queue can hold the finite projectile limit plus every authored barrel; all work resolves in simulation before presentation events are consumed.
 
-Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio coalesces cues, orders milestones and heavy impacts before routine fire, throttles repeats and admits a small number of cues per batch through the shared voice-limited owner.
+Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire.
 
-Visuals and cover artwork use editable geometry; sound uses procedural recipes.
+Visuals and cover artwork use editable geometry.
 
 ## Architecture decisions
 
 Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
-Appearance changes use the renderer’s `applyTheme` without replacing the run or terrain. Theme data owns visual material colors; collision and destructibility remain in gameplay content. Replacement artwork stays local, reusing the shared image loader only if it needs image preparation.
+Appearance changes use `presentation.ts`’s `applyTheme` on the existing terrain drawing; `themes.ts` maps material and operator colors.
 
-The local state contract connects movement, combat and objectives. Browser composition reuses the shared host, clock, input, focus/lifetime bindings and AudioBits owner. Fixed populations and visible tile traversal bound the work.
+The local state contract connects movement, combat and objectives. Fixed populations and visible tile traversal bound the work.
 
 ## Local verification
 
-Local checks exercise the complete authored operation, destructive geometry and population limits. Chromium checks cover input, transitions, menu availability and the live operation, and teardown. See the [shared commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/blastline/game.test.mjs) exercise the complete operation, destructive geometry and population limits; [browser checks](../../../tests/browser/games/blastline/game.spec.ts) exercise the live operation and controls. Use the [shared verification commands](../../architecture.md#local-verification).

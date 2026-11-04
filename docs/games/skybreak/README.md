@@ -1,14 +1,12 @@
 # Skybreak
 
-[Source](../../../src/games/skybreak/) | [Catalog](../../../CATALOG.md)
+[Source](../../../src/games/skybreak/) | [Controls](../../../CATALOG.md#skybreak) | [Shared contracts](../../architecture.md)
 
-A vertical arcade shooter with interchangeable Canvas 2D and Three.js appearances. See [artwork guide](../../../src/games/skybreak/art/README.md) and the [game catalog](../../../CATALOG.md) for controls.
+A vertical arcade shooter with Canvas 2D and Three.js appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) owns the Aurora Fleet sheets and Orbital Foundry background contract.
 
 ## Theme modes
 
-**Normal** keeps Pacific Run and its procedural aircraft and ocean. **Assets** selects bundled Aurora Fleet, combining six committed, original animated SVG sprite sheets with orbital scenery. **Quality** selects Orbital Foundry: sculpted Three.js ships, an original deep-space background, illuminated machinery and combat effects. All artwork ships with the repository. Theme selection is directly in the menu.
-
-Switching keeps the current sortie, score, health, weapons, formation progress and boss state. Resume continues from the same moment. Restart begins a fresh sortie while retaining the selected appearance. Image preparation leaves the current renderer active; failed loads restore the selected field and report a notice. Later selections and disposal invalidate pending image work. Appearance choices last for the session.
+**Normal** uses Pacific Run’s procedural aircraft and ocean. **Assets · Aurora Fleet** combines six animated SVG sheets with orbital scenery. **Quality · Orbital Foundry** uses sculpted Three.js ships and an illustrated deep-space background. Pacific Run’s aerial sortie and ocean are the starting setting for future art direction; the orbital treatments describe the current adaptations.
 
 ![Aurora Fleet: ivory fighter and distinct enemy ships above a blue planet](skybreak-starfall.png)
 
@@ -18,9 +16,9 @@ Quality places the sortie above an icy planet and a vast orbital shipyard. A dar
 
 Beveled armor, inset canopies, gold trim, vents, emissive drives and role-specific wings give the fleet a cohesive material language. Banking and evasive rolls reveal decorative depth. The flagship adds segmented armor, engine housings that follow the actual moving weak points, and a shrinking wreck during destruction. Cyan drive plumes, a short flight trail and event-driven expanding shockwaves complement existing impacts and fire blooms. Restrained bloom touches bright propulsion and impacts; crisp Canvas projectiles, supply symbols, protection rings and attack warnings remain above it. The HUD and menus use matching dark metal surfaces and pale cyan accents.
 
-The orthographic camera shares `flightView` with the Canvas tactical layer. Depth never changes projected collision centers or physical bodies. The host owns one loop. Cosmetic motion and effects use active sortie time, freeze on pause and reset on restart. Reduced motion freezes scenery, exhaust variation and banking, removes trails/shockwaves/flashes, and keeps moving threats, fortress weak points, warnings and immunity cues visible.
+The orthographic camera shares `flightView` with the Canvas tactical layer. Reduced motion freezes scenery, exhaust variation and banking, and removes trails, shockwaves and flashes.
 
-Quality lazily imports `quality/foundry.ts` and loads its validated background. A detached renderer draws the current sortie before activation. Failure keeps the current mode; superseding, starting/resuming or leaving invalidates pending work. WebGL context loss or draw failure pauses the sortie and restores Normal with a status notice. Quality can then be selected again. Models share geometry and materials, ship parts batch by material, actors are pooled, trails and shockwaves are bounded, and bloom buffers have a capped resolution. Geometry, textures, passes, buffers, listeners, image sources and graphics contexts are released when replaced or unmounted.
+Quality imports `quality/foundry.ts` and a validated background. Models share geometry/materials, ship parts batch by material, actors are pooled, and bloom resolution is capped. Normal and Assets load no graphics library.
 
 ![Orbital Foundry: sculpted fighters in a readable dark orbital corridor](skybreak-quality.png)
 
@@ -52,22 +50,27 @@ It cycles three readable patterns:
 
 At half hull, fans widen to nine rounds, aimed rounds accelerate, charge shortens from 1.1 to 0.9 seconds, and recovery shortens from 1.7 to 1.1 seconds. The fortress continues its slow lateral movement. Contact with its weak points damages the player; decorative armor does not.
 
-Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destruction state in the simulation drives the bounded explosion sequence. Movement remains available, pause freezes it, and no renderer callback advances it. Victory then awards 1,000 per remaining aircraft plus 250 per hull point. Results show score, flight time, kills, supplies, and the survival bonus. Losing all aircraft or reaching the time limit with the fortress alive ends in defeat. Damage on the kill step resolves before victory.
+Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destruction state in the simulation drives the bounded explosion sequence. Movement remains available during destruction. Victory then awards 1,000 per remaining aircraft plus 250 per hull point. Results show score, flight time, kills, supplies, and the survival bonus. Losing all aircraft or reaching the time limit with the fortress alive ends in defeat. Damage on the kill step resolves before victory.
 
-## Browser ownership and presentation
+## Presentation and source ownership
 
-P pauses/resumes; the visible Pause button opens the menu. Escape also pauses when delivered by the browser, which may instead use it to leave fullscreen. The HUD emphasizes current hull above remaining lives, with a warm warning at critical hull.
+The HUD emphasizes hull above remaining lives, with a warm warning at critical hull. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
 
-The session reuses the browser host, fixed-step clock, and shared AudioBits session owner. Collision math comes from the shared pure helper. All aircraft, drops, weapons, waves, scoring, roll, boss behavior, action input, UI, and presentation stay local. Simulation imports only typed content and pure collision math. Restart reconstructs the entire run; no saved format is introduced.
+Deep reef ribbons, currents, island shelves, clouds, aircraft shadows and rotating nacelle rings are procedural Canvas scenery. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
-One uniform transform scales and centers the portrait field. Relative drag displacement stays in CSS pixels. Holding a movement pointer fires; a second touch can roll. Cancellation releases capture. Fullscreen is available from the menus when supported and includes the playfield, HUD and controls. Pause, hidden pages, focus loss, layout changes and fullscreen transitions clear input and catch-up time. Only explicit Resume continues. A rejected fullscreen request reports a notice and leaves viewport play available. Returning to game selection aborts listeners and releases the frame, canvas, and audio context. Normal and Assets load no graphics library. Only Quality imports Three.js and its postprocessing passes.
+Dry gun transients leave room for metal impacts, enemy blasts, hull fractures and slipstream rolls. Armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. The sound adapter coalesces each cue per frame, caps voices at 12 and uses restrained world-space stereo placement.
 
-Deep reef ribbons, currents, island shelves, clouds, aircraft shadows, rotating nacelle rings, glow, and flashes are procedural Canvas cosmetics. Particles are capped at 180; fortress destruction adds only nine analytic fire blooms. Effects age in active run time, so pause freezes them. Sound coalesces each cue per frame, caps total voices at 12, and retains no backlog. Dry, short gun transients leave room for filtered metal impacts, low enemy blasts, hull fractures and slipstream rolls. Boss armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. Routine cues have game-owned cooldowns and restrained world-space stereo placement; milestones replace combat tails. Audio initialization failure leaves play available.
-
-The renderer follows the current reduced-motion preference: decorative ocean drift, banking, roll spin, particles, the roll-ready outline and damage flashes are suppressed. Enemy movement, projectiles, attack lanes, filling muzzle cells, the recharge bar and the roll/immunity ring remain visible gameplay cues. The same tactical Canvas layer supplies firing preparation and roll readiness in Normal, Assets and Quality.
-
-Change balance, supply deadlines, collision sizes, and formations in `src/games/skybreak/content.ts`; explicit behavior and rules in `game.ts`; appearance definitions in `themes.ts` and `art/`; image ownership/validation in `assets.ts` and `art-pack.ts`; Canvas drawing/effects in `presentation.ts`, cached Assets scenery in `space-scene.ts`, and Quality rendering/models in `quality/`; the renderer boundary in `flight-presentation.ts`; AudioBits recipes in `sound-recipes.ts` and event policy in `sound.ts`; menus/HUD in `ui.ts` and scoped `style.css`; browser input and composition in `input.ts` and `app.ts`.
+| Responsibility | Owner in `src/games/skybreak/` |
+| --- | --- |
+| Balance, supply deadlines, collision sizes and formations | `content.ts` |
+| Sortie, weapons, roll, boss patterns and scoring | `game.ts` |
+| Appearance definitions and sheet validation | `themes.ts`, `assets.ts`, `art-pack.ts`, `art/` |
+| Canvas drawing/effects and cached orbital scenery | `presentation.ts`, `space-scene.ts` |
+| Quality rendering/models and renderer contract | `quality/`, `flight-presentation.ts` |
+| Recipes and cue policy | `sound-recipes.ts`, `sound.ts` |
+| Menus, HUD and styles | `ui.ts`, `style.css` |
+| Action translation and session composition | `input.ts`, `app.ts` |
 
 ## Local verification
 
-Local checks cover combat, pickups, respawn, boss patterns and scoring. Chromium checks cover controls, transitions and session cleanup. See [shared commands](../../architecture.md#local-verification) and [audio ownership](../../architecture.md#sound).
+The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover sheet contracts. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Orbital Foundry recovery. Use the [shared verification commands](../../architecture.md#local-verification).

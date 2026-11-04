@@ -1,12 +1,12 @@
 # Last Light Clearing
 
-[Source](../../../src/games/last-light-clearing/) | [Catalog](../../../CATALOG.md)
+[Source](../../../src/games/last-light-clearing/) | [Controls](../../../CATALOG.md#last-light-clearing) | [Shared contracts](../../architecture.md)
 
-The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](../../../src/games/last-light-clearing/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn is a three-minute round; Brief dusk supplies a shorter round through the same implementation. Every appearance uses the same rules. See the [game catalog](../../../CATALOG.md) for controls and [artwork guide](../../../src/games/last-light-clearing/art/README.md) for artwork.
+The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](../../../src/games/last-light-clearing/content.ts), including the Keeper, enemies, weapons, upgrades, evolution recipe, XP progression, and named round configurations. Until dawn is a three-minute round; Brief dusk supplies a shorter round through the same implementation. See the [artwork guide](../../../src/games/last-light-clearing/art/README.md) for the Ember Ruins pack contract.
 
 ## Gameplay semantics
 
-- Movement normalizes diagonals and preserves proportional analog strength. Body radii, speeds, range, arena bounds, timers, and progression stay independent of presentation.
+- Movement normalizes diagonals and preserves proportional analog strength.
 - Spark targets the nearest living enemy and gains faster cadence at higher ranks. Halo gains additional orbiting contact bodies and retains shared per-target hit windows across lights, upgrades and revolutions. Pulse gains radius but samples its circle once per activation, including enemy body radii. Shard starts with cardinal shots and adds evenly spaced directions at higher ranks. Fractional damage rounds up. Upgrade cards preview effective damage and coverage/cadence changes, including Power rounding.
 - Each death drops one gem. Attraction persists after the Keeper moves away, and collection batches same-tick XP. Excess XP survives queued level choices. Choices stop gameplay, offer three distinct effective upgrades, and require releasing confirmation before continuing. Only offered IDs can apply.
 - Every offer reserves a support choice alongside weapon acquisition/ranks. Support rotates through Power, Reach and Recovery, with Lens available during evolution progression. Low health prioritizes Recovery immediately. Recovery, Power and Reach remain repeatable. Unused recovery becomes shield; Reach survives acquiring Lens. The HUD groups equipped weapons and ranks with progress toward Arc Spark, and shows shield quantity; absorption and health loss have distinct feedback.
@@ -15,15 +15,15 @@ The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](.
 - Briar chargers join after the opening and become more frequent as pursuit pressure grows. Their forked crest identifies them across themes. A dashed lane locks when wind-up begins; the charger strikes along that fixed direction, then rests. The elite commits a marked ground slam to a fixed circle. Step sideways out of a lane or leave the slam ring, then use the harmless recovery window. Only one special attack can commit at a time. Killing its owner cancels an attack; attacks and contact share shield absorption and immunity.
 - Shield and shared contact immunity apply before health. Lethal final-tick contact takes precedence over victory. Outcomes stop attacks, entries, and pickups, discard pending choices, and freeze results. Retry constructs a fresh run.
 
-## Browser behavior
+## Opening and upgrade flow
 
-Starting positions and body geometry live in `content.ts`. A nearby opening gem, a restrained guide line and a contextual prompt introduce collection before the first upgrade. Entry selection samples safe world edges with a run-owned seed, varying approach angles while preserving separation. Spawn rules and global targeting use world coordinates, regardless of the presentation.
+Starting positions and body geometry live in `content.ts`. A nearby opening gem, a restrained guide line and a contextual prompt introduce collection before the first upgrade. Entry selection samples safe world edges with a run-owned seed, varying approach angles while preserving separation.
 
 Projectile-radius collision uses a swept intersection, with movement limited to remaining projectile lifetime. Death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.
 
 Upgrade cards distinguish new weapons, rank changes and support effects, with a short purpose followed by the simulation’s exact stat preview. Equipped weapons and Arc Spark requirements stay beside the choices. The applied card is marked while confirmation is held; release returns to action or the next earned choice. This presentation lives in `ui.ts` and `style.css`, independently of progression rules.
 
-P pauses/resumes; Escape pauses when delivered by the browser. Pause/resume and confirmation release follow native browser focus and pointer lifetimes. Focus loss, hiding, and display transitions clear held input and require deliberate Resume, including after a suspended upgrade choice. Gameplay is visual; keyboard-accessible HTML menus and HUD do not provide a nonvisual equivalent of gameplay. Sound uses procedural cues without recordings or ambient music; see [shared audio ownership](../../architecture.md#sound).
+A suspended upgrade choice requires deliberate Resume before confirmation can continue.
 
 ## Camera
 
@@ -39,17 +39,15 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 **Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
 
-Each mode includes its matching HUD styling. The menu offers one Theme selector; the camera follows the Keeper in every mode. Replacements retain the entire run, including active time, positions, health, upgrades and pending state. Only Resume continues play. Clip timing follows active game time, so pausing or backgrounding cannot advance world animation. Source frames, anchors, visual footprints and scenery never change physics or targeting.
-
 ### Quality direction: Prism Garden
 
 An overgrown moonlit sanctuary of jade stone, gold inlays and violet crystal blossoms. The warm, petal-caged lantern Keeper is the focal point. Rose-armored thorn creatures have articulated dark legs and bright paired eyes; the elite wears a crown, while chargers retain their forked crest. Mint gems remain small, angular and distinct from creatures.
 
 Weathered paving, engraved circles and luminous botanical roots give the ground depth inside the following camera. Broad low-contrast forms leave combat readable. Raised crystal gardens stay outside traversable ground. Directional shadows, a moving lantern light pool and restrained bloom separate solid materials from luminous cores. Spell trails, contact glints and dissolving fragments carry the same crystal vocabulary. Glass UI uses warm gold accents against deep jade surfaces.
 
-Movement drives petal sway and alternating creature legs. Environmental motes and crystal glints use active run time, so pause freezes them. Reduced motion suppresses decorative drift, bobbing, spin and fragments while preserving actors, projectiles, warnings and state cues. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring. The result flourish may finish after gameplay stops; it never advances the run.
+Movement drives petal sway and alternating creature legs. Reduced motion suppresses decorative drift, bobbing, spin and fragments. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring.
 
-Quality lazily prepares Three.js geometry, a generated floor texture and a bounded bloom pipeline. No external artwork is required. Failed preparation retains the current theme; graphics failure restores Normal on the same paused run.
+Quality prepares Three.js geometry, a generated floor texture and a bounded bloom pipeline without an external image bundle.
 
 ![Prism Garden: a gold lantern Keeper, orbiting lights, thorn creatures and mint gems on engraved jade paving](prism-garden.png)
 
@@ -59,7 +57,7 @@ Quality lazily prepares Three.js geometry, a generated floor texture and a bound
 
 `src/games/last-light-clearing/sound-recipes.ts` defines original AudioBits recipes: soft Spark glints, brighter Arc Spark partials, crystalline Shard transients, Halo contact rings, and a low Pulse bloom. Enemy impacts/dissolves stay subdued, clustered gems brighten a bounded pickup control, and health damage has a distinct low crack. Fully absorbed shield hits use a protective Halo chime. Harmonic chords and restrained delay mark upgrades, evolution and dawn; a low dissonant omen announces the elite. Defeat closes with a falling minor-colored tone.
 
-`src/games/last-light-clearing/sound.ts` maps semantic events, coalesces repeated cues per frame and throttles dense contacts/pickups. Milestones replace combat tails. Simulation supplies projectile weapon identity, Halo contact and elite-entry notifications without knowing how they sound. Mute remains a session setting.
+Sound uses procedural cues without recordings or ambient music. `sound.ts` receives projectile weapon identity, Halo contact and elite-entry notifications from simulation.
 
 ## Implementation ownership
 
@@ -76,22 +74,16 @@ Paths below are relative to `src/games/last-light-clearing/`.
 | Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
 | UI and sound adapters | `ui.ts`, `style.css`, `sound.ts` |
 
-`mountClearing` owns composition and returns session cleanup while artwork prepares. If construction fails, it releases the resources acquired before propagating the error. Session settings survive run replacement; pending preparations are aborted and invalidated on disposal. Styles stay scoped to `.clearing-app`.
+## Renderer composition
 
-## Renderer and asset lifetimes
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality loads `three/garden.ts`; its orthographic mapping converts `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom loads `vgpu/bloom.ts` and its WGSL field and organism shaders.
 
-`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality lazily loads `three/garden.ts`; it uses the host frame loop and the same world-to-CSS transform. Canvas multiplies it by DPR; the orthographic garden maps `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom lazily loads `vgpu/bloom.ts` and its WGSL field and organism shaders. It uses the same host loop and world-to-CSS transform, with bounded instance, ripple and particle buffers. Renderers own backing resolution.
+Garden batches immutable scenery by geometry, material and shadow settings. Detached actor pose trees animate independently, then copy visible parts into shared instance buffers so dense crowds do not add draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` generates cached paving and botanical textures without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution.
 
-Garden batches immutable scenery by geometry, material and shadow settings at construction. Each instance retains its authored transform and the batch owns its bounds. Detached actor pose trees animate independently, then copy visible parts into shared instance buffers, keeping dense crowds from adding draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` creates the cached paving and botanical texture without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution. Bloom passes, render targets and the generated texture are session-owned and released on replacement or failure.
+The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Canvas uses the asset pack’s clip helpers; Garden and Bloom use procedural actor observations. Palettes live in `themes.ts`, while shader/effect budgets live with their renderer.
 
-`prepareAssets` validates decoded bundles and returns explicit disposal. Composition retains the active renderer while a candidate prepares, then resets, resizes and paints the candidate against the current run before replacing the canvas. Success releases the old renderer before its images. Failed, stale or aborted candidates release their own resources. Replacement never constructs a run or replays events. GPU loss or draw failure pauses the run and restores Normal.
-
-The persistent overlay consumes milestone and damage events and draws attack commitments from simulation state with the same world transform in every theme. It owns bounded effects, starter-gem guidance, protection cues and the cosmetic dawn finish. Animation observations update after simulation steps and persist between render frames. Cosmetic clips/effects use active run time. Canvas uses the asset pack’s clip helpers; garden and bloom use procedural actor observations. Palettes live in `themes.ts`, and procedural shader/effect budgets live with the renderer.
-
-Garden reuses bounded resources and releases geometry, materials, textures, instance buffers, shadows and renderer/context resources on failure and disposal. Bloom releases shader draws, effects, uniforms, storage buffers, its surface and device on cancellation, failure or disposal. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. Unavailable WebGPU or failed preparation retains the working presentation; an active graphics failure pauses and restores Normal.
-
-`createPreparationScope` invalidates superseded work; the session releases rejected image bundles and renderers.
+Bloom owns its device, surface, shader draws, effects, uniforms and storage buffers. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. The renderer/resource transaction follows the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery).
 
 ## Renderer verification
 
-The browser checks exercise replacement on a retained run, uniform projection, artwork failure, disposal and GPU loss. Normal startup does not request image sheets or graphics libraries. See [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover uniform projection, renderer replacement and GPU loss. Normal startup requests neither image sheets nor graphics libraries. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).

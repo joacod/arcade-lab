@@ -1,6 +1,8 @@
 # Obsidian Duel artwork
 
-`cover.svg` is the collection cover. `eclipse-foundry/` contains the original Assets theme. Stage and effects have editable SVG sources; fighter art uses AI-generated painted PNG drawings. Project artwork is distributed under the repository's [MIT license](../../../../LICENSE). All required images and source sheets are committed, with no third-party artwork inputs or external downloads.
+[Game presentations](../../../../docs/games/obsidian-duel/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
+
+`cover.svg` is the collection cover. `eclipse-foundry/` contains SVG stage/effects and AI-generated painted PNG fighters. `moonfall-sanctum/` contains Quality arena/effects artwork. Project images use the repository’s [MIT license](../../../../LICENSE); no third-party artwork inputs are included.
 
 ## Eclipse Foundry creative brief
 
@@ -15,9 +17,9 @@ Inspiration only:
 
 ## Action cels and animation direction
 
-Assets uses painted whole-character drawings for every action. The idle figure must already read as one person: shoulders flow into upper arms, elbows have soft volume, hands grow from wrists, and fabric wraps around the body. Attack and recovery drawings continue those forms while the torso, hips and shoulders work together. A file containing a complete cel is only a storage format; the drawing itself establishes cohesion.
+Eclipse Foundry uses painted whole-character action drawings. The relaxed stance, chamber, contact and recoil should retain connected muscles, purposeful hands and continuous garment folds across Nera’s sash and Kael’s bare shoulders.
 
-The selected painted poses fill the existing timed atlas slots, including explicit contact holds and retraction drawings. Normal's skeleton is not an artwork template for these images. The procedural limb-and-torso drawing generator has been removed from the Assets workflow.
+Selected poses fill the timed atlas slots, including contact holds and retraction drawings. They are authored independently of Normal’s procedural poses.
 
 Technique references, not sources of artwork:
 
@@ -25,11 +27,11 @@ Technique references, not sources of artwork:
 - [Capcom's Akiman interview](https://game.capcom.com/cfn/sfv/column-112429): character animation and sprite memory were authored together. Our compact sheets preserve deliberate action drawings with a stable pivot.
 - [Mariel Cartwright's GDC animation talk](https://www.gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful): strong keys, anticipation and timing under fighting-game frame restrictions, with examples including Street Fighter III and Darkstalkers. Prioritize a clear chamber, decisive contact, recoil and settle over interpolating every pose uniformly.
 
-`animation.ts` owns semantic clip selection and the procedural poses used by Normal. Assets consumes the action sample only. `painted/layout.json` maps those timed samples to independently painted source drawings and their cosmetic pivots. `painted/pack.mjs` extracts each complete silhouette and applies uniform scale and translation to pack the runtime PNGs. It preserves source color, shading and alpha; it does not reconstruct or draw anatomical parts.
+`animation.ts` owns semantic clip selection and the procedural poses used by Normal. Assets consumes the action sample only. `painted/layout.json` maps those timed samples to independently painted source drawings and their cosmetic pivots. `painted/pack.mjs` extracts each complete silhouette and applies uniform scale and translation to pack the runtime PNGs. It preserves source color, shading and alpha.
 
 ## Image specifications
 
-Runtime images use smooth Canvas sampling and contain no external references. The fighter atlases preserve transparent silhouettes, and their original source sheets stay in `painted/`. `asset-art.ts` owns decoded dimension validation and source rectangles. The renderer maps these cosmetic footprints to the same world transform as Normal; physical bodies and reach come from gameplay content.
+Runtime images use smooth Canvas sampling. The fighter source sheets stay in `painted/`; `asset-art.ts` owns decoded-dimension validation and source rectangles.
 
 | Image | Intrinsic size | Layout and use |
 | --- | --- | --- |
@@ -39,11 +41,11 @@ Runtime images use smooth Canvas sampling and contain no external references. Th
 
 `duelClips` defines clip order and timed-slot counts; `foundryFrame` computes packed rectangles. Painted drawings may be reused for holds, retraction and settling. All 16 clips are covered: idle, walk, jump, crouch, standing guard, crouching guard, light, heavy, sweep, aerial, special, hurt, block recoil, knockdown, rise and landing. Source rectangles, source-sheet dimensions, per-sheet scale, selected cels and pivot corrections are maintained together in `painted/layout.json`.
 
-Grounded drawings align by their support contacts. Airborne drawings have an explicit virtual ground pivot, retaining tucked feet above the baseline while the simulation supplies jump elevation. Cosmetic contact shifts are applied to the complete cel. They never move the simulation body. Artwork faces right and mirrors with the fighter. There is no runtime part assembly, nonuniform scaling or limb rotation.
+Grounded drawings align to support contacts. Airborne drawings use a virtual ground pivot, retaining tucked feet above the baseline while simulation supplies jump elevation. Cosmetic contact shifts move the complete cel. Artwork faces right and mirrors with the fighter.
 
-Idle loops gently unless reduced motion is requested. Walk phase follows signed ground travel. Attack samples use the simulation's own move time: startup draws the anticipation, active draws contact and follow-through, and recovery selects retraction and settling. Contact artwork never appears during startup. Reaction clips follow observed state durations. Pausing freezes observation time; restart resets the observers.
+Idle loops gently; walk phase follows signed travel. Attack samples select anticipation, contact/follow-through and retraction/settling drawings from the simulation’s move time. Reaction clips follow observed state durations. The [game guide](../../../../docs/games/obsidian-duel/README.md#source-ownership) owns reduced-motion and procedural Normal animation behavior.
 
-The bolt uses a 76 × 46 footprint and mirrors with its own facing. Contact images expand briefly within the existing bounded effect lifetime. These footprints do not imply extra collision reach.
+The bolt uses a 76 × 46 footprint and mirrors with its own facing. Contact images expand briefly within the existing bounded effect lifetime.
 
 ## Editing
 
@@ -54,7 +56,7 @@ The source sheets and exact prompts are retained as the visual maintenance input
 - [Kael poses](eclipse-foundry/painted/kael-poses.png) and [prompt](eclipse-foundry/painted/kael-poses.prompt.txt).
 - [Kael actions](eclipse-foundry/painted/kael-actions.png) and [prompt](eclipse-foundry/painted/kael-actions.prompt.txt).
 
-Reauthor complete character drawings when changing anatomy, costume or motion. Preserve identity, camera, light direction, clothing volume and transparency across the sequence. Inspect the relaxed stance first, then the chamber, contact and recoil together. Source sheets can have uneven spacing, so inspect and update explicit source rectangles and pivots rather than assuming a uniform generated grid. Unselected source poses are not loaded by the game.
+Source sheets can have uneven spacing: inspect and update explicit source rectangles and pivots in `painted/layout.json` rather than assuming a uniform grid. Unselected source poses are not loaded. Use the [shared cel-authoring guidance](../../../../docs/assets-themes.md#specify-artwork-before-integrating-it) when replacing drawings.
 
 Repack the committed fighter atlases with Node and the repository's installed Playwright Chromium:
 
@@ -62,7 +64,7 @@ Repack the committed fighter atlases with Node and the repository's installed Pl
 node src/games/obsidian-duel/art/eclipse-foundry/painted/pack.mjs
 ```
 
-The packer selects each complete connected silhouette where source bounding rectangles overlap, preserves its antialiased edge, normalizes support pivots and rejects any clipped destination cell. It performs no creative retouching or joint reconstruction. Layout corrections are cosmetic and independent of move timing and geometry.
+The packer selects each complete connected silhouette where source bounding rectangles overlap, preserves its antialiased edge, normalizes support pivots and rejects any clipped destination cell. It performs no creative retouching or joint reconstruction.
 
 Edit stage and effects in `eclipse-foundry/generate.mjs`, then regenerate their SVGs:
 
@@ -70,11 +72,9 @@ Edit stage and effects in `eclipse-foundry/generate.mjs`, then regenerate their 
 node src/games/obsidian-duel/art/eclipse-foundry/generate.mjs
 ```
 
-These tools have no runtime role. A fresh checkout loads the committed outputs directly. Keep moving fighters and reaction effects out of the static stage, and preserve quiet space behind the actors.
-
 ## Moonfall Sanctum
 
-Quality reuses the complete painted Nera and Kael atlases and their full set of semantic action cels. It adds an AI-generated illustrated arena and transparent effect artwork, with the original PNG sources and prompts in `moonfall-sanctum/sources/`. These project images share the repository's MIT license. The [game guide](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction) owns the creative brief and visual hierarchy.
+Quality reuses the complete painted Nera and Kael atlases and their full set of semantic action cels. It adds an AI-generated illustrated arena and transparent effect artwork, with the original PNG sources and prompts in `moonfall-sanctum/sources/`. The [game guide](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction) owns the creative brief and visual hierarchy.
 
 | Image | Intrinsic size | Role |
 | --- | --- | --- |
@@ -82,12 +82,10 @@ Quality reuses the complete painted Nera and Kael atlases and their full set of 
 | `eclipse-foundry/nera.png`, `kael.png` | 2560 × 2240 each | Shared complete-character atlases. Use the existing cel rectangles, stable pivots, authored visual footprints and semantic timing. |
 | `moonfall-sanctum/effects.png` | 768 × 768 | Four transparent 384-square cells in two rows: jade bolt, warm hit burst, blue guard seal, ground aura. Authored contact pivots live in `quality-art.ts`. |
 
-The original stage source is 1659 × 948 and the final transparent effects source is 1254 × 1254. [Stage prompt](moonfall-sanctum/sources/stage.prompt.txt) and [effects prompts](moonfall-sanctum/sources/effects.prompt.txt) preserve the intended artwork and atlas correction. The runtime export scales only the complete images and preserves alpha; it does not draw, assemble or retouch any body parts. Export with local Chromium:
+The original stage source is 1659 × 948 and the final transparent effects source is 1254 × 1254. [Stage prompt](moonfall-sanctum/sources/stage.prompt.txt) and [effects prompts](moonfall-sanctum/sources/effects.prompt.txt) preserve the intended artwork and atlas correction. The export scales complete images and preserves alpha. Export with local Chromium:
 
 ```sh
 node src/games/obsidian-duel/art/moonfall-sanctum/pack.mjs
 ```
 
-A fresh checkout loads the shipped runtime files without generation or export services. `quality-assets.ts` prepares and releases images through the common owner. `quality-art.ts` validates decoded dimensions, maps effect cells to their contact points and records the painted Crescent heel contact mark. `quality-presentation.ts` adds subtle low mist, lantern glow, moonlit motes and faint whole-sprite reflections. The common presentation retains the sole arena transform, action observations and bounded contact lifetimes. Decorative motion follows active match time and stops on pause or under reduced motion.
-
-For a new cast, replace the complete fighter drawings and maintain their clip/anchor contract. Improve or replace the background and effects to change the surrounding visual identity. Keep actors and interactive objects separate from scenery; volume and material detail belong in the artwork. Lighting, atmosphere and reflections support those images without requiring a character-model system.
+`quality-art.ts` validates decoded dimensions, maps effect cells to contact points and records the painted Crescent heel contact mark. For mist, reflections and contact composition, see the [Moonfall Sanctum brief](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction).

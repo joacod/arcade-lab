@@ -1,6 +1,6 @@
 # Creating a Normal theme
 
-Normal is the gameplay-first foundation: a complete, playable and enjoyable game with clear presentation and responsive feedback. Simplicity concerns implementation scope and readability, not intentionally poor graphics. Follow the [development progression and mode contracts](architecture.md#appearance-changes); preserve useful artwork and animation in existing games.
+Normal is the gameplay-first baseline: establish a game that is new to the catalog, work out its mechanics and deliver a complete, playable and enjoyable experience. Spend the effort on controls, rules, progression and readable feedback, with a simple, coherent presentation. Normal can look appealing and use image assets; the Assets mode name does not reserve artwork for later. A dedicated art or visual-polish pass is not the goal here. Follow the [development progression and mode contracts](architecture.md#appearance-changes); preserve useful artwork and animation in existing games.
 
 When implementing or improving Normal, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, rendering technologies, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
 
@@ -20,16 +20,16 @@ Keep one authoritative uniform world transform, with framing that exposes the sp
 
 ## Use a lightweight asset presentation
 
-Use custom image assets for the player, enemies and interactive objects. Start with a small, coherent sprite set and the action frames needed to communicate the game; complete character cels keep anatomy, clothing and silhouette together. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Browser-native Canvas drawing is usually sufficient to present them without a graphics dependency.
+Use custom image assets for the player, enemies and interactive objects, keeping their scope modest: a small, coherent sprite set and the action frames needed to communicate the game. Simple complete character cels keep anatomy, clothing and silhouette together. Reuse suitable committed artwork where it fits. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Browser-native Canvas drawing is usually sufficient to present them without a graphics dependency. The renderer serves the playable foundation; detailed materials, extensive scenery and elaborate animation can wait for the focused visual passes.
 
 Temporary shapes are useful while establishing mechanics. Replace that scaffolding before treating the presentation as finished. Do not build a procedural body-part system or skeleton renderer as the Normal foundation and then carry it into later themes. Existing procedural games can migrate in their own scoped passes.
 
 Keep the action visually dominant. Procedural paths, gradients, parallax and restrained environmental animation can support the sprite artwork. Bound temporary effects and keep the initial asset scope proportional to the game. Reuse image preparation and semantic animation owners rather than building elaborate renderer or rig systems. Use the [Assets guide](assets-themes.md#specify-artwork-before-integrating-it) for image layout and anchor contracts.
 
-Cosmetic motion follows the session's timing and pause rules. Reduced motion should remove decorative movement and flashes while preserving gameplay-critical movement and warnings. Follow the existing ownership contracts for cleanup and display transitions.
+Follow the shared [presentation timing and reduced-motion rules](architecture.md#presentation-timing-and-motion) and [session lifetime contract](architecture.md#lifetimes-and-execution).
 
 ## Move on when the foundation works
 
-Normal is ready for a focused [Assets pass](assets-themes.md) when the intended game is complete: controls respond, progression and outcomes work, and players can read actions, dangers and feedback throughout play. It should stand on its own as an enjoyable presentation, without requiring later artwork to explain missing gameplay.
+Normal is ready for a focused [Assets pass](assets-themes.md) when the intended game is complete: controls respond, mechanics work together, progression and outcomes work, and players can read actions, dangers and feedback throughout play. Simple visuals are sufficient; do not hold this pass open to chase the finish of Assets or Quality. Normal should stand on its own as an enjoyable game, without requiring later artwork to explain missing gameplay.
 
 Use the [shared local verification](architecture.md#local-verification) appropriate to the implementation. Resolve concrete gameplay or readability failures before changing the artistic treatment; exhaustive visual polish can continue in later passes.
