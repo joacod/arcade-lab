@@ -28,17 +28,15 @@ Every bell ends its district and freezes simulation. An explicit **Continue to鈥
 
 ## Theme modes
 
-**Normal** uses Verdant clockwork. **Assets 路 Porcelain Bellgarden** supplies a porcelain keeper and glazed botanical ruins; its [artwork guide](../../../src/games/clockwork-hollow/art/README.md) owns the creative brief and sheet layouts. **Quality 路 Lumen Conservatory** uses layered copper-and-glass cathedral gardens, described below.
+**Normal 路 Verdant clockwork** is the simple brass-and-moss baseline. **Assets 路 Porcelain Bellgarden** is an illustrated retro sanctuary with a porcelain keeper, coral scarf, tall ink-blue arches and glazed botanical machinery. **Quality 路 Lumen Conservatory** develops the same cast and setting into sculpted ceramic miniatures, reflective brass, luminous glass and layered cathedral gardens. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md#creative-direction) owns the briefs, functional visual rules and sheet layouts.
 
-![Porcelain Bellgarden: the ivory keeper at a flower lantern beneath indigo belfry arches, with a wind-up beetle and an active pressure vent](clockwork-bellgarden.png)
+Every mode uses complete keeper and beetle drawings. Quality鈥檚 AI-generated actor cels add spherical forms, painted botanical detail, inset glass and soft material shading. Eight stride cels follow ground travel in sequence; dedicated ascent and descent silhouettes communicate jumping. Foot anchors stay on the ground, velocity adds a small lean, and landing briefly compresses around the sole. Beetle steps follow patrol travel and stomped shells use their own spent drawing.
 
-### Quality direction: Lumen Conservatory
+![Porcelain Bellgarden: the ivory keeper beneath illustrated aqueduct arches and a broad waterwheel](clockwork-bellgarden.png)
 
-A moonlit mechanical garden built from oxidized copper, cut jade and warm luminous glass. Layered cathedral ribs frame a monumental waterwheel in the aqueduct, furnace vessels in the Emberworks and an astronomical rose window in the belfry. Distant architecture stays low in contrast; continuous pale landing lips, the keeper's glass heart, rounded beetle crowns and coral thorn tips lead the eye through the physical route.
+Quality uses Canvas 2D with shaded image assets, bevelled platform materials and cached architectural layers. A monumental waterwheel, foundry vessels and a belfry rose window distinguish the districts. Distant scenery stays quieter than landing lips, objectives and hazards. The interface uses dark mineral surfaces and brass rules.
 
-The keeper has a burnished helmet, inset glass face, a continuous brass silhouette and a trailing saffron scarf. Foot travel selects complete stride cels, while ascent and descent select dedicated airborne drawings. Faceted motes, caged lanterns and engraved bells repeat the same copper-and-glass language. Saved lanterns and awakened bells brighten locally, with bounded semantic sparks. The interface uses dark mineral surfaces and fine brass rules.
-
-Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture around complete actor and object sprites, without a graphics dependency.
+![Lumen Conservatory: a glazed lantern and keeper beside the pressure-room vent in the Emberworks](clockwork-lumen-emberworks.png)
 
 ## Source ownership and customization
 
@@ -52,7 +50,7 @@ Paths below are relative to `src/games/clockwork-hollow/`.
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`, `asset-presentation.ts` and the game-local sprite roles |
 | Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
-| Complete actor/object cels for all modes, frame layouts, validation and image drawing | `asset-art.ts`, `assets.ts` and `asset-presentation.ts`; committed images and generator in `art/bellgarden/` |
+| Complete actor/object cels for all modes, frame layouts, validation and image drawing | `asset-art.ts`, `assets.ts`, `sprite-art.ts` and `asset-presentation.ts`; SVG sources in `art/bellgarden/`, Quality actor sources, packed atlases and preparation in `art/lumen/` |
 | Quality architecture, bevelled scenery materials and cached background layers | `quality-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
@@ -60,15 +58,15 @@ Paths below are relative to `src/games/clockwork-hollow/`.
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts` |
 
-`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district鈥檚 background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its copper-and-glass sprite variants before replacing the current presentation.
+`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district鈥檚 background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its raster actor atlases and shaded object bundle before replacing the current presentation.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable.
 
-The camera provides minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize resets framing. The keeper's walking cels follow ground distance and settle when stopping; dedicated ascent and descent drawings distinguish jump phases.
+The camera provides minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize resets framing. The keeper's walking cels follow ground distance and settle into idle when stopping; physical movement does not depend on clip timing.
 
-Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, landing squash, scarf flutter and bell swinging. Assets and Quality use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
+Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, keeper lean, landing compression and bell swinging. All modes use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 
-![Lumen Conservatory: the glass-hearted keeper and a copper beetle beneath layered aqueduct ribs and a monumental waterwheel](clockwork-lumen.png)
+![Lumen Conservatory: the sculpted porcelain keeper and wind-up beetle beneath layered aqueduct ribs and a monumental waterwheel](clockwork-lumen.png)
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain; only nearby vents are audible.
 

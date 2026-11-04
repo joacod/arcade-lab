@@ -1,6 +1,6 @@
 import { createImageResource } from '../../engine/browser/images.ts';
 import { hollowSpriteImages } from './sprite-art.ts';
-import { validateHollowSprites } from './asset-art.ts';
+import { validateHollowSprites, illustratedSpriteLayout, lumenSpriteLayout } from './asset-art.ts';
 import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
 import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
@@ -28,7 +28,7 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context;
   surface.prepend(canvas);
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
-  const baseline = createImageResource(hollowSpriteImages('normal'), validateHollowSprites);
+  const baseline = createImageResource(hollowSpriteImages('normal'), dimensions => validateHollowSprites('normal', dimensions));
   let baselineDrawing: ReturnType<typeof createBellgardenDrawing> | undefined;
   const sprites = () => art ?? (baselineDrawing ??= baseline.images.keeper ? createBellgardenDrawing(ctx, baseline.images) : undefined);
   let theme = themes.normal;
@@ -166,7 +166,7 @@ export function createPresentation(surface: HTMLElement) {
       gear(x, y, 31, index, '#5c6650'); circle(x, y, 7, '#d6bb7d'); glow(x, y, 40, '#f3cb7930');
     }
   }
-  function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, _time: number, defeated: boolean, pose: KeeperPose = { stride: 0, bob: 0, lean: 0 }) {
+  function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, _time: number, defeated: boolean, pose: KeeperPose = { phase: 0, lean: 0 }) {
     const drawing = sprites();
     if (drawing) drawing.keeper(p, pose, defeated, motion.matches, landing);
     else circle(p.x + m.width/2, p.y + m.height/2, 16, theme.brass);
@@ -174,17 +174,17 @@ export function createPresentation(surface: HTMLElement) {
 
   function sign(x: number, y: number, title: string, detail: string) {
     line(x, y, x, y + 72, '#7d7860', 5);
-    ctx.fillStyle = art ? '#fff0cf' : '#1d3b3b'; ctx.beginPath(); ctx.roundRect(x - 9, y - 33, 166, 52, 4); ctx.fill();
+    ctx.fillStyle = theme === themes.assets ? '#fff0cf' : '#1d3b3bf0'; ctx.beginPath(); ctx.roundRect(x - 9, y - 33, 166, 52, 4); ctx.fill();
     line(x - 8, y - 33, x + 156, y - 33, '#a6ad7d', 2);
-    ctx.font = '10px monospace'; ctx.fillStyle = art ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 3, y - 12);
-    ctx.font = '8px monospace'; ctx.fillStyle = art ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
+    ctx.font = '10px monospace'; ctx.fillStyle = theme === themes.assets ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 3, y - 12);
+    ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.assets ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
   }
   return {
     ready: baseline.ready,
     replaceTheme(next: HollowTheme, images?: ImageBundle, factory?: LumenDrawingFactory) {
       const previous = { theme, art, quality, qualityFactory };
       const replacement = factory === qualityFactory ? quality : factory?.(ctx);
-      const nextArt = images ? createBellgardenDrawing(ctx, images) : undefined;
+      const nextArt = images ? createBellgardenDrawing(ctx, images, next === themes.quality ? lumenSpriteLayout : illustratedSpriteLayout) : undefined;
       theme = next; art = nextArt; quality = replacement; qualityFactory = factory;
       // A failed candidate may have interrupted a saved drawing scope. Keep the
       // camera/cosmetics, but start the replacement with a clean Canvas state.
@@ -285,7 +285,7 @@ export function createPresentation(surface: HTMLElement) {
       run.enemies.forEach(enemy => {
         if (enemy.x < view.x - 60 || enemy.x > view.x + view.width + 60) return;
         const x = enemy.x + enemy.w / 2, y = enemy.y + enemy.h;
-        sprites()?.beetle(x, y, enemy.direction, enemy.alive, run.levelTime, motion.matches);
+        sprites()?.beetle(x, y, enemy.direction, enemy.alive, motion.matches);
       });
       for (const s of run.level.hazards) {
         if (s.x + s.w < view.x || s.x > view.x + view.width) continue;

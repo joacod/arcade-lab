@@ -25,35 +25,69 @@ function write(name, width, height, body) {
   writeFileSync(new URL(`${name}.svg`, import.meta.url), `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><!-- Porcelain Bellgarden | Original Arcade Lab artwork | MIT -->${body}</svg>\n`);
 }
 
-// Complete connected silhouettes, with authored stance/action contours. No joint reconstruction.
+// Each contour is a complete keeper drawing, including both planted boots or a
+// distinct airborne silhouette. Frames run forward around a full eight-cel stride.
 const keeperContours = [
- 'M20 40L15 45L10 54Q11 60 17 58L23 52L24 62L21 70L18 71L18 76L31 76L33 63L36 63L37 76L50 76L49 71L44 68L42 52L48 57Q54 59 54 53L47 43L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L12 44L9 51L14 55L23 50L24 61L17 69L12 71L12 76L26 76L34 64L38 68L40 76L53 76L52 71L47 68L42 51L49 59L55 57L53 50L45 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L13 46L12 57L18 58L24 51L25 62L23 71L20 72L20 76L33 76L35 64L39 69L41 75L53 75L52 70L46 66L42 50L50 54L55 50L49 44L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L12 46L9 56L15 59L24 52L25 62L29 70L26 71L26 76L39 76L38 64L43 68L45 74L56 74L55 69L49 65L42 50L49 52L54 47L47 42L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L13 43L9 50L12 56L20 54L25 62L35 70L34 76L49 76L48 71L42 66L35 62L32 63L24 70L14 70L13 75L27 76L39 66L42 51L48 58L54 56L53 50L45 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L13 31L9 24L4 27L7 38L22 52L24 61L19 64L14 60L10 64L17 72L26 72L33 64L40 69L48 72L54 68L50 63L44 62L42 51L55 37L58 26L53 23L49 32L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L10 42L4 48L6 54L13 51L23 51L24 61L20 70L18 72L18 76L31 76L33 64L39 64L42 76L55 76L54 71L49 68L42 51L53 51L59 47L56 42L46 42L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
- 'M20 40L12 42L7 54L12 59L22 53L24 62L21 70L18 71L18 76L31 76L33 63L36 63L37 76L50 76L49 71L44 68L42 52L50 60L56 57L53 48L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L46 41Q52 43 54 52Q55 58 51 59Q47 59 45 53L43 51L43 62L46 69Q52 70 51 76L38 76L35 64L30 64L28 76L15 76Q13 71 20 69L23 61L23 51L20 57Q17 61 13 57Q10 53 14 47L19 41Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 42L53 49Q58 54 54 58Q50 60 47 55L43 51L43 61L49 68Q56 70 55 76L42 76L34 64L29 65L21 76L8 76Q7 71 14 69L23 60L22 49L17 52Q11 55 9 51Q7 46 13 43Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 41L52 47Q57 51 54 55Q50 58 46 53L43 51L43 60L46 66Q51 67 51 73L39 73L34 64L30 65L27 76L14 76Q12 71 19 69L23 61L23 50L18 54Q13 57 11 53Q8 49 13 45Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 41L51 45Q56 48 53 53Q50 56 45 52L43 51L43 60L40 67L43 71Q46 76 40 76L29 76L29 65L26 63L23 68Q19 72 15 68L13 64L22 59L23 51L18 57Q14 61 10 57Q8 53 13 47Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L49 41L54 44Q59 48 56 52Q53 55 48 52L43 50L43 60L37 68L40 71Q43 76 37 76L25 76L27 64L24 63L18 68Q12 70 11 64L13 60L22 57L23 51L20 59Q17 63 13 60Q9 57 12 51L17 43Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L49 40L55 44Q59 49 55 52Q51 55 46 51L43 50L43 60L39 64L49 69Q56 70 55 76L42 76L32 66L28 65L21 73L9 73Q7 68 14 66L23 59L23 51L20 58Q18 63 13 61Q9 59 11 53L16 44Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L49 40L53 43Q58 47 55 51Q52 55 47 51L43 50L43 60L40 64L46 69Q52 70 51 76L38 76L32 65L28 64L23 71L11 71Q9 66 16 64L23 59L23 51L20 57Q18 62 13 60Q10 58 12 52L17 43Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 41L51 45Q56 49 52 53Q48 56 44 51L43 51L43 60L37 65L39 70Q42 76 36 76L25 76L27 64L24 63L21 68Q17 72 13 68L12 64L23 58L23 51L18 56Q14 60 11 56Q8 52 13 47Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L46 41L50 47Q55 52 51 56Q47 59 44 53L43 51L43 61L44 68Q49 70 48 76L35 76L32 65L28 65L26 74L13 74Q11 69 18 67L23 60L23 51L18 54Q13 58 10 54Q8 50 13 45Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L48 37L51 28Q52 22 57 24Q61 26 58 33L55 45L44 52L43 60L48 63L54 62Q60 63 56 68L48 72L36 66L30 64L25 71L16 71L10 65Q8 60 13 58L20 63L24 59L23 51L11 39L6 29Q5 23 10 23Q14 23 15 30L20 38Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L50 40L57 43Q62 46 59 50Q56 54 51 50L43 48L43 61L47 68Q54 69 53 76L40 76L35 64L30 64L28 76L15 76Q13 71 20 69L23 61L23 49L14 51Q8 55 5 51Q2 47 7 44L17 40Z',
+ 'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 44L51 51Q54 56 50 59Q46 61 43 55L42 57L43 65L48 70Q54 71 53 76L38 76L34 68L30 68L27 76L12 76Q10 71 18 70L23 64L24 57L20 59Q15 63 11 59Q8 55 13 50L18 43Z',
 ];
-const keeperAtlas = keeperContours.map((contour, frame) => group(frame * 64, 0,
-  path(contour, cream, ink) +
-  path('M18 23Q30 18 49 23L48 33Q35 40 18 33Z', ink) +
-  ellipse(28,28,2.5,3.5,frame === 7 ? coral : '#a4f6e2') + ellipse(42,28,2.5,3.5,frame === 7 ? coral : '#a4f6e2') +
-  path('M24 46Q32 42 41 47L40 57Q32 63 25 57Z', gold, 'none') + ellipse(33,52,4,5,teal) +
-  path('M20 40Q32 45 45 40L44 45Q32 49 21 45Z',coral,ink,1) +
-  path('M22 17Q32 13 44 17M27 63L31 61M40 62L43 64','none',gold,1)
-)).join('');
-write('keeper',512,80,keeperAtlas);
-write('keeper-normal',512,80,keeperAtlas.replaceAll(cream,'#ddbc78').replaceAll(coral,'#5e947c').replaceAll(teal,'#b6efce'));
-write('keeper-quality',512,80,keeperAtlas.replaceAll(cream,'url(#copper)').replaceAll(coral,'#dba765').replaceAll(teal,'#b6f1d2').replaceAll(ink,'#15343c').replace(/^/,'<defs><linearGradient id="copper"><stop stop-color="#80725c"/><stop offset=".35" stop-color="#f3dcae"/><stop offset=".7" stop-color="#b3976b"/><stop offset="1" stop-color="#5b6156"/></linearGradient></defs>'));
-const beetleAtlas = Array.from({length:4},(_,frame)=>group(frame*64,0,
- path('M9 31Q8 10 31 9Q49 9 52 24Q60 22 59 32L52 37L49 43L44 43L44 36L36 36L35 43L30 43L30 36L22 36L20 43L14 43L16 35L9 35Z',frame===3?'#647583':coral,ink,2) +
- path('M13 20Q27 5 44 18M31 11L31 31','none',cream,2) + path('M12 33L51 33','none',cream,3) + ellipse(54,27,2,2,cream)
-)).join('');
-write('beetle',256,48,beetleAtlas);
-write('beetle-normal',256,48,beetleAtlas.replaceAll(coral,'#ce8c66'));
-write('beetle-quality',256,48,beetleAtlas.replaceAll(coral,'#ba8b73').replaceAll(cream,'#ffe1b3'));
+const materials = mode => mode === 'quality' ? `<defs>
+ <linearGradient id="shell" x1=".1" y1="0" x2=".8" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#fff9dc"/><stop offset=".3" stop-color="#e3d5af"/><stop offset=".65" stop-color="#a6b4a5"/><stop offset="1" stop-color="#405f64"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#fff1bc"/><stop offset=".24" stop-color="#d9ac68"/><stop offset=".6" stop-color="#94744e"/><stop offset="1" stop-color="#3d5355"/></linearGradient>
+ <radialGradient id="glass" cx=".35" cy=".25" r=".85"><stop stop-color="#529c99"/><stop offset=".35" stop-color="#224b54"/><stop offset="1" stop-color="#091e2b"/></radialGradient>
+ <radialGradient id="heart" cx=".35" cy=".3"><stop stop-color="#fff9cf"/><stop offset=".4" stop-color="#b1f1d7"/><stop offset="1" stop-color="#4b9b93"/></radialGradient>
+ </defs>` : '';
+for (const mode of ['normal', 'assets']) {
+ const normal = mode === 'normal';
+ const shell = normal ? '#e0bd7e' : cream;
+ const metal = gold, glass = ink;
+ const edge = ink, ribbon = normal ? '#6cae96' : coral;
+ const sheet = keeperContours.map((contour, frame) => {
+   // Whole-cel scarf drawing is pose-authored too, not a separately animated rig.
+   const tail = frame === 9 ? 'M24 39Q13 42 8 54L15 52L17 59Q21 49 29 44Z'
+    : frame === 10 ? 'M24 40Q12 35 5 34L10 40L5 44Q16 42 28 45Z'
+    : `M25 40Q14 ${38 + frame % 3} 4 ${43 + frame % 2 * 3}L10 47L7 51Q17 48 29 44Z`;
+   return group(frame * 64, 0,
+    path(tail,ribbon,edge,1) +
+    path(contour,shell,edge,1.5) +
+    // These are inset surfaces on the complete silhouette, never limb sprites.
+    path('M15 22Q31 16 51 22L50 31Q35 39 17 32Z',metal,edge,1) +
+    path('M18 23Q32 20 48 23L47 30Q33 35 19 30Z',glass,edge,.7) +
+    ellipse(28,27,2,2.7,frame === 11 ? '#ffab89' : '#d4ffe7') + ellipse(41,27,2,2.7,frame === 11 ? '#ffab89' : '#d4ffe7') +
+    path('M23 40Q33 45 44 39L45 44Q33 49 23 44Z',ribbon,edge,.7) +
+    path('M26 47Q33 43 41 48L40 58Q33 63 26 57Z',metal,edge,.8) +
+    ellipse(33.5,52.5,5.2,6,teal,edge,.7) +
+    path('M31 48Q28 52 31 56','none','#f3ffe0',1) +
+    path('M18 18Q22 12 31 12M40 13L45 15','none',gold,1.3) +
+    line(32,9,32,5,metal,1.8) + ellipse(32,4,2,2,teal)
+   );
+ }).join('');
+ write(mode === 'assets' ? 'keeper' : `keeper-${mode}`,768,80,materials(mode)+sheet);
+ // Distinct connected shell contours include alternate feet and a genuinely spent crown.
+ const beetles = [
+  'M8 31Q8 11 28 10Q46 7 51 25Q58 22 60 29L58 35L51 37L48 43L42 43L43 36L34 36L31 43L25 43L27 36L19 36L16 43L10 43L13 35Z',
+  'M8 32Q7 12 28 11Q46 8 51 26Q58 23 60 30L58 36L52 37L54 43L47 43L44 37L35 37L37 43L30 43L28 37L20 37L23 43L16 43L12 36Z',
+  'M8 31Q8 11 28 10Q46 7 51 25Q58 22 60 29L58 35L51 37L55 43L48 43L45 36L34 36L38 43L31 43L28 36L19 36L23 43L16 43L12 35Z',
+  'M7 37Q8 26 28 27Q46 24 51 35Q57 32 60 37L57 42L8 43Z',
+ ];
+ const body = beetles.map((d,i)=>group(i*64,0,path(d,i===3?'#5b7178':shell,edge,1.5)+
+  (i===3 ? path('M14 35L23 32L28 37L36 32L46 37','none',gold,1) :
+  path(`M12 ${28+i%2}Q13 ${13+i%2} 29 ${13+i%2}Q44 ${11+i%2} 48 ${28+i%2}Z`,normal?'#cd966a':coral,edge,1)+
+  path(`M15 ${24+i%2}Q25 ${13+i%2} 40 ${18+i%2}M30 ${14+i%2}L31 29`,'none',cream,1.4)+
+  path('M12 32Q28 35 49 31','none',cream,2)+
+  ellipse(54,29+i%2,2,2,cream)))).join('');
+ write(mode==='assets'?'beetle':`beetle-${mode}`,256,48,materials(mode)+body);
+}
 
 const lantern = lit => line(64, 152, 64, 30, ink, 6) + path('M43 36L64 20 85 36Z', cream, ink, 3) +
   rect(46, 38, 36, 49, lit ? '#bef5da' : '#647e83', 8, ink) +
@@ -74,17 +108,51 @@ write('objects', 1024, 160, [lantern(false), lantern(true), bell, gate, mote, th
   .map((body, i) => `<svg x="${i * 128}" width="128" height="160" viewBox="0 0 128 160">${body}</svg>`).join(''));
 
 const objectSource = new URL('objects.svg', import.meta.url);
-// Complete object images, same rectangles and pivots in every presentation.
-for (const [suffix, replacements] of [['normal', [[cream, '#ddbc78'],[coral, '#ce8c66']]], ['quality', [[cream, '#e5cfa8'],[coral, '#ed9f8b'],[gold, '#ba9664']]]]) {
-  let source = readFileSync(objectSource, 'utf8');
-  for (const [from,to] of replacements) source = source.replaceAll(from,to);
-  writeFileSync(new URL(`objects-${suffix}.svg`, import.meta.url),source);
-}
+writeFileSync(new URL('objects-normal.svg', import.meta.url), readFileSync(objectSource, 'utf8').replaceAll(cream,'#ddbc78').replaceAll(coral,'#ce8c66'));
+// Quality objects are newly illustrated volumes, preserving the flower, glass
+// heart, bell profile and pointed danger language of the porcelain originals.
+const qLantern = lit =>
+ path('M56 148L58 85L69 85L72 148Z','url(#metal)',ink,2) +
+ path('M38 42Q39 27 64 21Q89 27 90 42L84 48L44 48Z','url(#shell)',ink,2) +
+ path('M44 47Q64 37 84 47L83 79Q64 97 45 79Z',lit?'url(#heart)':'url(#glass)',ink,2) +
+ path('M44 45Q64 53 85 45M43 79Q64 91 85 79M52 49L52 83M76 49L76 83','none','url(#metal)',4) +
+ path('M48 57L48 70','none','#edffe6',2) + flower(64,66,10,lit?'#fff7cf':'#83b5b0') +
+ ellipse(64,27,5,5,'url(#metal)',ink) + foliage(60,150,38,'#548f86') +
+ path('M49 148Q64 141 79 148L81 155L47 155Z','url(#shell)',ink,2);
+const qBell = line(64,12,64,42,'url(#metal)',5) +
+ path('M26 111Q41 100 42 69Q41 42 64 40Q87 42 86 69Q87 100 102 111L99 118Q64 132 29 118Z','url(#metal)',ink,2) +
+ path('M48 68Q49 47 62 47L59 99Q49 100 42 106Z','#fff0c080') +
+ path('M80 63Q80 95 92 109L76 114L71 48Z','#43585666') +
+ ellipse(64,115,36,8,'url(#glass)',ink) + ellipse(64,119,8,10,'url(#metal)',ink) +
+ path('M43 78Q64 84 85 78M39 96Q64 103 90 96','none','#e4bf7b',2) + flower(64,73,10,coral);
+const qGate =
+ path('M9 159L9 45Q10 11 64 5Q118 11 119 45L119 159L100 159L100 47Q98 27 64 24Q30 27 28 47L28 159Z','url(#shell)',ink,3) +
+ path('M14 155V44Q15 17 64 11Q113 17 114 44V155M25 154V45Q27 25 64 20Q101 25 104 45V154','none','url(#metal)',3) +
+ path('M7 151L30 151L32 159L5 159ZM98 151L121 151L123 159L96 159Z','url(#metal)',ink,2) +
+ path('M64 6V24M27 18L37 32M101 18L91 32','none','#f5dfab',2) +
+ foliage(15,144,75,'#548f86') + foliage(113,145,54,'#609a8d') + flower(109,41,12,coral);
+const qMote = path('M64 51L83 78L64 105L45 78Z','url(#metal)',ink,2) +
+ path('M64 54L64 78L48 78Z','#fff9d1') + path('M64 78L80 78L64 101Z','#88d4c0') +
+ path('M64 54L80 78L64 78Z','#f9d588');
+const qThorns =
+ path('M0 159L8 105L25 151L32 109L49 150L57 105L75 151L83 109L100 151L109 105L128 159Z','#b87263',ink,2) +
+ path('M8 105L12 150L0 159ZM32 109L36 151L25 155ZM57 105L61 151L49 155ZM83 109L87 151L75 155ZM109 105L113 151L100 156Z','#ffc5a0') +
+ path('M8 105L18 147L12 150ZM57 105L69 148L61 151ZM109 105L122 152L113 151Z','#db9277') +
+ path('M0 155Q32 145 64 154T128 155L128 160L0 160Z','url(#metal)',ink,2);
+const qVent =
+ path('M13 130L23 122L105 122L116 130L116 157L13 157Z','url(#metal)',ink,2) +
+ path('M21 132L107 132L101 142L27 142Z','url(#glass)',ink,2) +
+ Array.from({length:8},(_,i)=>line(26+i*10,131,31+i*9,141,'#d5b782',3)).join('') +
+ line(19,128,109,128,'#fff0c3',2) + ellipse(24,150,3,3,'#233e47') + ellipse(103,150,3,3,'#233e47') +
+ ellipse(24,149,1,1,'#f4deaa') + ellipse(103,149,1,1,'#f4deaa');
+write('objects-quality',1024,160, materials('quality') +
+ [qLantern(false),qLantern(true),qBell,qGate,qMote,qThorns,qVent,foliage(64,158,115,'#639e89') + flower(66,55,15,coral)]
+ .map((body,i)=>`<svg x="${i*128}" width="128" height="160" viewBox="0 0 128 160">${body}</svg>`).join(''));
 
 const districts = [
-  { id: 'aqueduct', stone: '#456e78', tile: '#335564', pale: '#a6c8b9', leaf: '#509a94', far: '#34546a', glow: '#b5d5be' },
-  { id: 'emberworks', stone: '#80646e', tile: '#614e63', pale: '#dfad8c', leaf: '#947d8d', far: '#554257', glow: '#dc9e83' },
-  { id: 'belfry', stone: '#656e99', tile: '#444f77', pale: '#bbc4e0', leaf: '#7a8fae', far: '#303c60', glow: '#afb9dc' },
+  { id: 'aqueduct', stone: '#3c6570', tile: '#294957', pale: '#8fb7aa', leaf: '#4a8b82', far: '#263f53', glow: '#b5d5be' },
+  { id: 'emberworks', stone: '#775964', tile: '#554352', pale: '#cda283', leaf: '#87717e', far: '#45394b', glow: '#dc9e83' },
+  { id: 'belfry', stone: '#566286', tile: '#3b4668', pale: '#a6b4d0', leaf: '#6d84a4', far: '#29344f', glow: '#afb9dc' },
 ];
 write('terrain', 384, 192, districts.map((d, i) => `<svg x="${i * 128}" width="128" height="192" viewBox="0 0 128 192">` +
   rect(0, 0, 128, 128, d.tile) +
@@ -92,48 +160,56 @@ write('terrain', 384, 192, districts.map((d, i) => `<svg x="${i * 128}" width="1
     const x = col * 64 - (row % 2 ? 32 : 0), y = row * 32;
     return rect(x + 2, y + 2, 60, 28, d.stone, 3) + path(`M${x + 6} ${y + 6}L${x + 54} ${y + 6}`, 'none', d.pale, 1);
   }).join('')).join('') +
-  path('M64 17L79 32 64 47 49 32ZM64 81L79 96 64 111 49 96Z', 'none', d.pale, 1) +
+  path('M64 64L72 76L64 88L56 76Z',d.tile) + line(61,76,67,76,d.pale,1) +
   rect(0, 128, 128, 32, ink) + rect(0, 128, 128, 8, cream) + rect(0, 136, 128, 4, gold) +
   Array.from({ length: 8 }, (_, n) => path(`M${n * 16} 146Q${n * 16 + 8} 161 ${n * 16 + 16} 146`, 'none', d.pale, 2)).join('') +
   foliage(23, 192, 25, d.leaf) + foliage(97, 190, 23, d.leaf) + '</svg>').join(''));
 
+// Restrained illustrated-retro architecture: broad silhouettes, two ink values
+// and sparse ivory inlay. The roof frames the route instead of a row of tiny arches.
 for (const d of districts) {
-  // Quiet far layer: tall architectural silhouettes, unbroken repeating bottom edge.
-  let far = '';
-  for (let i = -1; i < 7; i++) {
-    const x = i * 160 - 65, y = 190 + ((i % 3 + 3) % 3) * 28;
-    far += group(x, y, path('M0 450L0 80Q75 -55 150 80L150 450 124 450 124 110Q75 24 26 110L26 450Z', d.far) +
-      path('M-5 85Q75 -44 155 85M-5 100Q75 -29 155 100', 'none', d.pale, 2) +
-      line(10, 130, 10, 450, d.pale, 1));
-    if (d.id === 'aqueduct') far += group(x + 60, y + 180, path('M0 80Q-80 -80 0 -160Q100 -120 90 -20Q70 70 0 80', d.leaf));
-    if (d.id === 'emberworks') far += group(x + 52, y + 55, rect(0, 30, 36, 250, d.stone, 12) + rect(-10, 68, 56, 12, d.pale, 4) + ellipse(18, 40, 12, 12, d.glow));
-    if (d.id === 'belfry') far += group(x + 50, y - 90, path('M0 170L0 30 25 0 50 30 50 170Z', d.far) + rect(16, 53, 18, 64, d.glow, 9) + line(25, 57, 25, 113, d.far, 4));
-  }
-  far += path('M0 560Q160 520 320 565T640 560T960 560L960 640 0 640Z', d.far);
-  write(`${d.id}-far`, 960, 640, far);
-
-  // Near layer: glazed archways and district-specific machinery, botanicals and medallions.
-  let near = '';
-  for (let i = 0; i < 3; i++) {
-    const x = i * 320 + 20, y = 215 + (i % 2) * 50;
-    near += group(x, y, path('M0 425L0 75Q140 -75 280 75L280 425 242 425 242 101Q140 -7 38 101L38 425Z', d.stone, d.far, 3) +
-      path('M-5 80Q140 -81 285 80L283 97Q140 -54 -3 97Z', d.pale, ink, 2) +
-      line(8, 118, 8, 420, d.pale, 3) + line(270, 118, 270, 420, d.pale, 3) +
-      Array.from({ length: 7 }, (_, k) => line(0, 160 + k * 38, 37, 160 + k * 38, d.far, 2) + line(243, 160 + k * 38, 280, 160 + k * 38, d.far, 2)).join('') +
-      wheel(140, 55, 21, gold));
-    if (d.id === 'aqueduct') {
-      near += foliage(x + 34, y + 290, 160, d.leaf) + foliage(x + 255, y + 150, 115, d.leaf) + flower(x + 247, y + 100, 16, '#d79f94');
-      near += group(x + 65, y + 235, path('M0 0Q65 35 130 0L130 15Q65 50 0 15Z', d.pale) + line(65, 35, 65, 150, d.pale, 4));
-    } else if (d.id === 'emberworks') {
-      near += group(x + 95, y + 150, rect(0, 0, 90, 190, d.far, 30, d.pale) + rect(12, 20, 66, 90, '#b17d74', 25, gold) +
-        Array.from({ length: 5 }, (_, k) => line(22 + k * 12, 25, 22 + k * 12, 106, d.far, 5)).join('') + wheel(45, 145, 24));
-      near += path(`M${x + 45} ${y + 330}V${y + 110}Q${x + 45} ${y + 90} ${x + 70} ${y + 90}H${x + 220}V${y + 300}`, 'none', gold, 7);
-    } else {
-      near += group(x + 74, y + 138, path('M0 180L0 20Q65 -45 130 20L130 180Z', d.far, d.pale, 3) +
-        path('M10 169L10 30Q65 -25 120 30L120 169Z', d.glow) +
-        path('M65 0L65 180M5 64L125 64M5 120L125 120M5 30L125 155M125 30L5 155', 'none', d.stone, 5));
-      near += line(x + 140, y + 320, x + 140, y + 388, gold) + flower(x + 140, y + 350, 13, cream);
-    }
-  }
-  write(`${d.id}-near`, 960, 640, near);
+ let far = '';
+ for (let i = -1; i < 4; i++) {
+  const x = i * 320;
+  far += group(x, 0,
+   path('M0 900V175L125 55L250 175V900Z', d.far) +
+   path('M22 900V187L125 88L228 187V900Z', d.tile) +
+   path('M57 900V230Q125 115 193 230V900Z',d.far) +
+   path('M68 680V238Q125 146 182 238V680Z',d.stone) +
+   path('M125 181V680M68 325H182M68 490H182','none',d.far,7) +
+   line(15,188,15,900,d.pale,1));
+ }
+ write(`${d.id}-far`,960,900,far);
+ let near = '';
+ for (let i = 0; i < 2; i++) {
+  const x = i * 480;
+  near += group(x,0,
+   path('M0 900V210Q0 75 240 8Q480 75 480 210V900L449 900V216Q446 113 240 49Q34 113 31 216V900Z',d.far,ink,3) +
+   path('M8 900V210Q8 83 240 20Q472 83 472 210V900','none',d.stone,7) +
+   path('M29 899V213Q34 113 240 48Q446 113 451 213V899','none',d.pale,2) +
+   Array.from({length:8},(_,j)=>line(1,258+j*80,29,258+j*80,d.stone,6)+line(451,258+j*80,479,258+j*80,d.stone,6)).join('') +
+   line(6,228,6,900,d.pale,1));
+ }
+ if (d.id === 'aqueduct') {
+  near += wheel(480,430,193,d.stone) + wheel(480,430,175,d.far) +
+   foliage(30,650,175,d.leaf) + foliage(927,540,135,d.leaf) +
+   flower(35,508,12,'#ba8b86');
+  near += path('M664 398Q685 430 675 655','none',d.pale,7) + path('M658 398Q677 430 668 655','none',d.leaf,2);
+ } else if (d.id === 'emberworks') {
+  for(let i=0;i<2;i++) near += group(i*480+155,180,
+   rect(0,0,170,540,d.far,65,ink) + rect(14,12,142,510,d.stone,55) +
+   Array.from({length:4},(_,j)=>rect(-7,80+j*114,184,15,d.far,3)+line(0,82+j*114,170,82+j*114,d.pale,2)).join('') +
+   ellipse(85,170,49,49,d.far,ink) + ellipse(85,170,38,38,'#b58075') +
+   Array.from({length:5},(_,j)=>line(56+j*14,140,56+j*14,200,d.far,5)).join('') + wheel(85,360,35,d.pale));
+  near += path('M88 900V230Q88 190 130 190H815Q855 190 855 230V900','none',d.far,19)+
+   path('M83 900V230Q83 185 130 185H815Q850 185 850 230V900','none',d.pale,3);
+ } else {
+  near += group(480,300,
+   ellipse(0,0,166,166,d.far,ink) + ellipse(0,0,154,154,d.stone) +
+   Array.from({length:12},(_,j)=>`<g transform="rotate(${j*30})">` +
+    path('M0 -18Q-53 -83 0 -139Q53 -83 0 -18Z',j%2?d.pale:d.leaf,d.far,6)+'</g>').join('') +
+   ellipse(0,0,27,27,d.far) + flower(0,0,15,cream));
+  near += foliage(29,670,100,d.leaf) + foliage(932,620,110,d.leaf);
+ }
+ write(`${d.id}-near`,960,900,near);
 }
