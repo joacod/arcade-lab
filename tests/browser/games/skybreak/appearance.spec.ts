@@ -14,7 +14,7 @@ test('Skybreak retains its run through failed, superseded and disposed appearanc
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}
       const actor = { image: 'ship', rect: [0, 0, 16, 16], footprint: [50, 50], frames: 1, stride: 0, seconds: 0.1, rotation: 0 };
-      themes.assets = { ...themes.normal, name: 'Test fleet', scene: 'orbit', art: { images: { ship: '/flight-test.svg' },
+      themes.assets = { ...themes.normal, name: 'Test fleet', art: { images: { ship: '/flight-test.svg' },
         actors: { player: actor, straight: actor, crossing: actor, swoop: actor, interceptor: actor } } };` });
   });
   let finish: (() => Promise<void>) | undefined;
@@ -86,7 +86,7 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   await page.addInitScript(() => {
     const images: HTMLImageElement[] = []; (window as any).fleetImages = images;
     const Original = window.Image;
-    window.Image = class extends Original { constructor() { super(); images.push(this); } };
+    window.Image = class extends Original { constructor() {super();images.push(this);} };
   });
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
@@ -101,13 +101,14 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(50);
   expect(await state()).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).fleetImages.map((image: HTMLImageElement) =>
+  await page.evaluate(() => { (window as any).activeFleetImages = (window as any).fleetImages.filter((image: HTMLImageElement) => image.naturalWidth === 384 || image.naturalWidth === 2016); });
+  expect(await page.evaluate(() => (window as any).activeFleetImages.map((image: HTMLImageElement) =>
     [image.naturalWidth, image.naturalHeight]))).toEqual([[384, 80], [384, 64], [384, 64], [384, 64], [384, 64], [2016, 168]]);
   const picture = await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL());
   await chooseOption(appearance, 'normal'); await page.clock.runFor(50);
   expect(await page.locator('canvas').evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())).not.toBe(picture);
   expect(await state()).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).fleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
+  expect(await page.evaluate(() => (window as any).activeFleetImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);

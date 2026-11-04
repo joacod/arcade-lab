@@ -2,25 +2,23 @@
 
 [Source](../../../src/games/skybreak/) | [Controls](../../../CATALOG.md#skybreak) | [Shared contracts](../../architecture.md)
 
-A vertical arcade shooter with Canvas 2D and Three.js appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) owns the Aurora Fleet sheets and Orbital Foundry background contract.
+A vertical arcade shooter with three image-based Canvas 2D appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) owns the Aurora Fleet sheets and Tempest Coast background contract.
 
 ## Theme modes
 
-**Normal** uses Pacific Run’s procedural aircraft and ocean. **Assets · Aurora Fleet** combines six animated SVG sheets with orbital scenery. **Quality · Orbital Foundry** uses sculpted Three.js ships and an illustrated deep-space background. Pacific Run’s aerial sortie and ocean are the starting setting for future art direction; the orbital treatments describe the current adaptations.
+**Normal** uses Pacific Run's simple aircraft sprites and procedural ocean. **Assets · Aurora Fleet** gives that same coastal sortie rounded retro aircraft, painted wing roundels and a muted teal sea. **Quality · Tempest Coast** combines shaded complete aircraft cels with an illustrated storm sea and atmospheric coastal scenery. Every mode keeps the game's aircraft, coast and tactical identity.
 
-![Aurora Fleet: ivory fighter and distinct enemy ships above a blue planet](skybreak-starfall.png)
+![Aurora Fleet: retro aircraft above the Pacific coast](skybreak-assets.png)
 
-## Orbital Foundry art direction
+## Tempest Coast art direction
 
-Quality places the sortie above an icy planet and a vast orbital shipyard. A dark navy combat corridor separates the ivory fighter, gunmetal hostile fleet and warm hostile rounds from the cyan planetary rim. An AI-generated background supplies distant atmospheric detail; editable geometry supplies the moving station fragments and all six ship roles. The models preserve the fleet's authored proportions.
+A dark petrol-blue storm sea, turquoise shoals and subtropical rocky headlands frame an earthly aerial operation. A quiet central corridor separates ivory aircraft, warm hostile wings and bright rounds from subdued wave detail. An AI-generated aerial plate supplies atmospheric sea texture, edge mist and broken sunlight. Shaded metal artwork gives the aircraft volume through complete images.
 
-Beveled armor, inset canopies, gold trim, vents, emissive drives and role-specific wings give the fleet a cohesive material language. Banking and evasive rolls reveal decorative depth. The flagship adds segmented armor, engine housings that follow the actual moving weak points, and a shrinking wreck during destruction. Cyan drive plumes, a short flight trail and event-driven expanding shockwaves complement existing impacts and fire blooms. Restrained bloom touches bright propulsion and impacts; crisp Canvas projectiles, supply symbols, protection rings and attack warnings remain above it. The HUD and menus use matching dark metal surfaces and pale cyan accents.
+Banking and evasive rolls transform whole cels. The flagship's complete nacelle images follow actual moving weak points. A short flight trail and bounded event shockwaves complement impacts and fire blooms. Canvas combines the detailed coastal plate, restrained edge mist, complete aircraft, supply images, protection rings and attack warnings through the same `flightView` projection. The HUD and menus carry matching dark coastal surfaces and pale accents.
 
-The orthographic camera shares `flightView` with the Canvas tactical layer. Reduced motion freezes scenery, exhaust variation and banking, and removes trails, shockwaves and flashes.
+Reduced motion freezes scenery, exhaust variation and banking and removes trails, shockwaves and decorative flashes. Quality prepares the background and aircraft bundle before activation. Drawing failure restores the sprite-based Normal presentation while preserving the sortie. None of the modes needs a graphics library.
 
-Quality imports `quality/foundry.ts` and a validated background. Models share geometry/materials, ship parts batch by material, actors are pooled, and bloom resolution is capped. Normal and Assets load no graphics library.
-
-![Orbital Foundry: sculpted fighters in a readable dark orbital corridor](skybreak-quality.png)
+![Tempest Coast: aircraft in a readable storm-sea corridor](skybreak-quality.png)
 
 ## Operation Iron Tempest
 
@@ -56,7 +54,7 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 The HUD emphasizes hull above remaining lives, with a warm warning at critical hull. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
 
-Deep reef ribbons, currents, island shelves, clouds, aircraft shadows and rotating nacelle rings are procedural Canvas scenery. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
+Deep reef ribbons, currents, island shelves and clouds are procedural Canvas scenery. Actors, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
 Dry gun transients leave room for metal impacts, enemy blasts, hull fractures and slipstream rolls. Armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. The sound adapter coalesces each cue per frame, caps voices at 12 and uses restrained world-space stereo placement.
 
@@ -65,12 +63,12 @@ Dry gun transients leave room for metal impacts, enemy blasts, hull fractures an
 | Balance, supply deadlines, collision sizes and formations | `content.ts` |
 | Sortie, weapons, roll, boss patterns and scoring | `game.ts` |
 | Appearance definitions and sheet validation | `themes.ts`, `assets.ts`, `art-pack.ts`, `art/` |
-| Canvas drawing/effects and cached orbital scenery | `presentation.ts`, `space-scene.ts` |
-| Quality rendering/models and renderer contract | `quality/`, `flight-presentation.ts` |
+| Canvas sprite drawing, ocean scenery and bounded effects | `presentation.ts` |
+| Layered coastal drawing and renderer contract | `presentation.ts`, `flight-presentation.ts` |
 | Recipes and cue policy | `sound-recipes.ts`, `sound.ts` |
 | Menus, HUD and styles | `ui.ts`, `style.css` |
 | Action translation and session composition | `input.ts`, `app.ts` |
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover sheet contracts. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Orbital Foundry recovery. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover sheet contracts. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Tempest Coast recovery. Use the [shared verification commands](../../architecture.md#local-verification).

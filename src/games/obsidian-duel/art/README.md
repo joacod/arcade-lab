@@ -19,7 +19,7 @@ Inspiration only:
 
 Eclipse Foundry uses painted whole-character action drawings. The relaxed stance, chamber, contact and recoil should retain connected muscles, purposeful hands and continuous garment folds across Nera’s sash and Kael’s bare shoulders.
 
-Selected poses fill the timed atlas slots, including contact holds and retraction drawings. They are authored independently of Normal’s procedural poses.
+Selected poses fill the timed atlas slots, including contact holds and retraction drawings. All three modes share these complete fighter cels.
 
 Technique references, not sources of artwork:
 
@@ -27,7 +27,7 @@ Technique references, not sources of artwork:
 - [Capcom's Akiman interview](https://game.capcom.com/cfn/sfv/column-112429): character animation and sprite memory were authored together. Our compact sheets preserve deliberate action drawings with a stable pivot.
 - [Mariel Cartwright's GDC animation talk](https://www.gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful): strong keys, anticipation and timing under fighting-game frame restrictions, with examples including Street Fighter III and Darkstalkers. Prioritize a clear chamber, decisive contact, recoil and settle over interpolating every pose uniformly.
 
-`animation.ts` owns semantic clip selection and the procedural poses used by Normal. Assets consumes the action sample only. `painted/layout.json` maps those timed samples to independently painted source drawings and their cosmetic pivots. `painted/pack.mjs` extracts each complete silhouette and applies uniform scale and translation to pack the runtime PNGs. It preserves source color, shading and alpha.
+`animation.ts` owns semantic clip selection for every mode. Each renderer consumes the same action sample. `painted/layout.json` maps those timed samples to independently painted source drawings and their cosmetic pivots. `painted/pack.mjs` extracts each complete silhouette and applies uniform scale and translation to pack the runtime PNGs. It preserves source color, shading and alpha.
 
 ## Image specifications
 
@@ -43,7 +43,7 @@ Runtime images use smooth Canvas sampling. The fighter source sheets stay in `pa
 
 Grounded drawings align to support contacts. Airborne drawings use a virtual ground pivot, retaining tucked feet above the baseline while simulation supplies jump elevation. Cosmetic contact shifts move the complete cel. Artwork faces right and mirrors with the fighter.
 
-Idle loops gently; walk phase follows signed travel. Attack samples select anticipation, contact/follow-through and retraction/settling drawings from the simulation’s move time. Reaction clips follow observed state durations. The [game guide](../../../../docs/games/obsidian-duel/README.md#source-ownership) owns reduced-motion and procedural Normal animation behavior.
+Idle loops gently; walk phase follows signed travel. Attack samples select anticipation, contact/follow-through and retraction/settling drawings from the simulation’s move time. Reaction clips follow observed state durations. The [game guide](../../../../docs/games/obsidian-duel/README.md#source-ownership) owns reduced-motion and semantic animation behavior.
 
 The bolt uses a 76 × 46 footprint and mirrors with its own facing. Contact images expand briefly within the existing bounded effect lifetime.
 

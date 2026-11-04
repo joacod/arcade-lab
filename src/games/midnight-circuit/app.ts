@@ -19,6 +19,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   function dispose() { if (disposed) return; disposed = true; disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose()); }
   function transition(next: Screen, focus = true) {
+    if (next === 'playing') presentation?.cancel();
     input?.clear(); clock.reset(); screen = next;
     if (next === 'paused' || next === 'title') sound?.pause();
     ui.show(next, focus); ui.update(run);

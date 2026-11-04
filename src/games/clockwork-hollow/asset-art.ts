@@ -29,3 +29,10 @@ export function keeperFrame(player: Pick<Player, 'grounded' | 'vx' | 'vy'>, pose
   if (reduced || Math.abs(player.vx) < 12) return 0;
   return pose.stride < -.65 ? 1 : pose.stride < 0 ? 2 : pose.stride < .65 ? 3 : 4;
 }
+
+export function validateHollowSprites(dimensions: ImageDimensions): readonly string[] {
+  return (['keeper','beetle','objects'] as const).flatMap(key => {
+    const expected = bellgardenSheets[key], actual = dimensions[key];
+    return actual?.width === expected.width && actual.height === expected.height ? [] : [`Invalid Hollow ${key}`];
+  });
+}

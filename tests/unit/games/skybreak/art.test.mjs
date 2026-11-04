@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { auroraFleet } from '../../../../src/games/skybreak/art/aurora-fleet.ts';
 import { themes } from '../../../../src/games/skybreak/themes.ts';
 import { validateFlightArt, flightFrame } from '../../../../src/games/skybreak/art-pack.ts';
 
-const art = auroraFleet.art;
+const art = themes.assets.art;
 const dimensions = Object.fromEntries(Object.entries(art.images).map(([key, url]) => {
   const sheet = readFileSync(new URL(url), 'utf8');
   const [, width, height] = sheet.match(/<svg[^>]* width="(\d+)" height="(\d+)"/);
@@ -13,7 +12,7 @@ const dimensions = Object.fromEntries(Object.entries(art.images).map(([key, url]
 }));
 
 test('the official Assets fleet resolves committed sheets for every actor and the flagship', () => {
-  assert.equal(themes.assets, auroraFleet);
+  for (const theme of Object.values(themes)) assert.ok(theme.art);
   assert.deepEqual(validateFlightArt(art, dimensions), []);
   assert.equal(new Set(Object.values(art.actors).map(sprite => sprite.image)).size, 5);
   assert.ok(art.flagship);

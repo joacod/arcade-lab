@@ -1,3 +1,5 @@
+import { createImageResource } from '../../engine/browser/images.ts';
+import { fighterImages, validateDuelSprites } from './asset-art.ts';
 import { themes, type DuelTheme } from './themes.ts';
 import { arena } from './content.ts';
 import type { DuelEvent, Fighter, Match } from './game.ts';
@@ -5,7 +7,7 @@ import type { Screen } from './ui.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { drawFoundryFighter, drawFoundryEffect } from './asset-presentation.ts';
 import type { SanctumDrawing, SanctumDrawingFactory } from './quality-presentation.ts';
-import { createDuelAnimation, samplePose, type AnimationSample, type Point } from './animation.ts';
+import { createDuelAnimation, type AnimationSample } from './animation.ts';
 export function duelView(width: number, height: number) {
   const scale = Math.min(width / arena.width, height / arena.height);
   return { scale, left: (width - arena.width * scale) / 2, top: (height - arena.height * scale) / 2 };
@@ -31,6 +33,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'duel-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
+  const baseline = createImageResource(fighterImages, validateDuelSprites);
   let theme = themes.normal;
   let art: ImageBundle | undefined;
   let quality: SanctumDrawing | undefined;
@@ -107,22 +110,9 @@ export function createPresentation(surface: HTMLElement) {
     for(let i=0;i<14;i++) {const x=(i*97)%1000;path([x,448+i%4*23,x+30+i%3*12,448+i%4*23], '#c0a7ad15',2);}
     const vignette=ctx.createRadialGradient(500,310,180,500,310,620);vignette.addColorStop(0,'#080d1800');vignette.addColorStop(1,'#080d18b3');rect(0,0,1000,560,vignette);
   }
-  function limb(a: Point,b: Point,c: Point,color: string,width: number) {
-    function segment(start: Point,end: Point,w: number,taper: number) {
-      const length=Math.hypot(end[0]-start[0],end[1]-start[1]),nx=-(end[1]-start[1])/length,ny=(end[0]-start[0])/length;
-      const points=[start[0]+nx*w,start[1]+ny*w,end[0]+nx*w*taper,end[1]+ny*w*taper,end[0]-nx*w*taper,end[1]-ny*w*taper,start[0]-nx*w,start[1]-ny*w];
-      path(points,'#101725',1,true);path(points,color,1,true);
-    }
-    segment(a,b,width*.56,.85);oval(b[0],b[1],width*.48,width*.48,color);segment(b,c,width*.48,.65);
-  }
-  function boot(knee: Point,foot: Point,color: string) {
-    ctx.save();ctx.translate(...foot);
-    if(foot[1]<-12)ctx.rotate(Math.max(-.7,Math.min(.8,Math.atan2(foot[1]-knee[1],foot[0]-knee[0]))));
-    path([-8,-8,5,-9,15,-3,16,2,-8,2],color,1,true);ctx.restore();
-  }
-  function drawFighter(f: Fighter, index: number, time: number, reduced: boolean, sample: AnimationSample) {
+  function drawFighter(f: Fighter, _index: number, time: number, reduced: boolean, sample: AnimationSample) {
     const nera=f.kind==='nera', down=f.state==='knockdown'||f.state==='ko';
-    const cycle=reduced?0:Math.sin(time*3.5+index), base=arena.floor;
+    const base=arena.floor;
     const s=f.attack, active=f.state==='active', wind=f.state==='startup';
     ctx.save();
     oval(f.x,base+4,down?69:48,8, '#080d1e88');
@@ -130,45 +120,10 @@ export function createPresentation(surface: HTMLElement) {
     glow(f.x,base+10,76,nera?'#7debdc0d':'#ffc08d0b');
     ctx.translate(f.x,base-f.z);ctx.scale(f.facing,1);ctx.lineCap='round';ctx.lineJoin='round';
     if(f.immune>0&&!down) { ctx.globalAlpha=reduced?.9:.83+.17*Math.sin(time*35); }
-    const { cloth, dark, trim } = theme.fighters[f.kind], skin=nera?'#cda99e':'#d7aa8f';
-    if (art) {
-      drawFoundryFighter(ctx, art, f.kind, sample);
-    } else {
-    const p=samplePose(f.kind,sample);
-    const {hip,shoulder,head,kneeBack,footBack,kneeFront,footFront,elbowBack,handBack,elbowFront,handFront}=p;
-    // A split, flowing silk coat versus a broad armored mantle creates different silhouettes.
-    const hem=Math.min(-5,hip[1]+31), trail=p.cloth*12;
-    if(nera){
-      path([shoulder[0]-14,shoulder[1]-4,shoulder[0]-30-trail,shoulder[1]+18,hip[0]-28-trail,hem,hip[0]-8,hip[1]+13,hip[0]+8,hip[1]-22], '#215767',1,true);
-      path([shoulder[0]-10,shoulder[1],shoulder[0]-40-trail,shoulder[1]-10,shoulder[0]-61-trail,shoulder[1]+4,shoulder[0]-30,shoulder[1]+1], '#88e0cc',1,true);
-    }else{
-      path([shoulder[0]-28,shoulder[1]-6,shoulder[0]+21,shoulder[1]-2,hip[0]+28,hem,hip[0]-24,hem+2,shoulder[0]-39-trail,shoulder[1]+25], '#3d3246',1,true);
-    }
-    limb(p.legBack,kneeBack,footBack,dark,nera?15:20);limb(p.legFront,kneeFront,footFront,nera?'#384f66':'#535064',nera?17:22);
-    boot(kneeBack,footBack,'#1a2638');boot(kneeFront,footFront,'#1c293a');
-    if(!nera){path([kneeFront[0],kneeFront[1],footFront[0],footFront[1]-5], '#827c86',7);}
-    limb(p.armBack,elbowBack,handBack,nera?'#507f89':'#a07c73',nera?11:17);
-    const sw=(nera?18:26)*(1-Math.abs(p.twist)*.17), bodyLength=Math.hypot(hip[0]-shoulder[0],hip[1]-shoulder[1]);
-    const across: Point=[(hip[1]-shoulder[1])/bodyLength,-(hip[0]-shoulder[0])/bodyLength];
-    const edge=(point: Point,w: number): Point=>[point[0]+across[0]*w,point[1]+across[1]*w];
-    path([...edge(shoulder,-sw),...edge(shoulder,sw),...edge(hip,nera?15:20),...edge(hip,nera?-15:-20)],cloth,1,true);
-    path([shoulder[0]-10,shoulder[1],hip[0]+9,hip[1]], '#c6b0a0',nera?7:10);
-    if(!nera){path([shoulder[0]+4,shoulder[1]+2,shoulder[0]+25,shoulder[1]+4,hip[0]+17,hip[1]-11,hip[0]+2,hip[1]-8], '#464656',1,true);path([shoulder[0]-27,shoulder[1]-6,shoulder[0]-4,shoulder[1]-11,shoulder[0]+1,shoulder[1]+5,shoulder[0]-30,shoulder[1]+12], '#b0a09a',1,true);}
-    path([...edge(hip,nera?-16:-21),...edge(hip,nera?16:21)],trim,5);
-    path([head[0]-5,head[1]+11,shoulder[0]+3,shoulder[1]],skin,13);
-    ctx.save();ctx.translate(...head);ctx.rotate(p.headTilt);ctx.translate(-head[0],-head[1]);
-    // Original profile, tied hair and eye line; no costume or signature animation references.
-    path([head[0]-14,head[1]-12,head[0]+10,head[1]-11,head[0]+17,head[1]+1,head[0]+11,head[1]+14,head[0]-8,head[1]+13,head[0]-15,head[1]],skin,1,true);
-    if(nera){path([head[0]-15,head[1]+7,head[0]-18,head[1]-13,head[0]+1,head[1]-22,head[0]+14,head[1]-11,head[0]-2,head[1]-8,head[0]-9,head[1]+4], '#162b3e',1,true);path([head[0]-14,head[1]-7,head[0]-25,head[1]+3,head[0]-29+cycle*3,head[1]+37], '#172f43',10);path([head[0]-14,head[1]-9,head[0]+13,head[1]-6],trim,3);}
-    else {path([head[0]-15,head[1]-1,head[0]-16,head[1]-14,head[0]-2,head[1]-21,head[0]+12,head[1]-15,head[0]+14,head[1]-9,head[0]-5,head[1]-10], '#292733',1,true);path([head[0]-8,head[1]+9,head[0]+10,head[1]+13,head[0]+12,head[1]+7], '#4a3941',5);}
-    path([head[0]+6,head[1]-2,head[0]+12,head[1]-2], '#1c2835',2);
-    ctx.restore();
-    limb(p.armFront,elbowFront,handFront,nera?'#75a5a6':'#b38b7d',nera?10:15);
-    const wrap=nera?'#dfdac5':'#978f96';
-    path([elbowFront[0]*.35+handFront[0]*.65,elbowFront[1]*.35+handFront[1]*.65,...handFront],wrap,nera?11:18);
-    oval(handFront[0]+3,handFront[1],nera?6:9,nera?5:7,nera?'#d8c2af':'#bfb3ac');
-    path([handFront[0]-7,handFront[1]-4,handFront[0]+7,handFront[1]-4],trim,2);
-    }
+    const { trim } = theme.fighters[f.kind];
+    const sprites = art ?? baseline.images;
+    if (sprites[f.kind]) drawFoundryFighter(ctx, sprites, f.kind, sample);
+    else oval(0,-65,25,65,theme.fighters[f.kind].cloth);
     if(active&&s&&!quality){
       ctx.globalAlpha=.5;ctx.strokeStyle=trim;ctx.lineWidth=s.kind==='heavy'?6:3;ctx.beginPath();
       if(s.kind==='sweep')ctx.ellipse(47,-12,65,15,0,-1.4,1.2);
@@ -178,6 +133,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   return {
+    ready: baseline.ready,
     replaceTheme(next: DuelTheme, images?: ImageBundle, factory?: SanctumDrawingFactory) {
       const previousTheme = theme, previousArt = art, previousQuality = quality;
       const drawing = factory && images ? factory(ctx,images) : undefined;
@@ -258,6 +214,6 @@ export function createPresentation(surface: HTMLElement) {
         ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
       ctx.globalAlpha=1;ctx.restore();
     },
-    dispose(){if(disposed)return;disposed=true;art=undefined;quality=undefined;sparks=[];impacts=[];canvas.remove();},
+    dispose(){if(disposed)return;disposed=true;baseline.dispose();art=undefined;quality=undefined;sparks=[];impacts=[];canvas.remove();},
   };
 }

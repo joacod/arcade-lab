@@ -4,13 +4,15 @@ import { orbitPosition } from './weapons/halo.ts';
 import type { Viewport } from './view.ts';
 import type { WorldPresentation, DisplaySize } from './world-presentation.ts';
 import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
-import { clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
+import { validateArtPack, clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
 import { actorAnimation, createAnimationObservations } from './animation.ts';
-import type { ImageBundle } from '../../engine/browser/images.ts';
+import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
 import { haloLights } from './weapon-stats.ts';
 
 export function createPresentation(theme: Theme, images: ImageBundle = {}): WorldPresentation {
   const artPack = theme.art;
+  const baseline = artPack && !Object.keys(images).length ? createImageResource(artPack.images, d => validateArtPack(artPack,d)) : undefined;
+  const gemArt = createImageResource({gem:new URL('./art/grove/gem.svg',import.meta.url).href}, d => d.gem?.width === 32 && d.gem.height === 32 ? [] : ['Invalid XP gem']);
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
   canvas.dataset.renderer = 'canvas';
@@ -19,7 +21,6 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
   const ctx = context;
   let size: DisplaySize = { width: 1, height: 1, ratio: 1 };
   const observations = createAnimationObservations();
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let effects: Extract<GameEvent, { x: number }>[] = [];
   const { width, height } = clearing.arena;
 
@@ -36,42 +37,20 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
   }
   function stamp(definition: Decoration, time: number) {
     const { image, rect: [sx, sy, sw, sh] } = clipFrame(definition.clip, time);
-    const source = images[image];
+    const source = images[image] ?? baseline?.images[image];
     if (!source) return;
     const [w, h] = definition.footprint, [ax, ay] = definition.anchor;
     ctx.drawImage(source, sx, sy, sw, sh, -ax * w, -ay * h, w, h);
   }
   function sprite(role: ActorRole, id: string | number, time: number, fallbackRadius: number, color: string, hitAt?: number, attackAt?: number) {
     const observation = observations.get(id);
-    if (!artPack) {
-      ctx.save(); ctx.rotate(observation.angle);
-      if (role === 'keeper') {
-        // A hood, shoulders and a lantern distinguish the Keeper from round creatures.
-        ctx.fillStyle = theme.palette.boundary;
-        ctx.beginPath(); ctx.moveTo(-15, -10); ctx.quadraticCurveTo(-4, -17, 10, -6);
-        ctx.lineTo(13, 0); ctx.lineTo(10, 6); ctx.quadraticCurveTo(-4, 17, -15, 10); ctx.closePath(); ctx.fill();
-        circle(0, 0, fallbackRadius, color); circle(7, 0, 4, theme.palette.hit);
-      } else {
-        ctx.strokeStyle = theme.palette.canopy; ctx.lineWidth = 4;
-        for (const side of [-1, 1]) for (const x of [-6, 5]) {
-          const gait = observation.moving && !reducedMotion.matches ? Math.sin(time * 13 + x) * 2 : 0;
-          ctx.beginPath(); ctx.moveTo(x, side * 6); ctx.lineTo(x - 4 + gait, side * (fallbackRadius + 4)); ctx.stroke();
-        }
-        ctx.save(); ctx.scale(1.1, 0.85); circle(0, 0, fallbackRadius, color); ctx.restore();
-        for (const y of [-4, 4]) circle(fallbackRadius * 0.5, y, 2, theme.palette.hit);
-        if (role === 'elite') {
-          ctx.strokeStyle = theme.palette.elite; ctx.lineWidth = 3;
-          for (const y of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-12, y * 10); ctx.lineTo(-22, y * 20); ctx.lineTo(-3, y * 17); ctx.stroke(); }
-        }
-      }
-      ctx.restore(); return;
-    }
+    if (!artPack) return;
     const art = artPack.actors[role];
     const { clip, age } = actorAnimation(art, observation, time, hitAt, attackAt);
     ctx.save();
     if (art.orientation === 'rotate') ctx.rotate(observation.angle);
     else if (art.orientation === 'mirror' && Math.cos(observation.angle) < -0.01) ctx.scale(-1, 1);
-    if (!Object.keys(images).length) {
+    if (!Object.keys(images).length && !Object.keys(baseline?.images ?? {}).length) {
       circle(0, 0, fallbackRadius, color);
       circle(fallbackRadius * 0.4, 0, 3, theme.palette.hit);
     } else stamp({ ...art, clip }, age);
@@ -120,7 +99,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
     },
-    dispose() { canvas.remove(); canvas.width = canvas.height = 1; effects = []; },
+    dispose() { baseline?.dispose(); gemArt.dispose(); canvas.remove(); canvas.width = canvas.height = 1; effects = []; },
     observe(run: Readonly<RunState>) { observations.observe(run); },
     reset(run: Readonly<RunState>) { effects = []; observations.reset(run); },
     consume(events: readonly GameEvent[]) {
@@ -228,11 +207,8 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}): Worl
         }
       }
       for (const gem of run.gems) {
-        ctx.save(); ctx.translate(gem.x, gem.y); ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = palette.gem;
-        ctx.strokeStyle = '#182b34'; ctx.lineWidth = 2;
-        ctx.fillRect(-5, -5, 10, 10); ctx.strokeRect(-5, -5, 10, 10);
-        ctx.fillStyle = palette.hit; ctx.fillRect(-3, -3, 3, 3); ctx.restore();
+        const image = gemArt.images.gem;
+        if (image) ctx.drawImage(image, gem.x - 7, gem.y - 7, 14, 14);
       }
       for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
         ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;

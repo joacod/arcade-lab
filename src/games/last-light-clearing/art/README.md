@@ -2,7 +2,7 @@
 
 [Game presentations](../../../../docs/games/last-light-clearing/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-`cover.svg` is an editable vector illustration. Normal draws the Keeper, crawlers, ground marks, gems and spells procedurally. Briar chargers add a forked crest; the persistent overlay carries their locked attack warnings across themes.
+`cover.svg` is an editable vector illustration. Normal uses complete Keeper and crawler cels in `grove/actors.svg` and the committed `grove/gem.svg`. Ground marks and spells remain procedural. Briar chargers add a forked crest; the persistent overlay carries their locked attack warnings across themes.
 
 **Ember Ruins** uses 0x72 DungeonTileset II v1.7. The atlas, frame list, upstream README, and [source credit and license](ember-ruins/PROVENANCE.md) live together.
 
@@ -28,3 +28,13 @@ Each mode chooses its matching interface in `themes.ts`; `style.css` defines its
 ## Prism Garden sources
 
 `../three/floor.ts` generates cached paving, gold rings and botanical roots. The [game guide](../../../../docs/games/last-light-clearing/README.md#quality-direction-prism-garden) owns the Garden brief, scene composition and renderer details.
+
+## Grove and Prism Garden sprite sources
+
+`grove/generate.mjs` authors connected whole-creature contours. It exports a 256 × 192 sheet: four 64-square cels in each of three rows, Keeper, crawler and elite. Normal uses `actors.svg`; Quality uses the shaded `actors-quality.svg`. The pivot is the cell center. Footprints are 40, 38 and 72 world units respectively; physical radii remain in content. Idle and reduced motion hold the first cel; movement cycles at 0.12 seconds per cel. The gem image is 32-square and drawn at its own gameplay footprint.
+
+Quality puts complete cels on flat image planes and batches them by role/frame. It has no leg joints, pose trees or body-part meshes. Its scenery and spell geometry remain independent. Custom retains the deliberately shader-authored Abyssal Bloom organism experiment.
+
+```sh
+node src/games/last-light-clearing/art/grove/generate.mjs
+```

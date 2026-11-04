@@ -31,11 +31,6 @@ export function createArt() {
   function rounded(parent: T.Object3D, x: number, y: number, z: number, w: number, h: number, d: number, color: string, metal = false) {
     return mesh(parent, round, material(color, false, metal), x, y, z, w, h, d);
   }
-  function profile(points: readonly (readonly [number, number])[], depth: number, bevel = 1.5) {
-    const shape = new T.Shape(); points.forEach(([x,y],i) => i ? shape.lineTo(x,y) : shape.moveTo(x,y)); shape.closePath();
-    const geometry = own(new T.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, steps: 1, curveSegments: 4 }));
-    geometry.translate(0, 0, -depth / 2); return geometry;
-  }
   function texture(canvas: HTMLCanvasElement) {
     const t = new T.CanvasTexture(canvas); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; textures.add(t); return t;
   }
@@ -65,7 +60,7 @@ export function createArt() {
   gradient.addColorStop(0,'#000c'); gradient.addColorStop(.4,'#0007'); gradient.addColorStop(1,'#0000');
   ctx.fillStyle=gradient; ctx.fillRect(0,0,128,128);
   const shadowMaterial = new T.MeshBasicMaterial({ map: texture(shadowCanvas), transparent: true, depthWrite: false, opacity: .85 }); materials.add(shadowMaterial);
-  return { own, box, round, sphere, cylinder, plane, material, mesh, block, rounded, profile, sign, shadowMaterial, geometries, materials, textures,
+  return { own, box, round, sphere, cylinder, plane, material, mesh, block, rounded, sign, shadowMaterial, geometries, materials, textures,
     dispose() { for (const g of geometries) g.dispose(); for (const m of materials) m.dispose(); for (const t of textures) t.dispose(); },
   };
 }

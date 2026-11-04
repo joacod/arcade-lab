@@ -34,6 +34,9 @@ async function openDuel(page: Page, controlled: 'assets' | 'quality' | false = f
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Obsidian Duel', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).duelImages.length === 2 && (window as any).duelImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
+  await page.evaluate(() => { (window as any).duelBaselineImages = (window as any).duelImages.splice(0); });
+  await page.clock.runFor(50);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(3100);
   await page.keyboard.down('d'); await page.keyboard.down('w'); await page.keyboard.down('j');
   await page.clock.runFor(120); await page.keyboard.press('Escape');
@@ -187,7 +190,8 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await released(page)).toBe(true);
-  await expect(page.locator('canvas')).toHaveCount(0); expect(errors).toEqual([]);
+  await expect(page.locator('canvas')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).duelBaselineImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true); expect(errors).toEqual([]);
 });
 
 test('Quality trial drawing preserves active sprites; reduced motion freezes decoration; runtime failure suspends and restores Normal', async ({ page }) => {

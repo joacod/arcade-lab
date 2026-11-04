@@ -7,26 +7,6 @@ const line = (x,y,x2,y2,color,width=2) => `<path d="M${x} ${y}L${x2} ${y2}" fill
 const circle = (x,y,r,fill,stroke=ink) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
 const text = (value,x,y,size,color=cream) => `<text x="${x}" y="${y}" font-family="monospace" font-weight="bold" font-size="${size}" fill="${color}">${value}</text>`;
 function save(name,w,h,body,defs='') { writeFileSync(new URL(`./${name}.svg`,import.meta.url),`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${defs}</defs>${body}</svg>\n`); }
-const roles = [
-  { coat:teal, light:'#9ae0c4', dark:'#237669', trim:red, skin:'#e8b487' },
-  { coat:'#d85d45', light:'#f39a6a', dark:'#893f38', trim:cream, skin:cream },
-  { coat:'#c19350', light:'#edd49b', dark:'#765137', trim:red, skin:'#d9b58a' },
-  { coat:cream, light:'#fff7d9', dark:'#9b9e87', trim:red, skin:cream },
-];
-let atlas='';
-for (let row=0;row<roles.length;row++) {
-  const p=roles[row], boss=row===3;
-  const hatch=Array.from({length:4},(_,i)=>line(18,33+i*5,24,29+i*5,p.dark,1)).join('');
-  const head = row===0
-    ? path('M18 24L30 19L43 24L46 36L53 41L46 45L43 57L27 56L17 45Z',p.skin)+path('M14 36L16 18L28 9L42 15L48 27L35 25L25 37L21 43L16 41Z',ink)+path('M16 21L40 19L45 25L17 28Z',cream)+line(40,37,46,38,ink,2)+line(34,50,43,51,'#af614b',2)
-    : path(boss?'M13 26L12 12L24 20L38 18L49 9L48 30L52 44L42 58L20 56L12 43Z':'M14 28L23 15L41 17L50 30L49 47L39 57L21 55L13 43Z',p.skin)+path('M14 31L49 30L53 39L44 46L16 43Z',ink)+path('M20 34L45 34L43 38L20 39Z',p.trim,'none')+path('M20 47L42 49L39 54L24 52Z',p.dark,'none')+line(18,24,39,23,p.light,2);
-  const torso = path(boss?'M9 13L23 6L42 8L57 20L49 36L50 57L14 59L10 38L4 26Z':'M15 12L27 8L42 11L53 26L46 54L18 61L9 47L10 26Z',p.coat)+path('M17 15L27 12L28 47L19 53L13 43Z',p.light,'none')+path('M31 13L38 15L42 52L31 53Z',ink,'none')+path('M13 49L49 46L48 53L15 56Z',p.dark)+box(30,48,9,6,cream,ink,1)+hatch;
-  const chest = boss ? circle(32,31,12,ink)+circle(32,31,8,red)+path('M34 22L27 33L33 32L30 41L39 29L33 30Z',cream,'none') : row===0 ? path('M13 11L28 7L43 10L42 17L21 19L10 14Z',red)+path('M12 15L3 16L1 38L9 34L16 18Z',red) : box(36,23,10,6,p.trim)+line(40,22,40,30,ink,1);
-  const segment=(fill,armored=false)=>path(armored?'M22 5L41 5L46 18L41 46L24 49L18 37L19 16Z':'M23 5L39 6L43 18L39 47L25 48L20 34L20 15Z',fill)+path('M23 10L29 9L28 39L24 40Z',p.light,'none')+path('M23 37L40 36L39 44L25 46Z',p.dark,'none')+line(34,13,38,24,p.dark,1);
-  const parts=[head,torso+chest,segment(p.coat,boss),segment(p.coat,boss)+path('M21 31L42 30L41 44L25 47Z',boss?p.trim:cream)+line(25,34,38,34,p.dark,1)+line(25,38,38,38,p.dark,1),segment('#294348',row>1),segment('#294348',row>1)+path('M22 7L40 7L41 24L23 27Z',row>1?p.coat:'#43625d')+line(26,12,35,12,p.light,2),path('M21 36L39 36L42 46L57 49L59 57L18 57L16 50Z',ink)+path('M20 49L55 50L55 54L20 54Z',p.trim,'none')+line(24,41,35,41,p.light),path('M22 23L39 21L47 29L45 40L24 43L19 34Z',boss?p.trim:row===0?cream:p.coat)+line(29,26,29,37,p.dark,1)+line(34,25,34,36,p.dark,1)];
-  parts.forEach((part,col)=>{ atlas+=`<g transform="translate(${col*64} ${row*64})">${part}</g>`; });
-}
-save('fighters',512,256,atlas);
 let sky=box(0,0,960,320,'#203d43')+circle(746,65,40,'#e1bf83','none')+circle(733,57,40,'#203d43','none');
 for(let i=0;i<20;i++) {const x=i*50,h=75+(i*73)%230,y=320-h;sky+=box(x,y,46,h,i%2?'#284b4e':'#17333b')+box(x+7,y-8,18,9,'#17333b');for(let r=0;r<h/20-1;r++)for(let c=0;c<3;c++) if((i+r+c)%3===0) sky+=box(x+8+c*11,y+14+r*20,4,7,'#b09c66');}
 for(let i=0;i<30;i++) sky+=line(i*39,180,i*39-100,320,'#3c6260',1);

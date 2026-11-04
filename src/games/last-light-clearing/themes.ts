@@ -14,7 +14,7 @@ interface Appearance {
 /** Asset requirements are explicit: procedural worlds never need a dummy atlas. */
 export type Theme = Appearance & (
   | { readonly presentation?: undefined; readonly art?: ArtPack }
-  | { readonly presentation: 'prism' | 'abyss'; readonly art?: never }
+  | { readonly presentation: 'prism' | 'abyss'; readonly art?: ArtPack }
 );
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
@@ -45,16 +45,25 @@ export const emberRuins: Theme = {
   palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#19151b', floor: '#302a2b', boundary: '#92775c', light: '#ffdc8e',
     ground: '#88674740', canopy: '#3a3033', spark: '#ffe5a1', shard: '#bfc8ff', pulse: '#ff9b66', gem: '#87ffb6' },
 };
+export function groveArt(quality = false): ArtPack {
+  const actor = (y: number, size: number): ActorArt => ({
+    clips: { idle: still('grove', [0,y,64,64]), move: row('grove',0,y,64,64,4,.12) },
+    anchor: [.5,.5], footprint: [size,size], orientation: 'rotate',
+  });
+  return { images: { grove: quality ? new URL('./art/grove/actors-quality.svg', import.meta.url).href : new URL('./art/grove/actors.svg', import.meta.url).href,
+    ...(quality ? {gem:new URL('./art/grove/gem.svg',import.meta.url).href} : {}) },
+    sampling: 'smooth', actors: { keeper: actor(0,40), crawler: actor(64,38), elite: actor(128,72) } };
+}
 const gardenPalette: Theme['palette'] = { enemy: '#e7809b', elite: '#b285f0', halo: '#ffefb2', hit: '#fff3dc', damage: '#ffa5ae', background: '#08171f', floor: '#203c3d', boundary: '#6198ad', light: '#ffdfa0',
       ground: '#52788c', canopy: '#324c70', spark: '#fcf0af', shard: '#c8a6ff', pulse: '#7bdcff', gem: '#73ffc7' };
 export const themes: Readonly<Record<ThemeId, Theme>> = {
   normal: {
-    name: 'Normal', motif: 'grove', interface: 'classic',
+    name: 'Normal', motif: 'grove', interface: 'classic', art: groveArt(),
     palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#0b171a', floor: '#172e29', boundary: '#708a6c', light: '#f5d58b',
       ground: '#7a9b7440', canopy: '#203d34', spark: '#b7edff', shard: '#d4b7ff', pulse: '#88e0d0', gem: '#9cecaa' },
   },
   assets: emberRuins,
-  quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', palette: gardenPalette },
+  quality: { name: 'Prism Garden', motif: 'crystal', presentation: 'prism', interface: 'glass', art: groveArt(true), palette: gardenPalette },
   custom: {
     name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
     palette: { background: '#020510', floor: '#080f26', boundary: '#337b9c', ground: '#17345e', canopy: '#573cc0',

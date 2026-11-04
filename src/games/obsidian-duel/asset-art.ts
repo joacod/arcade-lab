@@ -15,3 +15,11 @@ export function validateFoundryArt(dimensions: ImageDimensions): string[] {
   return Object.entries(foundrySheets).flatMap(([name, [width, height]]) =>
     dimensions[name]?.width === width && dimensions[name]?.height === height ? [] : [`Invalid Eclipse Foundry ${name} dimensions`]);
 }
+
+export const fighterImages = {
+  nera: new URL('./art/eclipse-foundry/nera.png',import.meta.url).href,
+  kael: new URL('./art/eclipse-foundry/kael.png',import.meta.url).href,
+};
+export function validateDuelSprites(dimensions: ImageDimensions): string[] {
+  return (['nera','kael'] as const).flatMap(key => dimensions[key]?.width === 2560 && dimensions[key].height === 2240 ? [] : [`Invalid ${key} fighter atlas`]);
+}

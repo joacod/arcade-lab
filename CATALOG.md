@@ -10,21 +10,21 @@ The table lists the presentations currently implemented; their artwork and rende
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
-| Last Light Clearing | Procedural clearing | Ember Ruins | Prism Garden, sculpted and lit in 3D |
-| Skybreak | Pacific Run | Bundled original Aurora Fleet | Orbital Foundry, sculpted ships and illuminated orbital scenery |
+| Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Prism Garden, botanical sprites and lit sanctuary scenery |
+| Skybreak | Pacific Run | Aurora Fleet, retro aircraft | Tempest Coast, shaded aircraft and storm-sea scenery |
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Lumen Conservatory, copper-and-glass cathedral gardens |
-| Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, a sculpted rain-soaked city with wet-road reflections |
+| Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, painted fighters in a rain-soaked city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Eclipse Foundry | Moonfall Sanctum, painted fighters in an illustrated lunar sanctuary |
 | Blastline | Iron coast | Not available | Not available |
 
-All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** is a polished modern visual interpretation of the game, with exceptional artwork and memorable animation, atmosphere or effects. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. These are the direction for future work, while the table and game descriptions record today's implementations. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** is a polished modern visual interpretation of the game, with exceptional artwork and memorable animation, atmosphere or effects. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. Existing standard presentations follow these roles while sharing their gameplay. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
 All artwork required by enabled presentations ships with the repository.
 
 
 ## Last Light Clearing
 
-![Last Light Clearing in Close view: the Keeper uses Spark and Halo while crawlers approach and green XP gems lie nearby](docs/games/last-light-clearing/last-light-clearing.png)
+![Last Light Clearing in Close view: the lantern Keeper faces approaching briar creatures](docs/games/last-light-clearing/last-light-clearing.png)
 
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution, lane-charging briar creatures and a late elite ground-slam encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
@@ -40,7 +40,7 @@ See [game rules and implementation](docs/games/last-light-clearing/README.md) an
 
 ## Skybreak
 
-![Skybreak: upgraded forward and spread fire face the Iron Tempest fortress above the ocean](docs/games/skybreak/skybreak.png)
+![Skybreak: aircraft exchange fire over the Pacific coast](docs/games/skybreak/skybreak.png)
 
 Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus.
 
@@ -117,7 +117,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Q | Switch operator after rescuing Bolt |
 | Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original Canvas pixel artwork, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete pixel sprites, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

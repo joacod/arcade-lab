@@ -4,6 +4,7 @@ export interface FlightSize { readonly width: number; readonly height: number; r
 /** Game-local boundary: renderers observe a sortie, never advance it or own a frame loop. */
 export interface FlightPresentation {
   readonly element: HTMLElement;
+  readonly ready?: Promise<void>;
   reset(): void;
   consume(events: readonly FlightEvent[]): void;
   draw(run: Run, size: FlightSize, attractTime?: number): void;

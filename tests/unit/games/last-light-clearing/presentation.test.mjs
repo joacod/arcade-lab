@@ -33,7 +33,7 @@ test('round profiles validate and preserve start, pause, outcome precedence and 
 });
 
 test('art manifests validate decoded bounds, clips, pivots and visual footprints independently of bodies', () => {
-  assert.equal(themes.normal.art, undefined);
+  for (const theme of [themes.normal, themes.quality]) assert.deepEqual(validateArtPack(theme.art, { grove: {width:256,height:192}, gem: {width:32,height:32} }), []);
   assert.deepEqual(validateArtPack(emberRuins.art, { dungeon: { width: 512, height: 512 } }), []);
   const invalid = structuredClone(emberRuins.art);
   invalid.actors.keeper.clips.move.frames[3].rect[0] = 510;

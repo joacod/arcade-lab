@@ -22,6 +22,9 @@ async function openHollow(page: Page, controlled = false) {
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).hollowImages.length === 3 && (window as any).hollowImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
+  await page.evaluate(() => { (window as any).hollowBaselineImages = (window as any).hollowImages.splice(0); });
+  await page.clock.runFor(50);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
   await page.keyboard.down('d'); await page.keyboard.down('Space'); await page.clock.runFor(120);
   await page.keyboard.press('Escape'); await page.keyboard.up('d'); await page.keyboard.up('Space');
@@ -75,6 +78,7 @@ test('Bellgarden loads its bundle, retains the run across modes and restart, and
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await released(page)).toBe(true);
   await expect(page.locator('canvas')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).hollowBaselineImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   expect(errors).toEqual([]);
 });
 
