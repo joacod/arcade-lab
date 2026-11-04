@@ -1,19 +1,23 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import type { LevelId, Rect } from './content.ts';
 import { movement } from './content.ts';
-import { keeperFrame, objectFrames, type BellgardenSheet } from './asset-art.ts';
+import { keeperFrame, objectFrames, illustratedSpriteLayout, type HollowSpriteLayout, type BellgardenSheet } from './asset-art.ts';
 import type { Player } from './game.ts';
 import type { KeeperPose } from './animation.ts';
 import type { HollowView } from './presentation.ts';
 import type { HollowTheme } from './themes.ts';
 
 /** Image footprints are cosmetic and share the Normal renderer's world transform. */
-export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: ImageBundle) {
+export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: ImageBundle, layout: HollowSpriteLayout = illustratedSpriteLayout) {
   function image(sheet: BellgardenSheet, rect: readonly [number, number, number, number], x: number, y: number, w: number, h: number) {
     ctx.drawImage(images[sheet]!, ...rect, x, y, w, h);
   }
   function object(role: keyof typeof objectFrames, x: number, y: number, w: number, h: number) {
     image('objects', objectFrames[role], x, y, w, h);
+  }
+  function actor(sheet: 'keeper' | 'beetle', frame: number) {
+    const { cell: [cw, ch], anchor: [ax, ay], size: [w, h] } = layout[sheet];
+    image(sheet, [frame * cw, 0, cw, ch], -ax / cw * w, -ay / ch * h, w, h);
   }
   return {
     object,
@@ -28,11 +32,11 @@ export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: I
         ctx.fillStyle = palette.sky; ctx.beginPath(); ctx.arc(view.width * .79 - view.x * .012 + 15, 120, 33, 0, Math.PI * 2); ctx.fill();
         for (let i = 0; i < 45; i++) { ctx.fillStyle = '#d7dded88'; ctx.fillRect(((i * 139 - view.x * .04) % view.width + view.width) % view.width, (i * 71) % 370, 2, 2); }
       }
-      for (const [layer, factor, base] of [['far', .16, 40], ['near', .38, 100]] as const) {
+      for (const [layer, factor, base] of [['far', .12, 0], ['near', .32, 0]] as const) {
         const offset = view.x * factor;
-        ctx.globalAlpha = layer === 'far' ? .62 : .66;
+        ctx.globalAlpha = layer === 'far' ? .32 : .58;
         for (let i = Math.floor(offset / 960); i <= Math.ceil((offset + view.width) / 960); i++) {
-          image(`${level}-${layer}`, [0, 0, 960, 640], i * 960 - offset, base - view.y * factor, 960, 640);
+          image(`${level}-${layer}`, [0, 0, 960, 900], i * 960 - offset, base - view.y * factor, 960, 900);
         }
       }
       ctx.globalAlpha = 1;
@@ -61,15 +65,18 @@ export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: I
       const frame = keeperFrame(p, pose, defeated, reduced);
       ctx.save(); ctx.translate(p.x + movement.width / 2, p.y + movement.height);
       const squash = reduced ? 0 : landing * .12;
+      ctx.rotate(reduced ? 0 : pose.lean * .045);
       ctx.scale(p.facing * (1 + squash), 1 - squash);
-      if (defeated) ctx.rotate(-.32);
-      image('keeper', [frame * 64, 0, 64, 80], -25.6, -60.8 - (reduced ? 0 : pose.bob), 51.2, 64);
+      if (defeated && layout === illustratedSpriteLayout) ctx.rotate(-.32);
+      // Both art families keep their authored sole on the physical contact.
+      actor('keeper', frame);
       ctx.restore();
     },
-    beetle(x: number, y: number, direction: number, alive: boolean, time: number, reduced: boolean) {
-      ctx.save(); ctx.translate(x, y); ctx.scale(direction, alive ? 1 : .28);
-      const frame = !alive ? 3 : reduced ? 0 : Math.floor(time * 10) % 3;
-      image('beetle', [frame * 64, 0, 64, 48], -25, -34.4, 51.2, 38.4);
+    beetle(x: number, y: number, direction: number, alive: boolean, reduced: boolean) {
+      ctx.fillStyle = '#061e2566'; ctx.beginPath(); ctx.ellipse(x, y - 1, alive ? 20 : 23, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(x, y); ctx.scale(direction, 1);
+      const frame = !alive ? 3 : reduced ? 0 : [0, 1, 0, 2][Math.floor(Math.abs(x) / 7) % 4]!;
+      actor('beetle', frame);
       ctx.restore();
     },
   };

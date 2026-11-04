@@ -12,7 +12,7 @@ The table lists the presentations currently implemented; their artwork and rende
 | --- | --- | --- | --- |
 | Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Ember Ruins · Rekindled, new illustrated knight, goblins and demon in a modern painted ruin |
 | Skybreak | Pacific Run | Aurora Fleet, arcade fleet and pixel reefs | Tempest Coast, painted fleet and scrolling shoals |
-| Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated glazed ruins | Lumen Conservatory, copper-and-glass cathedral gardens |
+| Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated retro sanctuary | Lumen Conservatory, dimensional ceramic-and-brass cathedral gardens |
 | Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, painted fighters in a rain-soaked city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Eclipse Foundry | Moonfall Sanctum, painted fighters in an illustrated lunar sanctuary |
 | Blastline | Iron coast | Not available | Not available |

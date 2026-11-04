@@ -17,23 +17,23 @@ test('keeper gait follows ground travel, freezes with paused time and resets acr
     const player = { x: 100, vx: 300, grounded: true };
     for (let i = 0; i < 120; i++) animation.observe(player, dt);
     let pose;
-    for (let i = 0; i < steps; i++) { player.x += 18 / steps; pose = animation.observe(player, dt); }
+    for (let i = 0; i < steps; i++) { player.x += 24 / steps; pose = animation.observe(player, dt); }
     return { animation, player, pose };
   }
   const slow = gait(12), fast = gait(6);
-  assert.ok(Math.abs(slow.pose.stride - fast.pose.stride) < 1e-8);
-  assert.ok(slow.pose.stride > 0.99);
+  assert.ok(Math.abs(slow.pose.phase - fast.pose.phase) < 1e-8);
+  assert.ok(Math.abs(slow.pose.phase - Math.PI / 2) < 1e-8);
   assert.deepEqual(slow.animation.observe(slow.player, 0), slow.pose);
   // Air travel and discontinuous repositioning never drive a footstep.
   slow.player.grounded = false; slow.player.x += 30;
-  assert.equal(slow.animation.observe(slow.player, 0).stride, slow.pose.stride);
+  assert.equal(slow.animation.observe(slow.player, dt).phase, slow.pose.phase);
   slow.player.grounded = true; slow.player.x = 3000;
-  assert.equal(slow.animation.observe(slow.player, 0).stride, slow.pose.stride);
+  assert.equal(slow.animation.observe(slow.player, dt).phase, slow.pose.phase);
   slow.player.vx = 0;
   for (let i = 0; i < 90; i++) slow.pose = slow.animation.observe(slow.player, dt);
-  assert.ok(Math.abs(slow.pose.stride) < 1e-8);
+  assert.ok(Math.abs(slow.pose.lean) < 1e-8);
   slow.animation.reset();
-  assert.deepEqual(slow.animation.observe(slow.player, dt), { stride: 0, bob: 0, lean: 0 });
+  assert.deepEqual(slow.animation.observe(slow.player, dt), { phase: 0, lean: 0 });
 });
 
 test('platformer remains grounded, stops promptly, blocks both walls and ceilings, and resolves the nearest surface', () => {

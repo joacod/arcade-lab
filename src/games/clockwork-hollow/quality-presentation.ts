@@ -53,13 +53,17 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
   }
   function wheel(x: number, y: number, radius: number, time: number, color: string) {
     c.save(); c.translate(x, y); c.rotate(time);
-    ring(0, 0, radius, '#0a202b', 22); ring(0, 0, radius, color, 12); ring(0, 0, radius - 14, color, 2);
+    ring(0, 0, radius, '#0a202b', 22); ring(0, 0, radius, color, 12);
+    ring(-1, -2, radius + 4, '#c9d7af44', 2); ring(1, 2, radius - 5, '#09253288', 3);
+    ring(0, 0, radius - 14, color, 2);
     ring(0, 0, radius * .57, color, 3);
     for (let i = 0; i < 16; i++) {
       c.save(); c.rotate(i * TAU / 16);
       box(radius - 13, -7, 26, 14, color, 2);
       box(radius - 8, -5, 19, 3, '#b9c5a755', 1);
+      line(14, 3, radius - 14, 3, '#09253266', 7);
       line(14, 0, radius - 14, 0, color, 5);
+      line(24, -1, radius - 20, -1, '#d2dbc233', 1);
       line(radius * .57, 2, radius * .82, 23, color, 2); c.restore();
     }
     for (let i = 0; i < 64; i++) {
@@ -154,8 +158,14 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
       box(0, 0, w, h, gradient(0, 0, w * .15, h, [p.sky, p.middle, p.deep]));
       // The light source and distant silhouettes stay behind every physical surface.
       const moonX = w * .78 - view.x * .015;
-      light(moonX, 135, 330, p.light, '25'); ellipse(moonX, 135, id === 'belfry' ? 45 : 31, id === 'belfry' ? 45 : 31, '#d6e3cf');
-      ellipse(moonX + 11, 127, 30, 30, p.sky);
+      light(moonX, 135, 330, p.light, '25');
+      const moonRadius = id === 'belfry' ? 45 : 31;
+      // Clip the cutout to the disc, so its mask never becomes a dark second moon.
+      c.save(); c.beginPath(); c.arc(moonX, 135, moonRadius, 0, TAU); c.clip();
+      c.fillStyle = '#d6e3cf'; c.beginPath();
+      c.arc(moonX, 135, moonRadius, 0, TAU);
+      c.moveTo(moonX + 11 + moonRadius, 127); c.arc(moonX + 11, 127, moonRadius, 0, TAU);
+      c.fill('evenodd'); c.restore();
       for (let i = 0; i < 55; i++) {
         const x = ((i * 131.3 - view.x * .035) % w + w) % w, y = (i * 67.1) % (h * .65);
         ellipse(x, y, i % 9 === 0 ? 1.6 : .7, i % 9 === 0 ? 1.6 : .7, '#d3e3db66');
@@ -196,6 +206,8 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
       const p = district[id], bottom = Math.min(s.y + s.h, view.y + view.height + 10);
       c.save(); c.beginPath(); c.rect(s.x, s.y, s.w, bottom - s.y); c.clip();
       box(s.x, s.y, s.w, s.h, gradient(s.x, s.y, 0, Math.min(s.h, 260), [p.stone, p.deep]));
+      // Reflected glass light models the broad face; the bevel remains below contact.
+      box(s.x, s.y + 20, s.w, Math.min(76, s.h), gradient(0, s.y + 20, 0, 76, [p.light + '12', p.light + '00']));
       const left = Math.max(s.x, view.x - 90), right = Math.min(s.x + s.w, view.x + view.width + 90);
       for (let row = 0; row < Math.min(10, s.h / 52); row++) {
         const y = s.y + 25 + row * 52;
@@ -217,7 +229,7 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
           }
         }
       }
-      box(s.x, s.y + 3, s.w, Math.min(17, s.h - 3), gradient(0, s.y + 3, 0, 16, [p.copper, '#483c36', '#8a7758']));
+      box(s.x, s.y + 3, s.w, Math.min(17, s.h - 3), gradient(0, s.y + 3, 0, 16, ['#ddc396', p.copper, '#483c36', '#8a7758']));
       for (let x = s.x + Math.max(0, Math.floor((left - s.x) / 40)) * 40 + 10; x < right; x += 40) {
         ellipse(x, s.y + 10, 2.3, 2.3, '#10232b'); ellipse(x - .5, s.y + 9, 1, 1, '#f1d5a7');
       }

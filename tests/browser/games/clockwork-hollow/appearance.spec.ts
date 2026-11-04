@@ -48,7 +48,7 @@ test('Bellgarden loads its bundle, retains the run across modes and restart, and
   expect(await page.evaluate(() => (window as any).retainedHollow === (window as any).hollowProbe)).toBe(true);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).not.toBe(normal);
   expect(await page.evaluate(() => (window as any).hollowImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
-    .toEqual([[512, 80], [256, 48], [1024, 160], [384, 192], ...Array.from({ length: 6 }, () => [960, 640])]);
+    .toEqual([[768, 80], [256, 48], [1024, 160], [384, 192], ...Array.from({ length: 6 }, () => [960, 900])]);
   await chooseOption(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);
@@ -102,7 +102,7 @@ test('failed, superseded, resumed and disposed image preparation keeps the activ
   await keeperURL(page, '/hollow-delayed.svg');
   let finish: (() => Promise<void>) | undefined;
   await page.route(/\/hollow-(delayed|resumed|disposed)\.svg$/, route => new Promise<void>(resolve => {
-    finish = async () => { await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="80"/>' }); resolve(); };
+    finish = async () => { await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="768" height="80"/>' }); resolve(); };
   }));
   await chooseOption(theme, 'assets'); await expect.poll(() => !!finish).toBe(true);
   await chooseOption(theme, 'normal'); await finish!(); await page.clock.runFor(50);
@@ -139,7 +139,7 @@ const liveCanvases = (page: Page) => page.evaluate(() => (window as any).lumenCa
 test('Lumen conservatory retains a paused journey, bounds its artwork and presents all districts', async ({ page }, info) => {
   const errors: string[] = [], qualityRequests: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (request.url().includes('/quality-presentation.ts')) qualityRequests.push(request.url()); });
+  page.on('request', request => { if (request.url().includes('/quality-presentation.ts') || request.url().includes('/art/lumen/')) qualityRequests.push(request.url()); });
   await trackCanvases(page); await openHollow(page);
   expect(qualityRequests).toEqual([]); expect(await liveCanvases(page)).toBe(1);
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
@@ -152,6 +152,8 @@ test('Lumen conservatory retains a paused journey, bounds its artwork and presen
   expect(await page.evaluate(() => (window as any).retainedHollow === (window as any).hollowProbe)).toBe(true);
   const quality = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   expect(quality).not.toBe(normal); expect(await liveCanvases(page)).toBe(3);
+  expect(await page.evaluate(() => (window as any).hollowImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
+    .toEqual([[2304, 240], [768, 144], [1024, 160]]);
   await page.clock.runFor(1000);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(quality);
   await chooseOption(theme, 'assets'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');

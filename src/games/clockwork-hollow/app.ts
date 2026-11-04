@@ -59,7 +59,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
         candidate = await prepareBellgarden(request.signal);
         if (!request.current()) return;
       } else if (id === 'quality') {
-        candidate = await prepareImages(hollowSpriteImages('quality'),request.signal,validateHollowSprites);
+        candidate = await prepareImages(hollowSpriteImages('quality'), request.signal, dimensions => validateHollowSprites('quality', dimensions));
         if (!request.current()) return;
         const { createLumenDrawing } = await import('./quality-presentation.ts');
         if (!request.current()) return;
