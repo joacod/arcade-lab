@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 
 // Original, editable SVG artwork. Runtime uses the committed outputs.
 const ink = '#233d55', cream = '#fff0cf', coral = '#ec7968', teal = '#59b8b2', gold = '#e4b767';
@@ -25,34 +25,35 @@ function write(name, width, height, body) {
   writeFileSync(new URL(`${name}.svg`, import.meta.url), `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><!-- Porcelain Bellgarden | Original Arcade Lab artwork | MIT -->${body}</svg>\n`);
 }
 
-// Eight independent frames, facing right. All soles share y=76.
-write('keeper', 512, 80, Array.from({ length: 8 }, (_, frame) => {
-  const stride = [0, -9, -4, 5, 10, 7, -5, 0][frame], jump = frame === 5, fall = frame === 6;
-  const arm = jump ? 29 : fall ? 37 : 50;
-  return group(frame * 64, 0,
-    path(`M25 42Q7 ${jump ? 26 : 44} 4 55L18 52 26 48`, coral, ink) +
-    line(27, 58, 24 + stride, 73, ink, 7) + line(37, 58, 40 - stride, 73, ink, 7) +
-    rect(18 + stride, 70, 13, 6, cream, 2, ink) + rect(34 - stride, 70, 14, 6, cream, 2, ink) +
-    line(21, 46, 14, arm, ink, 6) + line(42, 46, 49, arm + (jump ? 0 : stride * .5), ink, 6) +
-    ellipse(14, arm, 4, 4, cream, ink) + ellipse(49, arm + (jump ? 0 : stride * .5), 4, 4, cream, ink) +
-    path('M22 40Q16 56 23 62L41 62Q47 51 41 40Z', cream, ink) +
-    path('M25 44L25 55Q32 61 39 55L39 44', 'none', gold) +
-    ellipse(32, 51, 6, 6, ink) + ellipse(32, 51, 3, 3, teal) +
-    rect(15, 13, 36, 29, cream, 11, ink) + path('M17 23Q30 17 49 23L49 34Q35 40 18 33Z', ink) +
-    (frame === 7 ? line(26, 26, 30, 30, coral) + line(30, 26, 26, 30, coral) + line(39, 26, 43, 30, coral) + line(43, 26, 39, 30, coral)
-      : ellipse(28, 28, 2.5, 3.5, '#a4f6e2') + ellipse(42, 28, 2.5, 3.5, '#a4f6e2')) +
-    path('M21 17Q32 11 44 17', 'none', gold) + line(28, 12, 26, 5, ink) +
-    path('M26 7Q14 -1 16 8Q21 13 26 7M26 7Q37 -2 36 6Q33 12 26 7', teal, ink, 1) +
-    path('M20 40Q30 45 45 40L44 45Q32 49 21 45Z', coral, ink, 1));
-}).join(''));
-
-write('beetle', 256, 48, Array.from({ length: 4 }, (_, frame) => group(frame * 64, 0,
-  Array.from({ length: 3 }, (_, leg) => line(18 + leg * 12, 31, 13 + leg * 13 + (frame % 2 ? 3 : -2), 43, gold, 3)).join('') +
-  path('M9 31Q8 10 31 9Q49 9 52 31Z', frame === 3 ? '#647583' : coral, ink, 3) +
-  path('M13 20Q27 5 44 18M31 11L31 31', 'none', cream, 2) +
-  ellipse(25, 23, 4, 4, ink) + ellipse(39, 23, 4, 4, ink) +
-  path('M12 33L51 33', 'none', cream, 4) + ellipse(51, 29, 7, 7, ink) + ellipse(54, 27, 2, 2, cream) +
-  line(17, 12, 17, 4, gold) + line(11, 4, 23, 4, gold))).join(''));
+// Complete connected silhouettes, with authored stance/action contours. No joint reconstruction.
+const keeperContours = [
+ 'M20 40L15 45L10 54Q11 60 17 58L23 52L24 62L21 70L18 71L18 76L31 76L33 63L36 63L37 76L50 76L49 71L44 68L42 52L48 57Q54 59 54 53L47 43L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L12 44L9 51L14 55L23 50L24 61L17 69L12 71L12 76L26 76L34 64L38 68L40 76L53 76L52 71L47 68L42 51L49 59L55 57L53 50L45 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L13 46L12 57L18 58L24 51L25 62L23 71L20 72L20 76L33 76L35 64L39 69L41 75L53 75L52 70L46 66L42 50L50 54L55 50L49 44L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L12 46L9 56L15 59L24 52L25 62L29 70L26 71L26 76L39 76L38 64L43 68L45 74L56 74L55 69L49 65L42 50L49 52L54 47L47 42L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L13 43L9 50L12 56L20 54L25 62L35 70L34 76L49 76L48 71L42 66L35 62L32 63L24 70L14 70L13 75L27 76L39 66L42 51L48 58L54 56L53 50L45 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L13 31L9 24L4 27L7 38L22 52L24 61L19 64L14 60L10 64L17 72L26 72L33 64L40 69L48 72L54 68L50 63L44 62L42 51L55 37L58 26L53 23L49 32L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L10 42L4 48L6 54L13 51L23 51L24 61L20 70L18 72L18 76L31 76L33 64L39 64L42 76L55 76L54 71L49 68L42 51L53 51L59 47L56 42L46 42L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+ 'M20 40L12 42L7 54L12 59L22 53L24 62L21 70L18 71L18 76L31 76L33 63L36 63L37 76L50 76L49 71L44 68L42 52L50 60L56 57L53 48L43 40L48 35Q54 17 43 13L25 12Q11 15 15 33Z',
+];
+const keeperAtlas = keeperContours.map((contour, frame) => group(frame * 64, 0,
+  path(contour, cream, ink) +
+  path('M18 23Q30 18 49 23L48 33Q35 40 18 33Z', ink) +
+  ellipse(28,28,2.5,3.5,frame === 7 ? coral : '#a4f6e2') + ellipse(42,28,2.5,3.5,frame === 7 ? coral : '#a4f6e2') +
+  path('M24 46Q32 42 41 47L40 57Q32 63 25 57Z', gold, 'none') + ellipse(33,52,4,5,teal) +
+  path('M20 40Q32 45 45 40L44 45Q32 49 21 45Z',coral,ink,1) +
+  path('M22 17Q32 13 44 17M27 63L31 61M40 62L43 64','none',gold,1)
+)).join('');
+write('keeper',512,80,keeperAtlas);
+write('keeper-normal',512,80,keeperAtlas.replaceAll(cream,'#ddbc78').replaceAll(coral,'#5e947c').replaceAll(teal,'#b6efce'));
+write('keeper-quality',512,80,keeperAtlas.replaceAll(cream,'url(#copper)').replaceAll(coral,'#dba765').replaceAll(teal,'#b6f1d2').replaceAll(ink,'#15343c').replace(/^/,'<defs><linearGradient id="copper"><stop stop-color="#80725c"/><stop offset=".35" stop-color="#f3dcae"/><stop offset=".7" stop-color="#b3976b"/><stop offset="1" stop-color="#5b6156"/></linearGradient></defs>'));
+const beetleAtlas = Array.from({length:4},(_,frame)=>group(frame*64,0,
+ path('M9 31Q8 10 31 9Q49 9 52 24Q60 22 59 32L52 37L49 43L44 43L44 36L36 36L35 43L30 43L30 36L22 36L20 43L14 43L16 35L9 35Z',frame===3?'#647583':coral,ink,2) +
+ path('M13 20Q27 5 44 18M31 11L31 31','none',cream,2) + path('M12 33L51 33','none',cream,3) + ellipse(54,27,2,2,cream)
+)).join('');
+write('beetle',256,48,beetleAtlas);
+write('beetle-normal',256,48,beetleAtlas.replaceAll(coral,'#ce8c66'));
+write('beetle-quality',256,48,beetleAtlas.replaceAll(coral,'#ba8b73').replaceAll(cream,'#ffe1b3'));
 
 const lantern = lit => line(64, 152, 64, 30, ink, 6) + path('M43 36L64 20 85 36Z', cream, ink, 3) +
   rect(46, 38, 36, 49, lit ? '#bef5da' : '#647e83', 8, ink) +
@@ -71,6 +72,14 @@ const vent = rect(12, 124, 104, 31, cream, 5, ink) + rect(20, 129, 88, 10, ink, 
   Array.from({ length: 8 }, (_, i) => line(25 + i * 10, 129, 25 + i * 10, 139, gold, 3)).join('') + ellipse(29, 148, 3, 3, coral) + ellipse(98, 148, 3, 3, coral);
 write('objects', 1024, 160, [lantern(false), lantern(true), bell, gate, mote, thorn, vent, foliage(64, 158, 115) + flower(66, 55, 15, coral)]
   .map((body, i) => `<svg x="${i * 128}" width="128" height="160" viewBox="0 0 128 160">${body}</svg>`).join(''));
+
+const objectSource = new URL('objects.svg', import.meta.url);
+// Complete object images, same rectangles and pivots in every presentation.
+for (const [suffix, replacements] of [['normal', [[cream, '#ddbc78'],[coral, '#ce8c66']]], ['quality', [[cream, '#e5cfa8'],[coral, '#ed9f8b'],[gold, '#ba9664']]]]) {
+  let source = readFileSync(objectSource, 'utf8');
+  for (const [from,to] of replacements) source = source.replaceAll(from,to);
+  writeFileSync(new URL(`objects-${suffix}.svg`, import.meta.url),source);
+}
 
 const districts = [
   { id: 'aqueduct', stone: '#456e78', tile: '#335564', pale: '#a6c8b9', leaf: '#509a94', far: '#34546a', glow: '#b5d5be' },

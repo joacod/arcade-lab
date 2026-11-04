@@ -14,6 +14,7 @@ import { themes } from './themes.ts';
 import { prepareFlightArt } from './assets.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
 import { prepareImages } from '../../engine/browser/images.ts';
+import { validateFlightArt } from './art-pack.ts';
 import type { FlightPresentation } from './flight-presentation.ts';
 import './style.css';
 
@@ -46,7 +47,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     applyPalette();
     function applyPalette() {
       const theme = themes[appearance]!;
-      host.root.dataset.theme = appearance; host.root.dataset.scene = theme.scene;
+      host.root.dataset.theme = appearance;
       host.root.style.setProperty('--menu-accent', theme.palette.accent);
       host.root.style.setProperty('--sky-accent', theme.palette.accent);
       host.root.style.setProperty('--sky-background', theme.palette.background);
@@ -61,20 +62,19 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       try {
         const staging = document.createElement('div');
         if (theme.quality) {
-          const { createFoundry } = await import('./quality/foundry.ts');
+          candidate = await prepareImages({ ...theme.art!.images, backdrop: theme.quality.backdrop }, request.signal, dimensions => [
+            ...validateFlightArt(theme.art!, dimensions),
+            ...(dimensions.backdrop?.width === 1024 && dimensions.backdrop.height === 1536 ? [] : ['Invalid coastal backdrop dimensions.']),
+          ]);
           if (!request.current()) return;
-          candidate = await prepareImages({ backdrop: theme.quality.backdrop }, request.signal, dimensions =>
-            dimensions.backdrop?.width === 1024 && dimensions.backdrop.height === 1536 ? [] : ['Invalid foundry backdrop dimensions.']);
-          if (!request.current()) return;
-          const owner = createFoundry(theme, candidate.images, () => queueMicrotask(() => {
-            if (!disposed && presentation === owner) recoverQuality();
-          }));
-          candidateDisplay = owner;
+
         } else {
           if (theme.art) candidate = await prepareFlightArt(theme.art, request.signal);
           if (!request.current()) return;
-          candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
         }
+        candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
+        if (!request.current()) return;
+        await candidateDisplay.ready;
         if (!request.current()) return;
         // A candidate must draw the current sortie successfully before replacing its working owner.
         candidateDisplay.draw(run, host, screen === 'title' ? performance.now() / 1000 : undefined);
@@ -98,7 +98,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       const previous = presentation, previousArt = activeArt;
       host.surface.append(next.element); presentation = next; activeArt = undefined;
       appearance = 'normal'; applyPalette(); ui.appearance('normal');
-      ui.appearanceStatus('Orbital Foundry graphics stopped. Pacific Run is ready. Your sortie is preserved.');
+      ui.appearanceStatus('Tempest Coast graphics stopped. Pacific Run is ready. Your sortie is preserved.');
       disposeAll(() => previous.dispose(), () => previousArt?.dispose());
     }
     function transition(next: Screen, focus = true) {

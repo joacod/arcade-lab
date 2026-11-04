@@ -1,3 +1,5 @@
+import { prepareImages, type PreparedImages } from '../../engine/browser/images.ts';
+import { circuitSprites, validateCircuitSprites } from './sprite-art.ts';
 import { createPreparationScope } from '../../engine/browser/preparation.ts';
 import { createPresentation } from './presentation.ts';
 import { appearances, type Appearance, type CircuitRenderer } from './graphics.ts';
@@ -19,7 +21,7 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
     const request = preparation.begin();
     if (value === active) { status(active, ''); return; }
     status(value, `Preparing ${appearances[value]}…`);
-    const staging = document.createElement('div'); let next: CircuitRenderer | undefined;
+    const staging = document.createElement('div'); let next: CircuitRenderer | undefined, sprites: PreparedImages | undefined;
     const failed = () => { if (!disposed && current === next) fallback('Graphics became unavailable. Normal restored.'); };
     try {
       if (value === 'normal') next = createPresentation(staging);
@@ -30,19 +32,24 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
       } else {
         const { createDiorama } = await import('./three/diorama.ts');
         if (!request.current()) return;
-        next = createDiorama(staging, failed);
+        sprites = await prepareImages(circuitSprites, request.signal, validateCircuitSprites);
+        if (!request.current()) {sprites.dispose();return;}
+        const drawing = createDiorama(staging, sprites.images, failed), owned = sprites; sprites = undefined;
+        next = {...drawing, dispose() {try {drawing.dispose();} finally {owned.dispose();}}};
       }
+      await next.ready;
       if (!request.current()) { next.dispose(); return; }
       if (snapshot) next.draw(...snapshot);
       current.dispose(); surface.append(...staging.childNodes); current = next; active = value;
       status(active, '');
     } catch {
-      next?.dispose();
+      next?.dispose(); sprites?.dispose();
       if (request.current()) { status(active, `${appearances[value]} unavailable. ${appearances[active]} retained.`); }
     }
   }
   return {
     select,
+    cancel() { preparation.cancel(); status(active, ''); },
     reset() { current.reset(); },
     consume: ((events) => current.consume(events)) as CircuitRenderer['consume'],
     draw: ((...args) => { snapshot = args; try { current.draw(...args); } catch { fallback('Graphics became unavailable. Normal restored.'); current.draw(...args); } }) as CircuitRenderer['draw'],

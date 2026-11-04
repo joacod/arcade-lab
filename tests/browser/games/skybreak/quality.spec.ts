@@ -9,10 +9,10 @@ async function probe(page: import('@playwright/test').Page) {
   });
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
-    (window as any).foundryContexts = [];
+    (window as any).coastContexts = [];
     HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
       const ctx = (original as any).call(this, type, ...args);
-      if (type === 'webgl2' && ctx && !(window as any).foundryContexts.includes(ctx)) (window as any).foundryContexts.push(ctx);
+      if (type === 'webgl2' && ctx && !(window as any).coastContexts.includes(ctx)) (window as any).coastContexts.push(ctx);
       return ctx;
     } as any;
   });
@@ -21,7 +21,7 @@ async function probe(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
 }
 
-test('Quality preserves an ongoing sortie, freezes its output, survives restart and recovers from graphics loss', async ({ page }) => {
+test('Quality preserves an ongoing sortie, freezes its output, survives restart and recovers from drawing failure', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await probe(page);
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
@@ -31,7 +31,7 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   const frozen = await state();
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   expect(await state()).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).foundryContexts.length)).toBe(1);
+  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
   await page.clock.runFor(100);
   const surface = page.locator('.play-surface'); const picture = await surface.screenshot();
   await page.clock.runFor(1200); expect((await surface.screenshot()).equals(picture), 'paused presentation stays unchanged').toBe(true); expect(await state()).toBe(frozen);
@@ -41,8 +41,15 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   expect(await page.evaluate(() => (window as any).flightProbe.elapsed)).toBeLessThan(0.1);
-  // Loss while playing suspends the same run and supplies a working baseline.
-  await page.evaluate(() => (window as any).foundryContexts[0].getExtension('WEBGL_lose_context').loseContext());
+  // A failed image draw suspends the same sortie and supplies a working baseline.
+  await page.evaluate(() => {
+    const ctx=document.querySelector('canvas')!.getContext('2d')!,draw=ctx.drawImage;
+    ctx.drawImage=function(...args: any[]) {
+      if ((args[0] as HTMLImageElement).src?.includes('tempest-coast')) throw new Error('Lost coastal artwork');
+      return (draw as any).apply(this,args);
+    } as any;
+  });
+  await page.clock.runFor(32);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
   await expect(page.locator('.skybreak-asset-status')).toContainText('Your sortie is preserved');
@@ -50,7 +57,7 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   await chooseOption(theme, 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
-  expect(await page.evaluate(() => (window as any).foundryContexts.every((ctx: WebGL2RenderingContext) => ctx.isContextLost()))).toBe(true);
+  expect(await page.evaluate(() => (window as any).coastContexts.every((ctx: WebGL2RenderingContext) => ctx.isContextLost()))).toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0); expect(errors).toEqual([]);
 });
@@ -58,7 +65,7 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
 test('Quality handles cancelled and failed backdrop preparation without replacing the working renderer', async ({ page }) => {
   await probe(page);
   let finish: (() => Promise<void>) | undefined;
-  await page.route('**/orbital-foundry/backdrop.webp', route => new Promise<void>(resolve => {
+  await page.route('**/tempest-coast/backdrop.webp', route => new Promise<void>(resolve => {
     finish = async () => { await route.continue(); resolve(); };
   }));
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
@@ -66,13 +73,13 @@ test('Quality handles cancelled and failed backdrop preparation without replacin
   await expect(page.locator('canvas')).toHaveCount(1);
   await chooseOption(theme, 'normal'); await finish!(); await page.clock.runFor(100);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
-  expect(await page.evaluate(() => (window as any).foundryContexts.length)).toBe(0);
-  await page.unroute('**/orbital-foundry/backdrop.webp');
+  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
+  await page.unroute('**/tempest-coast/backdrop.webp');
   await page.evaluate(async () => {
     const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path);
     themes.quality.quality.backdrop += '?failure';
   });
-  await page.route('**/orbital-foundry/backdrop.webp?failure', route => route.abort());
+  await page.route('**/tempest-coast/backdrop.webp?failure', route => route.abort());
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-asset-status')).toContainText('Keeping Pacific Run');
   await expect(theme).toHaveAttribute('value', 'normal'); await expect(page.locator('canvas')).toHaveCount(1);
   await page.evaluate(async () => {
@@ -80,33 +87,25 @@ test('Quality handles cancelled and failed backdrop preparation without replacin
     themes.quality.quality.backdrop = themes.quality.quality.backdrop.replace('?failure', '?disposal');
   });
   finish = undefined;
-  await page.route('**/orbital-foundry/backdrop.webp?disposal', route => new Promise<void>(resolve => {
+  await page.route('**/tempest-coast/backdrop.webp?disposal', route => new Promise<void>(resolve => {
     finish = async () => { await route.continue(); resolve(); };
   }));
   await chooseOption(theme, 'quality'); await expect.poll(() => !!finish).toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await finish!(); await page.clock.runFor(100);
   await expect(page.locator('canvas')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).foundryContexts.length)).toBe(0);
+  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
 });
 
-test('Quality construction failure and reduced motion keep the sortie readable', async ({ page }) => {
+test('Quality uses complete sprites without WebGL and freezes decoration for reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await probe(page);
-  await page.evaluate(() => {
-    const original = HTMLCanvasElement.prototype.getContext;
-    (window as any).restoreContext = () => { HTMLCanvasElement.prototype.getContext = original; };
-    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
-      return type === 'webgl2' ? null : (original as any).call(this, type, ...args);
-    } as any;
-  });
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
-  await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-asset-status')).toContainText('Keeping Pacific Run');
-  await expect(page.locator('canvas')).toHaveCount(1);
-  await page.evaluate(() => (window as any).restoreContext());
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
+  await expect(page.locator('canvas')).toHaveCount(1);
+  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
   const picture = await page.locator('.play-surface').screenshot();
   await page.clock.runFor(1800); expect((await page.locator('.play-surface').screenshot()).equals(picture), 'reduced-motion title stays unchanged').toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  expect(await page.evaluate(() => (window as any).foundryContexts.every((ctx: WebGL2RenderingContext) => ctx.isContextLost()))).toBe(true);
+  await expect(page.locator('canvas')).toHaveCount(0);
 });

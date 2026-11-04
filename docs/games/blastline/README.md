@@ -18,7 +18,7 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 
 Artwork must distinguish breakable brick and armored cover from structural steel, with aim, warnings and extraction cues visible through debris. The industrial coast is the starting setting for future art direction.
 
-**Normal** keeps Iron coast, the original industrial skies, weather and operator colors. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
+**Normal** keeps Iron coast, the original industrial skies, weather and operator colors, using complete pixel sprite cels for both operators, enemies and interactive objects. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
 
 ## Source ownership
 
@@ -32,7 +32,7 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 | Local patrol, detection, committed telegraphs and bursts | `enemies.ts` |
 | Fresh runs, respawn, checkpoints, rescue and mission progression | `game.ts` |
 | Action translation using shared button capture | `input.ts` |
-| Uniform camera, original pixel characters/scenery and bounded effects | `presentation.ts` |
+| Uniform camera, complete sprite drawing, procedural scenery and bounded effects | `presentation.ts` |
 | Mission skies, material palettes, weather and operator/machine colors | `themes.ts` |
 | HUD, menus and announcements | `ui.ts`, `style.css` |
 | Original AudioBits recipes and local cue admission | `sound-recipes.ts`, `sound.ts` |
@@ -42,13 +42,13 @@ Terrain copies authored materials and health into each run. Axis-separated leadi
 
 Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire.
 
-Visuals and cover artwork use editable geometry.
+The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Scenery, effects and the cover use editable geometry.
 
 ## Architecture decisions
 
 Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
-Appearance changes use `presentation.ts`’s `applyTheme` on the existing terrain drawing; `themes.ts` maps material and operator colors.
+Appearance changes use `presentation.ts`’s `applyTheme` on the existing terrain drawing; `themes.ts` maps scenery materials; `sprite-art.ts` owns the sprite roles and image validation.
 
 The local state contract connects movement, combat and objectives. Fixed populations and visible tile traversal bound the work.
 

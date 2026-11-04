@@ -2,7 +2,7 @@
 
 [Game presentations](../../../../docs/games/midnight-circuit/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-Signal / Rain uses original SVG artwork under the repository’s [MIT license](../../../../LICENSE). Afterglow’s geometry and generated sign/contact-shadow textures live in `../three/art.ts`, `../three/scenery.ts` and `../three/fighters.ts`; its [creative brief](../../../../docs/games/midnight-circuit/README.md#quality-art-direction-afterglow) lives in the game guide.
+Signal / Rain uses original SVG artwork under the repository’s [MIT license](../../../../LICENSE). All modes share AI-generated complete painted fighters in `fighters/`. Afterglow’s scenery geometry and generated sign textures live in `../three/art.ts` and `../three/scenery.ts`; its [creative brief](../../../../docs/games/midnight-circuit/README.md#quality-art-direction-afterglow) lives in the game guide.
 
 ## Signal / Rain creative brief
 
@@ -16,14 +16,22 @@ The editable source is [signal-rain/generate.mjs](signal-rain/generate.mjs). Run
 
 | Image | Dimensions | Role and footprint |
 | --- | --- | --- |
-| `fighters.svg` | 512 × 256 | Four rows: Rook, Striker, Bruiser, Warden. Eight 64 × 64 independent parts per row: head, torso, upper arm, forearm, thigh, shin, boot, hand. Each frame rectangle starts at `(column × 64, row × 64)`. |
+| `fighters/fighters.png` | 2048 × 1024 | Four rows: Rook, Striker, Bruiser, Warden. Eight complete 256-square cels per row: idle, left step, right step, anticipation, punch, kick, hurt, down. |
 | `skyline.svg` | 960 × 320 | Repeating distant skyline at 0.18 camera parallax; 960 × 320 world units, top at ground − 360. |
 | `backstreets.svg`, `station.svg` | 960 × 340 | Repeating stage facade, 960 × 270 world units above the ground at 0.78 parallax. Subdued detail sits behind actors. |
 | `pavement.svg` | 960 × 240 | Camera-aligned repeating street surface, 960 units wide, extending from the ground to the viewport bottom with a minimum height of 240 units. |
 | `repair.svg` | 64 × 64 | Transparent repair case drawn at 42 × 42 units, centered on the pickup's x coordinate and grounded at lane + 4 with a gentle two-unit hover. |
 
-Fighters face right and mirror around their foot origin for left facing. Head and torso frame origins are `(-32, -140)` and `(-32, -91)`. Limb images pivot at `(32, 8)` and stretch along a 40-unit joint span. Boot and hand anchors are `(32, 54)` and `(32, 32)`. Transparent padding keeps adjacent frames isolated. The normal-size standing silhouette is approximately 80 × 130 units; Bruisers scale by 1.2 and the Warden by 1.48.
+Fighters face right and mirror around their foot origin. Each cel uses the same (128, 240) ground pivot and 160 × 160 world-unit footprint, including padding. Bruisers scale uniformly by 1.2 and the Warden by 1.48. Elevation translates the whole drawing independently of its ground lane. No body parts are drawn or transformed separately.
 
-This part atlas uses `fighterPose` observations to place knees, ankles, elbows and hands. The [game guide](../../../../docs/games/midnight-circuit/README.md#theme-modes) owns gait and combat-animation behavior. Immunity flicker, hit flashes and attack arcs stay in the Canvas overlay.
+`animation.ts` selects cels from observed displacement and actual attack windows. Combat effects and the Warden's recovery label remain separate semantic cues. Reduced motion holds the idle cel during walking and retains anticipation, contact, hurt and defeat information.
+
+The complete transparent source sheet, creation prompt, transparency correction and explicit source rectangles and pivots are retained in `fighters/`. The packer isolates each complete connected silhouette, preserves its antialiased edge and translates the whole drawing to a stable pivot. It rejects clipping and excludes neighboring figures without redrawing or reconstructing anatomy:
+
+```sh
+node src/games/midnight-circuit/art/fighters/pack.mjs
+```
+
+Quality maps these same cels to camera-facing image planes, including in the wet-road reflection. Its repair pickup also uses the committed repair image.
 
 `asset-art.ts` validates this layout; `assets.ts` maps images to roles. Preparation and release follow the [shared replacement contract](../../../../docs/architecture.md#replacement-and-recovery).

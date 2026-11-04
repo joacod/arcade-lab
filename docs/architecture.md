@@ -54,7 +54,7 @@ Engine code supplies game-independent execution and resource mechanisms. `engine
 | Bounded fixed-step timing | `src/engine/clock.ts` |
 | Pure swept-circle intersection and strict rectangle overlap | `src/engine/collision.ts` |
 | AudioBits session lifecycle and bounded playback | `src/engine/browser/audio.ts` |
-| Cancellable image preparation, source release and validation handoff | `src/engine/browser/images.ts` |
+| Cancellable image preparation, synchronous initial resource ownership, source release and validation handoff | `src/engine/browser/images.ts` |
 | Latest-request cancellation and session invalidation | `src/engine/browser/preparation.ts` |
 | Standard theme labels, ordering, availability and Custom exceptions | `src/common/ui/theme-select.ts` |
 
@@ -149,7 +149,7 @@ For new games and game types, prefer **Normal → Assets → Quality**, giving e
 
 Avoid combining all three presentations into one enormous initial task. This is a recommended development process, not a runtime dependency: every implemented mode presents the same simulation and gameplay rules, independently of whether other modes exist. Explicit creative requirements may justify a different order. Missing modes stay visible and unavailable until a dedicated pass implements them.
 
-Existing presentations may contain procedural actors, assembled body parts, non-retro Assets treatments or changes of setting between modes. Their game and artwork guides describe current behavior, not templates that override these contracts. Align those presentations in dedicated game passes; preserve their rules, useful artwork and semantic animation timing. Keep current implementation descriptions accurate until the game changes. Custom remains outside this progression, reserved for explicitly requested, documented experiments.
+When adapting older presentations, preserve their rules, useful artwork and semantic timing while replacing procedural anatomy with complete sprite cels. Retire obsolete rig code and part-atlas sources together, and keep the owning game and artwork guides accurate. Custom remains outside this progression, reserved for explicitly requested, documented experiments.
 
 ### Mode contract
 

@@ -9,46 +9,20 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-// Read the Keeper's body from actual Canvas output, in world units.
+// Physical positions are independent of the lantern's cosmetic location inside a cel.
 async function keeper(page: Page, screenSpace = false) {
-  // A real ResizeObserver can run after a fake-clock batch. Wait for its next painted frame.
-  for (let frame = 0; frame < 3; frame++) {
-    const position = await page.locator('.world-canvas').evaluate(async (canvas, screenSpace) => {
-      const rect = canvas.getBoundingClientRect();
-      if (Math.abs(canvas.width / rect.width - canvas.height / rect.height) > 0.02) return null;
-      const ctx = canvas.getContext('2d')!;
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      let x = 0, y = 0, count = 0;
-      for (let i = 0; i < pixels.length; i += 4) {
-        if ((Math.abs(pixels[i]! - 245) < 8 && Math.abs(pixels[i + 1]! - 213) < 8 && Math.abs(pixels[i + 2]! - 139) < 8)
-          || (pixels[i]! > 247 && Math.abs(pixels[i + 1]! - 240) < 8 && Math.abs(pixels[i + 2]! - 192) < 8)) {
-          const pixel = i / 4;
-          x += pixel % canvas.width; y += Math.floor(pixel / canvas.width); count++;
-        }
-      }
-      if (!count) return null;
-      const ratio = canvas.width / rect.width;
-      if (screenSpace) return { x: x / count / ratio, y: y / count / ratio };
-      // Invert the active following camera using test-only simulation observations.
-      const modulePath = '/src/games/last-light-clearing/view.ts';
-      const { createViewport } = await import(modulePath);
-      const player = ((window as any).runEvidence ?? (window as any).positionProbe).player;
-      const view = createViewport({ width: 960, height: 640 }, rect, player, 'close');
-      const scale = view.scale;
-      return {
-        x: (x / count / ratio - view.x) / scale,
-        y: (y / count / ratio - view.y) / scale,
-      };
-    }, screenSpace);
-    if (position) return position;
-    await page.clock.runFor(20);
-  }
-  throw new Error('Keeper was not drawn');
+  return page.locator('.world-canvas').evaluate(async (canvas, screenSpace) => {
+    const player = ((window as any).runEvidence ?? (window as any).positionProbe).player;
+    if (!screenSpace) return {x:player.x,y:player.y};
+    const modulePath = '/src/games/last-light-clearing/view.ts';
+    const { createViewport } = await import(modulePath);
+    const view = createViewport({width:960,height:640},canvas.getBoundingClientRect(),player,'close');
+    return {x:player.x*view.scale+view.x,y:player.y*view.scale+view.y};
+  }, screenSpace);
 }
 
 function expectStationary(actual: { x: number; y: number }, expected: { x: number; y: number }) {
-  // Active sprite frames change the raster centroid slightly, even at a fixed world position.
-  // One world unit is well below a single full-strength movement step (2.5 units).
+  // A sub-step tolerance detects input leaks without depending on sprite silhouette.
   expect(Math.hypot(actual.x - expected.x, actual.y - expected.y)).toBeLessThan(1);
 }
 
@@ -728,9 +702,9 @@ test('Prism Garden bounds dense rendering and freezes decorative motion on pause
       renderer.info.autoReset = false; renderer.info.reset(); composer.render();
       window.prismProbe = {
         motes: Array.from(motes.instanceMatrix.array),
-        petals: keeper.petals.map(petal => petal.rotation.x),
-        legs: crawlers[0].limbs.map(limb => limb.rotation.z),
-        facing: new THREE.Vector3(0, 1, 0).transformDirection(crawlers[0].model.matrixWorld)
+        keeperCel: keeper.cels.findIndex(cel => cel.visible),
+        crawlerCel: crawlers[0].cels.findIndex(cel => cel.visible),
+        facing: new THREE.Vector3(1, 0, 0).transformDirection(crawlers[0].model.matrixWorld)
           .dot(new THREE.Vector3(Math.cos(observations.get(1).angle), -Math.sin(observations.get(1).angle), 0)),
         keeper: [keeper.group.position.x, keeper.group.position.y],
         calls: renderer.info.render.calls, geometries: renderer.info.memory.geometries,
@@ -777,8 +751,8 @@ test('Prism Garden bounds dense rendering and freezes decorative motion on pause
   await page.keyboard.down('a'); await page.clock.runFor(300); await page.keyboard.up('a');
   const moving = await probe();
   expect(moving.motes).toEqual(reduced.motes);
-  expect(moving.petals).toEqual(reduced.petals);
-  expect(moving.legs.every((angle: number) => angle === 0)).toBe(true);
+  expect(moving.keeperCel).toBe(0);
+  expect(moving.crawlerCel).toBe(0);
   expect(moving.keeper).not.toEqual(reduced.keeper);
   await page.keyboard.press('Escape');
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');

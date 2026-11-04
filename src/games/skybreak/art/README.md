@@ -2,29 +2,25 @@
 
 [Game presentations](../../../../docs/games/skybreak/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-Aurora Fleet’s editable SVG sheets live in `aurora-fleet/`; Orbital Foundry’s background specification and prompt live in [its artwork guide](orbital-foundry/README.md).
+All standard modes depict an aircraft sortie over the Pacific coast. Normal uses simple readable aircraft, Assets uses the warm arcade Aurora Fleet palette, and Quality uses shaded metal aircraft over the [Tempest Coast background](tempest-coast/README.md). Original vector artwork uses the repository's [MIT license](../../../../LICENSE).
 
-## Aurora Fleet
+## Complete aircraft sheets
 
-The Assets presentation uses six transparent SVG sprite sheets in `aurora-fleet/`. Their generator builds editable geometric paths and colors for each role.
+`aircraft/generate.mjs` is the editable source. Each mode has six transparent SVG sheets, prefixed `normal-`, `assets-` or `quality-`. Artwork faces north; hostile aircraft and the flagship turn south as complete sprites. Authored exhaust cels advance at 0.09 seconds per frame and freeze for reduced motion.
 
-The ivory/teal player has paired swept wings, a narrow canopy and animated twin drives. The hostile fleet shares layered gunmetal armor, with distinct amber forked scouts, coral crescent raiders, violet twin-boom gunships and needle interceptors. The broad flagship supplies the fortress hull; existing procedural turrets, reactor and attack telegraphs remain above it. The original planet, orbital structures, pickups, projectiles, effects and accessible UI complete the presentation without another image pack.
-
-| Sheet | Frame size | Frames | Role |
+| Role | Frame size | Frames | World footprint |
 | --- | --- | --- | --- |
-| `fighter.svg` | 64 × 80 | 6 | Player and movement exhaust |
-| `scout.svg` | 64 × 64 | 6 | Straight formation |
-| `raider.svg` | 64 × 64 | 6 | Crossing formation |
-| `gunship.svg` | 64 × 64 | 6 | Swooping formation |
-| `interceptor.svg` | 64 × 64 | 6 | Interceptor |
-| `flagship.svg` | 336 × 168 | 6 | Iron Tempest hull and drives |
+| Fighter | 64 × 80 | 6 | 56 × 70 |
+| Scout | 64 × 64 | 6 | 48 × 62 |
+| Raider | 64 × 64 | 6 | 66 × 58 |
+| Gunship | 64 × 64 | 6 | 78 × 64 |
+| Interceptor | 64 × 64 | 6 | 48 × 68 |
+| Flagship | 336 × 168 | 6 | 336 × 168 |
 
-Frames face north, advance horizontally at 0.09 seconds per frame and freeze at the first frame for reduced motion. The renderer turns enemies and the flagship south; player banking and evasive-roll animation remain cosmetic transforms. To edit the source drawings and regenerate the committed sheets:
+Frames advance horizontally. Their pivot is the frame center. Banking, roll and facing transform complete images. `objects.svg` contains five 64-square cells: Power, Spread, Repair, a weak-point nacelle and the central reactor. Independently moving weak points follow simulation coordinates; they are complete mechanical objects, with separate semantic glow and warnings.
 
 ```sh
-node src/games/skybreak/art/aurora-fleet/generate.mjs
+node src/games/skybreak/art/aircraft/generate.mjs
 ```
 
-## Presentation ownership
-
-`../themes.ts` maps Assets to `aurora-fleet.ts`. `../art-pack.ts` defines sprite rectangles, frame stride/timing, source rotation and visual footprints; `../assets.ts` validates the sheet layout. The [game guide](../../../../docs/games/skybreak/README.md#presentation-and-source-ownership) owns renderer composition; preparation follows the [shared replacement contract](../../../../docs/architecture.md#replacement-and-recovery).
+`aircraft.ts` maps mode variants to roles. `../art-pack.ts` defines frame timing and footprints; `../assets.ts` prepares and validates sheets. Quality retains the same image-based actors in its Canvas layer and uses the illustrated coastal plate and restrained Canvas atmosphere. There are no modeled aircraft, joint rigs or orbital assets.

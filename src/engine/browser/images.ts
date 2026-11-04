@@ -2,6 +2,24 @@ export type ImageBundle = Readonly<Record<string, HTMLImageElement>>;
 export type ImageDimensions = Readonly<Record<string, { width: number; height: number }>>;
 export interface PreparedImages { readonly images: ImageBundle; dispose(): void }
 
+/** Synchronous presentation construction with session-owned initial image preparation. */
+export function createImageResource(urls: Readonly<Record<string, string>>,
+  validate: (dimensions: ImageDimensions) => readonly string[]) {
+  const lifetime = new AbortController();
+  let bundle: PreparedImages | undefined;
+  const ready = prepareImages(urls, lifetime.signal, validate).then(prepared => {
+    if (lifetime.signal.aborted) prepared.dispose();
+    else bundle = prepared;
+  });
+  // The owner can await readiness; cancellation during synchronous mount/disposal is harmless.
+  void ready.catch(() => {});
+  return {
+    ready,
+    get images(): ImageBundle { return bundle?.images ?? {}; },
+    dispose() { lifetime.abort(); bundle?.dispose(); bundle = undefined; },
+  };
+}
+
 /** Image ownership is shared; the supplied validator keeps atlas rules with each game. */
 export function prepareImages(urls: Readonly<Record<string, string>>, signal: AbortSignal,
   validate: (dimensions: ImageDimensions) => readonly string[]): Promise<PreparedImages> {

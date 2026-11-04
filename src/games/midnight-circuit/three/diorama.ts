@@ -1,4 +1,5 @@
 import * as T from 'three';
+import type { ImageBundle } from '../../../engine/browser/images.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -13,7 +14,7 @@ import { createScenery } from './scenery.ts';
 import { createFighters } from './fighters.ts';
 
 /** Afterglow: one orthographic scene and one bounded finish, driven by the session frame. */
-export function createDiorama(surface: HTMLElement, onFailure: () => void): CircuitRenderer {
+export function createDiorama(surface: HTMLElement, images: ImageBundle, onFailure: () => void): CircuitRenderer {
   const renderer=new T.WebGLRenderer({antialias:true,alpha:false});
   const canvas=renderer.domElement;canvas.className='circuit-canvas';canvas.dataset.renderer='three';
   const cleanups:(()=>void)[]=[];
@@ -32,7 +33,7 @@ export function createDiorama(surface: HTMLElement, onFailure: () => void): Circ
     const world=new T.Group(),people=new T.Group(),effects=new T.Group(),cues=new T.Group();scene.add(world,people,effects,cues);
     const art=createArt();cleanups.push(()=>art.dispose());
     const {mesh,block,material}=art;
-    const fighters=createFighters(art,people);cleanups.push(()=>fighters.reset());
+    const fighters=createFighters(art,people,images);cleanups.push(()=>fighters.dispose());
     let scenery:ReturnType<typeof createScenery>|undefined;cleanups.push(()=>scenery?.dispose());
     scene.add(new T.HemisphereLight('#b7d5df','#253f3b',1.6));
     const key=new T.DirectionalLight('#f4d8ac',2.4);key.position.set(-300,650,500);key.castShadow=true;
@@ -83,7 +84,8 @@ export function createDiorama(surface: HTMLElement, onFailure: () => void): Circ
     const warningFill=new T.MeshBasicMaterial({color:'#ef713d',transparent:true,opacity:.09,depthWrite:false});art.materials.add(warningFill);
     const warningLine=new T.MeshBasicMaterial({color:'#faab71',transparent:true,opacity:.9,depthWrite:false});art.materials.add(warningLine);
     const gateMaterial=new T.MeshBasicMaterial({color:'#e5ac78',transparent:true,opacity:.45,depthWrite:false});art.materials.add(gateMaterial);
-    const pickupMaterial=material('#b5f5c5',true);
+    const pickupMap=new T.Texture(images.repair!);pickupMap.colorSpace=T.SRGBColorSpace;pickupMap.needsUpdate=true;cleanups.push(()=>pickupMap.dispose());
+    const pickupMaterial=new T.MeshBasicMaterial({map:pickupMap,transparent:true,alphaTest:.04,depthWrite:false,toneMapped:false});art.materials.add(pickupMaterial);
     const rainGeometry=art.own(new T.BufferGeometry()),rainData=new Float32Array(110*6);
     rainGeometry.setAttribute('position',new T.BufferAttribute(rainData,3));
     const rainMaterial=new T.LineBasicMaterial({color:'#c0dad6',transparent:true,opacity:.16});art.materials.add(rainMaterial);
@@ -130,10 +132,8 @@ export function createDiorama(surface: HTMLElement, onFailure: () => void): Circ
       }
       for(const p of run.pickups)if(!p.collected){
         const z=p.lane/.6;
-        mesh(cues,ring,pickupMaterial,p.x,2,z,21,1,16);
-        art.rounded(cues,p.x,13,z,26,20,18,'#396658');
-        mesh(cues,art.box,pickupMaterial,p.x,14,z+10,4,12,2);
-        mesh(cues,art.box,pickupMaterial,p.x,14,z+10,12,4,2);
+        const pickup=mesh(cues,art.plane,pickupMaterial,p.x,16,z,42,42,1);
+        pickup.rotation.x=-Math.atan2(.6,.8);pickup.castShadow=false;
       }
     }
     canvas.addEventListener('webglcontextlost',lost);surface.append(canvas);

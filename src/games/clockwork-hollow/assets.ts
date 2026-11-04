@@ -1,15 +1,15 @@
 import { prepareImages } from '../../engine/browser/images.ts';
 import { validateBellgardenArt } from './asset-art.ts';
-import keeper from './art/bellgarden/keeper.svg';
-import beetle from './art/bellgarden/beetle.svg';
-import objects from './art/bellgarden/objects.svg';
-import terrain from './art/bellgarden/terrain.svg';
-import aqueductFar from './art/bellgarden/aqueduct-far.svg';
-import aqueductNear from './art/bellgarden/aqueduct-near.svg';
-import emberworksFar from './art/bellgarden/emberworks-far.svg';
-import emberworksNear from './art/bellgarden/emberworks-near.svg';
-import belfryFar from './art/bellgarden/belfry-far.svg';
-import belfryNear from './art/bellgarden/belfry-near.svg';
+const keeper = new URL('./art/bellgarden/keeper.svg', import.meta.url).href;
+const beetle = new URL('./art/bellgarden/beetle.svg', import.meta.url).href;
+const objects = new URL('./art/bellgarden/objects.svg', import.meta.url).href;
+const terrain = new URL('./art/bellgarden/terrain.svg', import.meta.url).href;
+const aqueductFar = new URL('./art/bellgarden/aqueduct-far.svg', import.meta.url).href;
+const aqueductNear = new URL('./art/bellgarden/aqueduct-near.svg', import.meta.url).href;
+const emberworksFar = new URL('./art/bellgarden/emberworks-far.svg', import.meta.url).href;
+const emberworksNear = new URL('./art/bellgarden/emberworks-near.svg', import.meta.url).href;
+const belfryFar = new URL('./art/bellgarden/belfry-far.svg', import.meta.url).href;
+const belfryNear = new URL('./art/bellgarden/belfry-near.svg', import.meta.url).href;
 
 export const bellgardenImages = { keeper, beetle, objects, terrain,
   'aqueduct-far': aqueductFar, 'aqueduct-near': aqueductNear,

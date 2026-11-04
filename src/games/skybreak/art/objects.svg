@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="64" viewBox="0 0 320 64"><!-- Original Arcade Lab flight objects | MIT -->
+<defs><linearGradient id="steel" x2="0" y2="1"><stop stop-color="#a2b9bb"/><stop offset=".4" stop-color="#39576a"/><stop offset="1" stop-color="#172c43"/></linearGradient></defs>
+<g stroke="#a1d8d1" stroke-width="2"><rect x="7" y="7" width="50" height="50" rx="12" fill="#17384b"/><rect x="71" y="7" width="50" height="50" rx="12" fill="#302a49"/><rect x="135" y="7" width="50" height="50" rx="12" fill="#183d38"/></g>
+<path d="M20 28L32 16L44 28M20 43L32 31L44 43" fill="none" stroke="#ffcf70" stroke-width="5"/><path d="M83 45L87 22M96 45V17M109 45L105 22" stroke="#d6aaff" stroke-width="5"/><path d="M155 19H165V27H173V37H165V45H155V37H147V27H155Z" fill="#a9f3b5"/>
+<path d="M205 3H243L252 45L240 61H208L196 45Z" fill="url(#steel)" stroke="#a2b9bb" stroke-width="2"/><path d="M207 9H211V43H207ZM237 9H241V43H237Z" fill="#c5e4d8"/><circle cx="224" cy="29" r="16" fill="#123b4e" stroke="#b2d9cd" stroke-width="3"/>
+<path d="M274 7H302L313 39L288 59L263 39Z" fill="url(#steel)" stroke="#c4e2d8" stroke-width="2"/><path d="M283 18H293V42H283Z" fill="#caffdd"/>
+</svg>

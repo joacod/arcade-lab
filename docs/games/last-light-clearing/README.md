@@ -35,19 +35,19 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Theme modes
 
-**Normal**, the default, uses the existing procedural clearing, actor silhouettes and spell effects without fetching images. **Assets** uses bundled Ember Ruins in development and production. **Quality** uses Prism Garden's sculpted actors, illuminated scenery and Three.js lighting.
+**Normal**, the default, uses complete hooded-Keeper and briar-creature sprites over the procedural forest clearing and spell effects. **Assets** uses bundled Ember Ruins in development and production. **Quality** uses Prism Garden's complete botanical sprites, illuminated scenery and Three.js lighting.
 
 **Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
 
 ### Quality direction: Prism Garden
 
-An overgrown moonlit sanctuary of jade stone, gold inlays and violet crystal blossoms. The warm, petal-caged lantern Keeper is the focal point. Rose-armored thorn creatures have articulated dark legs and bright paired eyes; the elite wears a crown, while chargers retain their forked crest. Mint gems remain small, angular and distinct from creatures.
+An overgrown moonlit sanctuary of jade stone, gold inlays and violet crystal blossoms. The warm, cloaked lantern Keeper is the focal point. Rose-armored thorn creatures have connected thorn silhouettes and bright paired eyes; the elite wears a crown, while chargers retain their forked crest. Mint gems remain small, angular and distinct from creatures.
 
 Weathered paving, engraved circles and luminous botanical roots give the ground depth inside the following camera. Broad low-contrast forms leave combat readable. Raised crystal gardens stay outside traversable ground. Directional shadows, a moving lantern light pool and restrained bloom separate solid materials from luminous cores. Spell trails, contact glints and dissolving fragments carry the same crystal vocabulary. Glass UI uses warm gold accents against deep jade surfaces.
 
-Movement drives petal sway and alternating creature legs. Reduced motion suppresses decorative drift, bobbing, spin and fragments. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring.
+Movement selects authored complete-creature cels. Reduced motion suppresses decorative drift, bobbing, spin and fragments. The final stretch warms toward dawn in every mode, with additional light changes in Garden and a short cosmetic victory ring.
 
-Quality prepares Three.js geometry, a generated floor texture and a bounded bloom pipeline without an external image bundle.
+Quality prepares validated creature and gem images, Three.js scenery, a generated floor texture and a bounded bloom pipeline.
 
 ![Prism Garden: a gold lantern Keeper, orbiting lights, thorn creatures and mint gems on engraved jade paving](prism-garden.png)
 
@@ -78,12 +78,12 @@ Paths below are relative to `src/games/last-light-clearing/`.
 
 `world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Quality loads `three/garden.ts`; its orthographic mapping converts `(x, y)` to `(x, -y, elevation)` without perspective/parallax. Custom loads `vgpu/bloom.ts` and its WGSL field and organism shaders.
 
-Garden batches immutable scenery by geometry, material and shadow settings. Detached actor pose trees animate independently, then copy visible parts into shared instance buffers so dense crowds do not add draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` generates cached paving and botanical textures without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution.
+Garden batches immutable scenery by geometry, material and shadow settings. Complete actor cels copy into shared instance buffers, grouped by sprite frame, so dense crowds do not add draw submissions per creature. Transient gems, shots, motes and effects reuse bounded instance buffers. `three/floor.ts` generates cached paving and botanical textures without touching run randomness. The render buffer caps its longest side at 1600 pixels and DPR at 1.5; bloom uses half that resolution.
 
-The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Canvas uses the asset pack’s clip helpers; Garden and Bloom use procedural actor observations. Palettes live in `themes.ts`, while shader/effect budgets live with their renderer.
+The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Canvas uses the asset pack’s clip helpers; Garden uses the same semantic observations to select complete sprite cels. Bloom retains its explicitly experimental shader organisms. Palettes live in `themes.ts`, while shader/effect budgets live with their renderer.
 
 Bloom owns its device, surface, shader draws, effects, uniforms and storage buffers. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. The renderer/resource transaction follows the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery).
 
 ## Renderer verification
 
-The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover uniform projection, renderer replacement and GPU loss. Normal startup requests neither image sheets nor graphics libraries. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover uniform projection, renderer replacement and GPU loss. Normal prepares a small local sprite bundle and requests no graphics library. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).

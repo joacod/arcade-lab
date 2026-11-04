@@ -1,6 +1,4 @@
-import { movement as m, type LevelId, type Rect, type Vent } from './content.ts';
-import type { Player } from './game.ts';
-import type { KeeperPose } from './animation.ts';
+import { type LevelId, type Rect } from './content.ts';
 import type { HollowView } from './presentation.ts';
 import { themes } from './themes.ts';
 
@@ -235,104 +233,6 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
         fern(s.x + s.w - 8, s.y + 65, 58, -1);
         fern(s.x + 10, s.y + 85, 67);
       }
-    },
-    keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, pose: KeeperPose, defeated: boolean, time: number, reduced: boolean, landing: number) {
-      const stride = reduced || !p.grounded ? 0 : pose.stride, bob = reduced ? 0 : pose.bob * 1.3;
-      c.save(); c.translate(p.x + m.width / 2, p.y + m.height);
-      const squash = reduced ? 0 : landing * .12;
-      c.scale(p.facing * (1 + squash), 1 - squash); if (defeated) c.rotate(-.4);
-      const metal = gradient(-17, 0, 34, 0, ['#725e4f', '#efd5a0', '#ae8b5b', '#5a5149']);
-      const spread = p.grounded ? stride * 7 : p.vy < 0 ? 7 : -4;
-      for (const side of [-1, 1]) {
-        const hip = side * 6, knee = side * 7 + side * spread * .6, foot = side * 7 + side * spread;
-        line(hip, -17, knee, -9, '#172e36', 7); line(hip, -17, knee, -9, '#c7ad7e', 3);
-        ellipse(knee, -9, 3, 3, '#ead8b1'); line(knee, -9, foot, -3, '#bda477', 4);
-        box(foot - 5, -4, 11, 4, '#d2b47a', 2); line(foot - 4, -4, foot + 5, -4, '#fff0c6');
-      }
-      c.translate(reduced ? 0 : pose.lean * p.facing * 2, -bob);
-      // A silk silhouette communicates direction without moving the physical body.
-      c.fillStyle = gradient(-34, -39, 34, 16, ['#9b6147', '#e9b466']); c.beginPath(); c.moveTo(-9, -35);
-      c.bezierCurveTo(-22, -36, -25, -28, -37 - Math.abs(p.vx) * .015, -31 + (reduced ? 0 : Math.sin(time * 9) * 3));
-      c.lineTo(-30, -24); c.quadraticCurveTo(-19, -28, -8, -29); c.closePath(); c.fill();
-      box(-12, -32, 24, 19, '#09252e', 7); box(-11, -32, 22, 18, metal, 6);
-      ellipse(0, -23, 7.5, 7.5, '#183c41'); ring(0, -23, 6, '#e2c58a', 1.5);
-      light(0, -23, 19, '#b3f1d3', '70'); ellipse(0, -23, 3.4, 4.6, '#b6f1d2'); ellipse(-1, -24, 1, 2, '#f1fff0');
-      for (const side of [-1, 1]) {
-        const reach = p.grounded ? 15 : 19, handY = p.grounded ? -18 + stride * side * 5 : p.vy < 0 ? -37 : -23;
-        ellipse(side * 12, -28, 3.6, 3.6, '#d6bf94');
-        line(side * 12, -27, side * reach, handY, '#243d40', 6); line(side * 12, -27, side * reach, handY, '#c4a574', 3);
-        ellipse(side * reach, handY, 3, 3, '#e1cb9f');
-      }
-      box(-15, -53, 31, 23, '#091e2a', 11); box(-14, -53, 29, 22, metal, 10);
-      c.fillStyle = gradient(-12, -48, 25, 12, ['#27515b', '#102c38', '#071b2b']);
-      c.beginPath(); c.roundRect(-11, -47, 25, 12, 6); c.fill();
-      line(-7, -45, 7, -45, '#9ec8c766', 1.5);
-      for (const x of [1, 9]) { light(x, -40, 8, '#b8f6d8', '55'); ellipse(x, -40, 1.7, 2.5, '#d4ffe4'); }
-      line(-8, -51, 7, -51, '#fff0c0', 1.5); ellipse(-13, -40, 2.2, 3.4, '#907c60');
-      line(-4, -53, -5, -60, '#d1b77e', 2); ellipse(-5, -61, 3, 3, '#c8e3bd');
-      box(-12, -33, 26, 4, '#e3af67', 2); c.restore();
-    },
-    beetle(x: number, y: number, direction: number, alive: boolean, time: number, reduced: boolean) {
-      c.save(); c.translate(x, y); c.scale(direction, alive ? 1 : .26);
-      const stride = !alive || reduced ? 0 : Math.sin(time * 16) * 3;
-      for (let j = -1; j <= 1; j++) {
-        line(j * 11, -10, j * 12 - 4, -5, '#b89d75', 3); line(j * 12 - 4, -5, j * 12 - 6, -1 + stride * (j % 2 ? 1 : -1), '#dfc797', 2);
-      }
-      ellipse(0, -13, 19, 12, gradient(-19, -25, 35, 25, alive ? ['#e7b88b', '#a46958', '#4e3b41'] : ['#898176', '#46454a']));
-      ring(-3, -14, 7, '#684c44', 2); line(-8, -19, 2, -9, '#e2b88b', 2);
-      box(-12, -26, 23, 4, '#ffdfb4', 2); ellipse(13, -15, 5, 7, '#233843'); ellipse(15, -17, 1.8, 2, '#ffcca3');
-      line(17, -19, 21, -25, '#d8b28b', 1.5); ellipse(21, -25, 1.5, 1.5, '#f6d7aa'); c.restore();
-    },
-    checkpoint(x: number, y: number, lit: boolean) {
-      line(x, y + m.height, x, y - 28, '#292f32', 8); line(x - 2, y + m.height, x - 2, y - 28, '#b99c70', 2);
-      light(x, y - 27, lit ? 105 : 40, lit ? '#aee7cb' : '#e4c593', lit ? '60' : '25');
-      box(x - 13, y - 48, 26, 33, gradient(x - 13, 0, 26, 0, ['#6e6956', '#e5c78d', '#807052']), 6);
-      box(x - 9, y - 44, 18, 23, gradient(0, y - 44, 0, 23, lit ? ['#e4ffdb', '#84d0bb', '#477e7a'] : ['#5a6d67', '#233b43']), 4);
-      for (const xx of [-4, 4]) line(x + xx, y - 44, x + xx, y - 21, '#c5ac7c', 1.5);
-      ellipse(x, y - 14, 18, 3, '#ac916a'); line(x - 18, y - 49, x, y - 59, '#d2b681', 3); line(x, y - 59, x + 18, y - 49, '#d2b681', 3);
-      ring(x, y - 62, 4, '#c3aa79', 2);
-    },
-    vent(vent: Vent, color: string) {
-      const y = vent.y + vent.h;
-      box(vent.x - 8, y - 8, vent.w + 16, 17, gradient(0, y - 8, 0, 17, ['#e5c493', '#85735a', '#263842']), 3);
-      box(vent.x + 2, y - 6, vent.w - 4, 9, '#112831', 2);
-      for (let x = vent.x + 6; x < vent.x + vent.w; x += 10) line(x, y - 5, x + 3, y + 2, '#bba77b', 2);
-      for (const x of [vent.x - 4, vent.x + vent.w + 4]) {
-        ellipse(x, y - 1, 2.5, 2.5, '#2a3438'); ellipse(x - .5, y - 2, 1, 1, '#f1d8a5');
-      }
-      box(vent.x + vent.w / 2 - 9, y + 4, 18, 4, color, 1);
-    },
-    thorns(s: Rect) {
-      box(s.x - 2, s.y + s.h - 4, s.w + 4, 5, '#442f39');
-      const count = Math.ceil(s.w / 15), width = s.w / count;
-      for (let i = 0; i < count; i++) {
-        const x = s.x + i * width;
-        c.fillStyle = gradient(x, s.y, width, s.h, ['#ffe0b9', '#ed9f8b', '#784c50']); c.beginPath();
-        c.moveTo(x, s.y + s.h); c.lineTo(x + width * .5, s.y); c.lineTo(x + width, s.y + s.h); c.closePath(); c.fill();
-        line(x + width * .5, s.y + 2, x + width * .58, s.y + s.h - 2, '#6c414b', 1);
-      }
-    },
-    bell(goal: Rect, awake: boolean, time: number, reduced: boolean) {
-      const x = goal.x + goal.w / 2, bottom = goal.y + goal.h;
-      for (const xx of [x - 59, x + 59]) {
-        box(xx - 8, goal.y - 64, 16, bottom - goal.y + 64, gradient(xx - 8, 0, 16, 0, ['#364d4d', '#b5ae85', '#304345']), 3);
-        for (let j = 0; j < 5; j++) box(xx - 11, goal.y - 30 + j * 36, 22, 5, '#8b8466', 2);
-      }
-      arch(x - 59, goal.y - 119, 118, 85, '#c5b487', 9); arch(x - 48, goal.y - 106, 96, 70, '#667c70', 2);
-      light(x, goal.y + 20, awake ? 230 : 110, '#edce8b', awake ? '65' : '35');
-      c.save(); c.translate(x, goal.y - 60); if (awake && !reduced) c.rotate(Math.sin(time * 5) * .18);
-      line(0, -24, 0, 20, '#c8b288', 3); ring(0, 17, 9, '#e3c78c', 3);
-      c.fillStyle = gradient(-37, 0, 74, 0, ['#69594b', '#d5b47a', '#ffe4a7', '#b18b58', '#5d5146']);
-      c.beginPath(); c.moveTo(-37, 83); c.bezierCurveTo(-20, 65, -23, 52, -22, 39); c.bezierCurveTo(-20, 10, 20, 10, 22, 39); c.bezierCurveTo(23, 52, 20, 65, 37, 83); c.closePath(); c.fill();
-      ellipse(0, 83, 38, 7, '#6c5542'); ellipse(0, 81, 36, 4, '#f0d49a');
-      ring(0, 49, 12, '#806c4c', 2); line(-6, 49, 6, 49, '#ead6a0', 2); line(0, 43, 0, 55, '#ead6a0', 2);
-      line(-22, 65, 22, 65, '#816949', 2); line(-23, 68, 23, 68, '#ead2a0', 1); ellipse(0, 91, 6, 8, '#dbc492'); c.restore();
-      fern(x + 67, bottom, 84, -1);
-    },
-    mote(x: number, y: number) {
-      light(x, y, 32, '#f4d79c', '35'); c.save(); c.translate(x, y);
-      c.fillStyle = gradient(-7, -10, 14, 20, ['#fff6c6', '#d6ad65', '#6f6b57']); c.beginPath(); c.moveTo(0, -10); c.lineTo(7, 0); c.lineTo(0, 10); c.lineTo(-7, 0); c.closePath(); c.fill();
-      line(0, -8, 0, 8, '#fff2c2', 1); c.restore();
     },
     dispose: releaseTiles,
   };

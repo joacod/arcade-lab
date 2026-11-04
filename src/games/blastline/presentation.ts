@@ -1,3 +1,5 @@
+import { createImageResource } from '../../engine/browser/images.ts';
+import { blastImages, validateBlastArt, operatorCel } from './sprite-art.ts';
 import { themes, type BlastTheme } from './themes.ts';
 import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
 import { forTiles } from './terrain.ts';
@@ -17,6 +19,7 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'blast-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.prepend(canvas);
+  const artwork = createImageResource(blastImages, validateBlastArt);
   let theme = themes.normal;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
@@ -28,25 +31,20 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y)); ctx.textAlign = 'left';
   }
   function human(x: number, y: number, operator: Operator, facing: number, stride: number, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
-    const bolt = operator === 'bolt', { suit, dark } = theme.operators[operator];
-    ctx.save(); ctx.translate(Math.round(x + 9), Math.round(y + 15)); ctx.scale(facing, 1);
-    const step = airborne ? 3 : Math.round(Math.sin(stride) * 3);
-    rect(-7, 8, 6, 8 + step, '#152c37'); rect(2, 8, 6, 8 - step, '#152c37');
-    rect(-9 - step, 14 + step, 9, 3, '#0b1c28'); rect(1 + step, 14 - step, 10, 3, '#0b1c28');
-    rect(-9, -2, 17, 12, dark); rect(-6, -3, 14, 10, suit); rect(-5, 3, 4, 5, '#d9e1c0');
-    rect(-11, -1, 4, 11, '#243f46'); rect(-12, 1, 2, 6, '#f2ac62'); // pack
-    rect(-7, -13, 15, 11, '#202e36'); rect(-6, -11, 14, 7, '#d6a186');
-    rect(-9, -15, 17, 5, dark); rect(-7, -15, 13, 2, suit); rect(1, -10, 9, 3, bolt ? '#ffdb8b' : '#b1fff0');
-    rect(-11, -7, 4, 2, '#f37768'); rect(-14, -7 + Math.sin(stride) * 2, 6, 2, '#e98069');
-    ctx.save(); ctx.translate(2, 0); ctx.rotate(Math.atan2(aimY, aimX * facing));
-    rect(0, -2, 8, 5, suit); rect(5, -2, 5, 5, '#e6b79a');
-    rect(7, bolt ? -6 : -3, bolt ? 18 : 19, bolt ? 9 : 5, '#1c303b');
-    rect(10, bolt ? -6 : -3, bolt ? 13 : 14, 2, '#8b9c91'); rect(12, 2, 4, 4, dark);
-    if (bolt) { rect(23, -6, 3, 9, '#cfc99a'); rect(9, -4, 4, 5, '#ee9c51'); }
-    else { rect(14, 1, 4, 5, '#212f35'); rect(24, -2, 4, 2, '#b1bfac'); }
-    if (firing) { rect(27, -4, 7, 6, '#ffeaa3'); rect(30, -2, 10, 2, '#fff5ce'); }
-    ctx.restore(); ctx.restore();
+    const image = artwork.images.operators;
+    if (!image) return;
+    const {aim,state} = operatorCel(airborne,stride,motion.matches,aimX,aimY);
+    const row = (operator === 'bolt' ? 4 : 0) + state;
+    ctx.save(); ctx.translate(Math.round(x+9),Math.round(y+32)); ctx.scale(facing,1);
+    ctx.drawImage(image,aim*64,row*64,64,64,-20,-45,48,48);
+    if (firing) { const angle = Math.atan2(aimY,aimX*facing); rect(Math.cos(angle)*18-2,-11+Math.sin(angle)*18,5,3,'#fff0b4'); }
+    ctx.restore();
   }
+  function object(frame: number,x: number,y: number,w: number,h: number,cells=1) {
+    const image = artwork.images.objects;
+    if (image) ctx.drawImage(image,frame*64,0,64*cells,64,x,y,w,h);
+  }
+
   function background(v: BlastView, run: Run, time: number) {
     const foundry = run.missionIndex > 0;
     const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
@@ -118,57 +116,37 @@ export function createPresentation(surface: HTMLElement) {
       if (i >= t.columns && !t.material[i - t.columns]) { rect(r.x, r.y, TILE, 3, structure ? theme.ledge : '#d5ba80'); if (structure && Math.floor(i / t.columns) >= 27) for (let j = 0; j < 3; j++) rect(r.x + j * 8, r.y + 3, 4, 3, '#d0ad63'); }
     });
     run.mission.checkpoints.forEach((cp, i) => {
-      rect(cp.x + 2, cp.y - 20, 3, 49, '#7e9485'); rect(cp.x + 5, cp.y - 20, 22, 13, i <= run.checkpoint ? '#a1e6bc' : '#4e6a61');
-      rect(cp.x - 3, cp.y + 16, 25, 13, '#31565a'); text('+', cp.x + 4, cp.y + 26, '#bee5ba', 12);
+      object(i <= run.checkpoint ? 4 : 3, cp.x-8,cp.y-25,42,58);
       text(i <= run.checkpoint ? 'SUPPLIED' : 'SUPPLY', cp.x + 10, cp.y - 28, '#c6ddb9', 6, 'center');
     });
     for (const r of run.relays) {
-      rect(r.x - 3, r.y - 6, 34, 38, '#152c38'); rect(r.x, r.y - 4, 28, 32, r.health > 0 ? '#48676c' : '#30474b');
-      rect(r.x + 4, r.y + 2, 20, 14, r.health > 0 ? '#f0bb69' : '#27393d');
-      if (r.health > 0) { rect(r.x + 8, r.y + 5, 4, 8, '#fff0ad'); rect(r.x + 16, r.y + 5, 4, 8, '#d66d4b'); text('POWER RELAY', r.x + 14, r.y - 18, '#ffd58a', 6, 'center'); }
-      else { line(r.x + 5, r.y, r.x + 22, r.y + 19, '#151f2b', 3); text('OFFLINE', r.x + 14, r.y - 13, '#a1b8aa', 6, 'center'); }
+      object(r.health > 0 ? 0 : 1,r.x-8,r.y-8,43,42);
+      text(r.health > 0 ? 'POWER RELAY' : 'OFFLINE',r.x+14,r.y-18,'#ffd58a',6,'center');
     }
     for (const b of run.barrels) if (!b.detonated && b.x > v.x - 40 && b.x < v.x + v.width + 40) {
-      rect(b.x, b.y + 2, 18, 24, '#723d35'); rect(b.x + 2, b.y, 14, 26, '#d26b48');
-      rect(b.x, b.y + 5, 18, 3, '#593c39'); rect(b.x, b.y + 19, 18, 3, '#593c39');
-      text('×', b.x + 5, b.y + 17, '#ffe2a2', 10); rect(b.x + 2, b.y + 1, 3, 4, '#e7985e');
+      object(2,b.x-3,b.y-3,24,30);
     }
     const rescue = run.mission.rescue;
     if (rescue && !run.rescued) {
       human(rescue.x, rescue.y, 'bolt', -1, 0, false);
-      rect(rescue.x - 8, rescue.y - 10, 38, 3, '#b2b09a'); rect(rescue.x - 8, rescue.y + 29, 38, 3, '#b2b09a');
-      for (let i = 0; i < 4; i++) rect(rescue.x - 7 + i * 12, rescue.y - 10, 2, 40, '#899a8b');
+      object(5,rescue.x-8,rescue.y-10,38,42);
       text('BOLT', rescue.x + 10, rescue.y - 28, '#ffe09a', 8, 'center'); text('REACH TO RESCUE', rescue.x + 10, rescue.y - 17, '#d7c69c', 6, 'center');
     }
     const exit = run.mission.exit, ready = readyToExtract(run);
     rect(exit.x - 14, 648, exit.w + 28, 8, '#182f3a');
     for (let i = 0; i < 12; i++) rect(exit.x - 14 + i * 17, 649, 8, 4, ready ? '#b2e6b4' : '#bba269');
     const shipX = exit.x + exit.w / 2, shipY = 593 - (run.extraction > 0 ? Math.pow(run.extraction, 2) * 25 : Math.sin(time * 2) * 2);
-    ctx.save(); ctx.translate(Math.round(shipX), Math.round(shipY));
-    rect(-45, -18, 74, 25, '#28434c'); rect(-35, -24, 54, 8, '#55756e'); rect(18, -13, 30, 16, '#32535b');
-    rect(-30, -17, 21, 9, '#b9e5cd'); rect(-6, -17, 15, 9, '#6fb6b0'); rect(-38, 9, 69, 3, '#91a99a');
-    rect(-36, 1, 6, 10, '#476066'); rect(23, 1, 6, 10, '#476066');
-    rect(-52, -26, 14, 4, '#d49f65'); rect(-45, -31, 3, 15, '#53726b'); rect(24, -29, 3, 11, '#53726b');
-    const rotor = motion.matches ? 32 : 15 + Math.abs(Math.sin(time * 34)) * 24;
-    rect(-43 - rotor, -33, rotor * 2, 2, '#aac2ad'); rect(25 - rotor, -31, rotor * 2, 2, '#aac2ad');
-    if (run.extraction > 0) { rect(-25, 9, 7, 15 + Math.sin(time * 60) * 8, '#f4bd70'); rect(13, 9, 7, 15 + Math.sin(time * 60) * 8, '#f4bd70'); }
-    ctx.restore();
+    object(6,Math.round(shipX)-64,Math.round(shipY)-35,128,64,2);
     text(ready ? 'EXTRACT ↑' : 'EXTRACTION / LOCKED', shipX, 549, ready ? '#c8f7c0' : '#dabd8e', 8, 'center');
     for (const e of run.enemies) {
       if (e.health <= 0 || e.x < v.x - 90 || e.x > v.x + v.width + 90) continue;
       ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y)); ctx.scale(e.facing, 1);
-      const heavy = e.kind !== 'guard', bastion = e.kind === 'bastion', suit = e.flash ? '#fff0b4' : theme.enemies[heavy ? 1 : 0];
-      if (bastion) {
-        rect(-32, 33, 64, 17, '#1c2e36'); for (let j = 0; j < 8; j++) rect(-29 + j * 8, 37, 4, 8, '#526261');
-        rect(-26, 13, 52, 24, suit); rect(-22, 10, 44, 5, '#b2a182'); rect(-17, 0, 34, 17, '#42585c');
-        rect(-15, 4, 30, 5, e.warning > 0 ? '#fff2a2' : '#f68b60'); rect(13, 19, 35, 12, '#273e46'); rect(43, 17, 7, 16, '#baa783');
-      } else {
-        const s = Math.sin(time * 10 + e.id) * (e.vx ? 3 : 0);
-        rect(-8, 21, 6, 9 + s, '#253940'); rect(3, 21, 6, 9 - s, '#253940');
-        rect(heavy ? -14 : -10, 7, heavy ? 28 : 20, 17, suit); rect(-7, 0, 17, 11, '#293d45');
-        rect(1, 3, 10, 4, '#ffb17b'); rect(-8, 11, 8, 4, '#a5a88b'); rect(5, 12, heavy ? 27 : 20, heavy ? 8 : 4, '#20363f');
-        if (heavy) { rect(-14, 8, 5, 8, '#c29c70'); rect(27, 11, 3, 10, '#c29c70'); }
-      }
+      const bastion = e.kind === 'bastion';
+      const row = bastion ? 2 : e.kind === 'heavy' ? 1 : 0;
+      const frame = !motion.matches && e.vx ? Math.floor(e.x/10)%2+1 : 0;
+      const image = artwork.images.enemies;
+      if (e.flash > 0) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
+      if (image) ctx.drawImage(image,frame*64,row*64,64,64,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
       ctx.restore();
       if (e.warning > 0) {
         const from = { x: e.x + e.w / 2, y: e.y + (bastion ? 22 : 12) };
@@ -242,6 +220,6 @@ export function createPresentation(surface: HTMLElement) {
       // Subtle scanline texture respects the pixel artwork without a postprocessing pass.
       ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);
     },
-    dispose() { if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; artwork.dispose(); particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

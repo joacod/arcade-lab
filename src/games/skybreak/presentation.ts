@@ -1,9 +1,10 @@
+import { createImageResource } from '../../engine/browser/images.ts';
+import { validateFlightArt } from './art-pack.ts';
 import { flight, fortress, waves, type Pattern } from './content.ts';
 import { bossLanes, enemyCharge, type Boss, type Enemy, type FlightEvent, type Point, type Run } from './game.ts';
 import { flightFrame, type FlightSprite } from './art-pack.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import type { FlightTheme } from './themes.ts';
-import { createSpaceScene } from './space-scene.ts';
 import type { FlightPresentation, FlightSize } from './flight-presentation.ts';
 
 export function flightView(width: number, height: number) {
@@ -18,18 +19,21 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable.');
   const c = ctx;
+  const baseline = theme.art && !Object.keys(images).length ? createImageResource(theme.art.images, d => validateFlightArt(theme.art!, d)) : undefined;
+  const objects = createImageResource({ objects: new URL('./art/objects.svg', import.meta.url).href }, d => d.objects?.width === 320 && d.objects.height === 64 ? [] : ['Invalid flight objects']);
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   surface.append(canvas);
-  const space = !overlay && theme.scene !== 'ocean' ? createSpaceScene(theme) : undefined;
+  const ready = Promise.all([baseline?.ready, objects.ready]).then(() => {});
+  void ready.catch(() => {});
   let visualTime = 0;
   let particles: Particle[] = [], lastTime = 0, width = 0, height = 0, damageFlash = 0;
   let lastRecharge = 0, rollReadyAt = -Infinity;
   const flashes = new Map<number | 'boss', number>();
   function sprite(art: FlightSprite) {
-    const image = images[art.image];
+    const image = images[art.image] ?? baseline?.images[art.image];
     if (!image) return;
     const [, y, w, h] = art.rect, [width, height] = art.footprint;
-    c.save(); c.rotate(art.rotation); c.imageSmoothingEnabled = false;
+    c.save(); c.rotate(art.rotation); c.imageSmoothingEnabled = !!theme.quality; c.imageSmoothingQuality = 'high';
     c.drawImage(image, flightFrame(art, visualTime, motion.matches), y, w, h, -width / 2, -height / 2, width, height);
     c.restore();
   }
@@ -39,7 +43,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     c.closePath(); c.fillStyle = fill; c.fill(); c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke();
   }
   function plane(x: number, y: number, kind: Pattern | 'player', bank = 0, roll = 0, shadow = false, flash = false) {
-    if (overlay) return;
     c.save(); c.translate(x, y);
     if (kind !== 'player') c.rotate(Math.PI);
     if (!motion.matches) {
@@ -54,36 +57,22 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       if (flash) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
       sprite(art); c.restore(); return;
     }
-    if (theme.scene !== 'ocean') {
-      if (shadow) { c.restore(); return; }
-      const span = kind === 'swoop' ? 34 : kind === 'interceptor' ? 19 : 27;
-      const color = flash ? '#ffffff' : kind === 'player' ? theme.palette.player : theme.palette.enemy;
-      c.fillStyle = `${theme.palette.accent}66`; c.shadowColor = theme.palette.accent; c.shadowBlur = 10;
-      c.beginPath(); c.ellipse(0, 28, 5, motion.matches ? 9 : 10 + Math.sin(visualTime * 30) * 3, 0, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
-      polygon([-span, 22, -span + 4, -3, -10, -8, 0, -35, 10, -8, span - 4, -3, span, 22, 9, 13, 5, 23, -5, 23, -9, 13], color, theme.palette.accent);
-      polygon([-6, 8, 0, -20, 6, 8, 0, 18], '#142238', theme.palette.accent);
-      c.fillStyle = theme.palette.accent; c.fillRect(-span + 5, 2, 3, 12); c.fillRect(span - 8, 2, 3, 12);
-      c.restore(); return;
-    }
-    const base = flash ? '#ffffff' : shadow ? '#031c31' : kind === 'player' ? '#eaf6e9' : kind === 'interceptor' ? '#ffb9a7' : kind === 'crossing' ? '#eeb963' : kind === 'swoop' ? '#bdafdf' : '#f17c67';
-    const dark = shadow ? '#031c31' : kind === 'player' ? '#269ab2' : '#723f55';
-    if (!shadow) {
-      c.fillStyle = kind === 'player' ? '#7ce4de55' : '#ffffff15';
-      for (const side of [-1, 1]) { c.fillRect(side * 13 - 1, 24, 2, 36); }
-    }
-    const span = kind === 'swoop' ? 33 : kind === 'interceptor' ? 18 : kind === 'crossing' ? 22 : 28;
-    polygon([-span, 8, -span + 3, 0, -7, -11, -4, -28, 0, -34, 4, -28, 7, -11, span - 3, 0, span, 8, 7, 5, 5, 21, 13, 27, 13, 31, 0, 28, -13, 31, -13, 27, -5, 21, -7, 5], base);
-    if (!shadow) {
-      polygon([-4, -11, 0, -18, 4, -11, 3, 8, -3, 8], '#163c57', '#93e6e0');
-      c.fillStyle = dark; c.fillRect(-span + 5, 2, 12, 4); c.fillRect(span - 17, 2, 12, 4);
-      c.fillStyle = '#ffce74'; c.fillRect(-3, 16, 6, 10);
-      c.strokeStyle = '#d4ffff99'; c.lineWidth = 2; c.beginPath(); c.moveTo(-12, -28); c.lineTo(12, -28); c.stroke();
-    }
     c.restore();
   }
   function ocean(time: number) {
+    if (theme.quality && images.backdrop) {
+      c.drawImage(images.backdrop,0,0,480,800);
+      if (!motion.matches) {
+        c.fillStyle='#c2ded709';
+        for(let i=0;i<8;i++) {
+          const x=i%2?470:10,y=(i*137+time*7)%940-70;
+          c.beginPath();c.ellipse(x,y,45,90, -.45,0,Math.PI*2);c.fill();
+        }
+      }
+      return;
+    }
     const gradient = c.createLinearGradient(0, 0, 480, 800);
-    gradient.addColorStop(0, '#083953'); gradient.addColorStop(0.5, '#09516b'); gradient.addColorStop(1, '#082f50');
+    gradient.addColorStop(0, theme.palette.sea[0]); gradient.addColorStop(0.5, theme.palette.sea[1]); gradient.addColorStop(1, theme.palette.sea[2]);
     c.fillStyle = gradient; c.fillRect(0, 0, 480, 800);
     // Long currents and short glints move at distinct depths. Pure cosmetic coordinates.
     for (let i = 0; i < 95; i++) {
@@ -171,26 +160,19 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     c.save(); c.translate(b.x, b.y);
     if (dead) { if (!motion.matches) c.translate(Math.sin(b.defeated * 45) * 4, b.defeated * 9); c.globalAlpha = Math.max(0, 1 - b.defeated / fortress.defeatDuration); }
     // Appearance owns the hull; the same animated weak points and warnings stay readable above it.
-    if (!overlay) {
+    {
       c.fillStyle = '#00152355'; c.beginPath(); c.ellipse(12, 30, 168, 70, 0, 0, Math.PI * 2); c.fill();
       if (theme.art?.flagship) {
         c.save(); c.rotate(Math.PI);
         if (flashes.has('boss')) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
         sprite(theme.art.flagship); c.restore();
-      } else {
-        polygon([-168, 12, -155, -18, -56, -50, -23, -82, 23, -82, 56, -50, 155, -18, 168, 12, 112, 35, 43, 19, 25, 68, -25, 68, -43, 19, -112, 35], flashes.has('boss') ? '#ecffff' : theme.palette.armor, '#b1c5c6');
-        polygon([-43, -38, -17, -65, 17, -65, 43, -38, 28, 38, 0, 60, -28, 38], '#18364e', '#8aa7b3');
-      }
-    }
-    if (theme.scene !== 'ocean') {
-      for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
-        c.fillStyle = `${theme.palette.accent}88`; c.fillRect(side * (116 + i * 9) - 2, -4 + i * 3, 3, 14);
       }
     }
     for (const side of [-1, 1]) {
       const x = side * 88, y = 16 + Math.sin(b.age * 2) * 8;
       c.save(); c.translate(x, y);
-      if (!overlay) polygon([-25, -40, 25, -40, 30, 20, 16, 42, -16, 42, -30, 20], '#243b51', '#8ba4b7');
+      const objectImage = objects.images.objects;
+      if (objectImage) c.drawImage(objectImage, 192, 0, 64, 64, -32, -42, 64, 84);
       c.fillStyle = dead ? '#ffbb75' : '#7aeadd'; c.shadowColor = c.fillStyle; c.shadowBlur = 14;
       if (overlay) {
         const reactor = c.createRadialGradient(-5, -6, 1, 0, 0, 19);
@@ -205,8 +187,8 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     }
     c.fillStyle = dead || b.phase === 2 ? '#ffae85' : '#b2fff2'; c.shadowColor = c.fillStyle; c.shadowBlur = 18;
     c.beginPath(); c.arc(0, 10, 28, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
-    polygon([-15, -9, 15, -9, 20, 25, 0, 39, -20, 25], '#19344d', '#ddfff3');
-    c.fillStyle = '#ffe3a7'; c.fillRect(-3, 0, 6, 22);
+    const reactorImage = objects.images.objects;
+    if (reactorImage) c.drawImage(reactorImage,256,0,64,64,-32,-22,64,64);
     if (dead && !motion.matches) for (let i = 0; i < 9; i++) {
       const age = (b.defeated + i * 0.19) % 0.7, x = noise(i + Math.floor(b.defeated * 4)) * 260 - 130, y = noise(i + 30) * 90 - 40;
       c.globalAlpha = (1 - age / 0.7) * Math.max(0, 1 - b.defeated / fortress.defeatDuration);
@@ -216,6 +198,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   }
   return {
     element: canvas,
+    ready,
     reset() { particles = []; lastTime = 0; damageFlash = 0; lastRecharge = 0; rollReadyAt = -Infinity; flashes.clear(); },
     consume(events: readonly FlightEvent[]) {
       for (const event of events) {
@@ -243,7 +226,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       c.translate(view.x, view.y); c.scale(view.scale, view.scale);
       c.save(); c.beginPath(); c.rect(0, 0, 480, 800); c.clip();
       visualTime = motion.matches ? 0 : attractTime ?? run.elapsed;
-      if (space) space.draw(c, visualTime); else if (!overlay) ocean(visualTime);
+      if (!overlay) ocean(visualTime);
       if (motion.matches) { particles = []; damageFlash = 0; }
       const dt = Math.max(0, run.elapsed - lastTime); lastTime = run.elapsed;
       for (const [id, life] of flashes) {
@@ -258,14 +241,10 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       for (const item of run.pickups) {
         const color = item.kind === 'power' ? '#ffcf70' : item.kind === 'spread' ? '#d6aaff' : '#a9f3b5';
         c.save(); c.translate(item.x, item.y); if (!motion.matches) c.rotate(Math.sin(item.age * 3) * 0.1);
-        c.fillStyle = '#06273e'; c.strokeStyle = color; c.lineWidth = 2;
-        c.shadowColor = color; c.shadowBlur = 14;
-        c.beginPath(); c.roundRect(-18, -18, 36, 36, 9); c.fill(); c.stroke(); c.shadowBlur = 0;
-        c.strokeStyle = color; c.lineWidth = 3; c.beginPath();
-        if (item.kind === 'repair') { c.moveTo(-9, 0); c.lineTo(9, 0); c.moveTo(0, -9); c.lineTo(0, 9); }
-        else if (item.kind === 'power') { for (const y of [-5, 5]) { c.moveTo(-8, y + 3); c.lineTo(0, y - 4); c.lineTo(8, y + 3); } }
-        else { for (const x of [-10, 0, 10]) { c.moveTo(x, 8); c.lineTo(x * 0.4, -7); } }
-        c.stroke(); c.fillStyle = color; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillText(item.kind.toUpperCase(), 0, 32); c.restore();
+        const objectImage = objects.images.objects;
+        const frame = item.kind === 'power' ? 0 : item.kind === 'spread' ? 1 : 2;
+        if (objectImage) c.drawImage(objectImage, frame * 64, 0, 64, 64, -22, -22, 44, 44);
+        c.fillStyle = color; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillText(item.kind.toUpperCase(), 0, 32); c.restore();
       }
       drawRollReadiness(run);
       for (const b of run.bullets) {
@@ -313,6 +292,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       c.restore();
       c.strokeStyle = '#73c7c233'; c.lineWidth = 1; c.strokeRect(0, 0, 480, 800);
     },
-    dispose() { particles = []; flashes.clear(); images = {}; space?.dispose(); canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { baseline?.dispose(); objects.dispose(); particles = []; flashes.clear(); images = {}; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

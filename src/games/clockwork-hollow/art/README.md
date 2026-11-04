@@ -2,7 +2,7 @@
 
 [Game presentations](../../../../docs/games/clockwork-hollow/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-The Porcelain Bellgarden Assets family uses original transparent SVG sheets under the repository’s [MIT license](../../../../LICENSE).
+Every mode uses original transparent SVG actor and object sheets under the repository’s [MIT license](../../../../LICENSE).
 
 ## Creative direction
 
@@ -11,6 +11,8 @@ A small porcelain keeper with a coral ribbon explores a mechanical botanical san
 The aqueduct layers jade plants and ceramic spillways. The Emberworks replaces the greenery with rose-glazed kilns, grilles and brass pipework. The belfry uses indigo stone, leaded glass, hanging ornaments and a crescent moon. Scenery is deliberately quieter than the ivory keeper, platform edges and coral threats.
 
 ## Committed images
+
+Normal uses the `-normal` brass variants of keeper, beetle and objects. Quality uses their `-quality` copper-and-glass variants. Assets uses the unsuffixed porcelain sheets and the illustrated terrain and scenery. All variants share the same frame layout. Keeper cels have continuous authored silhouettes rather than independently outlined anatomical pieces.
 
 Sheets use antialiased sampling. Runtime reads the committed SVGs; `bellgarden/generate.mjs` is their editable source.
 
@@ -37,4 +39,4 @@ Inspect continuous landing edges, thin ledges, beetle crowns and thorn tips at g
 
 ## Lumen Conservatory
 
-`../quality-presentation.ts` is the editable source for Quality’s architectural drawing, material gradients and cached background layers. District colors live in `../themes.ts`. The [game guide](../../../../docs/games/clockwork-hollow/README.md#quality-direction-lumen-conservatory) owns its art direction, animation and cache behavior.
+`../quality-presentation.ts` is the editable source for Quality’s architectural drawing, material gradients and cached background layers. Its actors, lanterns, bells, motes and hazards use the committed complete sprites through `asset-presentation.ts`. District colors live in `../themes.ts`. The [game guide](../../../../docs/games/clockwork-hollow/README.md#quality-direction-lumen-conservatory) owns its art direction, animation and cache behavior.

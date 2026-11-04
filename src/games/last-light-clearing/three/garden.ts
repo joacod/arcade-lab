@@ -11,13 +11,14 @@ import type { Theme } from '../themes.ts';
 import { MAX_EFFECTS, visualTiming } from '../themes.ts';
 import type { WorldPresentation, DisplaySize } from '../world-presentation.ts';
 import type { Viewport } from '../view.ts';
+import type { ImageBundle } from '../../../engine/browser/images.ts';
 import type { ActorRole } from '../art-pack.ts';
 import { createAnimationObservations } from '../animation.ts';
 import { orbitPosition } from '../weapons/halo.ts';
 import { haloLights } from '../weapon-stats.ts';
 
 /** XY ground: (x, -worldY, elevation). Camera looks down -Z, so elevation never shifts XY. */
-export function createGarden(theme: Theme, onFailure: () => void): WorldPresentation {
+export function createGarden(theme: Theme, images: ImageBundle, onFailure: () => void): WorldPresentation {
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas'; canvas.dataset.renderer = 'garden';
   const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
@@ -145,74 +146,32 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       batch.computeBoundingSphere(); scene.add(batch);
     }
 
-    const keeperMat = lit('#c9b477', '#ffc777', 0.22), enemyMat = lit('#9d4867', '#c35287', 0.08);
-    const eliteMat = lit('#7851a2', '#b36ee0', 0.2), dark = lit('#1b263c'), core = lit('#fff4cc', '#ffd090', 3);
-    const petalMat = lit('#6eaaa8', '#76dcc9', 0.24), gold = lit('#bba06a');
-    const eyes = lit('#ffb8c1', '#ff809b', 1.1);
+    const dark = lit('#1b263c');
     const ringGeometry = geometry(new THREE.TorusGeometry(1, 0.035, 5, 48));
     const sphere = geometry(new THREE.IcosahedronGeometry(1, 0));
     const observations = createAnimationObservations();
     let effects: Extract<GameEvent, { x: number }>[] = [];
     const flashMaterial = lightMaterial(p.hit), healthMaterial = lightMaterial(p.damage), eliteHealthMaterial = lightMaterial(p.elite);
+    const spritePlane = geometry(new THREE.PlaneGeometry(1,1));
+    const actorMap = texture(new THREE.Texture(images.grove!)); actorMap.colorSpace = THREE.SRGBColorSpace; actorMap.needsUpdate = true;
+    const actorMaterial = material(new THREE.MeshBasicMaterial({map: actorMap, transparent:true, alphaTest:.03, depthWrite:false, toneMapped:false}));
+    const spriteFrames = Array.from({length:3}, (_,row) => Array.from({length:4}, (_,frame) => {
+      const plane = geometry(new THREE.PlaneGeometry(1,1));
+      const left=frame/4,right=(frame+1)/4,top=1-row/3,bottom=1-(row+1)/3;
+      plane.setAttribute('uv',new THREE.Float32BufferAttribute([left,top,right,top,left,bottom,right,bottom],2));
+      return plane;
+    }));
     function actor(role: ActorRole) {
-      const group = new THREE.Group(); scene.add(group);
-      const model = new THREE.Group(); group.add(model);
-      const elite = role === 'elite', keeper = role === 'keeper';
-      const bodyMaterial = keeper ? keeperMat : elite ? eliteMat : enemyMat;
-      const radius = keeper ? 11 : elite ? 21 : 12;
-      const limbs: THREE.Group[] = [], petals: THREE.Mesh[] = [];
-      const body = mesh(keeper ? crystal : sphere, bodyMaterial, 0, 0, radius);
-      body.scale.set(radius, radius * (keeper ? 0.78 : 0.9), keeper ? 24 : radius * 0.85);
-      body.rotation.set(0.24, 0.18, 0); body.castShadow = true; model.add(body);
-      if (keeper) {
-        for (let index = 0; index < 6; index++) {
-          const angle = index * Math.PI / 3;
-          const petal = mesh(crystal, petalMat, Math.cos(angle) * 11, Math.sin(angle) * 11, 17, model);
-          petal.scale.set(4, 10, 7); petal.rotation.z = -angle + Math.PI / 2; petal.castShadow = true; petals.push(petal);
-        }
-        // Four dark ribs frame a luminous lantern, readable directly from above.
-        for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-          const rib = mesh(box, gold, Math.cos(angle) * 7, Math.sin(angle) * 7, 28, model);
-          rib.scale.set(2, 2, 16); rib.castShadow = true;
-        }
-        const cap = mesh(sphere, core, 0, 0, 30, model); cap.scale.set(5, 5, 8);
-        const frame = mesh(ringGeometry, gold, 0, 0, 35, model); frame.scale.setScalar(8);
-        const base = mesh(ringGeometry, gold, 0, 0, 12, model); base.scale.setScalar(12);
-      } else {
-        // Six jointed legs, split shell plates and paired eyes distinguish creatures from gems.
-        for (let j = 0; j < 6; j++) {
-          const side = j < 3 ? -1 : 1, offset = j % 3 - 1;
-          const joint = new THREE.Group(); joint.position.set(side * radius * 0.65, offset * radius * 0.65, 7); model.add(joint); limbs.push(joint);
-          const leg = mesh(box, dark, side * radius * 0.55, 0, 0, joint);
-          leg.scale.set(radius * 1.1, 3, 4); leg.rotation.z = offset * side * 0.5; leg.castShadow = true;
-          const tip = mesh(crystal, bodyMaterial, side * radius * 1.05, -offset * radius * 0.25, -2, joint);
-          tip.scale.set(3, 4, 5); tip.castShadow = true;
-        }
-        for (const side of [-1, 1]) {
-          const shell = mesh(crystal, bodyMaterial, side * radius * 0.43, 0, radius * 1.6, model);
-          shell.scale.set(radius * 0.48, radius * 0.85, radius * 0.45); shell.rotation.z = side * 0.15;
-          const thorn = mesh(crystal, gold, side * radius * 0.6, radius * 0.6, radius * 1.7, model); thorn.scale.set(2, radius * 0.45, 4);
-        }
-        for (const x of [-radius * 0.35, radius * 0.35]) {
-          const eye = mesh(sphere, eyes, x, -radius * 0.33, radius * 1.8, model); eye.scale.set(1.8, 1.8, 1.2);
-        }
-        if (elite) for (let j = 0; j < 5; j++) {
-          const spike = mesh(crystal, core, Math.cos(j * Math.PI * 2 / 5) * 15, Math.sin(j * Math.PI * 2 / 5) * 15, 24, model);
-          spike.scale.set(3, 3, 11);
-        }
-      }
-      const flash = mesh(ringGeometry, flashMaterial, 0, 0, 5, group);
-      flash.scale.setScalar(radius + 5); flash.visible = false;
-      const healthBack = mesh(box, dark, 0, -radius - 12, 5, group); healthBack.scale.set(radius * 2, 3, 1);
-      const health = mesh(box, elite ? eliteHealthMaterial : healthMaterial, 0, -radius - 12, 6, group);
-      const crest = new THREE.Group(); model.add(crest); crest.visible = false;
-      for (const side of [-1, 1]) {
-        const fork = mesh(crystal, gold, side * 6, -radius * 0.7, radius * 2, crest); fork.scale.set(3, 10, 5); fork.rotation.z = side * 0.4;
-      }
+      const group = new THREE.Group(), model = new THREE.Group(); group.add(model);
+      const elite = role === 'elite', radius = role === 'keeper' ? 11 : elite ? 21 : 12;
+      const row = role === 'keeper' ? 0 : elite ? 2 : 1, size = role === 'keeper' ? 40 : elite ? 72 : 38;
+      const cels = spriteFrames[row]!.map(g => { const cel = mesh(g,actorMaterial,0,0,8,model); cel.scale.set(size,size,1); return cel; });
+      const flash = mesh(ringGeometry,flashMaterial,0,0,9,group); flash.scale.setScalar(radius+5);
+      const healthBack = mesh(box,dark,0,-radius-12,5,group); healthBack.scale.set(radius*2,3,1);
+      const health = mesh(box,elite?eliteHealthMaterial:healthMaterial,0,-radius-12,6,group);
+
       group.visible = false;
-      // Detached pose trees are copied into shared instance buffers below.
-      scene.remove(group);
-      return { group, model, flash, health, healthBack, radius, limbs, petals, crest };
+      return {group, model, flash, health, healthBack, radius, cels};
     }
     type Actor = ReturnType<typeof actor>;
     const keeper = actor('keeper');
@@ -229,15 +188,10 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
       slot.health.scale.set(slot.radius * 2 * health, 2, 1);
       slot.health.position.x = -slot.radius * (1 - health);
       slot.group.scale.setScalar(entry ? 0.8 : 1);
-      // Eyes and crest face local +Y; convert world heading into the garden's inverted Y.
-      slot.model.rotation.z = -observation.angle - Math.PI / 2;
-      const gait = !motion.matches && observation.moving ? Math.sin(time * 14 + x * 0.03) : 0;
-      slot.model.position.z = !motion.matches ? Math.sin(time * 3 + x) * (id === 'keeper' ? 1.4 : 0.4) : 0;
-      for (const [index, limb] of slot.limbs.entries()) {
-        limb.rotation.z = gait * (index % 2 ? 0.22 : -0.22);
-        limb.position.z = 7 + Math.max(0, gait * (index % 2 ? 1 : -1)) * 2;
-      }
-      for (const [index, petal] of slot.petals.entries()) petal.rotation.x = motion.matches ? 0 : Math.sin(time * 3.2 + index) * 0.12;
+      slot.model.rotation.z = -observation.angle;
+      const frame = motion.matches || !observation.moving ? 0 : Math.floor(time/.12)%4;
+      slot.cels.forEach((cel,index) => {cel.visible = index === frame;});
+
     }
 
     // Fixed instance capacity covers authored round limits; no allocation per transient or per frame.
@@ -276,7 +230,8 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
         batch.instanceMatrix.needsUpdate = true;
       }
     }
-    const gems = instances(crystal, lit(p.gem, p.gem, 0.6), 2048);
+    const gemMap = texture(new THREE.Texture(images.gem!)); gemMap.colorSpace=THREE.SRGBColorSpace;gemMap.needsUpdate=true;
+    const gems = instances(spritePlane,material(new THREE.MeshBasicMaterial({map:gemMap,transparent:true,alphaTest:.03,depthWrite:false,toneMapped:false})),2048);
     const spark = instances(sphere, lightMaterial(p.spark), 256);
     const trails = instances(box, lightMaterial(p.spark), 256);
     const arcSpark = instances(crystal, lightMaterial(p.shard), 256);
@@ -337,7 +292,6 @@ export function createGarden(theme: Theme, onFailure: () => void): WorldPresenta
           if (slot) {
             drawActor(slot, enemy.id, enemy.x, enemy.y, run.elapsed, enemy.health / info.maxHealth, enemy.entryDelay > 0);
             slot.model.scale.set(enemy.kind === 'charger' ? 1.25 : 1, enemy.kind === 'charger' ? 0.8 : 1, 1);
-            slot.crest.visible = enemy.kind === 'charger';
           }
         }
         for (const batch of batches) batch.count = 0;

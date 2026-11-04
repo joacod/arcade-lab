@@ -88,7 +88,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         if (theme.presentation === 'prism') {
           const { createGarden } = await import('./three/garden.ts');
           if (!request.current()) return;
-          next = createGarden(theme, () => {
+          next = createGarden(theme, bundle!.images, () => {
             if (presentation === next) graphicsFailure();
           });
         } else if (theme.presentation === 'abyss') {

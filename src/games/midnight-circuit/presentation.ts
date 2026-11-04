@@ -1,4 +1,6 @@
-import { createGait, fighterPose } from './animation.ts';
+import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
+import { circuitSprites, validateCircuitSprites, drawCircuitFighter } from './sprite-art.ts';
+import { createGait, fighterFrame } from './animation.ts';
 import { attacks } from './content.ts';
 import { attackPhase, attackWarning, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
 import type { Screen } from './ui.ts';
@@ -12,15 +14,16 @@ export function circuitView(width: number, height: number, run: Run) {
 /** Local artwork replaces visual roles while sharing projection, gait, warnings and event effects. */
 export interface CircuitArtwork {
   scenery(ctx: CanvasRenderingContext2D, view: ReturnType<typeof circuitView>, run: Run, time: number, reducedMotion: boolean): void;
-  body(ctx: CanvasRenderingContext2D, actor: Actor, time: number, pose: ReturnType<typeof fighterPose>, reflection: boolean): void;
   pickup(ctx: CanvasRenderingContext2D, pickup: Run['pickups'][number], ground: number, time: number): void;
 }
 interface Particle { x: number; lane: number; z: number; vx: number; vy: number; vz: number; life: number; max: number; color: string }
 interface Ring { x: number; lane: number; life: number; strength: number; color: string }
-export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwork) {
+export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwork, images?: ImageBundle) {
   const canvas = document.createElement('canvas'); canvas.className = 'circuit-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
+  const baseline = images ? undefined : createImageResource(circuitSprites, validateCircuitSprites);
+  const sprites = () => images ?? baseline!.images;
   const gait = createGait();
   canvas.dataset.renderer = artwork ? 'assets' : 'canvas';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -149,82 +152,15 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       neon('POWER STATION →', x - 80, g - 60, '#9afadf', 15);
     }
   }
-  type Point = [number, number];
-  function limb(points: readonly Point[], color: string, width: number) {
-    const flat = points.flat(); line(flat, '#091522', width + 4); line(flat, color, width);
-  }
-  /** Original articulated vector figures. Pose observes the simulation's attack phase. */
   function body(a: Actor, time: number, reflection = false) {
-    if (artwork) { artwork.body(ctx, a, time, fighterPose(a, gait.get(a.id)), reflection); return; }
-    const player = a.kind === 'player', boss = a.kind === 'warden', bruiser = a.kind === 'bruiser';
-    const size = boss ? 1.48 : bruiser ? 1.2 : 1;
-    const ink = '#101b2c', trim = player ? '#86ffde' : boss ? '#ffb784' : bruiser ? '#e8b47a' : '#ed85ac';
-    const coat = player ? '#408c92' : boss ? '#3f5260' : bruiser ? '#815c63' : '#666a91';
-    const lit = player ? '#79b8af' : boss ? '#82919a' : bruiser ? '#c38a83' : '#a49bc0';
-    ctx.save(); ctx.scale(a.facing * size, size);
-    if (!reflection && a.immune > 0 && Math.floor(time * 16) % 2 === 0) ctx.globalAlpha *= .55;
-    if (a.health <= 0) { ctx.rotate(-Math.PI * .37); ctx.scale(1, .6); }
-    const pose = fighterPose(a, gait.get(a.id));
-    const { stride, bob } = pose;
-    const s = a.attack, phase = s ? attackPhase(s) : null;
-    const active = phase === 'active', windup = phase === 'startup', recovery = phase === 'recovery';
-    const kind = s?.kind, kick = kind === 'finisher' || kind === 'air';
-    const heavy = kind === 'heavy' || kind === 'smash' || kind === 'quake';
-    const recoil = a.stun > 0 && a.health > 0 ? -10 : windup ? -5 : active ? 7 : 0;
-    ctx.translate(recoil, bob - a.elevation / size);
-    const { backFoot, frontFoot, backKnee, frontKnee, rearElbow, rearHand, elbow, hand } = pose;
-    limb([[-8, -45], backKnee, backFoot], '#26374d', boss ? 15 : 10);
-    line([backFoot[0] - 7, backFoot[1], backFoot[0] + 10, backFoot[1]], '#182735', 10);
-    line([backFoot[0] - 4, backFoot[1] - 4, backFoot[0] + 9, backFoot[1] - 4], trim, 2);
-    // Rear arm is behind the jacket, with a compact guarded silhouette at rest.
-    limb([[-13, -76], rearElbow, rearHand], coat, boss ? 17 : 9); ellipse(rearHand[0], rearHand[1], boss ? 13 : 7, boss ? 12 : 7, trim);
-    polygon([-17, -81, 11, -83, 22, -48, 12, -39, -19, -43, -24, -60], coat);
-    polygon([-15, -80, -3, -78, -5, -46, -18, -45, -22, -60], lit);
-    polygon([-4, -79, 6, -78, 10, -45, -5, -45], '#1c2e40');
-    line([-15, -43, 16, -43], '#ded1ab', 4); rect(0, -46, 7, 6, '#f4d9a6', 1);
-    if (player) {
-      // Rook's split turquoise jacket, white wraps and coral scarf define the fighter.
-      polygon([-20, -49, -4, -45, -11 - Math.abs(stride) * .4, -26, -25, -29], '#326e7d');
-      polygon([-14, -83, -28, -81, -45 - Math.abs(stride), -70 + Math.sin(time * 9) * 3, -35, -87, -14, -89], '#e184a0');
-      line([-14, -82, 9, -84], '#f5adba', 5);
+    const frame = fighterFrame(a,gait.get(a.id),motion.matches);
+    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection);
+    if (a.attack && attackPhase(a.attack) === 'active') {
+      ctx.save();ctx.translate(0,-a.elevation);ctx.scale(a.facing,1);
+      ctx.strokeStyle=a.kind==='player'?'#b5f7db':'#ffb784';ctx.lineWidth=3;
+      ctx.beginPath();ctx.ellipse(30,-55,50,35,-.2,-.9,1);ctx.stroke();ctx.restore();
     }
-    limb([[8, -44], frontKnee, frontFoot], boss ? '#3b4f62' : '#30465b', boss ? 16 : 11);
-    if (boss || bruiser) { rect(frontKnee[0] - 8, frontKnee[1] - 10, 15, 17, lit, 4); }
-    line([frontFoot[0] - 8, frontFoot[1], frontFoot[0] + 13, frontFoot[1]], '#152535', 10);
-    line([frontFoot[0] - 6, frontFoot[1] - 4, frontFoot[0] + 10, frontFoot[1] - 4], trim, 2);
-    if (boss) {
-      polygon([-27, -90, -7, -91, -12, -66, -30, -70, -38, -82], '#71828d');
-      polygon([8, -92, 29, -87, 35, -75, 20, -65, 11, -73], '#8c999e');
-      ellipse(-2, -66, 12, 12, ink); ellipse(-2, -66, 8, 8, trim); ellipse(-2, -66, 3, 5, '#fff4c3');
-      line([-21, -87, -13, -73], trim, 3);
-    }
-    // Faces / visors have a strong directional nose and hair or helmet contour.
-    line([-2, -83, -2, -91], '#d8ac94', 13);
-    if (player) {
-      polygon([-13, -113, 7, -116, 16, -103, 20, -98, 13, -95, 10, -87, -5, -87, -14, -98], '#eac2a5');
-      polygon([-16, -106, -13, -120, -4, -124, 9, -120, 13, -110, 4, -110, -3, -103, -7, -98, -13, -98], '#1b2435');
-      line([-11, -111, 11, -114], '#88f3d4', 3); line([7, -103, 13, -103], '#192435', 2);
-      line([7, -92, 13, -92], '#925e65', 2);
-    } else {
-      polygon([-16, -110, -8, -119, 10, -117, 20, -105, 17, -89, -9, -87, -18, -97], lit);
-      polygon([-14, -107, 18, -107, 22, -99, 14, -96, -12, -97], ink);
-      line([-9, -102, 18, -102], trim, boss ? 5 : 3);
-      rect(-7, -91, 20, 4, '#263847');
-      if (boss) { polygon([-15, -111, -25, -128, -9, -119], '#9eacaa'); polygon([6, -117, 19, -130, 18, -109], '#b4b4a3'); }
-    }
-    limb([[14, -77], elbow, hand], coat, boss ? 19 : bruiser ? 14 : 10);
-    line([elbow[0], elbow[1], hand[0] * .8 + elbow[0] * .2, hand[1] * .8 + elbow[1] * .2], lit, boss ? 13 : 7);
-    ellipse(hand[0], hand[1], boss ? 14 : bruiser ? 11 : 8, boss ? 13 : 8, player ? '#d8e2d2' : trim);
-    line([hand[0] - 4, hand[1] - 4, hand[0] + 4, hand[1] - 4], player ? '#74ddc9' : '#fff0bc', 2);
-    if (player && active) {
-      const tip = kick ? frontFoot : kind === 'cross' ? rearHand : hand;
-      glow(tip[0], tip[1], heavy ? 35 : 23, '#8effdc66');
-      ctx.strokeStyle = heavy ? '#ffdcad99' : '#b2ffe5aa'; ctx.lineWidth = heavy ? 6 : 3;
-      ctx.beginPath(); ctx.ellipse(30, -55, heavy ? 58 : 45, heavy ? 42 : 26, -.2, -.9, 1); ctx.stroke();
-    }
-    if (a.flash > 0 && !reflection) { ctx.globalCompositeOperation = 'screen'; ellipse(0, -65, 23, 43, '#ffffe655'); }
-    if (recovery && boss) text('OPEN', 0, -143, 9, '#a3ffdc', 'center');
-    ctx.restore();
+    if (a.kind === 'warden' && a.attack && attackPhase(a.attack) === 'recovery') text('OPEN',0,-210,9,'#a3ffdc','center');
   }
   function telegraph(a: Actor, ground: number) {
     const s = a.attack, area = attackWarning(a); if (!s || !area || a.kind === 'player') return;
@@ -250,6 +186,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     ctx.restore();
   }
   return {
+    ready: baseline?.ready ?? Promise.resolve(),
     reset() { gait.reset(); particles = []; rings = []; camera = undefined; last = undefined; shake = 0; },
     consume(events: readonly BrawlerEvent[]) {
       for (const e of events) {
@@ -283,10 +220,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
         const x = pickup.x, y = view.ground + pickup.lane;
         ellipse(x, y, 22, 6, '#071525aa'); glow(x, y - 12, 42, '#7bffd730');
         if (artwork) artwork.pickup(ctx, pickup, view.ground, run.elapsed);
-        else {
-          rect(x - 12, y - 24 + Math.sin(run.elapsed * 3) * 2, 24, 20, '#254b50', 4);
-          rect(x - 8, y - 22, 16, 2, '#9ce9c7'); rect(x - 2, y - 20, 4, 13, '#9bffd3'); rect(x - 7, y - 15, 14, 4, '#9bffd3');
-        }
+        else if (sprites().repair) ctx.drawImage(sprites().repair!,x-21,y-38,42,42);
         text(`+${pickup.health}`, x, y - 33, 10, '#adffdb', 'center');
       }
       const actors = [run.player, ...run.enemies].filter(a => a.health > 0 || a.death > 0).sort((a, b) => a.lane - b.lane || a.id - b.id);
@@ -329,6 +263,6 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       // A subtle border treatment gives the rain-soaked scene a printed arcade-poster finish.
       const shade = ctx.createLinearGradient(0, 0, 0, view.height); shade.addColorStop(0, '#060d1b55'); shade.addColorStop(.3, '#060d1b00'); shade.addColorStop(1, '#060d1b55'); rect(0, 0, view.width, view.height, shade);
     },
-    dispose() { if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { baseline?.dispose(); if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

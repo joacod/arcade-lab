@@ -36,9 +36,9 @@ Every bell ends its district and freezes simulation. An explicit **Continue to�
 
 A moonlit mechanical garden built from oxidized copper, cut jade and warm luminous glass. Layered cathedral ribs frame a monumental waterwheel in the aqueduct, furnace vessels in the Emberworks and an astronomical rose window in the belfry. Distant architecture stays low in contrast; continuous pale landing lips, the keeper's glass heart, rounded beetle crowns and coral thorn tips lead the eye through the physical route.
 
-The keeper has a burnished helmet, inset glass face, articulated piston limbs and a trailing saffron scarf. Foot travel drives its stride, ascent opens its arms and descent braces its legs. Faceted motes, caged lanterns and engraved bells repeat the same copper-and-glass language. Saved lanterns and awakened bells brighten locally, with bounded semantic sparks. The interface uses dark mineral surfaces and fine brass rules.
+The keeper has a burnished helmet, inset glass face, a continuous brass silhouette and a trailing saffron scarf. Foot travel selects complete stride cels, while ascent and descent select dedicated airborne drawings. Faceted motes, caged lanterns and engraved bells repeat the same copper-and-glass language. Saved lanterns and awakened bells brighten locally, with bounded semantic sparks. The interface uses dark mineral surfaces and fine brass rules.
 
-Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture without a graphics dependency or external artwork.
+Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture around complete actor and object sprites, without a graphics dependency.
 
 ## Source ownership and customization
 
@@ -49,22 +49,22 @@ Paths below are relative to `src/games/clockwork-hollow/`.
 | Authored routes, physical geometry, checkpoint positions, patrol bounds, vent timings, motes and bell placement | `content.ts`: typed `Level` definitions and `journey` order |
 | Movement and jump feel | `movement` in `content.ts`; explicit acceleration, collision and jump behavior in `game.ts` |
 | Enemy and obstacle behaviors, vent cycle timing, failure causes, checkpoints, progression and scoring | `game.ts`; no generic AI or entity framework |
-| Character drawing, animation, environment artwork, camera and effects | `presentation.ts`; `keeper`, `scenery`, `stone` and the local enemy/vent drawings are the artwork entry points |
+| Character drawing, animation, environment artwork, camera and effects | `presentation.ts`, `asset-presentation.ts` and the game-local sprite roles |
 | Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
-| Assets frame layouts, validation, image footprints and artwork drawing | `asset-art.ts`, `assets.ts` and `asset-presentation.ts`; committed images and generator in `art/bellgarden/` |
-| Quality architecture, bevelled materials, articulated actors, lanterns and bells | `quality-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
+| Complete actor/object cels for all modes, frame layouts, validation and image drawing | `asset-art.ts`, `assets.ts` and `asset-presentation.ts`; committed images and generator in `art/bellgarden/` |
+| Quality architecture, bevelled scenery materials and cached background layers | `quality-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts` |
 
-`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district’s background layers; changing district, replacing Quality or disposing the session releases them. Normal requires no image loading.
+`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district’s background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its copper-and-glass sprite variants before replacing the current presentation.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable.
 
-The camera provides minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize resets framing. The keeper's stride follows ground distance and settles when stopping; lifted arms on ascent and braced arms on descent distinguish jump phases.
+The camera provides minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize resets framing. The keeper's walking cels follow ground distance and settle when stopping; dedicated ascent and descent drawings distinguish jump phases.
 
 Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, landing squash, scarf flutter and bell swinging. Assets and Quality use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 

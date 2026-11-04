@@ -1,5 +1,8 @@
+import { hollowSpriteImages } from './sprite-art.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import { prepareImages } from '../../engine/browser/images.ts';
+import { validateHollowSprites } from './asset-art.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -56,6 +59,8 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
         candidate = await prepareBellgarden(request.signal);
         if (!request.current()) return;
       } else if (id === 'quality') {
+        candidate = await prepareImages(hollowSpriteImages('quality'),request.signal,validateHollowSprites);
+        if (!request.current()) return;
         const { createLumenDrawing } = await import('./quality-presentation.ts');
         if (!request.current()) return;
         candidateQuality = createLumenDrawing;
