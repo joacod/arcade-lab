@@ -1,6 +1,10 @@
 # Creating a Quality theme
 
-Quality is the most ambitious standard visual presentation for an existing game: composition, actors, environment, animation, materials, lighting, effects and interface. Its objective is exceptional quality, cohesion, visual impact and polish, with a noticeable leap beyond Assets. It can deepen that artistic direction or establish a different identity. Build it around high-quality custom image assets for players, enemies and interactive objects, with complete sprites and authored action cels. Reuse strong artwork when it fits the direction. A renderer upgrade or a new palette alone does not complete it, and it need not be the most technically complicated mode. Follow the [development progression and mode contracts](architecture.md#appearance-changes), normally after gameplay is established and the Assets direction has been explored. Keep game-specific art direction and implementation details in the owning game's guide and `art/` documentation.
+Quality is the polished modern visual interpretation of the established game: exceptional artwork, composition, animation, materials, lighting, atmosphere, effects and interface. Aim for a clear visual step beyond Assets' retro treatment while preserving the game's setting and identity, unless the user explicitly requests a different adaptation. Modern describes visual craft and finish, not a futuristic setting or a requirement for photorealism. A western should have beautifully realized western characters and scenery; other genres deserve the same attention to their own fiction.
+
+Build around high-quality custom image assets for players, enemies and interactive objects, with complete sprites and authored action cels. Painted or pre-rendered 3D artwork can add volume and material richness when it suits the direction; neither is mandatory. Reuse strong artwork where it meets the brief. Give the scene memorable visual moments through composition, animated backgrounds, expressive action, atmosphere or well-chosen effects. Quality can be delivered entirely with images and Canvas 2D. A graphics library is optional and earns its place through a visible benefit that justifies its complexity and runtime cost.
+
+Follow the [development progression and mode contracts](architecture.md#appearance-changes), normally after gameplay is established and the Assets direction has been explored. Keep mechanics unchanged and game-specific art direction and implementation details in the owning game's guide and `art/` documentation.
 
 When implementing or improving Quality, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, rendering technologies, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
 
@@ -10,11 +14,12 @@ Read the game's guide, simulation/content boundaries, presentation, appearance p
 
 Write a brief in the game guide before polishing individual effects:
 
-- A named setting and visual identity, with a palette and materials that work together.
+- A modern visual treatment of the game's established setting and identity, with a palette and materials that work together. Record a different adaptation only when explicitly requested.
 - The visual hierarchy: gameplay-critical characters, objects, objectives and cues, then environment and decoration. Specify where scenery must stay quiet and how roles differ in silhouette as well as color.
 - The treatment of important characters and objects, the environment, feedback and interface. Cover significant gameplay transitions and outcomes.
 - The animation language: authored sprite clips, anticipation, contact, recovery, movement response, interactions and feedback where applicable. Separate cosmetic motion from movement that communicates gameplay.
-- The renderer and asset choices needed to deliver that identity, plus the behavior when preparation or graphics fails.
+- One or a few memorable visual moments that fit the game, such as moving scenery, expressive action animation, atmospheric depth or a striking event response. Keep them subordinate to readable play.
+- The artwork and simplest rendering approach needed to deliver that identity. Explain the concrete visual benefit if adding a graphics library, plus the behavior when preparation or graphics fails.
 
 Use game and asset sites as inspiration for composition, role differentiation, scale, animation and asset layouts. Adapt useful template structures when generating assets. Keep inspiration links when they help future artwork.
 
@@ -22,7 +27,9 @@ Use game and asset sites as inspiration for composition, role differentiation, s
 
 Choose the artwork first, then the simplest renderer that presents it well. Complete custom sprites and cels carry character design, anatomy, costume, silhouette and action. Do not replace good sprites with runtime body-part assembly, cut-up limb sprites, procedural skeleton drawings or mesh rigs. Use actual 3D actors only when the user explicitly requests them for the game. Painted or pre-rendered 3D sprites can supply convincing volume without that complexity.
 
-Canvas can deliver detailed layered artwork, animation, light, mist, reflections and expressive contact effects. Three.js and vgpu/WebGPU are useful for background depth, atmosphere, lighting, particles, distortion, transitions and other effects around the image assets. Use a graphics library only for a concrete improvement to the delivered scene. Keep expensive code and asset requests behind the selected mode's preparation boundary.
+Canvas can deliver detailed layered artwork, animation, light, mist, reflections and expressive contact effects. Start there when it serves the direction. Three.js or vgpu/WebGPU can add depth, atmosphere, lighting, particles, distortion or transitions when they work well with the artwork and make a worthwhile improvement over a simpler image-based approach. Choose a specific visual result before choosing a library; adding a backend, bloom or more particles alone does not establish Quality. Keep expensive code and asset requests behind the selected mode's preparation boundary.
+
+Custom is for an explicitly requested, documented experimental presentation, such as exploring a shader-driven visual identity. A technology experiment can belong there when that is the requested objective. Three.js or vgpu does not automatically make a mode Custom, and Quality does not require either. Keep experiments outside the standard progression; use the [mode contract](architecture.md#mode-contract) for their availability and naming.
 
 For raster artwork, define its role before creating it. A background plate should leave gameplay-critical areas quiet and keep dynamic actors, objects, cues and UI separate. A sprite needs a clear camera angle, orientation, transparent background, frame layout, anchors and intended on-screen size. Keep independently moving whole actors and objects separate from scenery; do not split a character into anatomical pieces. Reuse the game's atlas contract when suitable. Inspect output at its gameplay size; a beautiful source image can become noisy or unreadable in motion.
 
@@ -34,17 +41,13 @@ Keep one authoritative uniform world-to-screen transform. Orthographic geometry 
 
 Build the readable scene first, then add polish. Detailed silhouettes and material separation should remain legible without bloom. Reserve bright accents for important actions, interactions and state changes, and broad low-contrast forms for scenery. Keep hazards, objectives, warnings and interaction markers readable above atmospheric effects. Match HUD/menu colors, surfaces and accents to the scene without adding graphics controls to gameplay setup.
 
-Drive effects from semantic events and age them in active simulation time. Pausing freezes gameplay effects and environmental drift. Title animation can use separate cosmetic time. Reduced motion suppresses decorative drift, spin, trails, shockwaves and flashes while preserving gameplay-critical movement, warnings and state cues. Do not freeze a gameplay position because it looks like animation.
+Follow the [shared presentation timing and reduced-motion rules](architecture.md#presentation-timing-and-motion). Choose which decorative layers to suppress without freezing gameplay-critical positions or hiding warnings.
 
 Bound particles, trails, temporary lights and history buffers. Cache expensive scenery, reuse atlas images, batch compatible sprite/effect draws and recycle temporary presentation objects where this saves allocation. Share geometry/materials when the environment or effects actually need them. Size procedurally generated textures from their displayed footprint and cap both axes. Cap render-target resolution independently of display DPR, especially for bloom. Optimizations must preserve visual hierarchy and collision alignment.
 
 ## Replace and recover safely
 
-Use the session host and its frame loop. Keep the current presentation visible during loading, imports and graphics preparation. Validate images, construct a detached candidate, and draw it against the current run before committing it. Check request validity after every await. Dispose superseded candidates, failed construction resources and late completions. Release the old renderer and images after a successful commit. If starting/resuming cancels pending preparation, restore the selector and status to the active mode.
-
-Treat image sources, textures, geometries, materials, postprocessing passes, render targets, listeners and graphics contexts as explicit owned resources. Context loss or draw failure must suspend play, restore a working presentation and report recovery through existing status UI. Preserve the run and require explicit Resume. A failed candidate retains the previous mode. A capability fallback within Quality must preserve its visual direction; otherwise restore an available mode and reflect it in the selector.
-
-For Canvas recovery, restore drawing state as well as artwork ownership. An interrupted draw can leave saved transforms or clips on the context stack; reset that state before drawing the retained presentation, while preserving its camera and cosmetic observations.
+Follow the [shared replacement and recovery contract](architecture.md#replacement-and-recovery) for candidate validation, cancellation, resource release, graphics loss and Canvas state recovery. Keep Quality’s renderer-specific resource ownership and capability fallbacks in the owning game’s guide.
 
 ## Verify the delivered experience
 

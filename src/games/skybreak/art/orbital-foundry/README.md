@@ -1,13 +1,15 @@
 # Orbital Foundry artwork
 
-Quality uses editable Three.js fleet models in `../../quality/models.ts`, orbital machinery in `../../quality/foundry.ts`, and an AI-generated background in `backdrop.webp`. The models retain the fleet's approximate drawing footprints and north-facing construction convention. Physical geometry remains in gameplay content.
+[Game art direction](../../../../../docs/games/skybreak/README.md#orbital-foundry-art-direction) | [Shared Quality workflow](../../../../../docs/quality-themes.md)
+
+Quality uses editable Three.js fleet models in `../../quality/models.ts`, orbital machinery in `../../quality/foundry.ts`, and an AI-generated background in `backdrop.webp`. The models retain the fleet's approximate drawing footprints and north-facing construction convention.
 
 ## Background production
 
 - Dimensions: 1024 × 1536. Runtime format: WebP, quality 90, approximately 174 KiB.
 - Role: one distant background plate. Actors, projectiles, pickups, warnings, interface, foreground machinery and effects are independent runtime layers.
 - Composition: left-edge planet and distant diagonal ring, dark combat corridor, restrained edge dust and stars.
-- Use the prompt below when creating a replacement; generation is an artwork maintenance step, separate from running or building the game.
+- Use the prompt below when creating a replacement.
 - For changes, preserve dimensions or update the game-local validator in `../../app.ts`. Inspect the new plate behind real combat before replacing it.
 
 ### Background generation prompt
@@ -23,4 +25,4 @@ No spacecraft, fighters, enemies, projectiles, explosions, interface, text, logo
 
 `createFoundryModels` builds all five aircraft roles and the flagship from authored beveled plates and fittings. Parts batch by material and share their resulting geometry across live ships. Engine plumes remain separate shader planes. Model source coordinates are gameplay-style XY; the helper maps Y to Three.js's upward axis and uses Z only for decorative height. Hostile ships turn south at their root. Articulated flagship nacelles use inverse local offsets so their projected positions match the simulation's weak points.
 
-The fleet models describe the current implementation. Future actor artwork follows the [image-first theme guidance](../../../../../docs/quality-themes.md#choose-assets-and-rendering-together): replace ship roles with custom image assets, retaining their footprints and semantic observations. Keep useful background machinery, lighting and effect owners. Preserve Aurora Fleet's separate SVG source and atlas contract for the Assets mode. The Quality renderer and Canvas tactical overlay share `flightView`; only the session replaces owners and releases prepared image sources.
+The Quality renderer and Canvas tactical overlay share `flightView`. Aurora Fleet keeps its separate SVG source and atlas contract in [the parent artwork guide](../README.md).

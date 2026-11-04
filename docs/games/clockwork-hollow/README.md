@@ -1,12 +1,12 @@
 # Clockwork Hollow
 
-[Source](../../../src/games/clockwork-hollow/) | [Catalog](../../../CATALOG.md)
+[Source](../../../src/games/clockwork-hollow/) | [Controls](../../../CATALOG.md#clockwork-hollow) | [Shared contracts](../../architecture.md)
 
 A complete platform adventure with three Canvas 2D presentations through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
 
 ## Playing
 
-Move with A/D or left/right arrows. Jump with Space, W, Up or Z. Hold to jump higher and release for a short hop. Touch controls allow independent, simultaneous movement and jumping. P pauses/resumes; Pause opens the menu. Escape also pauses when delivered by the browser. Resume always requires an explicit gesture. There is no automatic repeat jump.
+Hold Jump for height and release for a short hop. Jump does not repeat automatically. Touch movement and jumping can be held simultaneously.
 
 | District | Challenges and identity |
 | --- | --- |
@@ -22,17 +22,13 @@ The HUD shows collected motes and awakened bells, including on narrow screens. T
 
 Every bell ends its district and freezes simulation. An explicit **Continue to…** action starts the next district. The third bell completes the journey. Results show bells, motes, active time, missed steps, points and a completion distinction for full collection or a clean journey. Optional motes and bells award points; missed steps reduce them. Neither retrying enemies nor revisiting collected motes awards extra points. Scoring amounts live in `game.ts`.
 
-**Restart** creates an entirely fresh adventure. Pause, menu time and suspended wall time do not count toward journey time. Focus loss, hiding the page, leaving the play controls and display changes pause play and clear input. Fullscreen is available in the menu when supported. Game selection releases the entire session. Unavailable or muted audio leaves play usable.
-
 ![The Emberworks: a saved lantern beside an active pressure column](clockwork-emberworks.png)
 
 ![The Starlit Belfry: moonlit machinery and staggered pressure vents](clockwork-belfry.png)
 
 ## Theme modes
 
-**Normal** keeps Verdant clockwork, its district palettes, brass keeper and original foliage. **Assets** uses **Porcelain Bellgarden**, an original illustrated treatment with a porcelain keeper, coral ribbon, wind-up ladybird shells, glazed masonry, flower lanterns and decorated bells. Jade aqueducts, rose-glazed kilns and indigo leaded-glass towers give each district its own image scenery. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md) records the direction, frame layouts, footprints and editable generator. All required images ship with the repository under MIT. **Quality** uses **Lumen Conservatory**, with mineral masonry, copper inlay, luminous glass, layered cathedral architecture and an articulated keeper.
-
-Selecting a theme retains the journey, camera, gait and cosmetic effects. Theme preparation keeps the active presentation visible; failure restores the active selection with a notice. Selecting another mode, starting, resuming, retrying, continuing or leaving cancels pending preparation. Restart retains the selected theme, while Game selection releases its artwork and starts the next visit in Normal. Reduced motion freezes decorative motion in every theme and uses a still grounded keeper pose in Assets and Quality; pressure timing remains readable.
+**Normal** uses Verdant clockwork. **Assets · Porcelain Bellgarden** supplies a porcelain keeper and glazed botanical ruins; its [artwork guide](../../../src/games/clockwork-hollow/art/README.md) owns the creative brief and sheet layouts. **Quality · Lumen Conservatory** uses layered copper-and-glass cathedral gardens, described below.
 
 ![Porcelain Bellgarden: the ivory keeper at a flower lantern beneath indigo belfry arches, with a wind-up beetle and an active pressure vent](clockwork-bellgarden.png)
 
@@ -42,13 +38,15 @@ A moonlit mechanical garden built from oxidized copper, cut jade and warm lumino
 
 The keeper has a burnished helmet, inset glass face, articulated piston limbs and a trailing saffron scarf. Foot travel drives its stride, ascent opens its arms and descent braces its legs. Faceted motes, caged lanterns and engraved bells repeat the same copper-and-glass language. Saved lanterns and awakened bells brighten locally, with bounded semantic sparks. The interface uses dark mineral surfaces and fine brass rules.
 
-Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture without a graphics dependency or external artwork. Quality is loaded only when selected, keeps the existing camera and cosmetic state, and retains the active theme if preparation fails. Pause freezes decorative motion; reduced motion holds ornaments, scarf and ground gait still while preserving player positions and vent timing.
+Layered Canvas drawing supplies bevelled materials, soft local light and cached architecture without a graphics dependency or external artwork.
 
 ## Source ownership and customization
 
+Paths below are relative to `src/games/clockwork-hollow/`.
+
 | Change | Owner |
 | --- | --- |
-| Authored routes, physical geometry, checkpoint positions, patrol bounds, vent timings, motes and bell placement | `src/games/clockwork-hollow/content.ts`: typed `Level` definitions and `journey` order |
+| Authored routes, physical geometry, checkpoint positions, patrol bounds, vent timings, motes and bell placement | `content.ts`: typed `Level` definitions and `journey` order |
 | Movement and jump feel | `movement` in `content.ts`; explicit acceleration, collision and jump behavior in `game.ts` |
 | Enemy and obstacle behaviors, vent cycle timing, failure causes, checkpoints, progression and scoring | `game.ts`; no generic AI or entity framework |
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`; `keeper`, `scenery`, `stone` and the local enemy/vent drawings are the artwork entry points |
@@ -60,24 +58,20 @@ Layered Canvas drawing supplies bevelled materials, soft local light and cached 
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
-| Browser composition and transitions | `app.ts`, using the shared host, clock, interruption/focus binders and AudioBits lifecycle |
+| Browser composition and transitions | `app.ts` |
 
-Character and enemy visual dimensions never define their collision bodies. All themes share simulation, content, input, the presentation camera and host ownership. `assets.ts` reuses `src/engine/browser/images.ts` with local decoded-dimension validation. The browser composition uses the shared preparation scope to cancel superseded work, draws candidates against the current run before committing them, and releases replaced or cancelled artwork. A local replacement transaction retains the previous drawing and its caches until the candidate draws successfully, rolling back on failure. Quality caches only the current district’s background layers and releases them on replacement or disposal. A Quality drawing failure pauses play and restores Normal with the journey intact. Normal requires no image loading.
+`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district’s background layers; changing district, replacing Quality or disposing the session releases them. Normal requires no image loading.
 
-Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable. Collision and jump rules use only fixed simulation steps. Content includes all physical dimensions independently of leaves, scarf, glow and animation poses.
+Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable.
 
-The camera uses one uniform world transform, minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize pauses play and resets framing. Reduced motion removes follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, landing squash and bell swinging.
+The camera provides minimum horizontal visibility on narrow displays, bounded velocity anticipation and a vertical dead zone to avoid chasing every hop. It clamps to the district, centers oversized axes and resets on retry, restart and level change. Resize resets framing. The keeper's stride follows ground distance and settles when stopping; lifted arms on ascent and braced arms on descent distinguish jump phases.
 
-Parallax arches, foreground canopy, drifting lights, foundry pipes and belfry stars give the districts distinct depth. Platform edges, thorns, shells and pressure columns render in front of scenery. Landing squash, jump dust, shell impacts, lantern sparks and bell celebrations consume semantic events. Particles are capped and viewport-admitted, with finite lifetimes. Cosmetic tails can finish after defeat or completion without advancing rules; pause freezes them and frame deltas are bounded. Artwork and the selection cover use editable geometry; sound uses procedural recipes.
-
-The keeper's stride follows ground distance, settles when stopping and resets on retry. Lifted arms on ascent and braced arms on descent distinguish jump phases. Continuous landing lips remain visible above moss; broad beetle shell crowns contrast with pointed copper thorns. Pressure motion, scarf flutter and bell swings share presentation time, so pausing freezes the entire scene. Reduced motion also removes scarf flutter.
+Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, landing squash, scarf flutter and bell swinging. Assets and Quality use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 
 ![Lumen Conservatory: the glass-hearted keeper and a copper beetle beneath layered aqueduct ribs and a monumental waterwheel](clockwork-lumen.png)
 
-Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain. Only nearby vents are audible. Routine cues are coalesced and throttled; outcomes replace lesser tails. The existing shared AudioBits owner provides lazy gesture activation, bounded voices, cancellation, suspension, mute and disposal.
+Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain; only nearby vents are audible.
 
 ## Local verification
 
-Local checks cover movement, collision, checkpoints, scoring and a complete route through all three districts. Chromium checks cover controls, transitions, menu availability and the live run, and session cleanup. See [shared commands](../../architecture.md#local-verification).
-
-See the [shared boundaries](../../architecture.md#boundaries-for-future-games) for common ownership decisions.
+The [game invariants](../../../tests/unit/games/clockwork-hollow/game.test.mjs) cover movement, collision, checkpoints, scoring and a complete route through all three districts. [Asset checks](../../../tests/unit/games/clockwork-hollow/assets.test.mjs) cover the Bellgarden layout; [browser checks](../../../tests/browser/games/clockwork-hollow/) cover the live journey and presentation replacement. Use the [shared verification commands](../../architecture.md#local-verification).
