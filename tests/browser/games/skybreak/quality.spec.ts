@@ -35,8 +35,15 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   await page.clock.runFor(100);
   const surface = page.locator('.play-surface'); const picture = await surface.screenshot();
   await page.clock.runFor(1200); expect((await surface.screenshot()).equals(picture), 'paused presentation stays unchanged').toBe(true); expect(await state()).toBe(frozen);
+  const coastPixels = () => page.locator('canvas').evaluate(canvas => {
+    const c = canvas as HTMLCanvasElement, scale = Math.min(c.width / 480, c.height / 800);
+    const x = (c.width - 480 * scale) / 2;
+    return Array.from(c.getContext('2d')!.getImageData(x + 5 * scale, 310 * scale, 45 * scale, 45 * scale).data);
+  });
+  const stoppedCoast = await coastPixels();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
   expect(await state()).not.toBe(frozen);
+  expect(await coastPixels(), 'the coast passes beneath the aircraft during active flight').not.toEqual(stoppedCoast);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
@@ -45,7 +52,7 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   await page.evaluate(() => {
     const ctx=document.querySelector('canvas')!.getContext('2d')!,draw=ctx.drawImage;
     ctx.drawImage=function(...args: any[]) {
-      if ((args[0] as HTMLImageElement).src?.includes('tempest-coast')) throw new Error('Lost coastal artwork');
+      if (args[0] instanceof HTMLCanvasElement && args[0].width === 1024) throw new Error('Lost coastal artwork');
       return (draw as any).apply(this,args);
     } as any;
   });
@@ -77,14 +84,14 @@ test('Quality handles cancelled and failed backdrop preparation without replacin
   await page.unroute('**/tempest-coast/backdrop.webp');
   await page.evaluate(async () => {
     const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path);
-    themes.quality.quality.backdrop += '?failure';
+    themes.quality.scenery.url += '?failure';
   });
   await page.route('**/tempest-coast/backdrop.webp?failure', route => route.abort());
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-asset-status')).toContainText('Keeping Pacific Run');
   await expect(theme).toHaveAttribute('value', 'normal'); await expect(page.locator('canvas')).toHaveCount(1);
   await page.evaluate(async () => {
     const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path);
-    themes.quality.quality.backdrop = themes.quality.quality.backdrop.replace('?failure', '?disposal');
+    themes.quality.scenery.url = themes.quality.scenery.url.replace('?failure', '?disposal');
   });
   finish = undefined;
   await page.route('**/tempest-coast/backdrop.webp?disposal', route => new Promise<void>(resolve => {

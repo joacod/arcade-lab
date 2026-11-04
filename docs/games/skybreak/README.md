@@ -2,23 +2,23 @@
 
 [Source](../../../src/games/skybreak/) | [Controls](../../../CATALOG.md#skybreak) | [Shared contracts](../../architecture.md)
 
-A vertical arcade shooter with three image-based Canvas 2D appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) owns the Aurora Fleet sheets and Tempest Coast background contract.
+A vertical arcade shooter with three image-based Canvas 2D appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) links the baseline assets and the detailed [coastal sortie brief](../../../src/games/skybreak/art/coastal-sortie/README.md).
 
 ## Theme modes
 
-**Normal** uses Pacific Run's simple aircraft sprites and procedural ocean. **Assets · Aurora Fleet** gives that same coastal sortie rounded retro aircraft, painted wing roundels and a muted teal sea. **Quality · Tempest Coast** combines shaded complete aircraft cels with an illustrated storm sea and atmospheric coastal scenery. Every mode keeps the game's aircraft, coast and tactical identity.
+**Normal · Pacific Run** uses simple aircraft sprites and a procedural ocean. **Assets · Aurora Fleet** gives the coastal sortie a detailed arcade fleet, distinct aircraft silhouettes, pixel reefs, scrolling sea currents and matching supply capsules. **Quality · Tempest Coast** reinterprets that fleet with newly painted metal aircraft, illustrated supplies and reactor housings, a separate detailed fortress hull, and a continuously scrolling coastal sea. The same ivory fighter and colored hostile roles carry through both directed modes.
 
-![Aurora Fleet: retro aircraft above the Pacific coast](skybreak-assets.png)
+![Aurora Fleet: arcade fleet over a scrolling pixel reef route](skybreak-assets.png)
 
-## Tempest Coast art direction
+## Functional presentation
 
-A dark petrol-blue storm sea, turquoise shoals and subtropical rocky headlands frame an earthly aerial operation. A quiet central corridor separates ivory aircraft, warm hostile wings and bright rounds from subdued wave detail. An AI-generated aerial plate supplies atmospheric sea texture, edge mist and broken sunlight. Shaded metal artwork gives the aircraft volume through complete images.
+The scenery passes beneath the aircraft in the direction of flight, with faster cloud layers establishing altitude. Offshore detail stays near the margins, leaving open water for projectile gaps, attack preparation and evasive movement. The coast, clouds and shadows are decorative; the world projection, physical circles, formation timings and movement rules remain the same across modes. The [coastal sortie brief](../../../src/games/skybreak/art/coastal-sortie/README.md#direction-and-functional-composition) owns the specific visual identities, travel contract and artwork layout.
 
-Banking and evasive rolls transform whole cels. The flagship's complete nacelle images follow actual moving weak points. A short flight trail and bounded event shockwaves complement impacts and fire blooms. Canvas combines the detailed coastal plate, restrained edge mist, complete aircraft, supply images, protection rings and attack warnings through the same `flightView` projection. The HUD and menus carry matching dark coastal surfaces and pale accents.
+Banking and evasive rolls transform complete aircraft images. Distinct wings and fuselages help separate light scouts, crossing raiders, heavy bombers and fast interceptors. Supplies use matching gold, violet and green capsules with readable icons. The fortress hull carries armor rather than baked targets: its separate engine housings follow the actual moving weak points, while the central reactor and tactical warnings stay visible above the hull. Translucent protection and impact cues preserve aircraft silhouettes and turbine detail.
 
-Reduced motion freezes scenery, exhaust variation and banking and removes trails, shockwaves and decorative flashes. Quality prepares the background and aircraft bundle before activation. Drawing failure restores the sprite-based Normal presentation while preserving the sortie. None of the modes needs a graphics library.
+World scenery uses active run time, so pause freezes travel and a theme replacement resumes at the current sortie time. Reduced motion freezes scenery, clouds, propeller/exhaust animation and banking while retaining physical movement, immunity, recharge and attack cues. Both directed themes prepare and validate their complete image bundle before activation. Drawing failure pauses the retained sortie and restores Pacific Run. The renderer remains Canvas 2D.
 
-![Tempest Coast: aircraft in a readable storm-sea corridor](skybreak-quality.png)
+![Tempest Coast: painted aircraft and coastal scenery in active flight](skybreak-quality.png)
 
 ## Operation Iron Tempest
 
@@ -54,7 +54,7 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 The HUD emphasizes hull above remaining lives, with a warm warning at critical hull. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
 
-Deep reef ribbons, currents, island shelves and clouds are procedural Canvas scenery. Actors, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
+Normal draws procedural ocean scenery; Assets and Quality use their own committed coastal images and cloud sprites. Aircraft, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
 Dry gun transients leave room for metal impacts, enemy blasts, hull fractures and slipstream rolls. Armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. The sound adapter coalesces each cue per frame, caps voices at 12 and uses restrained world-space stereo placement.
 
@@ -64,11 +64,11 @@ Dry gun transients leave room for metal impacts, enemy blasts, hull fractures an
 | Sortie, weapons, roll, boss patterns and scoring | `game.ts` |
 | Appearance definitions and sheet validation | `themes.ts`, `assets.ts`, `art-pack.ts`, `art/` |
 | Canvas sprite drawing, ocean scenery and bounded effects | `presentation.ts` |
-| Layered coastal drawing and renderer contract | `presentation.ts`, `flight-presentation.ts` |
+| Coastal tile travel and renderer contract | `scenery.ts`, `presentation.ts`, `flight-presentation.ts` |
 | Recipes and cue policy | `sound-recipes.ts`, `sound.ts` |
 | Menus, HUD and styles | `ui.ts`, `style.css` |
 | Action translation and session composition | `input.ts`, `app.ts` |
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover sheet contracts. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Tempest Coast recovery. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover image roles, decoded file dimensions, frame contracts and continuous coastal tile coverage. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Tempest Coast recovery. Use the [shared verification commands](../../architecture.md#local-verification).

@@ -11,10 +11,8 @@ import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import { themes } from './themes.ts';
-import { prepareFlightArt } from './assets.ts';
+import { prepareFlightImages } from './assets.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
-import { prepareImages } from '../../engine/browser/images.ts';
-import { validateFlightArt } from './art-pack.ts';
 import type { FlightPresentation } from './flight-presentation.ts';
 import './style.css';
 
@@ -61,17 +59,8 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       let candidateDisplay: FlightPresentation | undefined;
       try {
         const staging = document.createElement('div');
-        if (theme.quality) {
-          candidate = await prepareImages({ ...theme.art!.images, backdrop: theme.quality.backdrop }, request.signal, dimensions => [
-            ...validateFlightArt(theme.art!, dimensions),
-            ...(dimensions.backdrop?.width === 1024 && dimensions.backdrop.height === 1536 ? [] : ['Invalid coastal backdrop dimensions.']),
-          ]);
-          if (!request.current()) return;
-
-        } else {
-          if (theme.art) candidate = await prepareFlightArt(theme.art, request.signal);
-          if (!request.current()) return;
-        }
+        candidate = await prepareFlightImages(theme, request.signal);
+        if (!request.current()) return;
         candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
         if (!request.current()) return;
         await candidateDisplay.ready;
@@ -90,15 +79,16 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         }
       } finally { disposeAll(() => candidateDisplay?.dispose(), () => candidate?.dispose()); }
     }
-    function recoverQuality() {
-      if (disposed || appearance !== 'quality') return;
+    function recoverPresentation() {
+      if (disposed || appearance === 'normal') return;
+      const failedName = themes[appearance]!.name;
       suspend(); preparation.begin();
       const next = createPresentation(document.createElement('div'), themes.normal!);
       next.draw(run, host);
       const previous = presentation, previousArt = activeArt;
       host.surface.append(next.element); presentation = next; activeArt = undefined;
       appearance = 'normal'; applyPalette(); ui.appearance('normal');
-      ui.appearanceStatus('Tempest Coast graphics stopped. Pacific Run is ready. Your sortie is preserved.');
+      ui.appearanceStatus(`${failedName} graphics stopped. Pacific Run is ready. Your sortie is preserved.`);
       disposeAll(() => previous.dispose(), () => previousArt?.dispose());
     }
     function transition(next: Screen, focus = true) {
@@ -140,7 +130,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         if (run.status === 'victory' || run.status === 'defeat') transition(run.status);
       }
       try { presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined); }
-      catch (error) { if (appearance === 'quality') recoverQuality(); else throw error; }
+      catch (error) { if (appearance !== 'normal') recoverPresentation(); else throw error; }
       ui.update(run);
     });
     return { dispose };

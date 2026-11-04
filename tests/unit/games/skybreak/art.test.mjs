@@ -3,31 +3,58 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { themes } from '../../../../src/games/skybreak/themes.ts';
 import { validateFlightArt, flightFrame } from '../../../../src/games/skybreak/art-pack.ts';
+import { flightImages, validateFlightImages } from '../../../../src/games/skybreak/assets.ts';
+import { coastalTiles } from '../../../../src/games/skybreak/scenery.ts';
 
-const art = themes.assets.art;
-const dimensions = Object.fromEntries(Object.entries(art.images).map(([key, url]) => {
-  const sheet = readFileSync(new URL(url), 'utf8');
-  const [, width, height] = sheet.match(/<svg[^>]* width="(\d+)" height="(\d+)"/);
-  return [key, { width: Number(width), height: Number(height) }];
-}));
-
-test('the official Assets fleet resolves committed sheets for every actor and the flagship', () => {
-  for (const theme of Object.values(themes)) assert.ok(theme.art);
-  assert.deepEqual(validateFlightArt(art, dimensions), []);
-  assert.equal(new Set(Object.values(art.actors).map(sprite => sprite.image)).size, 5);
-  assert.ok(art.flagship);
-  for (const sprite of [...Object.values(art.actors), art.flagship]) {
-    assert.equal(sprite.rotation, 0); // Sheets face north; the renderer turns hostile ships south.
-    assert.equal(dimensions[sprite.image].width, sprite.stride * sprite.frames);
+function dimensionsFor(theme) {
+ return Object.fromEntries(Object.entries(flightImages(theme)).map(([key,url]) => {
+  const file=readFileSync(new URL(url));
+  if (url.endsWith('.png')) return [key,{width:file.readUInt32BE(16),height:file.readUInt32BE(20)}];
+  if (url.endsWith('.webp')) {
+   if (file.toString('ascii',12,16)==='VP8X') return [key,{width:file.readUIntLE(24,3)+1,height:file.readUIntLE(27,3)+1}];
+   assert.equal(file.toString('ascii',12,16),'VP8 ');
+   return [key,{width:file.readUInt16LE(26)&0x3fff,height:file.readUInt16LE(28)&0x3fff}];
   }
+  const [,width,height]=file.toString().match(/<svg[^>]* width="(\d+)" height="(\d+)"/);
+  return [key,{width:Number(width),height:Number(height)}];
+ }));
+}
+
+test('each fleet resolves its committed actor, flagship, supply and scenery artwork', () => {
+ for(const [mode,theme] of Object.entries(themes)) {
+  const dimensions=dimensionsFor(theme);
+  assert.deepEqual(validateFlightImages(theme,dimensions),[]);
+  assert.equal(Object.keys(theme.art.actors).length,5);
+  assert.ok(theme.art.flagship);
+  if(mode==='normal') continue;
+  assert.equal(Object.keys(theme.art.objects).length,6);
+  const roles=[...Object.values(theme.art.actors),theme.art.flagship,...Object.values(theme.art.objects)];
+  assert.equal(new Set(roles.map(s=>s.image+'/'+s.rect.join(','))).size,12);
+  assert.ok(validateFlightImages(theme,{...dimensions,backdrop:{width:1,height:1}}).length);
+  assert.ok(validateFlightArt(theme.art,{...dimensions,fleet:{width:4,height:3}}).length);
+ }
+ assert.notEqual(themes.assets.art.images.fleet,themes.quality.art.images.fleet);
+ assert.equal(themes.quality.art.actors.player.rect[2],256);
+ assert.equal(themes.assets.art.actors.player.rect[2],96);
 });
 
-test('fleet animation loops, freezes for reduced motion, and rejects invalid sheets or timing', () => {
-  const sprite = art.actors.player;
-  assert.equal(flightFrame(sprite, 0, false), 0);
-  assert.equal(flightFrame(sprite, 0.1, false), 64);
-  assert.equal(flightFrame(sprite, 0.55, false), 0);
-  assert.equal(flightFrame(sprite, 5, true), 0);
-  assert.ok(validateFlightArt(art, { ...dimensions, fighter: { width: 64, height: 80 } }).length > 0);
-  assert.ok(validateFlightArt({ ...art, actors: { ...art.actors, player: { ...sprite, seconds: 0 } } }, dimensions).length > 0);
+test('baseline exhaust loops, reduced motion freezes frames, and invalid timing is rejected', () => {
+ const art=themes.normal.art,dimensions=dimensionsFor(themes.normal),sprite=art.actors.player;
+ assert.equal(flightFrame(sprite,0,false),0);
+ assert.equal(flightFrame(sprite,.1,false),64);
+ assert.equal(flightFrame(sprite,.55,false),0);
+ assert.equal(flightFrame(sprite,5,true),0);
+ assert.ok(validateFlightArt({...art,actors:{...art.actors,player:{...sprite,seconds:0}}},dimensions).length);
+});
+
+test('coastal travel covers the viewport across wrap boundaries and keeps one world speed', () => {
+ for(const theme of [themes.assets,themes.quality]) {
+  const {speed,overlap,width,height}=theme.scenery,h=480*height/width,stride=h-overlap;
+  for(const time of [0,(stride-.01)/speed,stride/speed,(stride+.01)/speed,168]) {
+   const tiles=coastalTiles(time,speed,h,overlap);
+   assert.ok(tiles[0]<=0); assert.ok(tiles.at(-1)+h>=800);
+   for(let i=1;i<tiles.length;i++) assert.ok(Math.abs(tiles[i]-tiles[i-1]-stride)<1e-9);
+  }
+  assert.ok(Math.abs(coastalTiles(1,speed,h,overlap)[0]-coastalTiles(0,speed,h,overlap)[0]-96)<1e-9);
+ }
 });
