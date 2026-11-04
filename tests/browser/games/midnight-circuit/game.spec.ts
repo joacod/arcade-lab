@@ -107,32 +107,31 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   expect(unrelated).toEqual([]); expect(errors).toEqual([]);
 });
 
-test('Midnight Circuit appearances retain a paused run and recover from graphics loss', async ({ page }, info) => {
-  const errors: string[] = [];
+test('Midnight Circuit appearances retain a paused run and recover from drawing and image failures', async ({ page }, info) => {
+  const errors: string[] = [], qualityRequests: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  const qualityRequests: string[] = [];
-  page.on('request', request => { if (/midnight-circuit\/three\//.test(request.url())) qualityRequests.push(request.url()); });
+  page.on('request', request => { if (/midnight-circuit\/(quality\.ts|art\/afterglow\/)/.test(request.url())) qualityRequests.push(request.url()); });
   await page.route(/\/src\/games\/midnight-circuit\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nconst original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
   });
   await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined });
-    const contexts: WebGL2RenderingContext[] = []; (window as any).circuitGraphics = contexts;
-    const original = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: any[]) {
-      const context = (original as any).call(this, kind, ...args);
-      if (kind === 'webgl2' && context && !contexts.includes(context)) contexts.push(context);
-      return context;
-    } as typeof original;
+    const Original = window.Image;
+    (window as any).circuitImages = [];
+    let sequence = 0;
+    window.Image = class extends Original {
+      constructor() { super(); (window as any).circuitImages.push(this); }
+      // Exercise network failure/cancellation even after a successful decoded-image cache hit.
+      set src(value: string) { super.src = value.includes('/afterglow/') ? `${value}?probe=${sequence++}` : value; }
+      get src() { return super.src; }
+    };
   });
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
   expect(qualityRequests).toEqual([]);
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
+  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.keyboard.down('d'); await page.clock.runFor(350); await page.keyboard.up('d');
   await page.keyboard.press('Escape');
@@ -143,71 +142,72 @@ test('Midnight Circuit appearances retain a paused run and recover from graphics
   await page.clock.fastForward(1000);
   expect((await page.locator('canvas').screenshot()).equals(picture), 'paused Quality output stays unchanged').toBe(true);
   expect(await state()).toBe(paused);
-
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  // All appearances retain the exact run and produce visibly different artwork.
+  for (const mode of ['normal', 'assets', 'quality']) {
+    await chooseOption(page.getByLabel('Theme', { exact: true }), mode);
+    await expect(page.locator(`canvas[data-renderer="${mode === 'normal' ? 'canvas' : mode}"]`)).toBeVisible();
+    expect(await state()).toBe(paused);
+    if (mode !== 'quality') expect((await page.locator('canvas').screenshot()).equals(picture)).toBe(false);
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(32);
+  const still = await page.locator('canvas').screenshot();
+  await page.clock.fastForward(1000);
+  expect((await page.locator('canvas').screenshot()).equals(still)).toBe(true);
   expect(await state()).toBe(paused);
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
-  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
-  expect(await state()).toBe(paused);
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
-  expect(await state()).toBe(paused);
-  // Graphics loss during play must pause and retain the same run for explicit Resume.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1280, height: 1000 }); await page.clock.runFor(32);
+  // An active drawing failure pauses and restores Normal without resetting the run.
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  paused = await page.locator('canvas').evaluate(c => {
-    c.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
-    return JSON.stringify((window as any).circuitProbe);
+  await page.evaluate(() => {
+    const original = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      if (args[0] instanceof HTMLImageElement && args[0].src.includes('/afterglow/')) {
+        CanvasRenderingContext2D.prototype.drawImage = original;
+        (window as any).circuitFailureState = JSON.stringify({ ...(window as any).circuitProbe, status: 'paused' });
+        throw new Error('Drawing unavailable');
+      }
+      return (original as any).apply(this, args);
+    } as typeof original;
   });
+  await page.clock.runFor(32);
   await expect(page.locator('.circuit-app')).toHaveAttribute('data-screen', 'paused');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'normal');
-  expect(await state()).toBe(paused);
-  await page.evaluate(() => { delete (navigator as any).gpu; });
+  expect(await state()).toBe(await page.evaluate(() => (window as any).circuitFailureState));
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('.game-menu-display-status')).not.toContainText('Preparing', { timeout: 15000 });
-  expect(await state()).toBe(paused);
-  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
+  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.screenshot({ path: info.outputPath('midnight-afterglow.png') });
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Restart', exact: true }).click();
-  await expect(page.locator('canvas[data-renderer="three"]')).toBeVisible();
+  await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
   await page.keyboard.press('Escape');
   expect(JSON.parse(await state()).score).toBe(0);
   await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'quality');
-  // A graphics capability failure keeps the candidate detached and the same run intact.
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
   paused = await state();
-  await page.evaluate(() => {
-    const original = HTMLCanvasElement.prototype.getContext;
-    (window as any).circuitGetContext = original;
-    HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: any[]) {
-      if (kind === 'webgl2') return null;
-      return original.call(this, kind as any, ...args);
-    } as typeof original;
-  });
+  await page.route(/\/afterglow\/streets\.webp(?:\?.*)?$/, route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.game-menu-display-status')).toContainText('Quality unavailable. Normal retained.');
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   expect(await state()).toBe(paused);
-  await page.evaluate(() => { HTMLCanvasElement.prototype.getContext = (window as any).circuitGetContext; });
-  // Three.js reports a failed WebGL capability check to console as well as throwing it.
-  expect(errors.filter(error => !error.includes('Error creating WebGL context'))).toEqual([]);
-  errors.length = 0;
+  await page.unroute(/\/afterglow\/streets\.webp(?:\?.*)?$/);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  await expect(page.locator('canvas')).toHaveCount(0);
-  // A cancelled import/preparation must never attach to the departing session.
+  const released = () => page.evaluate(() => (window as any).circuitImages.every((image: HTMLImageElement) => image.getAttribute('src') === null));
+  expect(await released()).toBe(true);
+  // An image finishing after departure cannot attach a late renderer or retain its sources.
+  let release!: () => void, arrived!: () => void;
+  const delayed = new Promise<void>(resolve => { release = resolve; });
+  const requested = new Promise<void>(resolve => { arrived = resolve; });
+  await page.route(/\/afterglow\/streets\.webp(?:\?.*)?$/, async route => { arrived(); await delayed; await route.continue().catch(() => {}); });
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality'); await requested;
+  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  await page.waitForTimeout(200);
+  release(); await page.unroute(/\/afterglow\/streets\.webp(?:\?.*)?$/);
+  await page.waitForTimeout(100);
   await expect(page.locator('canvas')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).circuitGraphics.every((context: WebGL2RenderingContext) => context.isContextLost()))).toBe(true);
-  expect(errors).toEqual([]);
+  expect(await released()).toBe(true); expect(errors).toEqual([]);
 });
-
 
 test('Midnight Circuit Assets failures and cancelled preparation retain the working presentation', async ({ page }) => {
   const errors: string[] = [];

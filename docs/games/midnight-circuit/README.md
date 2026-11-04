@@ -2,7 +2,7 @@
 
 [Source](../../../src/games/midnight-circuit/) | [Controls](../../../CATALOG.md#midnight-circuit) | [Shared contracts](../../architecture.md)
 
-An original street brawler with complete painted fighter sprites, Canvas appearances and a Three.js city scene. Rook follows a blackout through **Neon Backstreets** and **The Power Station**, then takes on the **Circuit Warden** to restore the city grid. A first successful run is intended to take roughly 4–6 minutes, with faster runs possible. There is no time limit.
+An original street brawler with three coordinated Canvas presentations and complete fighter sprite cels. Rook follows a blackout through **Neon Backstreets** and **The Power Station**, then takes on the **Circuit Warden** to restore the city grid. A first successful run is intended to take roughly 4–6 minutes, with faster runs possible. There is no time limit.
 
 ## Play
 
@@ -12,23 +12,23 @@ Three lives cover the whole run. Losing a life cancels enemy attacks, restores h
 
 ## Theme modes
 
-**Normal** uses Illustrated arcade on Canvas. **Assets · Signal / Rain** is an inked comic treatment; the [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns its creative brief and complete-cel atlas contract. **Quality · Afterglow** uses a Three.js city diorama, described below.
+| Mode | Direction |
+| --- | --- |
+| **Normal · Street sketch** | Simple flat whole-character cels, silhouette buildings, broad windows and an open road. A lightweight, readable playable foundation. |
+| **Assets · Signal / Rain** | The painted arcade cast against an original inked city: noodle bar, radio repair shop, laundrette, railway steel and distinct industrial control bays. Warm paper, oxidized teal and charcoal carry through the instruments. |
+| **Quality · Afterglow** | The painted cast inhabits richly illustrated masonry, copper, ceramic, glass and wet asphalt. Warm practical lights, quiet reflections and graphite-and-ivory instruments give the whole street and station a coherent modern finish. |
 
-![Afterglow: Rook faces security enforcers beneath the railway, with warm shop lights reflected in wet pavement](afterglow.png)
+The [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns all three briefs, source artwork, layout and maintenance contracts. The cast keeps its identity across modes: Rook's teal jacket and red scarf, red-uniformed Strikers, ochre Bruisers and the ivory Warden. Assets and Quality retain the existing complete painted fighter drawings; Normal has a separate modest vector cel sheet.
 
-![Signal / Rain: Rook faces red-uniformed Strikers outside shuttered radio shops](signal-rain.png)
+![Afterglow: painted shops and warm lights behind the open fighting lane](afterglow.png)
 
-All appearances share complete painted cels for idle, two walking steps, anticipation, punch, kick, hurt and defeat. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Rendering never reconstructs joints or stretches anatomy.
+![Signal / Rain: distinct inked storefronts and sparse road reflections](signal-rain.png)
 
-## Quality art direction: Afterglow
+All modes use idle, two walking steps, anticipation, punch, kick, hurt and defeat cels. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Each drawing remains a complete figure with a stable foot pivot.
 
-A city running on its last circuit, seen beneath an elevated railway at blue hour. Petrol-blue masonry, smoked glass, oxidized copper and wet asphalt carry warm ivory shop lights and restrained signal-orange neon. Broad, dark road surfaces keep the fighting lane quiet. Rook reads first through a pale teal dispatch jacket, ivory sleeves and a vermilion scarf. Strikers wear narrow red security armor, Bruisers have heavy ochre utility gear, and the Warden has a broad ceramic exoskeleton with a hot orange core. Silhouettes, exposed faces and continuous clothing silhouettes distinguish people from machinery.
+Scenery has no physical obstacles in the traversable lane. Facades, transformers, gutter details and furniture stay behind its rear curb. Near scenery and pavement share world alignment; only distant skylines use parallax. The station control installation frames the final arena. Enemy attack footprints, repairs, encounter locks and the Warden's **OPEN** cue remain separate readable layers above the road. Reduced motion suppresses rain, walking animation, shake and moving impact effects while preserving movement and combat cels. The finale restores indicators and warms the city above the retained battle scene.
 
-The backstreets alternate a late-night noodle shop, shuttered electronics store and laundrette under weathered apartments and railway steel. The station replaces those storefronts with ribbed transformer banks, ceramic insulators, cable runs and a central control installation. Real ground reflections, soft contact shadows, restrained bloom and depth haze connect actors to the pavement. Signs and lamps illuminate scenery without outlining every object. Enemy attack footprints and repair markers remain clear above the road. Victory warms the city lighting and restores the station's indicators.
-
-Fighters reuse the same complete painted drawings across modes. Camera-facing image planes integrate them into the city and its wet-road reflections, preserving stable foot pivots and role-specific silhouettes. Contact produces brief starbursts, fragments and expanding ground rings; windups remain readable without those effects. Reduced motion freezes decorative walking, rain, expanding impact effects, particles and shake while retaining combat cels. Matching graphite-and-ivory instruments and menus carry the same accent colors.
-
-![Afterglow: the Circuit Warden telegraphs a ground impact in front of the main grid-control wall](afterglow-station.png)
+![Afterglow: the Circuit Warden at the main power station](afterglow-station.png)
 
 ## Encounters and combat
 
@@ -50,20 +50,21 @@ Paths below are relative to `src/games/midnight-circuit/`.
 | `game.ts` | Explicit x/lane/elevation coordinates, combat timing, AI, gates, lives, score and outcomes |
 | `input.ts` | Translate shared button snapshots into movement and one-shot combat actions |
 | `presentation.ts` | Uniform projection, encounter-framed camera, depth sorting, sprite composition, parallax, weather and bounded effects |
-| `assets.ts`, `asset-art.ts`, `art/signal-rain/` | Assets image preparation, layout validation and original scenery sources |
-| `animation.ts`, `sprite-art.ts`, `art/fighters/` | Displacement observations, semantic cel selection, role footprints, complete painted atlas, prompts and packing |
+| `assets.ts`, `asset-art.ts`, `art/signal-rain/` | Inked Assets scenery, image preparation and layout validation |
+| `quality.ts`, `quality-art.ts`, `art/afterglow/` | Painted Quality scenery, inspected curb anchors, image preparation and validation |
+| `animation.ts`, `sprite-art.ts`, `art/normal/`, `art/fighters/` | Displacement observations, semantic cel selection, role footprints, simple and painted complete-cel atlases and sources |
 | `graphics.ts`, `appearance.ts` | Renderer contract, lazy loading, atomic replacement, cancellation and recovery |
-| `three/diorama.ts` | Quality composition, orthographic projection, reflected camera, lighting, bounded bloom, weather, combat warnings and event effects |
-| `three/art.ts`, `scenery.ts`, `fighters.ts` | Owned original geometry/materials, batched street and station scenery, complete fighter image planes |
 | `ui.ts`, `style.css` | Scoped menus, HUD, boss bar, touch layout and user intents |
 | `sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities, batch coalescing and throttling |
 | `app.ts` | Composition, stepping, interruption, gesture audio activation and disposal |
 
-Actors sort by ground lane independently of jump elevation; shadows remain on the ground. The camera frames the whole encounter, including on narrow screens. Assets reuses the Canvas projection, gait, depth sorting and semantic feedback.
+Actors sort by ground lane independently of jump elevation; shadows remain on the ground. The camera frames the whole encounter, including on narrow screens. All modes share the Canvas projection, gait, depth sorting and semantic feedback.
 
 ## Architecture decisions
 
-The projected camera and sprite animation stay local because they depend on horizontal position, ground lane and elevation. The Three.js orthographic camera maps these coordinates to the Canvas scale. Static scenery batches by material. The reflected camera shares the asymmetric projection and clips underground backdrop geometry; its target stays at a fixed resolution. Stage changes rebuild only scenery and snap the camera to the new arena; restarts release previous fighter instances and event effects.
+The projected camera and sprite animation stay local because they depend on horizontal position, ground lane and elevation. A single Canvas owner composes every mode with the same world transform, semantic cues and bounded effects. Quality uses painted image plates instead of a separate 3D scene, keeping the people and architecture in the same illustrated perspective. Only the quiet asphalt portion stretches on tall displays; architectural proportions and the source curb anchor stay stable. Alternate Quality tiles mirror their matching edges. Sources contain no baked actors, combat effects or pickups.
+
+Assets and Quality each own lazy, validated image bundles. The session retains its current presentation until the replacement is ready and successfully drawn, then releases the previous owner. Image or draw failure uses the shared recovery contract. No optional graphics backend or capability gate is required for these modes.
 
 ## Verification
 
@@ -71,8 +72,8 @@ The projected camera and sprite animation stay local because they depend on hori
 
 `tests/unit/games/midnight-circuit/animation.test.mjs` checks displacement-driven gait, walking cel selection, recovery timing, pause, blocked movement, knockback, teleport handling and read-only observation.
 
-`tests/unit/games/midnight-circuit/assets.test.mjs` checks the committed artwork layout and rejection of missing or mismatched images.
+`tests/unit/games/midnight-circuit/assets.test.mjs` checks the committed sprite and environment layouts and rejection of missing or mismatched images.
 
-The [browser checks](../../../tests/browser/games/midnight-circuit/game.spec.ts) cover lane combat, simultaneous touch actions, boss-result composition and appearance replacement.
+The [browser checks](../../../tests/browser/games/midnight-circuit/game.spec.ts) cover lane combat, simultaneous touch actions, boss-result composition, distinct appearances, paused frame stability, retained-run replacement, drawing recovery and failed/cancelled image preparation.
 
 Use the [shared verification commands](../../architecture.md#local-verification).
