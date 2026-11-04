@@ -12,6 +12,7 @@ import { bindInput } from './input.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
+import type { SanctumDrawingFactory } from './quality-presentation.ts';
 import './style.css';
 export function mountDuel(container: HTMLElement, onExit: () => void): GameSession {
   let disposed=false, selected: FighterId='nera', match=createMatch(), screen: Screen='title';
@@ -34,12 +35,22 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     if(disposed)return;input?.clear();clock.reset();sound?.pause();
     if(screen==='playing'){pauseMatch(match,true);transition('paused',false);}
   }
+  function recoverGraphics(){
+    if(disposed||activeAppearance!=='quality')return;
+    preparation.cancel();suspend();
+    const previous=activeArt;activeArt=undefined;
+    presentation!.replaceTheme(themes.normal);activeAppearance='normal';host.root.dataset.appearance='normal';
+    ui.appearanceStatus('normal','');
+    ui.displayStatus('Moonfall Sanctum graphics interrupted. Restored Tempest citadel. Your match is preserved. Resume when ready.');
+    previous?.dispose();presentation!.draw(match,host,screen,performance.now()/1000);
+  }
   async function appearance(id: Appearance) {
     if (disposed || screen === 'playing') return;
     const request=preparation.begin();
     if(id===activeAppearance){ui.appearanceStatus(id,'');return;}
-    ui.appearanceStatus(id,id==='assets'?`Preparing ${appearanceNames[id]}…`:'');
+    ui.appearanceStatus(id,id!=='normal'?`Preparing ${appearanceNames[id]}…`:'');
     let candidate: PreparedImages|undefined;
+    let candidateDrawing: SanctumDrawingFactory|undefined;
     try{
       if(id==='assets'){
         const {prepareFoundry}=await import('./assets.ts');
@@ -47,10 +58,18 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
         candidate=await prepareFoundry(request.signal);
         if(!request.current())return;
       }
-      const replacement=presentation!.replaceTheme(themes[id],candidate?.images);
+      if(id==='quality'){
+        const {prepareSanctum,createSanctumDrawing}=await import('./quality-assets.ts');
+        if(!request.current())return;
+        candidate=await prepareSanctum(request.signal);
+        if(!request.current())return;
+        candidateDrawing=createSanctumDrawing;
+      }
+      const replacement=presentation!.replaceTheme(themes[id],candidate?.images,candidateDrawing);
       try{presentation!.draw(match,host,screen,performance.now()/1000);}
       catch(error){replacement.rollback();presentation!.draw(match,host,screen,performance.now()/1000);throw error;}
-      const previous=activeArt;activeArt=candidate;candidate=undefined;
+      const previous=activeArt;
+      activeArt=candidate;candidate=undefined;
       activeAppearance=id;host.root.dataset.appearance=id;
       input?.clear();clock.reset();ui.appearanceStatus(id,'');previous?.dispose();
     }catch{
@@ -87,12 +106,14 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
         const steps=clock.advance(now);
         for(let i=0;i<steps&&match.status==='active';i++){
           const phase=match.phase;stepMatch(match,input!.read(),FIXED_STEP);
-          const events=takeEvents(match);presentation!.consume(events);sound!.consume(events);
+          const events=takeEvents(match);presentation!.consume(events,match);sound!.consume(events);
           if(match.phase!==phase){input!.clear();clock.reset();break;}
         }
         if(match.status==='victory'||match.status==='defeat')transition(match.status);
       }
-      presentation!.draw(match,host,screen,now/1000);ui.update(match);
+      try{presentation!.draw(match,host,screen,now/1000);}
+      catch(error){if(activeAppearance==='quality')recoverGraphics();else throw error;}
+      ui.update(match);
     });
     return{dispose};
   }catch(error){dispose();throw error;}
