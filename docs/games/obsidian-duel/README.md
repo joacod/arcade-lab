@@ -28,8 +28,6 @@ The three modes express the same astronomical citadel, fighters and combat vocab
 - **Assets · Eclipse Foundry:** retain the expressive painted Nera and Kael in an old-school hand-painted arcade treatment. A layered foundry arena adds weathered columns, a copper eclipse orrery, distant aqueducts, forge-lit walls and banners. Separate illustrated ribbons distinguish heel, punch, sweep and aerial attacks.
 - **Quality · Moonfall Sanctum:** new detailed fighter drawings reinterpret the same costumes with embroidery, cloth volume, leather wear and bronze trim. The illustrated lunar observatory, carved perimeter, wet basalt and restrained reflections support a new jade-and-gold effects atlas. Quality upgrades actors and combat artwork as well as scenery.
 
-![Eclipse Foundry: the painted duel beneath a copper orrery and forge-lit citadel](eclipse-foundry.png)
-
 ![Moonfall Sanctum: detailed Nera and Kael with a jade Crescent heel trail](moonfall-sanctum.png)
 
 ## Combat presentation

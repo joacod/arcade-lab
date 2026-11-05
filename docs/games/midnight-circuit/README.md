@@ -22,13 +22,9 @@ The [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns all 
 
 ![Afterglow: painted shops and warm lights behind the open fighting lane](afterglow.png)
 
-![Signal / Rain: distinct inked storefronts and sparse road reflections](signal-rain.png)
-
 All modes use twelve cels per fighter: idle, four walking contacts/passing poses, anticipation, punch, kick, neutral jump rise/fall, hurt and defeat. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Each drawing remains a complete figure with a stable foot pivot. A full stride follows observed travel distance instead of wall time. An ordinary jump uses guarded rise and landing poses; only an actual aerial attack selects the kick contact.
 
 Scenery has no physical obstacles in the traversable lane. Facades, transformers, gutter details and furniture stay behind its rear curb. Near scenery and pavement share world alignment; only distant skylines use parallax. The station control installation frames the final arena. Quality frames its lower foreground facades beneath a visible distant skyline on desktop and portrait displays; the station roof has transparent openings into that same city layer. Enemy attack footprints, repairs, encounter locks and the Warden's **OPEN** cue remain separate readable layers above the road. Reduced motion suppresses rain, flashes, shake and moving impact effects while preserving the locomotion cels that communicate actual travel, as well as combat poses. The finale restores indicators and warms the city above the retained battle scene.
-
-![Afterglow: the Circuit Warden at the main power station](afterglow-station.png)
 
 ## Encounters and combat
 

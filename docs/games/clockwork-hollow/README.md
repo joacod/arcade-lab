@@ -22,21 +22,13 @@ The HUD shows collected motes and awakened bells, including on narrow screens. T
 
 Every bell ends its district and freezes simulation. An explicit **Continue to…** action starts the next district. The third bell completes the journey. Results show bells, motes, active time, missed steps, points and a completion distinction for full collection or a clean journey. Optional motes and bells award points; missed steps reduce them. Neither retrying enemies nor revisiting collected motes awards extra points. Scoring amounts live in `game.ts`.
 
-![The Emberworks: a saved lantern beside an active pressure column](clockwork-emberworks.png)
-
-![The Starlit Belfry: moonlit machinery and staggered pressure vents](clockwork-belfry.png)
-
 ## Theme modes
 
 **Normal · Verdant clockwork** is the simple brass-and-moss baseline. **Assets · Porcelain Bellgarden** is an illustrated retro sanctuary with a porcelain keeper, coral scarf, tall ink-blue arches and glazed botanical machinery. **Quality · Lumen Conservatory** develops the same cast and setting into sculpted ceramic miniatures, reflective brass, luminous glass and layered cathedral gardens. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md#creative-direction) owns the briefs, functional visual rules and sheet layouts.
 
 Every mode uses complete keeper and beetle drawings. Quality’s AI-generated actor cels add spherical forms, painted botanical detail, inset glass and soft material shading. Eight stride cels follow ground travel in sequence; dedicated ascent and descent silhouettes communicate jumping. Foot anchors stay on the ground, velocity adds a small lean, and landing briefly compresses around the sole. Beetle steps follow patrol travel and stomped shells use their own spent drawing.
 
-![Porcelain Bellgarden: the ivory keeper beneath illustrated aqueduct arches and a broad waterwheel](clockwork-bellgarden.png)
-
 Quality uses Canvas 2D with shaded image assets, bevelled platform materials and cached architectural layers. A monumental waterwheel, foundry vessels and a belfry rose window distinguish the districts. Distant scenery stays quieter than landing lips, objectives and hazards. The interface uses dark mineral surfaces and brass rules.
-
-![Lumen Conservatory: a glazed lantern and keeper beside the pressure-room vent in the Emberworks](clockwork-lumen-emberworks.png)
 
 ## Source ownership and customization
 

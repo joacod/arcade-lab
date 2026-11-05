@@ -29,7 +29,7 @@ tests/
 
 The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests use the same game slug. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. All modes render through Canvas 2D. Detailed scenery code and image preparation stay inside the owning game, behind its lazy imports. Appearance controllers own cancellation, replacement and graphics-failure recovery. Preparing a replacement retains the active renderer until the candidate can draw; simulation state and the host loop remain session-owned. Shared pose observations belong with the game when multiple renderers need the same animation.
 
-Runtime artwork belongs in the owning game's `art/` folder. Collection covers are SVG assets imported by `src/app/catalog.ts`; documentation screenshots live beside their game guide and are never imported by the application. Commit all artwork required by enabled modes. Keep useful prompts, templates, dimensions and role mappings with the game. Development and production import the same committed bundles. Generated builds and browser reports stay ignored.
+Runtime artwork belongs in the owning game's `art/` folder. Collection covers are SVG assets imported by `src/app/catalog.ts`; one Quality screenshot per game lives beside its guide and is reused by the README and catalog, never imported by the application. Commit all artwork required by enabled modes. Keep useful prompts, templates, dimensions and role mappings with the game. Development and production import the same committed bundles. Generated builds and browser reports stay ignored.
 
 `src/engine/` and `src/common/` have no imports from the application or games. Games depend on the engine's session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders in one catalog; adding a game does not require a second loader switch or card template.
 
@@ -108,6 +108,10 @@ The owner handles mute, normalized volume, overlap admission (including retiring
 Browser composition owns hide, blur, focus, display and page-lifetime decisions alongside gameplay suspension. Returning from a hidden page never resumes audio automatically. Restart cancels the old run before gesture activation; game selection and HMR dispose the departing session. Simulation emits only semantic notifications and never imports AudioBits or reads the audio clock.
 
 Each game's sound adapter owns recipes, event mapping, batch coalescing, priority, cooldown intervals and expressive playback values. `engine/cooldowns.ts` shares deadline bookkeeping and resets deadlines when a replacement audio clock moves backward. Record a cooldown only after playback is admitted; clear it when resetting the adapter. Important milestones replace combat tails; routine bursts are throttled and excess voices discarded. Audio time is used only for presentation throttling. A new game supplies recipes and an adapter, reuses this owner, and wires the same session lifecycle without introducing another lifecycle implementation.
+
+## Local development
+
+See the [README](../README.md#play-locally) to start the development server. `pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
 
 ## Local verification
 

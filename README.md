@@ -1,10 +1,25 @@
 # Arcade Lab
 
-A personal workshop for creating small, beautiful, fun browser games with our own evolving browser-native game engine. Each complete game helps us improve both the collection and the foundations for future games.
+A personal workshop for building complete, enjoyable browser games and evolving the shared engine behind them. Each game improves both the collection and the foundations for future games.
 
-## Run locally
+Built with TypeScript, Canvas 2D, original and bundled artwork, and procedural sound powered by [AudioBits](https://github.com/joacod/audiobits).
 
-Use **Node 26.x** (see `.node-version`) and the **pnpm version pinned in [package.json](package.json)**.
+<table>
+  <tr>
+    <td align="center" width="33%"><a href="CATALOG.md#last-light-clearing"><img src="docs/games/last-light-clearing/ember-rekindled.png" alt="Last Light Clearing · Quality: the spell knight faces goblins and a horned demon in painted ruins" width="240"><br>Last Light Clearing</a></td>
+    <td align="center" width="33%"><a href="CATALOG.md#skybreak"><img src="docs/games/skybreak/skybreak-quality.png" alt="Skybreak · Quality: painted aircraft exchange fire over the Tempest Coast" width="240"><br>Skybreak</a></td>
+    <td align="center" width="33%"><a href="CATALOG.md#clockwork-hollow"><img src="docs/games/clockwork-hollow/clockwork-lumen.png" alt="Clockwork Hollow · Quality: the porcelain keeper and a beetle beneath cathedral arches and a waterwheel" width="240"><br>Clockwork Hollow</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="CATALOG.md#midnight-circuit"><img src="docs/games/midnight-circuit/afterglow.png" alt="Midnight Circuit · Quality: Rook faces street fighters in the painted Afterglow backstreets" width="240"><br>Midnight Circuit</a></td>
+    <td align="center" width="33%"><a href="CATALOG.md#obsidian-duel"><img src="docs/games/obsidian-duel/moonfall-sanctum.png" alt="Obsidian Duel · Quality: Nera and Kael duel beneath the lunar orrery of Moonfall Sanctum" width="240"><br>Obsidian Duel</a></td>
+    <td align="center" width="33%"><a href="CATALOG.md#blastline"><img src="docs/games/blastline/blastline-quality.png" alt="Blastline · Quality: Bolt approaches the tracked Bastion against a painted coastal foundry" width="240"><br>Blastline</a></td>
+  </tr>
+</table>
+
+Screenshots show the **Quality** themes. See the [game catalog](CATALOG.md) for descriptions, controls and theme options.
+
+## Play locally
 
 ```sh
 git clone https://github.com/joacod/arcade-lab.git
@@ -13,19 +28,6 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL printed by Vite, then choose a game. **Game selection** in the game's menus returns to the collection. Games fill the browser viewport, with fullscreen available where supported.
+Open the local URL printed in the terminal and choose a game. Keyboard and touch controls are available, with fullscreen where supported. All required artwork is included.
 
-See the [game catalog](CATALOG.md) for the collection, screenshots and controls.
-
-All enabled presentations include their required artwork in the repository; no manual asset downloads are needed. Games develop through a playable Normal baseline, a focused retro Assets pass and a polished modern Quality presentation; see the [theme guidance](docs/architecture.md#development-progression).
-
-`pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
-
-## Learn more
-
-Built with TypeScript and Vite, using Canvas 2D and committed image assets for graphics. [AudioBits](https://github.com/joacod/audiobits) powers procedural game sound, with shared session lifecycle handling and original recipes for each game.
-
-- [Architecture](docs/architecture.md): repository layout, shared engine ownership and local verification.
-- [Development guidance](AGENTS.md): contributor and agent instructions.
-
-Code is available under the [MIT license](LICENSE).
+[Architecture](docs/architecture.md) · [Development guidance](AGENTS.md) · [MIT license](LICENSE)
