@@ -1,5 +1,5 @@
 import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
-import { circuitSprites, validateCircuitSprites, drawCircuitFighter } from './sprite-art.ts';
+import { normalSprites, validateCircuitSprites, drawCircuitFighter, type FighterAtlas } from './sprite-art.ts';
 import { createGait, fighterFrame } from './animation.ts';
 import { attacks } from './content.ts';
 import { attackPhase, attackWarning, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
@@ -13,6 +13,8 @@ export function circuitView(width: number, height: number, run: Run) {
 }
 /** Local artwork replaces visual roles while sharing projection, gait, warnings and event effects. */
 export interface CircuitArtwork {
+  readonly mode: 'assets' | 'quality';
+  readonly fighterAtlas?: FighterAtlas;
   scenery(ctx: CanvasRenderingContext2D, view: ReturnType<typeof circuitView>, run: Run, time: number, reducedMotion: boolean): void;
   pickup(ctx: CanvasRenderingContext2D, pickup: Run['pickups'][number], ground: number, time: number): void;
 }
@@ -22,10 +24,10 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
   const canvas = document.createElement('canvas'); canvas.className = 'circuit-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
-  const baseline = images ? undefined : createImageResource(circuitSprites, validateCircuitSprites);
+  const baseline = images ? undefined : createImageResource(normalSprites, validateCircuitSprites);
   const sprites = () => images ?? baseline!.images;
   const gait = createGait();
-  canvas.dataset.renderer = artwork ? 'assets' : 'canvas';
+  canvas.dataset.renderer = artwork?.mode ?? 'canvas';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false, camera: number | undefined, last: number | undefined, shake = 0;
   let particles: Particle[] = [], rings: Ring[] = [];
@@ -37,11 +39,6 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
     for (let i = 0; i < points.length; i += 2) { if (i === 0) ctx.moveTo(points[i]!, points[i + 1]!); else ctx.lineTo(points[i]!, points[i + 1]!); }
     ctx.stroke();
-  }
-  function polygon(points: readonly number[], color: string) {
-    ctx.fillStyle = color; ctx.beginPath();
-    for (let i = 0; i < points.length; i += 2) { if (i === 0) ctx.moveTo(points[i]!, points[i + 1]!); else ctx.lineTo(points[i]!, points[i + 1]!); }
-    ctx.closePath(); ctx.fill();
   }
   function ellipse(x: number, y: number, rx: number, ry: number, color: string) {
     ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
@@ -61,91 +58,40 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     const online = run.finale > 0 || run.status === 'victory';
     if (artwork) artwork.scenery(ctx, view, run, time, motion.matches);
     else {
-      const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, station ? '#101525' : '#0c142a'); sky.addColorStop(.58, station ? '#28313c' : '#302640'); sky.addColorStop(1, '#111d2b'); rect(0, 0, w, h, sky);
-      glow(w * .74 - cam * .04, g * .32, 300, online ? '#8bfbe348' : station ? '#ffa56119' : '#f184bd20');
-      ellipse(w * .81 - cam * .02, g * .23, 39, 39, '#c5c9de');
-      ellipse(w * .81 - cam * .02 - 13, g * .23 - 9, 39, 39, '#111a2c');
-      // Two independently drifting skyline layers, drawn only inside the visible span.
-      for (let layer = 0; layer < 2; layer++) {
-        const parallax = layer === 0 ? .15 : .34, spacing = layer === 0 ? 145 : 205;
-        for (let i = Math.floor(cam * parallax / spacing) - 1; i < Math.ceil((cam * parallax + w) / spacing) + 1; i++) {
-          const x = i * spacing - cam * parallax, bh = 110 + ((i * 71 + layer * 43) % 190 + 190) % 190, y = g - 65 - bh;
-          rect(x, y, spacing - 16, bh + 120, layer === 0 ? '#121e33' : '#162538');
-          rect(x + 12, y - 8, 35, 8, '#1c2e40'); line([x + 30, y - 8, x + 30, y - 43], '#405165');
-          for (let row = 0; row < bh / 26; row++) for (let col = 0; col < (spacing - 32) / 18; col++) {
-            if ((i + row * 7 + col * 3) % (online ? 2 : 7) !== 0) continue;
-            rect(x + col * 18 + 10, y + row * 26 + 14, 5, 9, online ? '#aadfc494' : '#b8ad9445');
-          }
+      rect(0, 0, w, h, '#172936');
+      // A quiet, flat baseline: silhouette skyline, broad facades and an open road.
+      for (let i = Math.floor(cam * .2 / 180) - 1; i * 180 - cam * .2 < w; i++) {
+        const x = i * 180 - cam * .2, bh = 90 + ((i * 71) % 130 + 130) % 130;
+        rect(x, g - 170 - bh, 163, bh + 170, '#213b47');
+      }
+      for (let i = Math.floor(cam / 420) - 1; i * 420 - cam < w; i++) {
+        const x = i * 420 - cam;
+        rect(x + 5, g - 220, 410, 220, '#2c454b');
+        rect(x + 22, g - 198, 375, 30, '#19313c');
+        text(station ? 'CENTRAL GRID' : 'NIGHT DISTRICT', x + 40, g - 177, 13, '#9eac9f');
+        rect(x + 24, g - 150, 370, 138, '#213941');
+        if (station) for (let j = 0; j < 3; j++) {
+          rect(x + 49 + j * 112, g - 122, 74, 107, '#526963');
+          line([x + 49 + j * 112, g - 87, x + 123 + j * 112, g - 87], '#849282', 3);
+        } else for (let j = 0; j < 4; j++) {
+          rect(x + 40 + j * 87, g - 132, 65, 90, online ? '#b9bd96' : '#506f70');
         }
       }
-      // The elevated railway ties the streets to the industrial station.
-      rect(0, g - 232, w, 16, '#0c192b'); line([0, g - 232, w, g - 232], '#65889755', 3);
-      for (let i = -1; i < w / 170 + 1; i++) { const x = i * 170 - (cam * .5 % 170); polygon([x, g - 218, x + 18, g - 218, x + 80, g - 80, x + 64, g - 80], '#122237'); }
-      // Near facades / transformer bays carry original signs and detailed silhouettes.
-      const spacing = 420;
-      for (let i = Math.floor(cam * .78 / spacing) - 1; i < Math.ceil((cam * .78 + w) / spacing) + 1; i++) {
-        const x = i * spacing - cam * .78, y = g - 205;
-        if (station) {
-          rect(x, y - 115, 395, 310, '#1b2834');
-          line([x, y - 112, x + 395, y - 112, x + 395, g - 13], '#4a5b65', 8);
-          rect(x + 20, y - 90, 354, 42, '#101c2b'); text(i % 2 ? 'HIGH VOLTAGE / 06' : 'CENTRAL GRID / 04', x + 36, y - 64, 14, '#d0aa7c');
-          for (let j = 0; j < 3; j++) {
-            const tx = x + 60 + j * 120;
-            rect(tx - 32, y + 10, 64, 153, '#34434b', 8); ellipse(tx, y + 12, 32, 10, '#657879');
-            ellipse(tx, y + 160, 32, 9, '#1c303a');
-            for (let k = 0; k < 5; k++) rect(tx - 40, y + 32 + k * 22, 80, 6, '#4f6165', 2);
-            line([tx - 6, y + 1, tx - 6, y - 30, tx + 21, y - 30, tx + 21, y - 46], '#99a293', 5);
-            glow(tx, y + 90, 55, online ? '#73ffcd22' : '#eea06a15');
-            polygon([tx + 2, y + 56, tx - 12, y + 80, tx + 3, y + 80, tx - 2, y + 103, tx + 17, y + 72, tx + 3, y + 72], online ? '#a1ffd2' : '#d9ae73');
-          }
-          line([x + 20, g - 28, x + 375, g - 28], '#708188', 3);
-          for (let k = 0; k < 15; k++) line([x + 22 + k * 24, g - 28, x + 22 + k * 24, g - 5], '#405665', 2);
-        } else {
-          rect(x, y - 65, 404, 258, '#182537'); rect(x + 10, y - 55, 384, 5, '#61707855');
-          rect(x + 26, y + 32, 195, 151, '#111b2a');
-          for (let k = 0; k < 16; k++) line([x + 30, y + 39 + k * 9, x + 217, y + 39 + k * 9], k % 4 ? '#293b4b' : '#4b5060', 2);
-          rect(x + 18, y - 14, 214, 44, '#102030', 3); line([x + 18, y - 14, x + 232, y - 14], '#ee7ca955', 2);
-          neon(['AFTER HOURS', 'NO SIGNAL', 'NIGHT MARKET'][Math.abs(i) % 3]!, x + 32, y + 13, i % 2 ? '#72dddf' : '#ed8db9', 19);
-          rect(x + 263, y + 15, 104, 168, '#101a2a'); rect(x + 270, y + 22, 90, 7, '#405366');
-          for (let k = 0; k < 4; k++) { rect(x + 274, y + 44 + k * 31, 36, 23, '#2a3e4c'); rect(x + 317, y + 44 + k * 31, 36, 23, online ? '#d3bb86' : '#284354'); }
-          line([x + 244, y - 58, x + 244, g - 15, x + 255, g - 15], '#4d5c68', 5);
-          rect(x + 283, y - 85, 70, 58, '#354151', 4); ellipse(x + 317, y - 55, 21, 21, '#192936');
-          for (let a = 0; a < 6; a++) { const r = a * Math.PI / 3 + (motion.matches ? 0 : time); line([x + 317, y - 55, x + 317 + Math.cos(r) * 17, y - 55 + Math.sin(r) * 17], '#546575', 3); }
-          rect(x + 236, y + 50, 21, 90, '#173141'); neon('24', x + 236, y + 73, '#6ae1cb', 14);
-        }
-        ctx.strokeStyle = '#0c1726'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 80, y - 92); ctx.quadraticCurveTo(x + 160, y - 20, x + 460, y - 105); ctx.stroke();
-      }
-      const floor = ctx.createLinearGradient(0, g - 20, 0, h); floor.addColorStop(0, '#283445'); floor.addColorStop(.3, '#172b3c'); floor.addColorStop(1, '#101b2c'); rect(0, g - 9, w, h - g + 9, floor);
-      rect(0, g - 10, w, 13, '#4c5964'); line([0, g + 4, w, g + 4], '#77939c55', 2);
-      line([0, g + 182, w, g + 182], station ? '#e8b47655' : '#acc6c62a', 3);
-      for (let i = Math.floor(cam / 170) - 1; i < Math.ceil((cam + w) / 170) + 1; i++) {
-        const x = i * 170 - cam;
-        line([x, g + 5, x - 65, h], '#7192a20c');
-        rect(x + 20, g + 210, 90, 3, '#dbcb973b');
-        ellipse(x + 85, g + 70 + (i % 3) * 43, 69, 8, '#609da412');
-        for (let j = 0; j < 6; j++) line([x + 32 + j * 17, g + 35 + j * 5, x + 62 + j * 11, g + 35 + j * 5], i % 2 ? '#75eedc1d' : '#f295bc20', 2);
-        if (station) for (let j = 0; j < 5; j++) polygon([x + j * 18, g + 3, x + j * 18 + 9, g + 3, x + j * 18 - 4, g + 15, x + j * 18 - 13, g + 15], '#d7ab6948');
-        else { rect(x + 12, g + 12, 47, 12, '#0b1827'); for (let j = 0; j < 7; j++) line([x + 15 + j * 6, g + 13, x + 15 + j * 6, g + 22], '#405669'); }
-      }
-      for (let i = Math.floor(cam * .78 / 420); i < Math.ceil((cam * .78 + w) / 420); i++) {
-        const x = i * 420 + 120 - cam * .78;
-        glow(x, g + 50, 130, online ? '#75e6b828' : station ? '#f3ae7b15' : i % 2 ? '#6de1df22' : '#ea80af22');
-        for (let j = 0; j < 8; j++) rect(x - 50 + j % 3 * 18, g + 12 + j * 13, 70 - j * 5, 2, i % 2 ? '#7de9d61b' : '#ee8cb41b');
-      }
-      if (!station) {
-        // Rain uses a fixed bounded field and the simulation clock; pausing freezes it.
-        for (let i = 0; i < (motion.matches ? 0 : 100); i++) {
-          const x = ((i * 137.3 - time * 75) % w + w) % w, y = (i * 83.7 + time * 400) % h;
-          line([x, y, x - 5, y + 15], '#b6d5e31c', 1);
-        }
-      }
+      rect(0, g, w, h - g, '#24383f');
+      rect(0, g - 3, w, 6, '#6a8079');
+      line([0, g + 181, w, g + 181], '#83908955', 2);
     }
     const encounter = stageOf(run).encounters[run.encounter];
     if (run.gated && encounter) for (const boundary of [encounter.left, encounter.right]) {
-      const x = boundary - cam; glow(x, g + 80, 80, '#ee77991e');
-      line([x, g - 8, x, g + 185], '#ed8aa390', 3);
-      for (let y = 0; y < 180; y += 24) line([x - 8, g + y + 12, x + 8, g + y], '#ffb1b178', 2);
-      text('LOCK', x, g + 208, 8, '#e4a4b1', 'center');
+      const x = boundary - cam, quality = artwork?.mode === 'quality';
+      const edge = quality ? '#d6b582a6' : '#ed8aa390';
+      glow(x, g + 80, 60, quality ? '#edc49013' : '#ee77991e');
+      line([x, g - 8, x, g + 185], edge, quality ? 1.5 : 3);
+      if (quality) {
+        for (const y of [g, g + 180]) line([x - 10, y, x + 10, y], '#e8ca9b99', 2);
+        for (const y of [g + 65, g + 105]) line([x - 4, y - 5, x, y, x - 4, y + 5], '#e8ca9b66', 1);
+      } else for (let y = 0; y < 180; y += 24) line([x - 8, g + y + 12, x + 8, g + y], '#ffb1b178', 2);
+      text('LOCK', x, g + 208, 8, quality ? '#dfc9a4' : '#e4a4b1', 'center');
     }
     if (!encounter && !run.finale && run.status !== 'victory') {
       const x = stageOf(run).width - 140 - cam; glow(x, g + 40, 160, '#78f8db33');
@@ -153,8 +99,8 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     }
   }
   function body(a: Actor, time: number, reflection = false) {
-    const frame = fighterFrame(a,gait.get(a.id),motion.matches);
-    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection);
+    const frame = fighterFrame(a,gait.get(a.id));
+    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches,artwork?.fighterAtlas);
     if (a.attack && attackPhase(a.attack) === 'active') {
       ctx.save();ctx.translate(0,-a.elevation);ctx.scale(a.facing,1);
       ctx.strokeStyle=a.kind==='player'?'#b5f7db':'#ffb784';ctx.lineWidth=3;
@@ -165,10 +111,10 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
   function telegraph(a: Actor, ground: number) {
     const s = a.attack, area = attackWarning(a); if (!s || !area || a.kind === 'player') return;
     const phase = attackPhase(s), d = attacks[s.kind];
-    const active = phase === 'active', color = artwork ? active ? '#ffe7af' : '#ff9976' : active ? '#ffb797' : '#ed7c99';
+    const active = phase === 'active', color = artwork ? active ? '#ffe7af' : '#ff9976' : active ? '#ffe7af' : '#f59a9f';
     const x = a.x, y = ground + a.lane;
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(active ? [] : [8, 5]);
-    ctx.globalAlpha = active ? (artwork ? .9 : .7) : (artwork ? .65 : .35) + .35 * Math.min(1, s.time / d.startup);
+    ctx.globalAlpha = active ? .9 : .6 + .35 * Math.min(1, s.time / d.startup);
     if (area.shape === 'ellipse') {
       ellipse(area.x, y, area.width / 2, area.depth / 2, '#e86e8b1c');
       ctx.beginPath(); ctx.ellipse(area.x, y, area.width / 2, area.depth / 2, 0, 0, Math.PI * 2); ctx.stroke();
@@ -213,7 +159,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       camera = camera === undefined ? view.x : camera + (view.x - camera) * (motion.matches ? 1 : 1 - Math.exp(-7 * dt)); view.x = camera;
       ctx.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, 0, 0); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       scenery(view, run, run.elapsed);
-      ctx.save(); ctx.translate(-view.x + (motion.matches ? 0 : Math.sin(now * 83) * shake), motion.matches ? 0 : Math.cos(now * 67) * shake * .5);
+      ctx.save(); ctx.translate(-view.x + (motion.matches ? 0 : Math.sin(run.elapsed * 83) * shake), motion.matches ? 0 : Math.cos(run.elapsed * 67) * shake * .5);
       shake = Math.max(0, shake - dt * 26);
       for (const a of run.enemies) telegraph(a, view.ground);
       for (const pickup of run.pickups) if (!pickup.collected) {
@@ -226,8 +172,8 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       const actors = [run.player, ...run.enemies].filter(a => a.health > 0 || a.death > 0).sort((a, b) => a.lane - b.lane || a.id - b.id);
       // Reflections and shadows stay on the ground, independently of jump elevation.
       ctx.save(); ctx.beginPath(); ctx.rect(view.x, view.ground, view.width, view.height); ctx.clip();
-      for (const a of actors) {
-        ctx.save(); ctx.globalAlpha = .10; ctx.translate(a.x, view.ground + a.lane + 4); ctx.scale(1, -.45); body(a, run.elapsed, true); ctx.restore();
+      for (const a of artwork ? actors : []) {
+        ctx.save(); ctx.globalAlpha = artwork?.mode === 'quality' ? .14 : .07; ctx.translate(a.x, view.ground + a.lane + 4); ctx.scale(1, -.45); body(a, run.elapsed, true); ctx.restore();
       }
       ctx.restore();
       for (const a of actors) {

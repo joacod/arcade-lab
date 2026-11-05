@@ -1,11 +1,11 @@
 import type { ImageDimensions } from '../../engine/browser/images.ts';
-/** Complete 256-square cels; four fighter rows and eight semantic poses. */
+/** Complete 256-square cels; four fighter rows and twelve semantic poses. */
 export const signalRain = {
-  fighters: { width: 2048, height: 1024 },
-  skyline: { width: 960, height: 320 },
-  backstreets: { width: 960, height: 340 },
-  station: { width: 960, height: 340 },
-  pavement: { width: 960, height: 240 },
+  fighters: { width: 3072, height: 1024 },
+  skyline: { width: 1920, height: 480 },
+  backstreets: { width: 1920, height: 600 },
+  station: { width: 1920, height: 600 },
+  pavement: { width: 1920, height: 480 },
   repair: { width: 64, height: 64 },
 } as const;
 export function validateCircuitArt(dimensions: ImageDimensions): readonly string[] {

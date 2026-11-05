@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Reference image: existing classic painted arcade fighter sheet. Preserve these FOUR character designs and its illustrated retro arcade style. This is a supplementary MOVEMENT sheet, NOT the premium modern Quality cast.
+Asset: transparent production sprite atlas, EXACT 6 columns by 4 rows, twenty-four complete figures, landscape 2400 x 1600. Uniform evenly separated cells. Every figure faces RIGHT in side/slight-three-quarter view, fully visible including boots and hands. No visible grid, floor, shadows, text, labels, effects or detached parts.
+Rows in exact order: row1 Rook (dark tousled hair, ivory headband, teal short courier jacket with ivory sleeves, red scarf, dark cargo trousers, brown boots); row2 red-uniformed lean security Striker with dark helmet and orange visor; row3 stocky bare-faced bearded Bruiser in ochre work armor with ivory shoulder guards; row4 massive ivory ceramic-armored Circuit Warden with enclosed helmet, orange visor and orange chest core.
+Each row repeats the SAME six pose positions:
+Column1 LOW WALK contact A, left foot forward planted and other foot behind, natural arm swing.
+Column2 LOW WALK passing A, planted support foot under hips, rear heel lifting just BEHIND the hips, both thighs point down, NO raised knee.
+Column3 LOW WALK contact B, right foot forward planted, opposite leg and arm swing to col1.
+Column4 LOW WALK passing B, swing foot LOW just ahead of the supporting ankle, knees BELOW the crotch, both thighs point down. Neither walking passing pose may look like high-knee marching.
+Column5 neutral JUMP RISING, both knees tucked, fists guarding chest, no extended attacking leg.
+Column6 neutral JUMP FALLING, boots reaching down for landing and balancing arms, not punching or kicking.
+Walking heads/hips stay level, grounded boot soles align near the bottom of each cell. Grounded walking is natural and low, not a squat or run. Jumps are visibly different from walk and from kick attacks. Consistent character scale across all six cels in each row. True transparent alpha background, clean whole figures with connected clothing and anatomy.

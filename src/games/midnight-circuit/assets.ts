@@ -2,7 +2,7 @@ import { prepareImages, type ImageBundle } from '../../engine/browser/images.ts'
 import { validateCircuitArt } from './asset-art.ts';
 import { stageOf } from './game.ts';
 import { createPresentation, type CircuitArtwork } from './presentation.ts';
-import fighters from './art/fighters/fighters.png';
+import fighters from './art/fighters/animated.webp';
 import skyline from './art/signal-rain/skyline.svg';
 import backstreets from './art/signal-rain/backstreets.svg';
 import station from './art/signal-rain/station.svg';
@@ -11,16 +11,20 @@ import repair from './art/signal-rain/repair.svg';
 
 function createArtwork(images: ImageBundle): CircuitArtwork {
   return {
+    mode: 'assets',
     scenery(ctx, view, run, time, reducedMotion) {
       const { width, height, ground, x: camera } = view;
       ctx.fillStyle = '#203d43'; ctx.fillRect(0, 0, width, height);
+      const stage = stageOf(run), finale = stage.encounters.at(-1)!;
+      const origin = stage.environment === 'station' ? (finale.left + finale.right) / 2 - 640 : 0;
       const tile = (name: string, y: number, h: number, parallax: number) => {
-        const offset = camera * parallax;
-        for (let i = Math.floor(offset / 960); i * 960 - offset < width; i++) ctx.drawImage(images[name]!, i * 960 - offset, y, 960, h);
+        const offset = camera * parallax - (name === 'skyline' ? 0 : origin);
+        const span = 1280;
+        for (let i = Math.floor(offset / span); i * span - offset < width; i++) ctx.drawImage(images[name]!, i * span - offset, y, span, h);
       };
-      tile('skyline', ground - 360, 320, .18);
-      tile(stageOf(run).environment === 'station' ? 'station' : 'backstreets', ground - 270, 270, .78);
-      tile('pavement', ground, Math.max(240, height - ground), 1);
+      tile('skyline', ground - 480, 320, .18);
+      tile(stageOf(run).environment === 'station' ? 'station' : 'backstreets', ground - 400, 400, 1);
+      tile('pavement', ground, Math.max(320, height - ground), 1);
       if (run.finale > 0 || run.status === 'victory') {
         ctx.fillStyle = '#9ae6ab24'; ctx.fillRect(0, 0, width, ground);
       }
@@ -34,8 +38,8 @@ function createArtwork(images: ImageBundle): CircuitArtwork {
         ctx.stroke();
       }
     },
-    pickup(ctx, pickup, ground, time) {
-      ctx.drawImage(images.repair!, pickup.x - 21, ground + pickup.lane - 38 + Math.sin(time * 3) * 2, 42, 42);
+    pickup(ctx, pickup, ground) {
+      ctx.drawImage(images.repair!, pickup.x - 21, ground + pickup.lane - 38, 42, 42);
     },
   };
 }

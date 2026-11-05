@@ -13,7 +13,7 @@ The table lists the presentations currently implemented; their artwork and rende
 | Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Ember Ruins · Rekindled, new illustrated knight, goblins and demon in a modern painted ruin |
 | Skybreak | Pacific Run | Aurora Fleet, arcade fleet and pixel reefs | Tempest Coast, painted fleet and scrolling shoals |
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated retro sanctuary | Lumen Conservatory, dimensional ceramic-and-brass cathedral gardens |
-| Midnight Circuit | Illustrated arcade | Signal / Rain, inked comic artwork | Afterglow, painted fighters in a rain-soaked city with wet-road reflections |
+| Midnight Circuit | Street sketch, simple flat cels | Signal / Rain, inked arcade shops and industrial bays | Afterglow, detailed modern fighters and painted city with wet-road reflections |
 | Obsidian Duel | Tempest citadel | Eclipse Foundry | Moonfall Sanctum, painted fighters in an illustrated lunar sanctuary |
 | Blastline | Iron coast | Not available | Not available |
 
@@ -69,7 +69,7 @@ Six checkpoint lanterns shorten retries. Falling or touching danger ends the att
 
 ## Midnight Circuit
 
-![Midnight Circuit: Rook fights security enforcers in a rain-soaked neon street](docs/games/midnight-circuit/midnight-circuit.png)
+![Midnight Circuit: simple Street sketch fighters in the backstreets](docs/games/midnight-circuit/midnight-circuit.png)
 
 The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstreets** and **The Power Station**, then break the blackout by defeating the **Circuit Warden**. Align in the ground-depth lane, tap through a three-hit combo, reposition during recovery, clear crowds with a heavy strike and jump into a flying kick. Contextual prompts help with alignment and chaining. Authored encounters mix fast Strikers and committed Bruisers before the Warden's charge and ground-impact patterns. Three lives, repair cells that wait until health is needed and a station health refill support the roughly 4–6 minute first-run pace.
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGait, fighterFrame } from '../../../../src/games/midnight-circuit/animation.ts';
-import { createRun } from '../../../../src/games/midnight-circuit/game.ts';
+import { createGait, fighterFrame, fighterCels as c } from '../../../../src/games/midnight-circuit/animation.ts';
+import { createRun, stepRun, idle } from '../../../../src/games/midnight-circuit/game.ts';
 import { attacks } from '../../../../src/games/midnight-circuit/content.ts';
 
 test('gait follows displacement, plants feet, freezes on pause and ignores knockback or teleports', () => {
@@ -18,9 +18,10 @@ test('gait follows displacement, plants feet, freezes on pause and ignores knock
   assert.equal(gait.get(0).phase, phase);
   run.player.stun = 0; run.player.x += 500; run.elapsed += 1/60; gait.observe(run);
   assert.equal(gait.get(0).phase, phase);
-  assert.equal(fighterFrame(run.player,{phase:0,weight:1}),1);
-  assert.equal(fighterFrame(run.player,{phase:Math.PI*1.5,weight:1}),2);
-  assert.equal(fighterFrame(run.player,{phase:Math.PI*1.5,weight:1},true),0);
+  assert.equal(fighterFrame(run.player,{phase:0,weight:1}),c.contactLeft);
+  assert.equal(fighterFrame(run.player,{phase:Math.PI*.5,weight:1}),c.passingLeft);
+  assert.equal(fighterFrame(run.player,{phase:Math.PI,weight:1}),c.contactRight);
+  assert.equal(fighterFrame(run.player,{phase:Math.PI*1.5,weight:1}),c.passingRight);
   gait.reset(); assert.equal(gait.get(0).phase, 0);
 });
 
@@ -50,4 +51,37 @@ test('recovery steps blend back into the walking pose while startup and contact 
     assert.equal(fighterFrame(p,gait.get(0)),fighterFrame({...p,attack:null},gait.get(0)));
 
   }
+});
+
+test('real grounded movement traverses all four walking cels, including repeated render observations', () => {
+  const run = createRun(), gait = createGait(), poses = new Set(); gait.observe(run);
+  for (let frame = 0; frame < 48; frame++) {
+    stepRun(run, { ...idle, x: 1 }, 1 / 60); gait.observe(run);
+    poses.add(fighterFrame(run.player, gait.get(0)));
+    const sample = structuredClone(gait.get(0));
+    for (let repeat = 0; repeat < 3; repeat++) gait.observe(run);
+    assert.deepEqual(gait.get(0), sample);
+  }
+  assert.deepEqual([...poses].sort(), [c.contactLeft,c.passingLeft,c.contactRight,c.passingRight]);
+});
+
+test('a neutral jump rises and falls in guarded cels; only an actual aerial attack uses kick contact', () => {
+  const run = createRun(), gait = createGait(); gait.observe(run);
+  stepRun(run, { ...idle, jump: true }, 1 / 60); gait.observe(run);
+  assert.equal(run.player.attack, null);
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.rise);
+  while (run.player.vz > 0) { stepRun(run, idle, 1 / 60); gait.observe(run); }
+  assert.ok(run.player.elevation > 0);
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.fall);
+  stepRun(run, { ...idle, light: true }, 1 / 60);
+  assert.equal(run.player.attack.kind, 'air');
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.fall);
+  run.player.attack.time = attacks.air.startup;
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.kick);
+  run.player.attack.time = attacks.air.startup + attacks.air.active + attacks.air.recovery * .85;
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.fall);
+  run.player.attack = null;
+  while (run.player.elevation > 0) stepRun(run, idle, 1 / 60);
+  gait.observe(run);
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.idle);
 });
