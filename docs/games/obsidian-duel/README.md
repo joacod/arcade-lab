@@ -22,21 +22,25 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 ## Theme modes
 
-**Normal** uses Tempest citadel and storm scenery with the shared complete painted fighter cels. **Assets · Eclipse Foundry** supplies a ruined observatory, complete painted fighters and contact artwork; the [artwork guide](../../../src/games/obsidian-duel/art/README.md#eclipse-foundry-creative-brief) owns its brief and cel layout. **Quality · Moonfall Sanctum** uses an illustrated lunar sanctuary with the same fighter atlases, described below.
+The three modes express the same astronomical citadel, fighters and combat vocabulary at different levels of finish. Their artwork is independent; only semantic animation timing, cosmetic atlas layout and gameplay observations are shared. Follow the [shared mode contracts](../../architecture.md#mode-contract) when extending them. The [artwork guide](../../../src/games/obsidian-duel/art/README.md) owns the detailed briefs, sources and export specifications.
 
-![Eclipse Foundry: painted Nera extends a kick toward Kael's guard beneath the copper orrery](eclipse-foundry.png)
+- **Normal · Tempest citadel:** flat-color whole-character cels, a sparse terrace, broad mountain silhouettes and compact geometric feedback. This is the simple gameplay baseline, with its own complete action set rather than the polished Assets fighters.
+- **Assets · Eclipse Foundry:** retain the expressive painted Nera and Kael in an old-school hand-painted arcade treatment. A layered foundry arena adds weathered columns, a copper eclipse orrery, distant aqueducts, forge-lit walls and banners. Separate illustrated ribbons distinguish heel, punch, sweep and aerial attacks.
+- **Quality · Moonfall Sanctum:** new detailed fighter drawings reinterpret the same costumes with embroidery, cloth volume, leather wear and bronze trim. The illustrated lunar observatory, carved perimeter, wet basalt and restrained reflections support a new jade-and-gold effects atlas. Quality upgrades actors and combat artwork as well as scenery.
 
-## Moonfall Sanctum art direction
+![Eclipse Foundry: the painted duel beneath a copper orrery and forge-lit citadel](eclipse-foundry.png)
 
-![Moonfall Sanctum: Nera lands a heel strike on Kael in the moonlit obsidian sanctuary](moonfall-sanctum.png)
+![Moonfall Sanctum: detailed Nera and Kael with a jade Crescent heel trail](moonfall-sanctum.png)
 
-Quality places the duel in a suspended obsidian sanctuary under a pearl moon. A custom illustrated arena supplies carved basalt, weathered bronze, jade ornament, ruined aqueducts, distant waterfalls and a monumental fractured lunar instrument. Quiet mist behind the fight lane separates the ivory-and-turquoise Nera from the broad charcoal-and-copper Kael. The floor remains unobstructed at the existing physical baseline.
+## Combat presentation
 
-Both fighters reuse Eclipse Foundry’s painted cels and semantic clip samples, preserving planted travel-driven steps, guards, jumping attacks, knockdown and wake-up.
+Every mode communicates standing and crouching guard, jump ascent/apex/descent, anticipation, active attack, recovery, landing, injury, knockdown and wake-up. Travel drives walking; holding against a boundary does not march in place. Complete drawings supply the anatomy and clothing, with no runtime body assembly. Grounded cels use support pivots, while jumping cels retain a virtual ground pivot above the simulation's elevation.
 
-A separate custom transparent effects atlas supplies the jade Stormglass bolt, warm ivory contact burst, blue guard seal and subtle ground aura. Contact anchors follow the artwork's bright points. A missed strike has no hit burst. Layered low mist, lantern glows, sparse moonlit motes and faint reflections connect the sprites to the wet platform. Reduced motion removes drifting mist, motes and light pulsing and keeps contact sizes steady while preserving action poses and warnings. Menus, HUD and round/match announcements use the same moon-and-bronze palette.
+Move trails appear only during the actual active window, including a miss. Nera's Crescent heel has a tall jade crescent, sweeps stay near the ground, aerial attacks descend diagonally, and Kael's punches and Riftbreaker produce horizontal copper pressure. Stormglass artwork tracks the actual projectile and mirrors with its own facing. Trail extents are cosmetic and do not determine reach or collision. Contact bursts require a hit or block event; charge, release, knockdown and misses cannot manufacture hit confirmation. Guard seals differ in shape and color from damage bursts. The existing opponent labels remain above artwork and explain guard height and recovery.
 
-Quality uses Canvas with no separate graphics context. `quality-assets.ts` prepares the arena/effects and shared fighter atlases; `quality-art.ts` validates effect anchors. See the [artwork sources and prompts](../../../src/games/obsidian-duel/art/README.md#moonfall-sanctum).
+Keep important silhouettes, bolts and warnings distinct from the quiet central scenery. Edge props remain behind the fight lane, ground seals lie flat beneath feet, and effects stay bounded. The uniform camera and all physical geometry remain independent of illustration dimensions. A theme replacement preserves the current match and animation observations through the [shared replacement contract](../../architecture.md#replacement-and-recovery), with Normal as recovery presentation.
+
+Reduced motion preserves physical movement, action cels, warnings and contact confirmation. It removes idle breathing, shake, drifting scenery and pulsing lights, reduces sparks, and keeps contact artwork at a steady size. Active run time owns animation; pause freezes it. Quality uses Canvas 2D with the same context as the other modes.
 
 ## Source ownership
 
@@ -48,11 +52,11 @@ Paths below are relative to `src/games/obsidian-duel/`.
 | `game.ts` | Pure fighter states, attack instances, contact, guard, projectiles and match rounds |
 | `cpu.ts` | Seeded decisions using delayed visible observations and ordinary action commands |
 | `input.ts` | Shared captured-button snapshots translated into fighting actions |
-| `themes.ts` | Theme names, stage palettes and fighter costume colors |
+| `themes.ts` | Theme names, stage palettes and cue colors |
 | `animation.ts` | Cosmetic action observations, travel-driven walking and semantic whole-cel timing |
-| `presentation.ts` | Uniform arena transform, shared complete fighter cels, presentation replacement and bounded contact effects |
-| `asset-art.ts`, `assets.ts` | Whole-body cel layout, dimension validation and shared cancellable image preparation |
-| `quality-assets.ts`, `quality-art.ts`, `quality-presentation.ts` | Moonfall Sanctum image preparation, validated effect anchors, illustrated scene, mist, reflections and contact artwork |
+| `presentation.ts` | Uniform arena transform, Normal scenery, mode-specific cels, move trails and bounded contact effects |
+| `asset-art.ts`, `assets.ts` | Whole-body cel layout, Normal sprite resources, validation and Foundry image preparation |
+| `quality-assets.ts`, `quality-art.ts`, `quality-presentation.ts` | Independent detailed sprite preparation, eight effect anchors, lunar scene, mist and reflections |
 | `asset-presentation.ts` | Complete painted Eclipse Foundry action cels, bolts and contact artwork |
 | `ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |
@@ -62,22 +66,16 @@ Simulation records horizontal position, elevation, velocity and facing. Startup,
 
 The CPU samples visible spacing, telegraphs and incoming bolts, then receives those observations after a reaction delay. Decisions have their own cadence and seeded mistakes. The CPU cannot read player inputs or buffered commands and uses the same movement, guard, cooldown and combat restrictions as the player.
 
-All modes use complete painted fighter sprites through Canvas; the selection cover is an editable SVG. Nera's ivory tunic, turquoise sash and fast kicks distinguish her from Kael's charcoal wrap, copper sash and committed punches. The illustration supplies continuous anatomy and clothing. Walking selects cels from signed distance travelled, so pressing into a wall does not march in place. There is no joint solver or runtime body assembly.
-
-The shared fighter atlases cover 16 action clips. The [artwork guide](../../../src/games/obsidian-duel/art/README.md#action-cels-and-animation-direction) owns source sheets, frame selection, pivot packing and pose requirements.
-
-Attack drawings follow startup, active and recovery times; contact cels never appear during startup. Jump poses follow ascent, apex and descent. Landing, hit reactions, knockdown and wake-up have dedicated sequences. Reduced motion removes idle breathing, shake, storm flourishes and Assets embers, and reduces particles.
+All modes use complete image sprites through Canvas; the selection cover remains an editable SVG. Nera's ivory tunic, turquoise sash and fast kicks distinguish her from Kael's charcoal wrap, copper sash and committed punches. Each atlas covers the same 16 semantic clips. The [artwork guide](../../../src/games/obsidian-duel/art/README.md#cel-layout-and-timing) owns source sheets, frame selection, pivot packing and pose requirements.
 
 ## Architecture decisions
 
 Guard height, projectiles, bilateral trades, stun exits and best-of-three ownership are local fighting rules. Their contact and progression semantics differ from a scrolling brawler's lane geometry, crowd coordination and encounter gates.
 
-`presentation.ts`’s `replaceTheme` updates the existing renderer while retaining its animation observations. It uses the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery), with Normal as its recovery presentation.
-
 Round-phase changes clear held controls and buffered commands.
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/obsidian-duel/game.test.mjs) cover guards, wake-up, body bounds, bilateral trades, timer decisions and complete CPU matches. [Animation](../../../tests/unit/games/obsidian-duel/animation.test.mjs) and [asset](../../../tests/unit/games/obsidian-duel/assets.test.mjs) checks cover stable pivots, cel coverage, displacement-driven walking and attack timing. [Browser checks](../../../tests/browser/games/obsidian-duel/) cover the retained match, theme replacement, drawing-failure recovery and simultaneous touch actions.
+The [game invariants](../../../tests/unit/games/obsidian-duel/game.test.mjs) cover guards, wake-up, body bounds, bilateral trades, timer decisions and complete CPU matches. [Animation](../../../tests/unit/games/obsidian-duel/animation.test.mjs) and [asset](../../../tests/unit/games/obsidian-duel/assets.test.mjs) checks cover stable pivots, cel coverage, displacement-driven walking and attack timing. [Browser checks](../../../tests/browser/games/obsidian-duel/) cover the retained match, theme replacement, drawing-failure recovery, simultaneous touch actions and contact-only hit confirmation across modes.
 
 See the [shared commands](../../architecture.md#local-verification).

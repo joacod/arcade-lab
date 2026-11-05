@@ -106,7 +106,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
         const steps=clock.advance(now);
         for(let i=0;i<steps&&match.status==='active';i++){
           const phase=match.phase;stepMatch(match,input!.read(),FIXED_STEP);
-          const events=takeEvents(match);presentation!.consume(events,match);sound!.consume(events);
+          const events=takeEvents(match);presentation!.consume(events);sound!.consume(events);
           if(match.phase!==phase){input!.clear();clock.reset();break;}
         }
         if(match.status==='victory'||match.status==='defeat')transition(match.status);

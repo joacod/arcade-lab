@@ -8,5 +8,5 @@ export function drawFoundryFighter(ctx: CanvasRenderingContext2D, art: ImageBund
   ctx.drawImage(art[kind]!, ...foundryFrame(sample), -foundryCell.pivotX, -foundryCell.pivotY, foundryCell.width, foundryCell.height);
 }
 export function drawFoundryEffect(ctx: CanvasRenderingContext2D, art: ImageBundle, cell: number, x: number, y: number, width: number, height = width) {
-  ctx.drawImage(art.effects!, cell * 128, 0, 128, 128, x - width / 2, y - height / 2, width, height);
+  ctx.drawImage(art.effects!, cell % 4 * 128, Math.floor(cell / 4) * 128, 128, 128, x - width / 2, y - height / 2, width, height);
 }

@@ -1,91 +1,76 @@
 # Obsidian Duel artwork
 
-[Game presentations](../../../../docs/games/obsidian-duel/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
+[Game and combat presentation](../../../../docs/games/obsidian-duel/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-`cover.svg` is the collection cover. `eclipse-foundry/` contains SVG stage/effects and AI-generated painted PNG fighters. `moonfall-sanctum/` contains Quality arena/effects artwork. Project images use the repository’s [MIT license](../../../../LICENSE); no third-party artwork inputs are included.
+`cover.svg` is the collection cover. All required outputs and editable inputs live here. New raster illustrations were generated with the built-in image generation tool; prompts accompany the source sheets. Project artwork uses the repository's [MIT license](../../../../LICENSE). No third-party artwork inputs are included.
 
-## Eclipse Foundry creative brief
+## Direction across modes
 
-A ruined astronomical foundry, poised between cold sky and warm metal. A quiet geometric stage frames expressive, painted human fighters. Selective contour lines and soft shading describe connected muscles, faces and clothing volumes. A copper eclipse and orbital bands occupy the upper sky; distant basalt spires and an aqueduct form a low-contrast backdrop. The unobstructed fight lane has engraved bronze inlays. Braziers and columns stay at the edges and behind the lane.
+Keep the same cast, astronomical citadel, unarmed moves and teal/copper role separation throughout the progression. Nera has a long dark ponytail and crescent clasp, ivory wrap tunic, turquoise sash, dark teal trousers and soft boots. Kael has short dark hair, a neat beard, broad bare arms, a charcoal wrap tunic, copper sash, dark trousers and bronze forearm wraps. Heavier form and horizontal punches distinguish him from Nera's light silhouette and kicks. Mirror the complete figures with facing, preserving stable support feet and purposeful hands.
 
-Nera wears an ivory wrap tunic, a flowing turquoise sash, dark teal trousers, soft boots and small wrist wraps. Her dark ponytail and crescent clasp carry the Stormweaver identity. Kael has short dark hair, a neat beard, a charcoal sleeveless wrap tunic, a copper sash and a small bronze forearm wrap. Broad connected shoulders and bare muscular arms convey his power. Clothing folds continue across the hips, elbows and knees. Armor boundaries and outlines do not divide every anatomical segment. Both remain unarmed, face right in source art, and mirror with facing. Strong costume values separate them from the subdued scenery and one another.
+### Tempest citadel · Normal
 
-Inspiration only:
+Use deliberately simple flat-color whole-character drawings: broad garment shapes, minimal facial detail and clean silhouettes. A quiet sky, mountain silhouette, two plain columns and a level terrace establish the playable baseline. Compact arcs, a simple bolt and small hit/guard marks supply the same combat information as the later modes. Do not load Foundry or Sanctum fighter art for Normal, or gradually rebuild their ornament here.
 
-- [Nagoriyuki, Guilty Gear Strive](https://www.guiltygear.com/ggst/en/character/nag/): bold silhouette and clear material blocks. The Foundry costumes, faces, crest and unarmed animations are original.
-- [Sifu combat VFX, Sébastien Gabriel](https://clamz.artstation.com/projects/0lKKZV): contact effects communicate combat information. Foundry uses a pointed warm strike burst and a cool polygonal guard seal.
+`tempest-citadel/sources/` contains the two original 36-drawing sheets and prompts. This is an independently authored baseline, not a filter over the painted fighters.
 
-## Action cels and animation direction
+### Eclipse Foundry · Assets
 
-Eclipse Foundry uses painted whole-character action drawings. The relaxed stance, chamber, contact and recoil should retain connected muscles, purposeful hands and continuous garment folds across Nera’s sash and Kael’s bare shoulders.
+Retain the established painted fighter cels and their expressive coordinated anatomy. Their outlined contours, broad value blocks and soft shading suit an old-school hand-painted arcade presentation. Frame them with a ruined astronomical foundry: enormous weathered basalt columns, copper eclipse and orbital bands overhead, teal banners, aqueducts, distant mountains and warm forge openings. Architectural density stays high and at the sides. The central head/body band stays subdued, and the level fight lane has no apparent pits, steps or blocking scenery.
 
-Selected poses fill the timed atlas slots, including contact holds and retraction drawings. All three modes share these complete fighter cels.
+The new arena is in `eclipse-foundry/sources/stage.png`. The existing fighter inputs, exact crops and pivots remain in `eclipse-foundry/painted/`. Eight editable SVG effect cels cover Stormglass, strike contact, guard, ground seal, Crescent heel, punch pressure, low sweep and aerial slash. Their graphic shapes suit the arcade fighters and distinguish attacks without implying extra damage.
 
-Technique references, not sources of artwork:
+### Moonfall Sanctum · Quality
 
-- [Ed Boon interviewed by NPR](https://www.wkms.org/2023-09-30/how-mortal-kombat-conquered-gaming): early Mortal Kombat filmed performers for its sprites. The useful lesson here is observing a complete body's coordinated motion, rather than independently moving extremities. No actor footage or game sprites are included.
-- [Capcom's Akiman interview](https://game.capcom.com/cfn/sfv/column-112429): character animation and sprite memory were authored together. Our compact sheets preserve deliberate action drawings with a stable pivot.
-- [Mariel Cartwright's GDC animation talk](https://www.gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful): strong keys, anticipation and timing under fighting-game frame restrictions, with examples including Street Fighter III and Darkstalkers. Prioritize a clear chamber, decisive contact, recoil and settle over interpolating every pose uniformly.
+Reinterpret those same costumes as detailed modern painted sprites with embroidered hems, cloth volume, stitched leather, scuffed boots, bronze trim, dimensional faces and connected anatomy. The new 36-drawing fighter sheets in `moonfall-sanctum/fighters/` replace the Foundry pixels while retaining their identities and attack vocabulary. Assess the character drawings themselves at gameplay size before adding atmosphere.
 
-`animation.ts` owns semantic clip selection for every mode. Each renderer consumes the same action sample. `painted/layout.json` maps those timed samples to independently painted source drawings and their cosmetic pivots. `painted/pack.mjs` extracts each complete silhouette and applies uniform scale and translation to pack the runtime PNGs. It preserves source color, shading and alpha.
+The retained illustrated observatory provides carved basalt, weathered bronze, jade ornament, a fractured lunar instrument, distant aqueducts and waterfalls. Quiet mist separates the cast from the backdrop. A wet uninterrupted terrace grounds the characters. Edge pillars and lanterns remain scenery behind the lane. Sparse motes, low mist and faint reflections support the detailed artwork.
 
-## Image specifications
+The new transparent jade-and-gold atlas coordinates projectile, contact, protection, ground ring and four move ribbons. Pearl cores make small threats readable. Keep bursts compact, ground rings flattened and decorative motion subordinate to guards, attack height and opponent labels. Kael's Riftbreaker pressure stays horizontal and copper; Nera's heel crescent is tall and teal. Neither a trail nor a charge glint confirms contact. Menus, meters and announcements use the lunar bronze/jade palette.
 
-Runtime images use smooth Canvas sampling. The fighter source sheets stay in `painted/`; `asset-art.ts` owns decoded-dimension validation and source rectangles.
+## Cel layout and timing
 
-| Image | Intrinsic size | Layout and use |
+All runtime fighter atlases are **2560 × 2240 RGBA PNGs**, packed eight 320 × 224 cells per row. Every cell has a cosmetic ground pivot at **(144, 208)** and a 320 × 224 world-unit draw footprint including transparent padding. The shared layout is a drawing contract, not shared artwork or physical geometry. Normal, Assets and Quality each load their own Nera and Kael PNGs. Smooth Canvas sampling preserves contours.
+
+`animation.ts` observes the simulation and supplies 16 semantic clips. `asset-art.ts` computes rectangles. Authored holds fill the 74 timed slots: idle, walking, jump, crouch, standing/crouching guard, light, heavy, sweep, aerial, special, hurt, block recoil, down, rise and landing. Contact drawings enter only at the active boundary; recovery retracts the attack. Guard hands stay in front, crouches reduce silhouette height, and sweeping feet stay near the floor. Walking follows signed distance instead of a wall-clock loop.
+
+The new Normal and Quality source sheets each contain six rows of six full-body drawings: stance/travel, air/guard, light/heavy, sweep/aerial, special/reaction, and down/rise/settle. `art/pack-fighters.mjs` records the inspected row boundaries and maps drawings to timed holds. It selects complete connected silhouettes, removes disconnected export noise, preserves antialiased edges, applies uniform sheet scale and normalizes support pivots. Contact drawings apply a bounded translation of the whole cel to align the hand or heel with authored move reach while preserving body proportions and support. Air cels keep a virtual ground reference. The resulting `layout.json` files record source rectangles, dimensions, pivots, scale and clip mappings. Packing rejects clipped or empty cels and never assembles body parts.
+
+Foundry retains its separate `painted/layout.json` mapping and packer, including the original selected drawings and contact offsets. Its source sheets can have uneven spacing; maintain explicit inspected crops rather than assuming a new grid.
+
+## Arena and effect images
+
+| Runtime image | Dimensions | Layout and anchors |
 | --- | --- | --- |
-| `stage.svg` | 1600 × 896 | Opaque side-view arena plate, viewBox 1000 × 560. Drawn over the fixed world rectangle. The near floor begins at world y=420; fighters stand at the gameplay floor. |
-| `nera.png`, `kael.png` | 2560 × 2240 each | Transparent whole-body atlas. 320 × 224 cells packed consecutively, eight per row. Every frame has a ground pivot at cell (144, 208) and a 320 × 224 world-unit footprint, including transparent padding. Compact packing avoids allocating a separate mostly empty row for short clips. |
-| `effects.svg` | 512 × 128 | Four transparent 128-square cells: right-facing Stormglass bolt, hit burst, guard seal, ground seal. Each cell anchors at its center. |
+| `eclipse-foundry/stage.webp` | 1600 × 896 | Complete arcade foundry plate over the fixed arena. Uninterrupted foreground terrace. |
+| `eclipse-foundry/effects.svg` | 512 × 256 | Four columns, two rows of 128-square cells. Center anchors; right-facing bolt and punch ribbons. |
+| `moonfall-sanctum/stage.webp` | 1600 × 896 | Illustrated lunar observatory and wet terrace, retained from the earlier arena pass. |
+| `moonfall-sanctum/effects.png` | 1536 × 768 | Four columns, two rows of 384-square cells. Same eight semantic roles as Foundry. Contact pivots in `quality-art.ts`; bolt and punch anchor near their bright noses, other cells at their centers. |
 
-`duelClips` defines clip order and timed-slot counts; `foundryFrame` computes packed rectangles. Painted drawings may be reused for holds, retraction and settling. All 16 clips are covered: idle, walk, jump, crouch, standing guard, crouching guard, light, heavy, sweep, aerial, special, hurt, block recoil, knockdown, rise and landing. Source rectangles, source-sheet dimensions, per-sheet scale, selected cels and pivot corrections are maintained together in `painted/layout.json`.
+Source stage/effect PNGs and prompts remain in each family's `sources/` folder. The Quality effect cleanup prompt records removal of unwanted background haze. Fighter cleanup preserves the exact pose layout and costume. Required outputs run without regeneration or external services. Use the [shared source and anchor workflow](../../../../docs/assets-themes.md#specify-artwork-before-integrating-it) for replacements.
 
-Grounded drawings align to support contacts. Airborne drawings use a virtual ground pivot, retaining tucked feet above the baseline while simulation supplies jump elevation. Cosmetic contact shifts move the complete cel. Artwork faces right and mirrors with the fighter.
+## Editing and export
 
-Idle loops gently; walk phase follows signed travel. Attack samples select anticipation, contact/follow-through and retraction/settling drawings from the simulation’s move time. Reaction clips follow observed state durations. The [game guide](../../../../docs/games/obsidian-duel/README.md#source-ownership) owns reduced-motion and semantic animation behavior.
-
-The bolt uses a 76 × 46 footprint and mirrors with its own facing. Contact images expand briefly within the existing bounded effect lifetime.
-
-## Editing
-
-The source sheets and exact prompts are retained as the visual maintenance inputs:
-
-- [Nera poses](eclipse-foundry/painted/nera-poses.png) and [prompt](eclipse-foundry/painted/nera-poses.prompt.txt).
-- [Nera actions](eclipse-foundry/painted/nera-actions.png) and [prompt](eclipse-foundry/painted/nera-actions.prompt.txt).
-- [Kael poses](eclipse-foundry/painted/kael-poses.png) and [prompt](eclipse-foundry/painted/kael-poses.prompt.txt).
-- [Kael actions](eclipse-foundry/painted/kael-actions.png) and [prompt](eclipse-foundry/painted/kael-actions.prompt.txt).
-
-Source sheets can have uneven spacing: inspect and update explicit source rectangles and pivots in `painted/layout.json` rather than assuming a uniform grid. Unselected source poses are not loaded. Use the [shared cel-authoring guidance](../../../../docs/assets-themes.md#specify-artwork-before-integrating-it) when replacing drawings.
-
-Repack the committed fighter atlases with Node and the repository's installed Playwright Chromium:
+From the repository root, using Node and the installed Playwright Chromium:
 
 ```sh
+# New Normal and Quality whole-character sheets and inspected layout metadata
+node src/games/obsidian-duel/art/pack-fighters.mjs
+# Retained Assets fighter drawings
 node src/games/obsidian-duel/art/eclipse-foundry/painted/pack.mjs
-```
-
-The packer selects each complete connected silhouette where source bounding rectangles overlap, preserves its antialiased edge, normalizes support pivots and rejects any clipped destination cell. It performs no creative retouching or joint reconstruction.
-
-Edit stage and effects in `eclipse-foundry/generate.mjs`, then regenerate their SVGs:
-
-```sh
+# Assets arena and editable effect artwork
+node src/games/obsidian-duel/art/eclipse-foundry/pack.mjs
 node src/games/obsidian-duel/art/eclipse-foundry/generate.mjs
-```
-
-## Moonfall Sanctum
-
-Quality reuses the complete painted Nera and Kael atlases and their full set of semantic action cels. It adds an AI-generated illustrated arena and transparent effect artwork, with the original PNG sources and prompts in `moonfall-sanctum/sources/`. The [game guide](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction) owns the creative brief and visual hierarchy.
-
-| Image | Intrinsic size | Role |
-| --- | --- | --- |
-| `moonfall-sanctum/stage.webp` | 1600 × 896 | Moonlit observatory background, quiet mist behind fighters, unobstructed wet floor. Drawn in the same 1000 × 560 arena as the other themes. |
-| `eclipse-foundry/nera.png`, `kael.png` | 2560 × 2240 each | Shared complete-character atlases. Use the existing cel rectangles, stable pivots, authored visual footprints and semantic timing. |
-| `moonfall-sanctum/effects.png` | 768 × 768 | Four transparent 384-square cells in two rows: jade bolt, warm hit burst, blue guard seal, ground aura. Authored contact pivots live in `quality-art.ts`. |
-
-The original stage source is 1659 × 948 and the final transparent effects source is 1254 × 1254. [Stage prompt](moonfall-sanctum/sources/stage.prompt.txt) and [effects prompts](moonfall-sanctum/sources/effects.prompt.txt) preserve the intended artwork and atlas correction. The export scales complete images and preserves alpha. Export with local Chromium:
-
-```sh
+# Quality arena and eight-cell effects atlas
 node src/games/obsidian-duel/art/moonfall-sanctum/pack.mjs
 ```
 
-`quality-art.ts` validates decoded dimensions, maps effect cells to contact points and records the painted Crescent heel contact mark. For mist, reflections and contact composition, see the [Moonfall Sanctum brief](../../../../docs/games/obsidian-duel/README.md#moonfall-sanctum-art-direction).
+Changing source sheet layout requires inspecting and updating the owning packer and its recorded metadata together. Keep export operations mechanical; illustration defines body shape, clothing, anatomy and action.
+
+## Inspiration
+
+These are technique references, not artwork inputs:
+
+- [Akiman's Capcom interview](https://game.capcom.com/cfn/sfv/column-112429): deliberate action drawings and sprite budgets.
+- [Mariel Cartwright's animation talk](https://www.gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful): clear keys, anticipation, contact and recovery under combat timing constraints.
+- [Sifu combat VFX](https://clamz.artstation.com/projects/0lKKZV): contact shapes that communicate combat information.
