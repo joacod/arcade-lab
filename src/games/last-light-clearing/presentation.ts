@@ -4,7 +4,7 @@ import { orbitPosition } from './weapons/halo.ts';
 import type { Viewport } from './view.ts';
 import type { WorldPresentation, DisplaySize } from './world-presentation.ts';
 import { MAX_EFFECTS, visualTiming, type Theme } from './themes.ts';
-import { validateArtPack, clipFrame, type ActorRole, type Decoration } from './art-pack.ts';
+import { actorBounds, validateArtPack, clipFrame, type ActorArt, type ActorRole, type Decoration } from './art-pack.ts';
 import { actorAnimation, createAnimationObservations } from './animation.ts';
 import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
 import type { createEmberScene } from './ember-scene.ts';
@@ -40,6 +40,16 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
     ctx.strokeStyle = color; ctx.lineWidth = lineWidth;
     ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.stroke();
   }
+  function bodyRing(art: ActorArt, color: string, lineWidth: number) {
+    const bounds = actorBounds(art);
+    ctx.strokeStyle = color; ctx.lineWidth = lineWidth;
+    ctx.beginPath(); ctx.ellipse((bounds.left + bounds.right) / 2, (bounds.top + bounds.bottom) / 2,
+      (bounds.right - bounds.left) / 2 + 3, (bounds.bottom - bounds.top) / 2 + 3, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  function enemyArt(enemy: RunState['enemies'][number]) {
+    return enemies[enemy.kind].elite ? artPack!.actors.elite
+      : enemy.kind === 'charger' ? artPack!.actors.charger ?? artPack!.actors.crawler : artPack!.actors.crawler;
+  }
   function stamp(definition: Decoration, time: number) {
     const { image, rect: [sx, sy, sw, sh] } = clipFrame(definition.clip, time);
     const source = images[image] ?? baseline?.images[image];
@@ -68,21 +78,38 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
     light.addColorStop(0, palette.light + '22'); light.addColorStop(1, palette.light + '00');
     circle(x, y, 90, light);
     if (!quality) { ring(x, y, 19, '#07101c', 3); ring(x, y, 19, palette.light, 1); }
-    if (run.player.shield > 0) ring(x, y, 23, palette.spark, 1.5);
-    if (ember) ember.shadow(ctx, x, y + 6, 13);
-    else circle(x, y + 6, 13, '#09151370');
+    const art = artPack!.actors.keeper;
+    if (run.player.shield > 0 && !quality) ring(x, y, 23, palette.spark, 1.5);
+    if (!ember) circle(x, y + 6, 13, '#09151370');
     ctx.save();
     ctx.translate(x, y);
-    if (quality) { ctx.shadowColor = '#ffca7b60'; ctx.shadowBlur = 8; }
+    if (quality && run.player.shield > 0) bodyRing(art, palette.spark, 1.5);
     sprite('keeper', 'keeper', run.elapsed, clearing.keeper.radius, palette.light,
       effects.findLast(effect => effect.type === 'player-hit')?.at, effects.findLast(effect => effect.type === 'shot')?.at);
     if (effects.some(effect => effect.type === 'player-hit' && run.elapsed - effect.at < visualTiming.hit)) {
-      ring(0, 0, 16, palette.hit, 3);
+      if (quality) bodyRing(art, palette.hit, 2);
+      else ring(0, 0, 16, palette.hit, 3);
     }
     ctx.restore();
 
     // A steady lantern core remains readable at narrow viewport scales.
     if (!quality && artPack?.sampling !== 'nearest') circle(x, y, 5, palette.light);
+  }
+  function drawHalos(run: Readonly<RunState>, behind: boolean) {
+    const palette = theme.palette;
+    for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
+      for (let index = 0; index < haloLights(slot.rank); index++) {
+        const at = orbitPosition(run, slot, index);
+        if (quality && (at.y < run.player.y) !== behind) continue;
+        ember?.light(ctx, at.x, at.y, 20, palette.halo, .6);
+        if (artPack?.objects?.halo) {
+          ctx.save(); ctx.translate(at.x, at.y); stamp(artPack.objects.halo, run.elapsed); ctx.restore();
+        } else {
+          circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
+          circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
+        }
+      }
+    }
   }
   function environment(time: number) {
     const environment = artPack!.environment!;
@@ -209,29 +236,46 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
         ctx.moveTo(entry.x, entry.y - 8); ctx.lineTo(entry.x, entry.y + 8); ctx.stroke();
       }
       effects = effects.filter(effect => run.elapsed - effect.at < visualTiming.defeat);
+      // Range tracks stay on the floor; rear spell bodies pass behind the Keeper.
+      for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
+        ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
+      }
+      if (quality) drawHalos(run, true);
+      const keeperGround = run.player.y + actorBounds(artPack!.actors.keeper).groundY;
+      if (ember) {
+        const ground = actorBounds(artPack!.actors.keeper);
+        ember.shadow(ctx, run.player.x + ground.groundX, keeperGround, 11);
+        for (const enemy of run.enemies) {
+          const ground = actorBounds(enemyArt(enemy));
+          ember.shadow(ctx, enemy.x + ground.groundX, enemy.y + ground.groundY, enemies[enemy.kind].radius * .8);
+        }
+      }
       let keeperDrawn = false;
-      for (const enemy of quality ? [...run.enemies].sort((a, b) => a.y - b.y) : run.enemies) {
-        if (quality && !keeperDrawn && enemy.y > run.player.y) { drawKeeper(run); keeperDrawn = true; }
+      for (const enemy of quality ? [...run.enemies].sort((a, b) =>
+        a.y + actorBounds(enemyArt(a)).groundY - b.y - actorBounds(enemyArt(b)).groundY) : run.enemies) {
+        const art = enemyArt(enemy), bounds = actorBounds(art);
+        if (quality && !keeperDrawn && enemy.y + bounds.groundY > keeperGround) { drawKeeper(run); keeperDrawn = true; }
         const hit = effects.some(effect => effect.type === 'enemy-hit'
           && run.elapsed - effect.at < visualTiming.hit
           && effect.enemyId === enemy.id);
         const data = enemies[enemy.kind];
-        if (ember) ember.shadow(ctx, enemy.x, enemy.y + 5, data.radius);
-        else circle(enemy.x, enemy.y + data.radius * 0.65, artPack?.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
+        if (!ember) circle(enemy.x, enemy.y + data.radius * 0.65, artPack?.sampling === 'nearest' ? data.radius * 0.8 : data.radius + 3, '#030a1666');
         ctx.save(); ctx.translate(enemy.x, enemy.y);
         if (enemy.entryDelay > 0) ctx.globalAlpha = 0.4;
         sprite(data.elite ? 'elite' : enemy.kind === 'charger' ? 'charger' : 'crawler', enemy.id, run.elapsed, data.radius, data.elite ? palette.elite : palette.enemy,
           effects.findLast(effect => effect.type === 'enemy-hit' && effect.enemyId === enemy.id)?.at);
-        if (hit) { ctx.globalAlpha = 0.85; ring(0, 0, data.radius + 2, palette.hit, 2); }
+        if (hit) { ctx.globalAlpha = 0.85;
+          if (quality) bodyRing(art, palette.hit, 1.5);
+          else ring(0, 0, data.radius + 2, palette.hit, 2);
+        }
         ctx.restore();
         if (data.elite) {
           ctx.fillStyle = palette.elite; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-          const art = artPack?.actors.elite;
-          ctx.fillText(data.name, enemy.x, enemy.y - Math.max(32, art ? art.footprint[1] * art.anchor[1] + 8 : 0));
+          ctx.fillText(data.name, enemy.x, enemy.y + (quality ? bounds.top - 12 : -Math.max(32, art.footprint[1] * art.anchor[1] + 8)));
         }
         if (enemy.health < data.maxHealth) {
-          const art = artPack?.actors[data.elite ? 'elite' : enemy.kind === 'charger' && artPack.actors.charger ? 'charger' : 'crawler'];
-          const barY = enemy.y - Math.max(data.radius + 8, art ? art.footprint[1] * art.anchor[1] + 3 : 0);
+          const barY = enemy.y + (quality ? bounds.top - 7 : -Math.max(data.radius + 8, art.footprint[1] * art.anchor[1] + 3));
           ctx.fillStyle = '#1b2524'; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2, 3);
           ctx.fillStyle = palette.damage; ctx.fillRect(enemy.x - data.radius, barY, data.radius * 2 * enemy.health / data.maxHealth, 3);
         }
@@ -247,20 +291,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
           if (image) ctx.drawImage(image, gem.x - 7, gem.y - 7, 14, 14);
         }
       }
-      for (const slot of run.loadout) if (weapons[slot.base].behavior === 'orbit') {
-        ctx.strokeStyle = palette.halo + '55'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(run.player.x, run.player.y, weapons[slot.base].radius, 0, Math.PI * 2); ctx.stroke();
-        for (let index = 0; index < haloLights(slot.rank); index++) {
-          const at = orbitPosition(run, slot, index);
-          ember?.light(ctx, at.x, at.y, 28, palette.halo, .9);
-          if (artPack?.objects?.halo) {
-            ctx.save(); ctx.translate(at.x, at.y); stamp(artPack.objects.halo, run.elapsed); ctx.restore();
-          } else {
-            circle(at.x, at.y, weapons[slot.base].hitRadius + 3, '#111c29');
-            circle(at.x, at.y, weapons[slot.base].hitRadius, palette.halo);
-          }
-        }
-      }
+      drawHalos(run, false);
       for (const projectile of run.projectiles) {
         ember?.light(ctx, projectile.x, projectile.y, 24, projectile.weapon === 'shard' ? palette.shard : palette.spark, .8);
         if (projectile.weapon === 'shard') {
@@ -277,6 +308,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
         circle(projectile.x, projectile.y, weapons[projectile.weapon].hitRadius, arc ? palette.shard : palette.spark);
       }
       for (const effect of effects) {
+        if (quality && (effect.type === 'enemy-hit' || effect.type === 'player-hit')) continue;
         const age = run.elapsed - effect.at;
         const duration = effect.type === 'pickup' ? visualTiming.pickup : effect.type === 'enemy-defeated' ? visualTiming.defeat
           : effect.type === 'pulse' ? visualTiming.pulse

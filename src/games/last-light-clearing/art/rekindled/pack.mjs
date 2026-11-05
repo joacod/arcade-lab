@@ -1,55 +1,45 @@
-import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { chromium } from '@playwright/test';
+import { readFile, writeFile } from 'node:fs/promises';
+import sharp from 'sharp';
 
-// Pack complete authored cels. This only aligns and resamples drawings, never builds anatomy.
-const browser = await chromium.launch();
-const page = await browser.newPage();
+// Whole authored cels retain their registered ground line, including passing poses.
+// Alpha bounds only trim transparent storage; they never choose an animation pivot.
+const directory = new URL('./', import.meta.url);
+const registrations = JSON.parse(await readFile(new URL('registration.json', directory), 'utf8'));
 const layout = {};
-try {
-  for (const name of ['keeper', 'goblins', 'elite', 'props']) {
-    const columns = name === 'props' ? 3 : 4;
-    const source = readFileSync(new URL(`sources/${name}.png`, import.meta.url));
-    const result = await page.evaluate(async ({ data, columns, props }) => {
-      const image = new Image(); image.src = `data:image/png;base64,${data}`; await image.decode();
-      const cw = image.width / columns, ch = image.height / 2;
-      if (!Number.isInteger(cw) || !Number.isInteger(ch)) throw new Error('Source grid is not integral');
-      const sourceCanvas = document.createElement('canvas'); sourceCanvas.width = image.width; sourceCanvas.height = image.height;
-      const sc = sourceCanvas.getContext('2d'); sc.drawImage(image, 0, 0);
-      const frames = [];
-      for (let row = 0; row < 2; row++) for (let column = 0; column < columns; column++) {
-        const pixels = sc.getImageData(column * cw, row * ch, cw, ch).data;
-        let left = cw, right = 0, top = ch, bottom = 0;
-        for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (pixels[(y * cw + x) * 4 + 3] > 32) {
-          left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
-        }
-        if (right <= left || bottom <= top) throw new Error('Empty cel');
-        frames.push({ row, column, bounds: [left, top, right + 1, bottom + 1] });
-      }
-      const canvas = document.createElement('canvas'); canvas.width = columns * 256; canvas.height = 512;
-      const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      const sharedScale = Math.min(220 / Math.max(...frames.map(f => f.bounds[2] - f.bounds[0])), 216 / Math.max(...frames.map(f => f.bounds[3] - f.bounds[1])));
-      for (const frame of frames) {
-        const { column, row, bounds: [left, top, right, bottom] } = frame;
-        const scale = props ? Math.min(220 / (right - left), 216 / (bottom - top)) : sharedScale;
-        const center = props ? (left + right) / 2 : cw / 2;
-        const dy = props && row === 1 ? 128 - (top + bottom) / 2 * scale : 228 - bottom * scale;
-        const dx = 128 - center * scale;
-        ctx.save(); ctx.beginPath(); ctx.rect(column * 256, row * 256, 256, 256); ctx.clip();
-        ctx.drawImage(image, column * cw, row * ch, cw, ch, column * 256 + dx, row * 256 + dy, cw * scale, ch * scale);
-        ctx.restore();
-        frame.anchor = props && row === 1 ? [.5, .5] : [.5, .89];
-        frame.destination = [column * 256, row * 256, 256, 256]; frame.scale = Math.round(scale * 10000) / 10000;
-      }
-      return { png: canvas.toDataURL('image/png').split(',')[1], frames, sourceSize: [image.width, image.height] };
-    }, { data: source.toString('base64'), columns, props: name === 'props' });
-    const png = new URL(`${name}.png`, import.meta.url), webp = new URL(`${name}.webp`, import.meta.url);
-    writeFileSync(png, Buffer.from(result.png, 'base64'));
-    const converted = spawnSync('cwebp', ['-quiet', '-lossless', '-z', '9', png.pathname, '-o', webp.pathname], { stdio: 'inherit' });
-    unlinkSync(png);
-    if (converted.status !== 0) throw new Error(`Failed to export ${name}`);
-    layout[name] = { sourceSize: result.sourceSize, size: [columns * 256, 512], anchor: [.5, .89], frames: result.frames };
-    console.log(`Packed ${name}: ${columns * 256} × 512`);
+for (const [name, definition] of Object.entries(registrations)) {
+  const source = new URL(`sources/${name}.png`, directory);
+  const metadata = await sharp(source.pathname).metadata();
+  const { columns, rows } = definition;
+  const cw = metadata.width / columns, ch = metadata.height / rows.length;
+  if (!Number.isInteger(cw) || !Number.isInteger(ch)) throw new Error(`${name}: non-integral source grid`);
+  const layers = [], frames = [];
+  for (let row = 0; row < rows.length; row++) for (let column = 0; column < columns; column++) {
+    const registration = rows[row].frames?.[column] ?? rows[row];
+    const { pivot, destinationPivot, scale } = registration;
+    const cel = sharp(source.pathname).extract({ left: column * cw, top: row * ch, width: cw, height: ch });
+    const { data, info } = await cel.clone().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    let left = cw, right = 0, top = ch, bottom = 0;
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (data[(y * cw + x) * info.channels + 3] > 8) {
+      left = Math.min(left, x); right = Math.max(right, x + 1); top = Math.min(top, y); bottom = Math.max(bottom, y + 1);
+    }
+    if (right <= left || bottom <= top) throw new Error(`${name}: empty cel ${row},${column}`);
+    left = Math.max(0, left - 2); top = Math.max(0, top - 2);
+    right = Math.min(cw, right + 2); bottom = Math.min(ch, bottom + 2);
+    const width = Math.round((right - left) * scale), height = Math.round((bottom - top) * scale);
+    const dx = Math.round(destinationPivot[0] + (left - pivot[0]) * scale);
+    const dy = Math.round(destinationPivot[1] + (top - pivot[1]) * scale);
+    if (dx < 0 || dy < 0 || dx + width > 256 || dy + height > 256) throw new Error(`${name}: registered cel exceeds its frame ${row},${column}`);
+    const input = await sharp(source.pathname).extract({ left: column * cw + left, top: row * ch + top,
+      width: right - left, height: bottom - top }).resize(width, height).png().toBuffer();
+    layers.push({ input, left: column * 256 + dx, top: row * 256 + dy });
+    frames.push({ row, column, bounds: [left, top, right, bottom], pivot, destinationPivot, scale,
+      destination: [column * 256, row * 256, 256, 256], visible: [dx, dy, width, height] });
   }
-  writeFileSync(new URL('layout.json', import.meta.url), `${JSON.stringify(layout, null, 2)}\n`);
-} finally { await browser.close(); }
+  await sharp({ create: { width: columns * 256, height: rows.length * 256, channels: 4, background: '#00000000' } })
+    .composite(layers).webp({ lossless: true, effort: 6 }).toFile(new URL(`${name}.webp`, directory).pathname);
+  layout[name] = { sourceSize: [metadata.width, metadata.height], size: [columns * 256, rows.length * 256], frames };
+  console.log(`Packed ${name}`);
+}
+await writeFile(new URL('layout.json', directory), `${JSON.stringify(layout, null, 2)}\n`);
+await sharp(new URL('ground-source.png', directory).pathname).removeAlpha()
+  .webp({ quality: 88, effort: 6 }).toFile(new URL('ground.webp', directory).pathname);

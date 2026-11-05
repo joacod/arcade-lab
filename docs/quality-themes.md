@@ -33,6 +33,8 @@ For raster artwork, define its role before creating it. A background plate shoul
 
 Describe AI-generated images simply as AI-generated. Retain useful creative briefs, prompts, asset specifications (dimensions, export settings and intended roles), layouts and editable sources to reproduce the intended visual result with appropriate tools. Omit generation tools, models, providers, harnesses, services, versions and production dates. Preserve code-native artwork or its generator. Keep regeneration separate from runtime loading; a fresh clone must work without generation services. Optimize the shipped image after visual inspection and validate its decoded dimensions before activation.
 
+Match visible silhouettes and their registration to the established gameplay scale, rather than comparing source-canvas dimensions. If the art must read smaller, redesign proportions, material shapes and detail for that size. Keep the gameplay anchor distinct from an authored foot-contact point. Preserve registered pivots across an animation sequence; aligning every cel by its lowest opaque pixel can erase intended passing poses and create sliding. Check body-centered spells and protective outlines against the full silhouette without moving their physical geometry.
+
 ## Build one coherent presentation
 
 Keep one authoritative uniform world-to-screen transform. Painted perspective and layered scenery can add depth without moving projected collision centers. Decorative depth, shapes, shadows, glow and screen-space effects never determine physical geometry. Avoid camera shake or parallax on collision-critical layers. Multiple layers should consume the same run, semantic action samples and transform rather than independently reconstructing anatomy or gameplay cues.
