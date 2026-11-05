@@ -8,8 +8,8 @@ export const blastSheets = { operators: [320,512], enemies: [192,192], objects: 
 export function validateBlastArt(dimensions: ImageDimensions) {
   return Object.entries(blastSheets).flatMap(([key,[width,height]]) => dimensions[key]?.width === width && dimensions[key].height === height ? [] : [`Invalid Blastline ${key}`]);
 }
-export function operatorCel(airborne: boolean, stride: number, reduced: boolean, aimX: number, aimY: number) {
+export function operatorCel(airborne: boolean, moving: boolean, phase: number, reduced: boolean, aimX: number, aimY: number) {
   const aim = aimY < -.4 ? Math.abs(aimX) < .4 ? 0 : 1 : aimY > .4 ? Math.abs(aimX) < .4 ? 4 : 3 : 2;
-  const state = airborne ? 3 : reduced ? 0 : Math.abs(Math.sin(stride)) < .3 ? 0 : Math.sin(stride) > 0 ? 1 : 2;
-  return { aim, state };
+  const state = airborne ? 3 : reduced || !moving ? 0 : phase < .5 ? 1 : 2;
+  return { aim, state, runFrame: Math.min(5, Math.floor(phase * 6)) };
 }

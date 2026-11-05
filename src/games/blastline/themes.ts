@@ -10,10 +10,15 @@ export interface BlastTheme {
   readonly armor: readonly [string, string];
   readonly ledge: string;
 }
-export type Appearance = 'normal';
+export type Appearance = 'normal' | 'assets';
+export const appearanceNames = { normal: 'Iron coast', assets: 'Ember Coast' } as const;
 export const themes: Readonly<Record<Appearance, BlastTheme>> = {
   normal: {
     sky: ['#253f4b', '#ad8465', '#293e42'], foundrySky: ['#202b3a', '#765447', '#293e42'], skyline: ['#394a50', '#2b4248', '#263c42'],
     sun: '#eccd8c', weather: 'ash', structure: ['#1a323d', '#2e4850'], masonry: ['#776f57', '#a1906d'], armor: ['#71594e', '#92705a'], ledge: '#77918a',
+  },
+  assets: {
+    sky: ['#263b50', '#cf886b', '#243e48'], foundrySky: ['#222f43', '#a46654', '#233942'], skyline: ['#50606a', '#344e58', '#253e48'],
+    sun: '#f2cc8c', weather: 'ash', structure: ['#192f40', '#354d59'], masonry: ['#795844', '#ba9561'], armor: ['#67473f', '#9c6850'], ledge: '#9fb9ad',
   },
 };

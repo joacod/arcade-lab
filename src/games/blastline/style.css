@@ -1,5 +1,12 @@
 .blast-app { --menu-accent: #f0c181; width:100%; height:100%; min-height:0; display:flex; flex-direction:column; overflow:hidden; background:#15262d; color:#e9ddc3; font-family:'Avenir Next',Avenir,system-ui,sans-serif; }
 .blast-app, .blast-app * { box-sizing:border-box; }
+.blast-app[data-appearance=assets] { --menu-accent:#edb86b; background:#172b37; color:#f0d9af; }
+.blast-app[data-appearance=assets] .blast-hud,
+.blast-app[data-appearance=assets] .blast-footer { background:linear-gradient(90deg,#172b37,#263b44); border-color:#d69b584d; }
+.blast-app[data-appearance=assets] .blast-emblem { background:#edb86b; box-shadow:inset 0 0 0 3px #a66f42; }
+.blast-app[data-appearance=assets] .blast-route { background:#203641; border-color:#d69b5866; }
+.blast-app[data-appearance=assets] .blast-progress { background:#dca86020; border-color:#edb86b; }
+.blast-app[data-appearance=assets] .blast-topline { color:#ffe3b2b0; text-shadow:1px 1px #19313d; }
 .blast-app [hidden] { display:none!important; }
 .blast-app button { color:inherit; background:#243a40; border:1px solid #a9bc9d44; font:600 11px system-ui; cursor:pointer; min-height:40px; padding:10px 15px; }
 .blast-app button:hover { background:#3f5149; border-color:#efbd72; }
