@@ -4,6 +4,14 @@ import { readFileSync } from 'node:fs';
 import { foundryFrame, foundryClips, foundrySheets, validateFoundryArt } from '../../../../src/games/obsidian-duel/asset-art.ts';
 import { duelClips } from '../../../../src/games/obsidian-duel/animation.ts';
 
+function webpSize(image) {
+  assert.equal(image.toString('ascii', 0, 4), 'RIFF');
+  assert.equal(image.toString('ascii', 8, 12), 'WEBP');
+  if (image.toString('ascii', 12, 16) === 'VP8X') return { width: image.readUIntLE(24, 3) + 1, height: image.readUIntLE(27, 3) + 1 };
+  assert.equal(image.toString('ascii', 12, 16), 'VP8 ');
+  return { width: image.readUInt16LE(26) & 0x3fff, height: image.readUInt16LE(28) & 0x3fff };
+}
+
 test('Eclipse Foundry committed artwork covers every whole-body cel and rejects incomplete bundles', () => {
   const dimensions = Object.fromEntries(Object.keys(foundrySheets).map(name => {
     if (name === 'nera' || name === 'kael') {
@@ -11,6 +19,7 @@ test('Eclipse Foundry committed artwork covers every whole-body cel and rejects 
       assert.equal(png.subarray(1, 4).toString(), 'PNG'); assert.equal(png[25], 6, 'RGBA keeps transparent sprite silhouettes');
       return [name, { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }];
     }
+    if (name === 'stage') return [name, webpSize(readFileSync(new URL('../../../../src/games/obsidian-duel/art/eclipse-foundry/stage.webp', import.meta.url)))];
     const svg = readFileSync(new URL(`../../../../src/games/obsidian-duel/art/eclipse-foundry/${name}.svg`, import.meta.url), 'utf8');
     const root = svg.match(/<svg[^>]+width="(\d+)"[^>]+height="(\d+)"/);
     assert.ok(root, name);
@@ -41,14 +50,12 @@ test('Eclipse Foundry committed artwork covers every whole-body cel and rejects 
   }
 });
 
-test('Moonfall Sanctum ships decodable arena/effect artwork and validates the shared complete fighter atlases', async () => {
+test('Moonfall Sanctum ships its own detailed fighter and eight-effect atlases', async () => {
   const { sanctumSheets, sanctumEffects, validateSanctumArt } = await import('../../../../src/games/obsidian-duel/quality-art.ts');
   const stage = readFileSync(new URL('../../../../src/games/obsidian-duel/art/moonfall-sanctum/stage.webp', import.meta.url));
-  assert.equal(stage.toString('ascii', 0, 4), 'RIFF');
-  assert.equal(stage.toString('ascii', 8, 16), 'WEBPVP8X');
-  const dimensions = { stage: { width: stage.readUIntLE(24, 3) + 1, height: stage.readUIntLE(27, 3) + 1 } };
+  const dimensions = { stage: webpSize(stage) };
   for (const name of ['nera', 'kael', 'effects']) {
-    const folder = name === 'effects' ? 'moonfall-sanctum' : 'eclipse-foundry';
+    const folder = 'moonfall-sanctum';
     const png = readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${name}.png`, import.meta.url));
     assert.equal(png[25], 6, 'Preserve transparent silhouettes and glows');
     dimensions[name] = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
@@ -62,5 +69,40 @@ test('Moonfall Sanctum ships decodable arena/effect artwork and validates the sh
   for (const frame of sanctumEffects) {
     assert.ok(frame.x >= 0 && frame.y >= 0 && frame.x + 384 <= dimensions.effects.width && frame.y + 384 <= dimensions.effects.height);
     assert.ok(frame.pivotX > 0 && frame.pivotX < 384 && frame.pivotY > 0 && frame.pivotY < 384, 'Contact anchors remain inside authored cels');
+  }
+});
+
+
+test('Normal, Assets and Quality own distinct complete artwork with valid semantic coverage', async () => {
+  const { fighterImages, validateDuelSprites } = await import('../../../../src/games/obsidian-duel/asset-art.ts');
+  for (const kind of ['nera', 'kael']) {
+    assert.ok(fighterImages[kind].includes('/tempest-citadel/'), 'Normal must never fall back to loading a polished fighter atlas');
+    const images = ['tempest-citadel', 'eclipse-foundry', 'moonfall-sanctum'].map(folder =>
+      readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}.png`, import.meta.url)));
+    for (let i = 0; i < images.length; i++) for (let j = i + 1; j < images.length; j++) assert.ok(!images[i].equals(images[j]), 'Each mode requires independent actor artwork');
+  }
+  for (const folder of ['tempest-citadel', 'moonfall-sanctum']) {
+    const layout = JSON.parse(readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/layout.json`, import.meta.url)));
+    const dimensions = {};
+    for (const kind of ['nera', 'kael']) {
+      const png = readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}.png`, import.meta.url));
+      assert.equal(png[25], 6);
+      dimensions[kind] = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+      const source = layout.fighters[kind];
+      assert.equal(source.frames.length, 36);
+      for (const { rect: [x, y, w, h], pivot: [px, py] } of source.frames) {
+        assert.ok(w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= source.size[0] && y + h <= source.size[1]);
+        assert.ok(px >= x && px <= x + w && py >= y && py <= y + h);
+      }
+    }
+    assert.deepEqual(validateDuelSprites(dimensions), []);
+    for (const [clip, count] of Object.entries(duelClips)) {
+      assert.equal(layout.clips[clip].length, count);
+      for (const index of layout.clips[clip]) assert.ok(index >= 0 && index < 36);
+      if (['light', 'heavy', 'sweep', 'air', 'special'].includes(clip)) {
+        assert.notEqual(layout.clips[clip][2], layout.clips[clip][3], 'Anticipation and contact require distinct drawings');
+        assert.notEqual(layout.clips[clip][4], layout.clips[clip][5], 'Recovery retracts the contact drawing');
+      }
+    }
   }
 });

@@ -62,7 +62,7 @@ test('Eclipse Foundry replaces the complete presentation while retaining the due
   expect(await page.evaluate(() => (window as any).retainedDuel === (window as any).duelProbe)).toBe(true);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).not.toBe(normal);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
-    .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [512, 128]]);
+    .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [512, 256]]);
   await chooseOption(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);
@@ -156,7 +156,8 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
   expect(await page.evaluate(() => (window as any).duelContexts.length)).toBe(0);
   expect(requests.filter(url => /three|vgpu/.test(url))).toEqual([]);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
-    .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [768, 768]]);
+    .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [1536, 768]]);
+  expect(await page.evaluate(() => (window as any).duelImages.filter((image: HTMLImageElement) => /\/(nera|kael)\.png/.test(image.src)).every((image: HTMLImageElement) => image.src.includes('moonfall-sanctum')))).toBe(true);
   expect(await page.evaluate(() => (window as any).duelProbe === (window as any).retainedDuel)).toBe(true);
   await page.clock.runFor(50);
   const image = await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL());
@@ -255,5 +256,37 @@ for (const action of ['normal', 'resume', 'quit'] as const) test(`late Quality i
     await expect(theme).toHaveAttribute('value', 'normal');
     await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'normal');
     if (action === 'normal') expect(await state(page)).toBe(frozen);
+  }
+});
+
+test('combat artwork confirms actual contact and keeps special release and knockdown free of false hit bursts', async ({ page }) => {
+  await page.route(/\/src\/games\/obsidian-duel\/presentation\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const originalDrawing = createPresentation; createPresentation = (...args) => {
+        const drawing = originalDrawing(...args); window.duelDrawing = drawing; return drawing;
+      };` });
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openDuel(page);
+  for (const mode of ['normal', 'assets', 'quality']) {
+    if (mode !== 'normal') {
+      await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), mode);
+      await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', mode);
+    }
+    const result = await page.evaluate(() => {
+      const drawing = (window as any).duelDrawing, match = (window as any).duelProbe;
+      const before = JSON.stringify(match), canvas = document.querySelector('canvas')!;
+      const { width, height } = canvas.getBoundingClientRect(), host = { width, height, ratio: devicePixelRatio };
+      const paint = () => { drawing.draw(match, host, 'paused', 0); return canvas.toDataURL(); };
+      const event = { x: 500, z: 92, fighter: 1, strength: 1 };
+      drawing.reset(); paint(); const baseline = paint();
+      drawing.consume([{ ...event, type: 'special' }, { ...event, type: 'knockdown' }]);
+      const release = paint();
+      drawing.consume([{ ...event, type: 'hit' }]); const hit = paint();
+      drawing.reset(); drawing.consume([{ ...event, type: 'block' }]); const block = paint();
+      return { releaseUnchanged: release === baseline, hitVisible: hit !== baseline, guardDistinct: block !== hit && block !== baseline, unchangedMatch: before === JSON.stringify(match) };
+    });
+    expect(result, mode).toEqual({ releaseUnchanged: true, hitVisible: true, guardDistinct: true, unchangedMatch: true });
   }
 });

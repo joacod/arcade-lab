@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
-  for (const [name, width, height, format] of [['stage', 1600, 896, 'webp'], ['effects', 768, 768, 'png']]) {
+  for (const [name, width, height, format] of [['stage', 1600, 896, 'webp'], ['effects', 1536, 768, 'png']]) {
     const source = readFileSync(new URL(`sources/${name}.png`, import.meta.url)).toString('base64');
     const encoded = await page.evaluate(async ({ source, width, height, format }) => {
       const image = new Image(); image.src = `data:image/png;base64,${source}`; await image.decode();

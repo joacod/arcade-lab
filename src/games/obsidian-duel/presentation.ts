@@ -1,7 +1,7 @@
 import { createImageResource } from '../../engine/browser/images.ts';
 import { fighterImages, validateDuelSprites } from './asset-art.ts';
 import { themes, type DuelTheme } from './themes.ts';
-import { arena } from './content.ts';
+import { arena, fighters } from './content.ts';
 import type { DuelEvent, Fighter, Match } from './game.ts';
 import type { Screen } from './ui.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
@@ -64,59 +64,26 @@ export function createPresentation(surface: HTMLElement) {
       }
       return;
     }
-    const sky = ctx.createLinearGradient(0, 0, 0, 560); sky.addColorStop(0, theme.sky[0]); sky.addColorStop(.6, theme.sky[1]); sky.addColorStop(1, theme.sky[2]); rect(0, 0, 1000, 560, sky);
-    glow(570, 143, 240, '#a799d034'); oval(570, 143, 55, 55, theme.orb[0]); oval(570, 143, 48, 48, theme.orb[1]);
-    path([524,135,552,148,537,165,574,155,587,177,599,142,621,126], '#9b9aaa55', 2);
-    // Authored mountain silhouettes and an ancient ring suspended over the dueling terrace.
-    path([0,278,63,205,127,261,203,151,275,243,365,190,470,284,580,234,690,272,778,165,863,237,952,174,1000,216,1000,440,0,440], theme.mountains[0], 1, true);
-    path([0,333,109,260,203,314,292,239,352,309,465,275,593,327,735,274,840,321,934,265,1000,314,1000,440,0,440], theme.mountains[1], 1, true);
-    ctx.strokeStyle = '#a09aaf2c'; ctx.lineWidth = 15; ctx.beginPath(); ctx.arc(570, 250, 165, Math.PI * 1.08, Math.PI * 1.93); ctx.stroke();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#d4bda34a'; ctx.beginPath(); ctx.arc(570, 250, 178, Math.PI * 1.08, Math.PI * 1.93); ctx.stroke();
-    for (let i = 0; i < 12; i++) { const a = Math.PI * (1.12 + i * .07); path([570 + Math.cos(a)*159,250+Math.sin(a)*159,570+Math.cos(a)*172,250+Math.sin(a)*172], '#bba28666', 3); }
-    // Storm filaments glow continuously; reduced motion removes the periodic lightning flourish.
-    const storm = theme.weather === 'dawn' ? 0 : reduced ? .12 : .10 + Math.pow(Math.max(0, Math.sin(t * .65)), 20) * .38;
-    ctx.globalAlpha = storm;
-    path([770,0,732,52,758,65,713,116,737,125,699,185], '#d4bafb', 3);
-    path([170,0,196,42,181,61,215,94,194,113], '#a3c9f4', 2); ctx.globalAlpha = 1;
-    for (let i = 0; i < 6; i++) {
-      const drift = reduced ? 0 : Math.sin(t * .055 + i) * 28;
-      oval(i * 220 - 35 + drift, 93 + i % 3 * 31, 190, 19 + i * 2, theme.clouds[i % 2 ? 0 : 1]);
-    }
-    // Rear balustrade, worn bronze pillars and fluttering storm banners.
-    rect(0,350,1000,9,'#5d5259'); rect(0,359,1000,6,'#211f2e');
-    for (let i=0;i<21;i++) { const x=i*50; path([x,360,x+10,360,x+9,400,x+16,408,x-6,408,x+2,400], '#323240',1,true); }
-    rect(0,408,1000,12,'#504852');
-    for (const x of [40, 920]) {
-      rect(x-12,147,52,273,'#202432'); rect(x-4,158,35,250,'#383746'); rect(x+2,163,5,240,'#55505b');
-      path([x-24,144,x+52,144,x+43,126,x-15,126], '#66606b',1,true);
-      rect(x-17,119,62,8,'#8b7880'); rect(x-21,412,72,14,'#76636b');
-      const flutter = reduced ? 0 : Math.sin(t*1.4+x)*7;
-      path([x+24,156,x+80,161,x+78+flutter,287,x+51,268,x+24,298], theme.banner,1,true);
-      path([x+48,184,x+62,205,x+48,226,x+34,205], '#d0a67f66',2);
-      glow(x+14,320,70,'#ffae6d25');
-      path([x-4,326,x+32,326,x+24,343,x+3,343], '#88706b',1,true);
-      for (let j=0;j<3;j++) { const f = reduced ? 0 : Math.sin(t*5+j+x)*4; path([x+2+j*8,327,x+1+j*8+f,300-j*6,x+13+j*7,323],j===1?'#ffdf9c':'#d9946e',1,true); }
-    }
-    const floor = ctx.createLinearGradient(0,420,0,560); floor.addColorStop(0,theme.floor[0]); floor.addColorStop(.2,theme.floor[1]); floor.addColorStop(1,theme.floor[2]); rect(0,420,1000,140,floor);
-    path([0,423,1000,423], '#b5a19366',2); path([0,432,1000,432], '#171d2b',3);
-    for (let i=0;i<12;i++) path([500+(i-6)*66,423,500+(i-6)*140,560], '#151b2c77',1.5);
-    for (const y of [453,490,546]) path([0,y,1000,y], '#74637744',1);
-    // Inlaid dueling ring, cracks and rain-slick reflections are cosmetic only.
-    ctx.strokeStyle='#b99a794d'; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(500,458,286,30,0,0,Math.PI*2);ctx.stroke();
-    ctx.beginPath();ctx.ellipse(500,458,264,23,0,0,Math.PI*2);ctx.stroke();
-    path([500,441,516,458,500,475,484,458,500,441], '#b99a7966',1);
-    path([170,471,205,485,191,496,230,515,215,540], '#14192b',2);
-    path([825,427,803,451,815,468,778,479], '#14192b',2);
-    for(let i=0;i<14;i++) {const x=(i*97)%1000;path([x,448+i%4*23,x+30+i%3*12,448+i%4*23], '#c0a7ad15',2);}
-    const vignette=ctx.createRadialGradient(500,310,180,500,310,620);vignette.addColorStop(0,'#080d1800');vignette.addColorStop(1,'#080d18b3');rect(0,0,1000,560,vignette);
+    // Normal deliberately leaves the lane quiet: simple sky, distant citadel and a flat terrace.
+    const sky = ctx.createLinearGradient(0, 0, 0, 440);
+    sky.addColorStop(0, theme.sky[0]); sky.addColorStop(1, theme.sky[1]);
+    rect(0, 0, 1000, 560, sky);
+    oval(570, 135, 43, 43, '#b7bacd');
+    path([0,330,110,275,240,326,360,243,500,318,650,261,780,323,900,271,1000,320,1000,440,0,440], theme.mountain, 1, true);
+    rect(0, 383, 1000, 57, '#252b3b');
+    rect(0, 383, 1000, 6, '#626477');
+    for (const x of [32, 932]) { rect(x, 225, 36, 215, '#262b3c'); rect(x - 7, 219, 50, 10, '#666479'); }
+    rect(0, 420, 1000, 140, theme.floor);
+    path([0, 440, 1000, 440], '#a6a4b1', 2);
+    path([0, 494, 1000, 494], '#272938', 1);
   }
-  function drawFighter(f: Fighter, _index: number, time: number, reduced: boolean, sample: AnimationSample) {
+  function drawFighter(f: Fighter, time: number, reduced: boolean, sample: AnimationSample) {
     const nera=f.kind==='nera', down=f.state==='knockdown'||f.state==='ko';
     const base=arena.floor;
     const s=f.attack, active=f.state==='active', wind=f.state==='startup';
     ctx.save();
     oval(f.x,base+4,down?69:48,8, '#080d1e88');
-    if (art && !down) { ctx.save(); ctx.globalAlpha=quality?.18:.24; if(quality)quality.effect(3,f.x,base+4,155,95);else drawFoundryEffect(ctx,art,3,f.x,base+4,112,20); ctx.restore(); }
+    if (art && !down) { ctx.save(); ctx.globalAlpha=quality?.18:.24; if(quality)quality.effect(3,f.x,base+4,145,22);else drawFoundryEffect(ctx,art,3,f.x,base+4,112,20); ctx.restore(); }
     glow(f.x,base+10,76,nera?'#7debdc0d':'#ffc08d0b');
     ctx.translate(f.x,base-f.z);ctx.scale(f.facing,1);ctx.lineCap='round';ctx.lineJoin='round';
     if(f.immune>0&&!down) { ctx.globalAlpha=reduced?.9:.83+.17*Math.sin(time*35); }
@@ -124,12 +91,26 @@ export function createPresentation(surface: HTMLElement) {
     const sprites = art ?? baseline.images;
     if (sprites[f.kind]) drawFoundryFighter(ctx, sprites, f.kind, sample);
     else oval(0,-65,25,65,theme.fighters[f.kind].cloth);
-    if(active&&s&&!quality){
-      ctx.globalAlpha=.5;ctx.strokeStyle=trim;ctx.lineWidth=s.kind==='heavy'?6:3;ctx.beginPath();
-      if(s.kind==='sweep')ctx.ellipse(47,-12,65,15,0,-1.4,1.2);
-      else ctx.arc(12,-92,s.kind==='heavy'?99:76,-.9,.45);ctx.stroke();ctx.globalAlpha=1;
+    if (active && s) {
+      const move = fighters[f.kind].attacks[s.kind];
+      if (art && !(nera && s.kind === 'special')) {
+        // Trails describe the committed move, including a miss; contact bursts require a hit event.
+        const cell = s.kind === 'sweep' ? 6 : s.kind === 'air' ? 7 : nera && s.kind === 'heavy' ? 4 : 5;
+        const x = cell === 5 ? move.reach : move.reach * .57;
+        const y = cell === 6 ? -14 : cell === 4 ? -111 : -91;
+        const width = cell === 5 ? move.reach * 1.1 : move.reach;
+        ctx.globalAlpha = reduced ? .32 : .58;
+        if (quality) quality.effect(cell, x, y, width, cell === 6 ? 34 : cell === 5 ? 65 : 116);
+        else drawFoundryEffect(ctx, art, cell, cell === 5 ? x - width / 2 : x, y, width, cell === 6 ? 28 : 80);
+      } else if (!art && s.kind !== 'special') {
+        ctx.globalAlpha = .45; ctx.strokeStyle = trim; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(move.reach * .5, s.kind === 'sweep' ? -12 : -87, move.reach * .45, s.kind === 'sweep' ? 12 : 24, 0, -.9, .8); ctx.stroke();
+      }
     }
-    if(!quality&&wind&&s&&(s.kind==='heavy'||s.kind==='special')){oval(-30,-85,3,3,trim);path([-42,-89,-48,-94],trim,2);}
+    if (wind && s && (s.kind === 'heavy' || s.kind === 'special')) {
+      // A compact hand/foot glint distinguishes charge from active danger without a false impact.
+      oval(nera && s.kind === 'heavy' ? 10 : 35, nera && s.kind === 'heavy' ? -48 : -94, 3, 3, trim);
+    }
     ctx.restore();
   }
   return {
@@ -141,15 +122,15 @@ export function createPresentation(surface: HTMLElement) {
       return { rollback() { theme = previousTheme; art = previousArt; quality = previousQuality; ctx.reset(); } };
     },
     reset() { sparks=[];impacts=[];shake=0;last=undefined;for(const animation of animations)animation.reset(); },
-    consume(events: readonly DuelEvent[], match: Match) {
+    consume(events: readonly DuelEvent[]) {
       for(const e of events){
-        if(!['hit','heavyHit','block','knockdown','special','ko'].includes(e.type))continue;
-        if(quality&&!['hit','heavyHit','block'].includes(e.type))continue;
+        if (e.type === 'ko') shake = 9;
+        if (!['hit', 'heavyHit', 'block'].includes(e.type)) continue;
         const blocked=e.type==='block', color=blocked?'#b4d8ff':e.fighter===0?'#a5f6e0':'#ffcf98';
-        const point=quality?.contact(e,match)??{x:e.x,y:arena.floor-e.z};
-        if(e.type==='ko')shake=9;else if(e.type!=='special')shake=Math.max(shake,blocked?2:e.strength*6);
+        const point={x:e.x,y:arena.floor-e.z};
+        shake=Math.max(shake,blocked?2:e.strength*6);
         if(impacts.length<12)impacts.push({x:point.x,y:point.y,life:.25,blocked,color});
-        const count=motion.matches?4:blocked?9:16;
+        const count=motion.matches?2:quality?6:art?10:4;
         for(let i=0;i<count&&sparks.length<120;i++){
           const a=i*2.399+e.x, speed=55+(i%5)*32;
           sparks.push({x:point.x,y:point.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-35,life:.22+(i%4)*.08,max:.46,color});
@@ -175,7 +156,7 @@ export function createPresentation(surface: HTMLElement) {
         quality.scenery(t,reduced);
         for(let i=0;i<2;i++)quality.reflection(m.fighters[i]!,samples[i]!);
       } else scenery(reduced?0:t,reduced);
-      for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,i,t,reduced,samples[i]!);
+      for(let i=0;i<2;i++)drawFighter(m.fighters[i]!,t,reduced,samples[i]!);
       const enemy=m.fighters[1], cue=screen==='playing'&&m.phase==='fight'?duelCue(enemy):null;
       if(cue){
         const labelScale=Math.max(1,10/(13*v.scale)), y=Math.max(80,arena.floor-enemy.z-190);
@@ -192,11 +173,11 @@ export function createPresentation(surface: HTMLElement) {
         if(quality) {
           glow(p.x,arena.floor-p.z,36,'#6df5d52a');
           ctx.save();ctx.translate(p.x,arena.floor-p.z);ctx.scale(p.facing,1);
-          quality.effect(0,0,0,145,100);ctx.restore();continue;
+          quality.effect(0,0,0,110,62);ctx.restore();continue;
         }
         if (art) {
           ctx.save(); ctx.translate(p.x, arena.floor - p.z); ctx.scale(p.facing, 1);
-          drawFoundryEffect(ctx, art, 0, -6, 0, 76, 46); ctx.restore(); continue;
+          drawFoundryEffect(ctx, art, 0, -28, 0, 76, 46); ctx.restore(); continue;
         }
         glow(p.x,arena.floor-p.z,44,'#8cffe45a');
         path([p.x-p.facing*44,arena.floor-p.z,p.x,arena.floor-p.z],'#87f5d87a',8);
@@ -211,7 +192,7 @@ export function createPresentation(surface: HTMLElement) {
           quality.effect(r.blocked?2:1,r.x,r.y,size,r.blocked?size: size*.85);
           continue;
         }
-        ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
+        ctx.globalAlpha=Math.max(0,r.life/.25);if(art){drawFoundryEffect(ctx,art,r.blocked?2:1,r.x,r.y,reduced?64:38+(1-r.life/.25)*44);continue;}ctx.strokeStyle=r.color;ctx.lineWidth=r.blocked?4:2;ctx.beginPath();ctx.arc(r.x,r.y,reduced?22:8+(1-r.life/.25)*30,r.blocked?-.9:0,r.blocked?2.2:Math.PI*2);ctx.stroke();if(!r.blocked){path([r.x-21,r.y,r.x+21,r.y],r.color,2);path([r.x,r.y-21,r.x,r.y+21],r.color,2);}}
       ctx.globalAlpha=1;ctx.restore();
     },
     dispose(){if(disposed)return;disposed=true;baseline.dispose();art=undefined;quality=undefined;sparks=[];impacts=[];canvas.remove();},

@@ -1,9 +1,9 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
-import type { Fighter, Match, DuelEvent } from './game.ts';
+import type { Fighter } from './game.ts';
 import type { AnimationSample } from './animation.ts';
 import { arena } from './content.ts';
 import { drawFoundryFighter } from './asset-presentation.ts';
-import { sanctumEffects, sanctumHeelContact } from './quality-art.ts';
+import { sanctumEffects } from './quality-art.ts';
 
 export type SanctumDrawing = ReturnType<typeof createSanctumDrawing>;
 export type SanctumDrawingFactory = typeof createSanctumDrawing;
@@ -34,13 +34,6 @@ export function createSanctumDrawing(ctx: CanvasRenderingContext2D, art: ImageBu
         ctx.fillStyle = i % 3 ? '#b5e7dd40' : '#e6c38d66';
         ctx.fillRect(x, y, i % 3 ? .7 : 1.2, .7);
       }
-    },
-    contact(event: DuelEvent, match: Match) {
-      const source = match.fighters[1 - event.fighter];
-      if (event.type === 'heavyHit' && source?.kind === 'nera' && source.attack?.kind === 'heavy') {
-        return { x: source.x + source.facing * sanctumHeelContact.x, y: arena.floor - source.z - sanctumHeelContact.z };
-      }
-      return { x: event.x, y: arena.floor - event.z };
     },
     reflection(f: Fighter, sample: AnimationSample) {
       ctx.save(); ctx.beginPath(); ctx.rect(0, arena.floor + 3, arena.width, arena.height - arena.floor); ctx.clip();
