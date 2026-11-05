@@ -18,7 +18,9 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 
 Artwork must distinguish breakable brick and armored cover from structural steel, with aim, warnings and extraction cues visible through debris. The industrial coast is the starting setting for future art direction.
 
-**Normal** keeps Iron coast, the original industrial skies, weather and operator colors, using complete pixel sprite cels for both operators, enemies and interactive objects. **Assets** and **Quality** are disabled until dedicated presentations are implemented.
+**Normal** keeps Iron coast, the original industrial skies, weather and operator colors, using complete pixel sprite cels for both operators, enemies and interactive objects. **Assets / Ember Coast** gives that same operation detailed arcade commandos, armored security, a tracked Bastion, weathered cover, supply equipment and illustrated harbor/foundry panoramas. Teal Nova and ochre Bolt keep their identities. The [artwork guide](../../../src/games/blastline/art/README.md#ember-coast-assets) owns its creative brief and atlas contracts. **Quality** remains unavailable.
+
+![Ember Coast: Bolt approaches the Bastion among rusted cover and glowing foundry halls](blastline-assets.png)
 
 ## Source ownership
 
@@ -34,6 +36,7 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 | Action translation using shared button capture | `input.ts` |
 | Uniform camera, complete sprite drawing, procedural scenery and bounded effects | `presentation.ts` |
 | Mission skies, material palettes, weather and operator/machine colors | `themes.ts` |
+| Ember Coast image URLs, preparation and decoded-dimension validation | `assets.ts` |
 | HUD, menus and announcements | `ui.ts`, `style.css` |
 | Original AudioBits recipes and local cue admission | `sound-recipes.ts`, `sound.ts` |
 | Browser composition, sound activation and disposal | `app.ts` |
@@ -42,16 +45,16 @@ Terrain copies authored materials and health into each run. Axis-separated leadi
 
 Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire.
 
-The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Scenery, effects and the cover use editable geometry.
+The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Normal scenery and the cover use editable geometry; Ember Coast adds authored scenery and effects.
 
 ## Architecture decisions
 
 Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
-Appearance changes use `presentation.ts`’s `applyTheme` on the existing terrain drawing; `themes.ts` maps scenery materials; `sprite-art.ts` owns the sprite roles and image validation.
+Appearance changes use `presentation.ts`’s reversible `replaceTheme` on the existing camera and effects. `app.ts` owns candidate preparation and the active image bundle through the [shared replacement contract](../../architecture.md#replacement-and-recovery). `themes.ts` maps scenery materials; `sprite-art.ts` owns Normal sprite roles and image validation, and `assets.ts` owns Ember Coast's bundle. Character cels share aim/travel observations. Cosmetic animation freezes with the paused operation; reduced motion holds grounded idle poses and suppresses shake, muzzle flashes, hit glow and explosion motion.
 
 The local state contract connects movement, combat and objectives. Fixed populations and visible tile traversal bound the work.
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/blastline/game.test.mjs) exercise the complete operation, destructive geometry and population limits; [browser checks](../../../tests/browser/games/blastline/game.spec.ts) exercise the live operation and controls. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/blastline/game.test.mjs) exercise the complete operation, destructive geometry and population limits; [browser checks](../../../tests/browser/games/blastline/game.spec.ts) exercise the live operation and controls. [Appearance checks](../../../tests/browser/games/blastline/appearance.spec.ts) cover both missions, retained state, restart, compact layouts, invalid/failed images, supersession, resume cancellation and image release after disposal. Use the [shared verification commands](../../architecture.md#local-verification).

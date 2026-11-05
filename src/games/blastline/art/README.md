@@ -16,4 +16,37 @@ Iron coast uses original pixel-inspired SVG sprites under the repository's [MIT 
 node src/games/blastline/art/generate.mjs
 ```
 
-Every required output is committed. No missing Assets or Quality presentation is implied by this sprite set.
+Every required output is committed.
+
+## Ember Coast / Assets
+
+### Creative brief
+
+Keep the occupied industrial coast and the same cast, with a detailed 16-bit arcade finish. Nova wears teal with a red scarf and a compact rifle; Bolt wears ochre with a shoulder launcher. Muted olive security and rust-armored heavy units lead to the squat tracked Bastion with its orange optic. Dark navy contours, clustered metal highlights, amber windows and warm coastal skies tie the scene together. Green supply equipment, red barrels and glowing amber relays remain readable against quieter teal harbor silhouettes. Riveted blue structural steel, ochre brick and X-braced rust armor distinguish immutable routes from breakable cover. The interface carries matching brass accents.
+
+Complete right-facing operator cels include idle, two travel steps and a tucked airborne pose for all five aim observations. Machines have complete idle/two-step cels, with track/vent variations for the Bastion. Damage flashes, target lines, health bars and readable labels stay separate from the artwork. Object drawings include live/offline relays, dormant/supplied posts and intact/damaged cover; effects include a muzzle flare, explosion and smoke. Two panoramic plates depict Border Station's harbor and Foundry Run's furnace district without baking actors or objectives into scenery.
+
+### Runtime atlas contracts
+
+All files below live in `ember-coast/`. PNG sprites have transparency and use nearest-neighbor sampling. Draw footprints remain in `presentation.ts`; physical geometry remains in `content.ts`.
+
+| Image | Layout | Anchors and playback |
+| --- | --- | --- |
+| `operators.png` | 640 × 1024, 128-square cells; five aim columns: up, diagonal up, forward, diagonal down, down. Rows 0–3 Nova, 4–7 Bolt; each group idle, stride A, stride B, airborne. | Sole pivot (54, 120), drawn in a 48-square world rectangle. Mirror complete cells for facing. Travel phase follows horizontal position; grounded reduced-motion travel uses idle. Aim follows `operatorCel` in `sprite-art.ts`. |
+| `enemies.png` | 384 × 384, 128-square cells. Three columns idle/step A/step B. Rows guard, heavy, Bastion. | Bottom-center pivot (64, 120). Guard/heavy draw in 36 × 34 world rectangles, Bastion in 72 × 64. Travel steps alternate every ten world units; still actors use idle. Mirror whole cells. |
+| `objects.png` | 512 × 512, sixteen 128-square cells in row-major order. | Live relay, offline relay, barrel, dormant post; supplied post, cage, helicopter, grenade; steel, brick, armor, damaged brick; damaged armor, muzzle, explosion, smoke. Objects fill local draw rectangles, including the helicopter's 128 × 64 world rectangle. Labels and telegraphs are separate. |
+| `backdrop.webp` | 1536 × 1024; top 1536 × 512 harbor, bottom 1536 × 512 foundry. | One bounded panorama per mission, with cosmetic horizontal parallax. Covers tall viewports without repeating seams. No collision or interaction data. |
+
+Muzzle flashes follow weapon recovery, explosions expand during their existing 0.38-second visual lifetime, and smoke uses the bounded particle owner. No art clip advances simulation or derives collision dimensions. Reduced motion preserves action/aim observations and warning cues while suppressing decorative motion and flashes.
+
+### Sources, provenance and export
+
+Original artwork was generated for this repository with the built-in imagegen tool and ships under the repository's [MIT license](../../../../LICENSE), with no third-party asset dependencies. `ember-coast/sources/` retains the final full-resolution PNG illustration sheets and [production prompts](ember-coast/sources/prompts.md), including transparency cleanup. Edit complete illustrations there; do not split actors into articulated pieces.
+
+`ember-coast/pack.mjs` crops and resamples the existing whole drawings, normalizes operator and enemy pivots, and exports the committed runtime bundle. Object crops are inspected coordinates, including the wider helicopter. Backdrop WebP export uses quality 0.94. Export after changing source sheets with:
+
+```sh
+node src/games/blastline/art/ember-coast/pack.mjs
+```
+
+The packer uses the installed Playwright Chromium for offline Canvas export. Normal's `generate.mjs` remains independent. Runtime preparation uses `assets.ts` and the shared image owner; regeneration is never required to play a fresh checkout.

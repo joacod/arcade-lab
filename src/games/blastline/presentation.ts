@@ -1,4 +1,4 @@
-import { createImageResource } from '../../engine/browser/images.ts';
+import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
 import { blastImages, validateBlastArt, operatorCel } from './sprite-art.ts';
 import { themes, type BlastTheme } from './themes.ts';
 import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
@@ -21,6 +21,8 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context; surface.prepend(canvas);
   const artwork = createImageResource(blastImages, validateBlastArt);
   let theme = themes.normal;
+  let assets: ImageBundle | undefined, animationTime = 0;
+  const images = () => assets ?? artwork.images;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
   const rect = (x: number, y: number, w: number, h: number, color: string) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h)); };
@@ -31,22 +33,39 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y)); ctx.textAlign = 'left';
   }
   function human(x: number, y: number, operator: Operator, facing: number, stride: number, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
-    const image = artwork.images.operators;
+    const image = images().operators;
     if (!image) return;
     const {aim,state} = operatorCel(airborne,stride,motion.matches,aimX,aimY);
     const row = (operator === 'bolt' ? 4 : 0) + state;
     ctx.save(); ctx.translate(Math.round(x+9),Math.round(y+32)); ctx.scale(facing,1);
-    ctx.drawImage(image,aim*64,row*64,64,64,-20,-45,48,48);
-    if (firing) { const angle = Math.atan2(aimY,aimX*facing); rect(Math.cos(angle)*18-2,-11+Math.sin(angle)*18,5,3,'#fff0b4'); }
+    const cell = assets ? 128 : 64;
+    ctx.drawImage(image,aim*cell,row*cell,cell,cell,-20,-45,48,48);
+    if (firing && !motion.matches) {
+      const angle = Math.atan2(aimY,aimX*facing);
+      if (assets) {
+        ctx.save(); ctx.translate(Math.cos(angle)*19,-16+Math.sin(angle)*19); ctx.rotate(angle);
+        object(13,0,-5,14,10); ctx.restore();
+      } else rect(Math.cos(angle)*18-2,-11+Math.sin(angle)*18,5,3,'#fff0b4');
+    }
     ctx.restore();
   }
   function object(frame: number,x: number,y: number,w: number,h: number,cells=1) {
-    const image = artwork.images.objects;
-    if (image) ctx.drawImage(image,frame*64,0,64*cells,64,x,y,w,h);
+    const image = images().objects;
+    if (!image) return;
+    if (assets) ctx.drawImage(image,frame%4*128,Math.floor(frame/4)*128,128,128,x,y,w,h);
+    else ctx.drawImage(image,frame*64,0,64*cells,64,x,y,w,h);
   }
 
   function background(v: BlastView, run: Run, time: number) {
     const foundry = run.missionIndex > 0;
+    if (assets?.backdrop) {
+      const height = Math.max(512, 675 - v.y), width = Math.max(height * 3, v.width), y = 675 - v.y - height;
+      rect(0, 0, v.width, v.height, foundry ? theme.foundrySky[0] : theme.sky[0]);
+      const travel = Math.max(1, run.mission.columns * TILE - v.width);
+      const x = -clamp(v.x / travel, 0, 1) * (width - v.width);
+      ctx.drawImage(assets.backdrop, 0, foundry ? 512 : 0, 1536, 512, Math.round(x), Math.round(y), width, height);
+      return;
+    }
     const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
     const sky = foundry ? theme.foundrySky : theme.sky;
     gradient.addColorStop(0, sky[0]); gradient.addColorStop(.62, sky[1]); gradient.addColorStop(1, sky[2]);
@@ -104,6 +123,14 @@ export function createPresentation(surface: HTMLElement) {
     }
     forTiles(t, { x: v.x - TILE, y: v.y - TILE, w: v.width + TILE * 2, h: v.height + TILE * 2 }, (i, r) => {
       const m = t.material[i]!, armored = m === 3, structure = m === 1;
+      const damaged = t.health[i]! < materialHealth[m] * .75;
+      if (assets) {
+        rect(r.x, r.y, TILE, TILE, structure ? theme.structure[0] : armored ? theme.armor[0] : theme.masonry[0]);
+        object(structure ? 8 : armored ? damaged ? 12 : 10 : damaged ? 11 : 9, r.x, r.y, TILE, TILE);
+        if (structure && Math.floor(i / t.columns) > 27) rect(r.x, r.y, TILE, TILE, '#10273766');
+        if (i >= t.columns && !t.material[i - t.columns]) rect(r.x, r.y, TILE, 2, structure ? theme.ledge : '#e4bc7c');
+        return;
+      }
       rect(r.x, r.y, TILE, TILE, structure ? theme.structure[0] : armored ? theme.armor[0] : theme.masonry[0]);
       rect(r.x + 1, r.y + 2, TILE - 2, TILE - 3, structure ? theme.structure[1] : armored ? theme.armor[1] : theme.masonry[1]);
       rect(r.x + 2, r.y + TILE - 5, TILE - 4, 3, structure ? '#1c353e' : '#5d5e50');
@@ -144,9 +171,9 @@ export function createPresentation(surface: HTMLElement) {
       const bastion = e.kind === 'bastion';
       const row = bastion ? 2 : e.kind === 'heavy' ? 1 : 0;
       const frame = !motion.matches && e.vx ? Math.floor(e.x/10)%2+1 : 0;
-      const image = artwork.images.enemies;
-      if (e.flash > 0) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
-      if (image) ctx.drawImage(image,frame*64,row*64,64,64,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
+      const image = images().enemies, cell = assets ? 128 : 64;
+      if (e.flash > 0 && !motion.matches) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
+      if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
       ctx.restore();
       if (e.warning > 0) {
         const from = { x: e.x + e.w / 2, y: e.y + (bastion ? 22 : 12) };
@@ -156,7 +183,10 @@ export function createPresentation(surface: HTMLElement) {
       if (e.health < e.maxHealth || bastion) { rect(e.x, e.y - 7, e.w, 3, '#142a35'); rect(e.x, e.y - 7, e.w * e.health / e.maxHealth, 2, '#efaa6b'); }
     }
     for (const shot of run.projectiles) {
-      if (shot.kind === 'grenade') { rect(shot.x - 3, shot.y - 3, 6, 6, '#e4b470'); rect(shot.x - 1, shot.y - 5, 2, 2, '#fdedb4'); }
+      if (shot.kind === 'grenade') {
+        if (assets) object(7, shot.x - 5, shot.y - 5, 10, 10);
+        else { rect(shot.x - 3, shot.y - 3, 6, 6, '#e4b470'); rect(shot.x - 1, shot.y - 5, 2, 2, '#fdedb4'); }
+      }
       else {
         const length = shot.kind === 'rocket' || shot.kind === 'shell' ? 12 : 8, speed = Math.hypot(shot.vx, shot.vy);
         line(shot.x, shot.y, shot.x - shot.vx / speed * length, shot.y - shot.vy / speed * length, shot.friendly ? '#fff2b0' : '#ff9271', shot.radius ? 4 : 2);
@@ -164,21 +194,28 @@ export function createPresentation(surface: HTMLElement) {
       }
     }
     const p = run.player;
-    if (p.health > 0 && run.extraction === 0 && (!playing || p.immune <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, p.x * .15, !p.grounded, p.aimX, p.aimY, p.cooldown > (p.operator === 'nova' ? .055 : .55));
+    if (p.health > 0 && run.extraction === 0 && (!playing || p.immune <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, Math.abs(p.vx) > 5 ? p.x * .15 : 0, !p.grounded, p.aimX, p.aimY, p.cooldown > (p.operator === 'nova' ? .055 : .55));
     if (p.health <= 0) text('REDEPLOYING…', p.x + p.w / 2, p.y - 18, '#ffe1ac', 9, 'center');
     for (const ring of rings) {
       const progress = 1 - ring.life / .38, r = ring.radius * (.3 + progress * .7);
       if (!motion.matches && progress < .5) {
         const fire = r * (1 - progress * .7);
-        rect(ring.x - fire, ring.y - fire * .55, fire * 2, fire * 1.1, '#e78548');
-        rect(ring.x - fire * .55, ring.y - fire, fire * 1.1, fire * 2, '#f7b55b');
-        rect(ring.x - fire * .7, ring.y - fire * .7, fire * 1.4, fire * 1.4, '#f7b55b');
-        rect(ring.x - fire * .38, ring.y - fire * .45, fire * .76, fire * .9, '#fff0ac');
+        if (assets) object(14, ring.x - fire, ring.y - fire, fire * 2, fire * 2);
+        else {
+          rect(ring.x - fire, ring.y - fire * .55, fire * 2, fire * 1.1, '#e78548');
+          rect(ring.x - fire * .55, ring.y - fire, fire * 1.1, fire * 2, '#f7b55b');
+          rect(ring.x - fire * .7, ring.y - fire * .7, fire * 1.4, fire * 1.4, '#f7b55b');
+          rect(ring.x - fire * .38, ring.y - fire * .45, fire * .76, fire * .9, '#fff0ac');
+        }
       }
       ctx.globalAlpha = ring.life / .38; ctx.strokeStyle = progress < .25 ? '#fff2b7' : '#f6b56b'; ctx.lineWidth = Math.max(1, 8 * (1 - progress));
       ctx.beginPath(); ctx.arc(ring.x, ring.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
     }
-    for (const p of particles) { ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5); rect(p.x, p.y, p.size + (p.smoke ? (1 - p.life / p.max) * 12 : 0), p.size, p.color); }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5);
+      if (p.smoke && assets) { const size = 12 + (1 - p.life / p.max) * 18; object(15,p.x-size/2,p.y-size/2,size,size); }
+      else rect(p.x, p.y, p.size + (p.smoke ? (1 - p.life / p.max) * 12 : 0), p.size, p.color);
+    }
     ctx.globalAlpha = 1;
   }
   function consume(events: readonly BlastEvent[]) {
@@ -196,13 +233,19 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { consume,
-    applyTheme(next: BlastTheme) { theme = next; },
-    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; },
+    replaceTheme(next: BlastTheme, nextImages?: ImageBundle) {
+      const previousTheme = theme, previousImages = assets;
+      theme = next; assets = nextImages;
+      ctx.reset();
+      return () => { theme = previousTheme; assets = previousImages; ctx.reset(); };
+    },
+    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; },
     draw(run: Run, host: { width: number; height: number; ratio: number }, playing: boolean, time: number) {
       if (disposed) return;
       const dt = Math.max(0, Math.min(.05, last === undefined ? 0 : time - last)); last = time;
       const animate = playing && run.status === 'active';
       if (animate) {
+        animationTime += dt;
         for (const p of particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.smoke ? -12 : 180) * dt; }
         particles = particles.filter(p => p.life > 0); rings.forEach(r => { r.life -= dt; }); rings = rings.filter(r => r.life > 0); shake *= Math.exp(-12 * dt);
       }
@@ -213,10 +256,11 @@ export function createPresentation(surface: HTMLElement) {
       if (!camera) camera = target;
       else { const ease = 1 - Math.exp(-12 * dt); camera = { ...target, x: camera.x + (target.x - camera.x) * ease, y: camera.y + (target.y - camera.y) * ease }; }
       const v = camera;
-      ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run, motion.matches ? 0 : time);
-      ctx.save(); ctx.translate(-Math.round(v.x) + (motion.matches ? 0 : Math.sin(time * 83) * shake), -Math.round(v.y) + (motion.matches ? 0 : Math.cos(time * 71) * shake * .5));
-      world(run, v, motion.matches ? 0 : time, playing); ctx.restore();
-      if (run.collapse >= 0 && run.extraction === 0 && !motion.matches) { ctx.fillStyle = `rgba(221,94,57,${.018 + Math.max(0, Math.sin(time * 5)) * .025})`; ctx.fillRect(0, 0, v.width, v.height); }
+      const sceneTime = motion.matches ? 0 : run.elapsed === 0 ? time : animationTime;
+      ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run, sceneTime);
+      ctx.save(); ctx.translate(-Math.round(v.x) + (motion.matches ? 0 : Math.sin(sceneTime * 83) * shake), -Math.round(v.y) + (motion.matches ? 0 : Math.cos(sceneTime * 71) * shake * .5));
+      world(run, v, sceneTime, playing); ctx.restore();
+      if (run.collapse >= 0 && run.extraction === 0 && !motion.matches) { ctx.fillStyle = `rgba(221,94,57,${.018 + Math.max(0, Math.sin(sceneTime * 5)) * .025})`; ctx.fillRect(0, 0, v.width, v.height); }
       // Subtle scanline texture respects the pixel artwork without a postprocessing pass.
       ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);
     },
