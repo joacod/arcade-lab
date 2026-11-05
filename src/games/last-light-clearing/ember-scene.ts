@@ -72,7 +72,7 @@ export function createEmberScene(images: ImageBundle, environment: NonNullable<A
       }
     },
     atmosphere(target: CanvasRenderingContext2D, run: Readonly<RunState>, reduced: boolean) {
-      light(target, run.player.x, run.player.y - 8, 125, '#ffd08a', .7);
+      light(target, run.player.x, run.player.y - 4, 75, '#ffd08a', .45);
       if (reduced) return;
       // A small fixed field of drifting embers. Pause freezes all motion through active time.
       const time = run.elapsed;

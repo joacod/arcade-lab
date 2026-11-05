@@ -2,6 +2,7 @@ import { encounters, enemies } from './content.ts';
 import { chargeDestination } from './encounters.ts';
 import type { GameEvent, RunState } from './game-state.ts';
 import { MAX_EFFECTS, type Theme } from './themes.ts';
+import { actorBounds } from './art-pack.ts';
 import type { Stick } from './input.ts';
 import { edgeCue, type Viewport } from './view.ts';
 import type { DisplaySize } from './world-presentation.ts';
@@ -38,6 +39,14 @@ export function createScreenOverlay(surface: HTMLElement) {
       function ring(x: number, y: number, radius: number, color: string, lineWidth = 2) {
         ctx!.strokeStyle = color; ctx!.lineWidth = lineWidth;
         ctx!.beginPath(); ctx!.arc(x, y, radius, 0, Math.PI * 2); ctx!.stroke();
+      }
+      const keeperBounds = theme.art && actorBounds(theme.art.actors.keeper);
+      function protection(x: number, y: number, radius: number, color: string, lineWidth = 2) {
+        if (theme.presentation !== 'ember' || !keeperBounds) { ring(x, y, radius, color, lineWidth); return; }
+        const b = keeperBounds;
+        ctx!.strokeStyle = color; ctx!.lineWidth = lineWidth;
+        ctx!.beginPath(); ctx!.ellipse(x + (b.left + b.right) / 2, y + (b.top + b.bottom) / 2,
+          (b.right - b.left) / 2 + 5, (b.bottom - b.top) / 2 + 5, 0, 0, Math.PI * 2); ctx!.stroke();
       }
       for (const enemy of run.enemies) {
         if (enemy.entryDelay > 0) continue;
@@ -77,7 +86,9 @@ export function createScreenOverlay(surface: HTMLElement) {
           }
         }
         ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(winding ? enemy.kind === 'charger' ? 'LOCKED LANE' : 'SLAM — LEAVE THE RING' : 'DANGER', enemy.x, enemy.y - enemies[enemy.kind].radius - 16);
+        const art = theme.art?.actors[enemies[enemy.kind].elite ? 'elite' : 'charger'];
+        const labelY = theme.presentation === 'ember' && art ? actorBounds(art).top - 24 : -enemies[enemy.kind].radius - 16;
+        ctx.fillText(winding ? enemy.kind === 'charger' ? 'LOCKED LANE' : 'SLAM — LEAVE THE RING' : 'DANGER', enemy.x, enemy.y + labelY);
         ctx.restore();
       }
       if (run.progression.level === 1 && run.status === 'active' && run.gems.length) {
@@ -91,9 +102,10 @@ export function createScreenOverlay(surface: HTMLElement) {
         const age = run.elapsed - event.at;
         if (event.type === 'player-hit' && age < 0.35) {
           const color = event.damage === 0 ? p.shard : p.damage;
-          ring(event.x, event.y, 25, color, 3);
+          protection(event.x, event.y, 25, color, 3);
           ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText(event.damage === 0 ? `SHIELD −${event.absorbed}` : `−${event.damage} HP`, event.x, event.y - 35);
+          const labelY = theme.presentation === 'ember' && keeperBounds ? keeperBounds.top - 9 : -35;
+          ctx.fillText(event.damage === 0 ? `SHIELD −${event.absorbed}` : `−${event.damage} HP`, event.x, event.y + labelY);
         } else if (event.type === 'evolution' && age < 2) {
           ctx.save(); ctx.globalAlpha = Math.max(0, 1 - age / 2);
           ring(run.player.x, run.player.y, reducedMotion.matches ? 35 : 25 + age * 55, p.shard, 3); ctx.restore();
@@ -102,7 +114,7 @@ export function createScreenOverlay(surface: HTMLElement) {
         }
       }
       if (run.player.invulnerability > 0) {
-        ctx.save(); ctx.setLineDash([3, 4]); ring(run.player.x, run.player.y, 27, p.light, 1.5); ctx.restore();
+        ctx.save(); ctx.setLineDash([3, 4]); protection(run.player.x, run.player.y, 27, p.light, 1.5); ctx.restore();
       }
       if (run.outcome === 'victory') {
         outcomeAt ??= now;

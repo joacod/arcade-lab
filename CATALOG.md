@@ -10,14 +10,14 @@ The table lists the presentations currently implemented; their artwork and rende
 
 | Game | Normal | Assets | Quality |
 | --- | --- | --- | --- |
-| Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Ember Ruins · Rekindled, new illustrated knight, goblins and demon in a modern painted ruin |
+| Last Light Clearing | Forest clearing with complete sprites | Ember Ruins | Ember Ruins · Rekindled, compact painted knight, goblins and demon in a cobbled ruin |
 | Skybreak | Pacific Run | Aurora Fleet, arcade fleet and pixel reefs | Tempest Coast, painted fleet and scrolling shoals |
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated retro sanctuary | Lumen Conservatory, dimensional ceramic-and-brass cathedral gardens |
 | Midnight Circuit | Street sketch, simple flat cels | Signal / Rain, inked arcade shops and industrial bays | Afterglow, detailed modern fighters and painted city with wet-road reflections |
 | Obsidian Duel | Tempest citadel, simple flat-color fighters | Eclipse Foundry, painted arcade fighters and forge-lit arena | Moonfall Sanctum, detailed fighters and jade-and-gold combat artwork |
 | Blastline | Iron coast | Ember Coast, detailed arcade commandos and rusted harbor defenses | Ember Reforged, dimensional painted commandos and industrial coast |
 
-All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** reinterprets the Assets designs through new or substantially improved artwork and animation, with a coherent modern finish across characters, objects, scenery, effects and interface. Modern refers to visual finish, not a futuristic setting. All three modes use Canvas 2D and image assets. Existing standard presentations follow these roles while sharing their gameplay. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
+All games start in **Assets**. **Normal** is a development-only gameplay baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** reinterprets the Assets designs through new or substantially improved artwork and animation, with a coherent modern finish across characters, objects, scenery, effects and interface. Modern refers to visual finish, not a futuristic setting. All three modes use Canvas 2D and image assets. Existing standard presentations follow these roles while sharing their gameplay. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
 All artwork required by enabled presentations ships with the repository. Screenshots below show each game in **Quality**.
 

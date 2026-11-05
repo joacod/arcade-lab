@@ -1,0 +1,38 @@
+{
+  "keeper": {
+    "columns": 4,
+    "rows": [
+      { "pivot": [192, 438], "destinationPivot": [128, 200], "scale": 0.52 },
+      { "pivot": [192, 440], "destinationPivot": [128, 200], "scale": 0.52 }
+    ]
+  },
+  "goblins": {
+    "columns": 4,
+    "rows": [
+      { "pivot": [192, 414], "destinationPivot": [128, 200], "scale": 0.64 },
+      { "pivot": [192, 414], "destinationPivot": [128, 200], "scale": 0.57 }
+    ]
+  },
+  "elite": {
+    "columns": 4,
+    "rows": [
+      { "pivot": [192, 442], "destinationPivot": [128, 200], "scale": 0.49 },
+      { "pivot": [192, 440], "destinationPivot": [128, 200], "scale": 0.49 }
+    ]
+  },
+  "props": {
+    "columns": 3,
+    "rows": [
+      { "frames": [
+        { "pivot": [256, 466], "destinationPivot": [128, 220], "scale": 0.48 },
+        { "pivot": [256, 468], "destinationPivot": [128, 220], "scale": 0.73 },
+        { "pivot": [256, 466], "destinationPivot": [128, 220], "scale": 0.52 }
+      ] },
+      { "frames": [
+        { "pivot": [267, 248], "destinationPivot": [128, 128], "scale": 0.82 },
+        { "pivot": [254, 248], "destinationPivot": [128, 128], "scale": 0.76 },
+        { "pivot": [239, 255], "destinationPivot": [128, 128], "scale": 0.88 }
+      ] }
+    ]
+  }
+}

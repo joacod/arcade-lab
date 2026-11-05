@@ -50,12 +50,14 @@ function groveArt(): ArtPack {
   return { images: { grove: new URL('./art/grove/actors.svg', import.meta.url).href },
     sampling: 'smooth', actors: { keeper: actor(0,40), crawler: actor(64,38), elite: actor(128,72) } };
 }
-/** New authored cels preserve the Assets cast, not its low-resolution source pixels. */
-const paintedActor = (image: string, size: number, idleY = 0, moveY = 256): ActorArt => ({
-  clips: { idle: row(image, 0, idleY, 256, 256, 4, .2), move: row(image, 0, moveY, 256, 256, 4, .12) },
-  anchor: [.5, .89], footprint: [size, size], orientation: 'mirror',
+/** Compact painted miniatures register their bodies around the existing gameplay center. */
+const paintedActor = (image: string, size: number, stride: number,
+  bounds: readonly [number, number, number, number]): ActorArt => ({
+  clips: { idle: row(image, 0, 0, 256, 256, 4, .2), move: row(image, 0, 256, 256, 256, 4, .12) },
+  anchor: [.5, .64], footprint: [size, size], ground: [.5, 200 / 256], stride,
+  visualBounds: [bounds[0] / 256, bounds[1] / 256, bounds[2] / 256, bounds[3] / 256], orientation: 'mirror',
 });
-const paintedObject = (x: number, y: number, size: number, anchor: readonly [number, number] = [.5, .89]): Decoration => ({
+const paintedObject = (x: number, y: number, size: number, anchor: readonly [number, number] = [.5, 220 / 256]): Decoration => ({
   clip: still('props', [x, y, 256, 256]), footprint: [size, size], anchor,
 });
 export const rekindledArt: ArtPack = {
@@ -68,19 +70,19 @@ export const rekindledArt: ArtPack = {
   },
   sampling: 'smooth',
   actors: {
-    keeper: paintedActor('keeper', 76),
-    crawler: { ...paintedActor('goblins', 58, 0, 0), clips: { idle: still('goblins', [0, 0, 256, 256]), move: row('goblins', 0, 0, 256, 256, 4, .12) } },
-    charger: { ...paintedActor('goblins', 64), clips: { idle: still('goblins', [0, 256, 256, 256]), move: row('goblins', 0, 256, 256, 256, 4, .1) } },
-    elite: paintedActor('elite', 112),
+    keeper: paintedActor('keeper', 48, 64, [49, 4, 209, 203]),
+    crawler: { ...paintedActor('goblins', 32, 32, [49, 7, 213, 202]), clips: { idle: still('goblins', [0, 0, 256, 256]), move: row('goblins', 0, 0, 256, 256, 4, .12) } },
+    charger: { ...paintedActor('goblins', 36, 40, [43, 7, 204, 203]), clips: { idle: still('goblins', [0, 256, 256, 256]), move: row('goblins', 0, 256, 256, 256, 4, .1) } },
+    elite: paintedActor('elite', 64, 48, [42, 9, 217, 203]),
   },
   objects: {
-    gem: paintedObject(0, 256, 19, [.5, .5]),
-    halo: paintedObject(256, 256, 30, [.5, .5]),
-    shard: paintedObject(512, 256, 26, [.5, .5]),
+    gem: paintedObject(0, 256, 16, [.5, .5]),
+    halo: paintedObject(256, 256, 22, [.5, .5]),
+    shard: paintedObject(512, 256, 16, [.5, .5]),
   },
   environment: {
     plate: frame('ground', [0, 0, 1536, 1024]), tileSize: 32, ground: [],
-    perimeter: [paintedObject(0, 0, 112), paintedObject(256, 0, 76), paintedObject(512, 0, 80)],
+    perimeter: [paintedObject(0, 0, 80), paintedObject(256, 0, 52), paintedObject(512, 0, 64)],
   },
 };
 export const themes: Readonly<Record<ThemeId, Theme>> = {

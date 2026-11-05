@@ -13,6 +13,12 @@ export interface ActorArt {
   /** Normalized pivot in every frame and authored world-space frame footprint. */
   readonly anchor: readonly [number, number];
   readonly footprint: readonly [number, number];
+  /** Normalized visual envelope across the clip, independent of the physical body. */
+  readonly visualBounds?: readonly [left: number, top: number, right: number, bottom: number];
+  /** Authored contact point within the frame; anchor remains the gameplay center. */
+  readonly ground?: readonly [number, number];
+  /** World distance for one complete walking cycle, when authored for grounded travel. */
+  readonly stride?: number;
   readonly orientation: 'rotate' | 'mirror' | { readonly directions: Readonly<Record<Direction, { readonly idle: Clip; readonly move: Clip }>> };
 }
 export interface Decoration {
@@ -37,6 +43,15 @@ export interface ArtPack {
 }
 export type ImageDimensions = Readonly<Record<string, { readonly width: number; readonly height: number }>>;
 export const frame = (image: string, rect: FrameRect): ArtFrame => ({ image, rect });
+/** Cosmetic placement shared by sprite feedback, shadows and the persistent overlay. */
+export function actorBounds(art: ActorArt) {
+  const [w, h] = art.footprint, [ax, ay] = art.anchor;
+  const [left, top, right, bottom] = art.visualBounds ?? [0, 0, 1, 1];
+  const [gx, gy] = art.ground ?? art.anchor;
+  return { left: (left - ax) * w, top: (top - ay) * h,
+    right: (right - ax) * w, bottom: (bottom - ay) * h,
+    groundX: (gx - ax) * w, groundY: (gy - ay) * h };
+}
 export const still = (image: string, rect: FrameRect): Clip => ({ frames: [frame(image, rect)], frameSeconds: 1, loop: true });
 /** A single row of an inspected regular sheet, with explicit count and stride. */
 export function row(image: string, x: number, y: number, width: number, height: number,
@@ -66,6 +81,13 @@ export function validateArtPack(pack: ArtPack, dimensions: ImageDimensions): str
     const actor = pack.actors[role];
     if (!actor) { if (role !== 'charger') errors.push(`${role}: missing actor`); continue; }
     geometry(actor, role);
+    if (actor.visualBounds) {
+      const [left, top, right, bottom] = actor.visualBounds;
+      if (!actor.visualBounds.every(v => Number.isFinite(v) && v >= 0 && v <= 1)
+        || left >= right || top >= bottom) errors.push(`${role}: invalid visual bounds`);
+    }
+    if (actor.ground && !actor.ground.every(v => Number.isFinite(v) && v >= 0 && v <= 1)) errors.push(`${role}: invalid ground point`);
+    if (actor.stride !== undefined && (!Number.isFinite(actor.stride) || actor.stride <= 0)) errors.push(`${role}: invalid stride`);
     for (const [name, value] of Object.entries(actor.clips)) clip(value, `${role}.${name}`);
     if (typeof actor.orientation === 'object') for (const direction of ['up', 'down', 'left', 'right'] as const) {
       const clips = actor.orientation.directions[direction];

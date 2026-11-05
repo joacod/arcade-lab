@@ -1,15 +1,17 @@
 import type { ActorArt, Clip, Direction } from './art-pack.ts';
 import type { RunState } from './game-state.ts';
-export interface ActorObservation { x: number; y: number; angle: number; moving: boolean; since: number }
+export interface ActorObservation { x: number; y: number; angle: number; moving: boolean; since: number; distance: number }
 /** Observed after each simulation step, never from consecutive render frames. */
 export function createAnimationObservations() {
   const actors = new Map<string | number, ActorObservation>();
   function observe(id: string | number, x: number, y: number, time: number) {
     const previous = actors.get(id);
-    if (!previous) { actors.set(id, { x, y, angle: -Math.PI / 2, moving: false, since: time }); return; }
-    const moving = Math.hypot(x - previous.x, y - previous.y) > 0.00001;
+    if (!previous) { actors.set(id, { x, y, angle: -Math.PI / 2, moving: false, since: time, distance: 0 }); return; }
+    const distance = Math.hypot(x - previous.x, y - previous.y);
+    const moving = distance > 0.00001;
     if (moving !== previous.moving) previous.since = time;
     if (moving) previous.angle = Math.atan2(y - previous.y, x - previous.x);
+    previous.distance += distance;
     previous.x = x; previous.y = y; previous.moving = moving;
   }
   return {
@@ -38,6 +40,9 @@ export function actorClip(art: ActorArt, observation: ActorObservation): Clip {
 export function actorAnimation(art: ActorArt, observation: ActorObservation, time: number, hitAt?: number, attackAt?: number) {
   const hit = hitAt !== undefined && art.clips.hit && time - hitAt < art.clips.hit.frames.length * art.clips.hit.frameSeconds;
   const attack = attackAt !== undefined && art.clips.attack && time - attackAt < art.clips.attack.frames.length * art.clips.attack.frameSeconds;
-  return { clip: hit ? art.clips.hit! : attack ? art.clips.attack! : actorClip(art, observation),
-    age: time - (hit ? hitAt! : attack ? attackAt! : observation.since) };
+  const clip = hit ? art.clips.hit! : attack ? art.clips.attack! : actorClip(art, observation);
+  const age = !hit && !attack && observation.moving && art.stride
+    ? observation.distance / art.stride * clip.frames.length * clip.frameSeconds
+    : time - (hit ? hitAt! : attack ? attackAt! : observation.since);
+  return { clip, age };
 }
