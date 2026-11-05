@@ -1,7 +1,7 @@
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { initialTheme, createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { attacks } from './content.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
@@ -18,7 +18,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
-  const style = createThemeSelect({ names: { normal: 'Street sketch', assets: 'Signal / Rain', quality: 'Afterglow' }, modes: appearances, value: initialTheme, signal, onChange: appearance });
+  const style = createThemeChoices({ names: { normal: 'Street sketch', assets: 'Signal / Rain', quality: 'Afterglow' }, modes: appearances, value: initialTheme, signal, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
@@ -36,7 +36,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const description = menu.description;
   let current: Screen = 'title';
   return { controls,
-    appearanceStatus(value: Appearance, message: string) { style.setValue(value); menu.displayStatus(message); },
+    appearanceStatus(value: Appearance, message: string, preparing = false) { if (preparing) style.prepare(value); else style.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,

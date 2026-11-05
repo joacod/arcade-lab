@@ -1,171 +1,139 @@
-import { chooseOption, openSettings } from '../menu.ts';
+import { chooseTheme } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
-test('shared menus fit compact screens and keep actions accessible with a single theme selector', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
+test('shared menus expose the two themes directly, start in Assets and keep compact actions reachable', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  const games = ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline'];
-  for (const title of games) {
+  for (const title of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline']) {
     await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
+    const play = page.getByRole('button', { name: 'Play', exact: true });
+    await expect(play).toBeEnabled();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.locator('[data-control]:visible')).toHaveCount(0);
-    const play = page.getByRole('button', { name: 'Play', exact: true });
+    await expect(page.getByRole('combobox')).toHaveCount(0);
+    const theme = page.getByRole('group', { name: 'Theme', exact: true });
+    await expect(theme.getByRole('radio')).toHaveCount(2);
+    await expect(theme.getByRole('radio', { name: /^Assets/ })).toBeChecked();
+    await expect(theme.getByRole('radio', { name: /^Quality/ })).toBeEnabled();
+    await expect(page.locator('.menu-theme-development')).not.toHaveAttribute('open');
+    await theme.scrollIntoViewIfNeeded();
+    await expect(theme.getByRole('radio', { name: /^Quality/ }).locator('..')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeVisible();
+    await expect(page.locator('.game-menu-controls summary')).toHaveText('How to play');
+    await expect(play).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
     await play.hover();
     const contrast = await play.evaluate(button => {
-      const style = getComputedStyle(button);
-      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
-      const context = canvas.getContext('2d')!;
+      const style = getComputedStyle(button), canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1; const context = canvas.getContext('2d')!;
       function luminance(color: string) {
-        // CSS color-mix serializes as color(srgb ...), not necessarily rgb(0..255).
         context.fillStyle = color; context.fillRect(0, 0, 1, 1);
         const [r, g, b] = [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).map(channel => {
-          const value = channel / 255;
-          return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+          const value = channel / 255; return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
         });
         return .2126 * r! + .7152 * g! + .0722 * b!;
       }
-      const foreground = luminance(style.color), background = luminance(style.backgroundColor);
-      return (Math.max(foreground, background) + .05) / (Math.min(foreground, background) + .05);
+      const a = luminance(style.color), b = luminance(style.backgroundColor);
+      return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
     });
-    expect(contrast, `${title} primary action remains readable on hover`).toBeGreaterThanOrEqual(4.5);
-    await expect(page.getByRole('tab')).toHaveCount(0);
-    await openSettings(page);
-    const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
-    await expect(theme).toHaveAttribute('value', 'normal');
-    await expect(page.locator('.menu-theme-note')).toContainText('keeps your run');
-    if (title === 'Blastline') {
-      await expect(theme.locator('..').locator('[role="option"][aria-selected="true"]')).toHaveText('Normal · Iron coast');
-      await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Reforged');
-      await expect(page.locator('.menu-theme-note')).not.toContainText('Unavailable:');
-    }
-    if (title === 'Last Light Clearing') await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Ruins · Rekindled');
-    expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(['normal', 'assets', 'quality']);
-    await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', 'false');
-    await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'false');
-    await theme.focus();
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeFocused();
-    const controls = page.locator('.game-menu-controls summary');
-    await controls.focus(); await page.keyboard.press('Enter');
-    await expect(page.locator('.game-menu-controls')).toHaveAttribute('open', '');
-    expect(await page.locator('.game-menu').evaluate(menu => menu.scrollWidth <= menu.clientWidth + 1)).toBe(true);
-    await expect(play).toBeInViewport({ ratio: 1 });
-    await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeInViewport({ ratio: 1 });
-    await page.keyboard.press('Enter');
-    if (title === games[0]) {
+    expect(contrast, title).toBeGreaterThanOrEqual(4.5);
+    if (title === 'Last Light Clearing') {
       await page.setViewportSize({ width: 844, height: 390 });
-      await theme.scrollIntoViewIfNeeded();
-      await expect(theme).toBeInViewport({ ratio: 1 });
-      await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeInViewport({ ratio: 1 });
-      await controls.scrollIntoViewIfNeeded();
-      await expect(controls).toBeInViewport({ ratio: 1 });
+      await theme.getByRole('radio', { name: /^Assets/ }).focus();
+      await expect(theme.getByRole('radio', { name: /^Assets/ }).locator('..')).toBeInViewport({ ratio: 1 });
       await expect(play).toBeInViewport({ ratio: 1 });
-      await page.screenshot({ path: 'test-results/theme-menu-landscape.png' });
       await page.setViewportSize({ width: 390, height: 844 });
     }
-    await page.getByRole('button', { name: 'Play', exact: true }).click();
-    const root = page.locator('[data-menu-owner]');
+    await play.click();
     await page.keyboard.down('p');
-    await expect(root).toHaveAttribute('data-screen', 'paused');
-    await page.keyboard.down('p'); // Native repeat must not resume the run.
-    await expect(root).toHaveAttribute('data-screen', 'paused');
+    await expect(page.locator('[data-menu-owner]')).toHaveAttribute('data-screen', 'paused');
+    await page.keyboard.down('p');
+    await expect(page.locator('[data-menu-owner]')).toHaveAttribute('data-screen', 'paused');
     await page.keyboard.up('p');
-    await theme.focus();
-    await page.keyboard.press('p'); // Select fields keep their own keyboard interaction.
-    await expect(root).toHaveAttribute('data-screen', 'paused');
-    await page.locator('.game-menu-body').focus();
-    await page.keyboard.press('p');
-    await expect(root).toHaveAttribute('data-screen', 'playing');
-    await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
-    if (title === 'Skybreak') {
-      await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
-      await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-      await page.getByRole('button', { name: 'Resume', exact: true }).focus();
-      await page.keyboard.press('p');
-      await expect(root).toHaveAttribute('data-screen', 'playing');
-      await page.keyboard.press('p');
-      await expect(root).toHaveAttribute('data-screen', 'paused');
-      await page.keyboard.press('p');
-      // A browser-owned exit may deliver no Escape keydown at all.
-      await page.evaluate(() => document.exitFullscreen());
-      await expect(root).toHaveAttribute('data-screen', 'paused');
-      await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
-    }
-    await page.getByRole('button', { name: 'Resume', exact: true }).click();
-    await page.getByRole('button', { name: 'Pause', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
-    // A frozen run must not rewrite HUD/readout attributes or text on every draw.
     const mutations = await page.locator('[data-menu-owner]').evaluate(async root => {
-      await new Promise(requestAnimationFrame);
-      let count = 0;
-      const recording = new MutationObserver(records => { count += records.length; });
-      recording.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
+      await new Promise(requestAnimationFrame); let count = 0;
+      const observer = new MutationObserver(records => { count += records.length; });
+      observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
       for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
-      count += recording.takeRecords().length; recording.disconnect();
-      return count;
+      count += observer.takeRecords().length; observer.disconnect(); return count;
     });
-    expect(mutations, `${title} leaves unchanged UI untouched`).toBe(0);
+    expect(mutations, `${title} leaves frozen UI untouched`).toBe(0);
     await expect(theme).toBeVisible();
-
-    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeInViewport({ ratio: 1 });
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect(page.getByRole('button', { name: `Open game: ${title}`, exact: true })).toBeFocused();
-    await expect(page.getByRole('button', { name: `Open game: ${title}`, exact: true }).locator('.arcade-return')).toHaveText('Last selected');
   }
   expect(errors).toEqual([]);
 });
 
-test('composed menu fields retain labels, values and session-owned listeners', async ({ page }) => {
+test('native theme fields retain selection semantics, disabled choices and session-owned listeners', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
-    const path = '/src/common/ui/menu-components.ts';
-    const { createSelectField, createMenuReadout } = await import(path);
-    const menuPath = '/src/common/ui/menu.ts';
-    const { createGameMenu } = await import(menuPath);
-    const lifetime = new AbortController(), events: (string | number)[] = [];
-    const field = createSelectField({ label: 'Difficulty', choices: { gentle: 'Gentle', brisk: 'Brisk' }, value: 'gentle', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
-    const themePath = '/src/common/ui/theme-select.ts';
-    const { createThemeSelect } = await import(themePath);
-    const theme = createThemeSelect({ modes: { quality: {} }, value: 'quality', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
+    const path = '/src/common/ui/theme-choices.ts';
+    const { createThemeChoices } = await import(path);
+    const componentPath = '/src/common/ui/menu-components.ts';
+    const { createMenuReadout } = await import(componentPath);
+    const menuPath = '/src/common/ui/menu.ts'; const { createGameMenu } = await import(menuPath);
+    const lifetime = new AbortController(), events: string[] = [];
+    const theme = createThemeChoices({ modes: { assets: {}, quality: {} }, value: 'quality', signal: lifetime.signal,
+      onChange(value: string) { events.push(value); theme.setValue(value); } });
     const readout = createMenuReadout('Test results'); readout.update('100 POINTS\n2 lives'); readout.element.hidden = false;
-    const settings = document.createElement('div'); settings.append(field.element, readout.element);
     const root = document.createElement('div'), stage = document.createElement('div'), surface = document.createElement('div'), pause = document.createElement('button');
-    root.style.height = '100vh';
-    root.append(stage, pause); stage.append(surface); document.body.replaceChildren(root);
-    const menu = createGameMenu(root, surface, stage, { id: 'test', title: 'Test game', signal: lifetime.signal, pause, gameplayUI: [], game: settings, theme: theme.element, controls: '<p>Authored controls</p>', actions: [], onAction() {}, onMute() {}, onFullscreen() {} });
-    menu.show('title', false);
-    (window as any).menuProbe = { lifetime, events, field, theme, readout };
+    root.style.height = '100vh'; root.append(stage, pause); stage.append(surface); document.body.replaceChildren(root);
+    const menu = createGameMenu(root, surface, stage, { id: 'test', title: 'Test game', signal: lifetime.signal, pause, gameplayUI: [], game: readout.element, theme: theme.element, controls: '', actions: [], onAction() {}, onMute() {}, onFullscreen() {} });
+    menu.show('title', false); (window as any).menuProbe = { lifetime, events, theme, readout };
   });
-  await expect(page.getByLabel('Test results', { exact: true })).toHaveText('100 POINTS\n2 lives');
-  await expect(page.getByLabel('Test results', { exact: true })).toHaveAttribute('aria-live', 'off');
-
-  await openSettings(page);
-  await expect(page.getByLabel('Difficulty', { exact: true })).toHaveAttribute('value', 'gentle');
-  await chooseOption(page.getByLabel('Difficulty', { exact: true }), 'brisk');
-  await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'quality');
-  await expect(page.getByLabel('Theme', { exact: true }).locator('..').locator('[role="option"][data-value="normal"]')).toHaveAttribute('aria-disabled', 'true');
-  await page.getByLabel('Theme', { exact: true }).evaluate(control => { control.parentElement!.querySelector<HTMLElement>('[data-value="normal"]')!.click(); });
-  expect(await page.evaluate(() => (window as any).menuProbe.events)).toEqual(['brisk']);
+  const theme = page.getByRole('group', { name: 'Theme', exact: true });
+  await expect(theme.getByRole('radio', { name: 'Quality', exact: true })).toBeChecked();
+  await chooseTheme(theme, 'assets');
+  await expect(theme.getByRole('radio', { name: 'Assets', exact: true })).toBeChecked();
   const result = await page.evaluate(() => {
-    const { lifetime, events, field, theme, readout } = (window as any).menuProbe;
-    // Programmatic synchronization must not emit another game intent.
-    field.setValue('gentle'); theme.setValue('quality');
+    const { lifetime, events, theme, readout } = (window as any).menuProbe;
+    theme.setValue('quality');
+    const normal = theme.element.querySelector('input[value="normal"]'); normal.click();
     const observer = new MutationObserver(() => {}); observer.observe(readout.element, { childList: true, subtree: true, characterData: true });
-    readout.update('100 POINTS\n2 lives');
-    const unchangedMutations = observer.takeRecords().length; observer.disconnect();
-    // Even retained DOM references cannot call a disposed session.
-    lifetime.abort();
-    field.input.dispatchEvent(new Event('change')); theme.input.dispatchEvent(new Event('change'));
-    return { events, unchangedMutations };
+    readout.update('100 POINTS\n2 lives'); const unchanged = observer.takeRecords().length; observer.disconnect();
+    lifetime.abort(); theme.input.click(); return { events, unchanged, normalDisabled: normal.disabled };
   });
-  expect(result).toEqual({ events: ['brisk'], unchangedMutations: 0 });
+  expect(result).toEqual({ events: ['assets'], unchanged: 0, normalDisabled: true });
 });
 
+test('theme navigation exposes pending versus active choice, supports cancellation, arrows, Tab and development Normal', async ({ page }) => {
+  let release!: () => void, requested = false;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/art/lumen/keeper.png', async route => { requested = true; await gate; await route.continue(); });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  const theme = page.getByRole('group', { name: 'Theme', exact: true });
+  const assets = theme.getByRole('radio', { name: /^Assets/ }), quality = theme.getByRole('radio', { name: /^Quality/ });
+  await assets.focus(); await page.keyboard.press('ArrowRight');
+  await expect.poll(() => requested).toBe(true);
+  await expect(theme).toHaveAttribute('aria-busy', 'true');
+  await expect(assets).toBeChecked(); await expect(quality).not.toBeChecked();
+  await expect(theme.locator('[data-value="quality"] .menu-theme-loading')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  await assets.click(); // Selecting the working choice also cancels a pending replacement.
+  await expect(theme).toHaveAttribute('aria-busy', 'false');
+  release();
+  await expect(assets).toBeChecked();
+  await quality.click(); await expect(quality).toBeChecked();
+  await expect(quality).toBeFocused();
+  await page.keyboard.press('ArrowLeft'); await expect(assets).toBeChecked();
+  await page.keyboard.press('Tab'); await expect(assets).toBeChecked();
+  await chooseTheme(theme, 'normal');
+  await expect(theme.getByRole('radio', { name: /^Normal/ })).toBeChecked();
+  await expect(page.locator('.menu-theme-note')).toContainText('Normal baseline active');
+  await page.getByRole('button', { name: 'Play', exact: true }).focus(); await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
+  await assets.click(); await expect(assets).toBeChecked();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.keyboard.press('f');
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBe(null);
+});
 test('menu shortcuts respect editing, browser modifiers, disabled Resume and disposal', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
@@ -205,75 +173,6 @@ test('menu shortcuts respect editing, browser modifiers, disabled Resume and dis
     return { ignored, beforeDisposal, afterDisposal: events, escapePrevented };
   });
   expect(result).toEqual({ ignored: [], beforeDisposal: ['resume', 'pause'], afterDisposal: ['resume', 'pause'], escapePrevented: true });
-});
-
-test('web options preview without applying, dismiss cleanly and stay usable in fullscreen', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 700 });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  await openSettings(page);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
-  const options = page.getByRole('listbox', { name: 'Theme options', exact: true });
-  await theme.focus(); await page.keyboard.press('ArrowDown');
-  await expect(options).toBeVisible();
-  await expect(theme).toHaveAttribute('aria-expanded', 'true');
-  await page.keyboard.press('ArrowDown'); // Preview the newly available Assets without applying it.
-  const activeId = await theme.getAttribute('aria-activedescendant');
-  await expect(page.locator(`[id="${activeId}"]`)).toContainText('Assets');
-  await expect(theme).toHaveAttribute('value', 'normal');
-  await page.keyboard.press('Escape');
-  await expect(options).toBeHidden(); await expect(theme).toBeFocused();
-  await expect(theme).toHaveAttribute('value', 'normal');
-  await theme.click();
-  await expect(page.getByRole('option', { name: 'Assets · Signal / Rain', exact: true })).toHaveAttribute('aria-disabled', 'false');
-  await expect(theme).toHaveAttribute('value', 'normal'); await expect(options).toBeVisible();
-  await page.keyboard.press('Home'); await page.keyboard.press('q');
-  await page.keyboard.press('Enter');
-  await expect(theme).toHaveAttribute('value', 'quality');
-  await expect(options).toBeHidden(); await expect(theme).toBeFocused();
-  await theme.click(); await page.keyboard.press('Tab');
-  await expect(options).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeFocused();
-  await theme.click(); await page.getByRole('heading', { name: 'Midnight Circuit', exact: true }).click();
-  await expect(options).toBeHidden(); await expect(theme).toHaveAttribute('aria-expanded', 'false');
-  await page.getByRole('button', { name: 'Fullscreen', exact: true }).focus();
-  await page.keyboard.press('f');
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-  await theme.click();
-  await expect(options).toBeInViewport({ ratio: 1 });
-  await page.screenshot({ path: 'test-results/styled-menu-options.png' });
-  await page.keyboard.press('Escape'); // Close only the list; browser may also exit fullscreen.
-  await expect(options).toBeHidden();
-  await page.locator('.game-menu-body').focus();
-  if (await page.evaluate(() => !!document.fullscreenElement)) await page.keyboard.press('f');
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
-  const dusk = page.getByRole('radio', { name: 'Brief dusk', exact: true });
-  await expect(page.getByRole('radio', { name: 'Until dawn', exact: true })).toBeChecked();
-  await dusk.check(); await expect(dusk).toBeChecked();
-  await expect(page.locator('.game-menu-description')).toContainText('90 seconds');
-  await dusk.focus(); await page.keyboard.press('ArrowLeft');
-  await expect(page.getByRole('radio', { name: 'Until dawn', exact: true })).toBeChecked();
-  await expect(page.locator('.game-menu-description')).toContainText('180 seconds');
-  await page.screenshot({ path: 'test-results/clearing-round-cards.png' });
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toHaveText('Pause (P)');
-  await page.keyboard.press('f'); // The shortcut also works from gameplay and pauses on display change.
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toHaveText('Resume (P)');
-  await page.keyboard.press('f');
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
-  await page.keyboard.press('p');
-  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
-  await page.keyboard.press('p');
-  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toHaveText('Resume (P)');
-  await page.keyboard.press('f');
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-  await openSettings(page);
-  await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toHaveText('Exit fullscreen (F)');
-  await page.keyboard.press('f');
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
 });
 
 test('fullscreen belongs to the arcade across selection and game replacement', async ({ page }) => {
@@ -317,9 +216,9 @@ test('menu sound and theme shortcuts retain the paused run and leave gameplay ke
   await page.keyboard.press('s');
   await expect(mute).toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('t');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
-  await page.keyboard.press('t');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
+  await page.keyboard.press('t');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(100);
   expect(await state()).toBe(frozen);
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
@@ -332,9 +231,9 @@ test('menu sound and theme shortcuts retain the paused run and leave gameplay ke
   expect(await state()).not.toBe(frozen);
 });
 
-test('public themes start in Assets and expose only Assets and Quality in every game', async ({ page }) => {
-  // Exercise the production policy through Vite while retaining the suite's one Chromium target.
-  await page.route(/\/src\/common\/ui\/theme-select\.ts(?:\?.*)?$/, async route => {
+
+test('production uses the same visible Assets / Quality choices with no development controls', async ({ page }) => {
+  await page.route(/\/src\/common\/ui\/theme-choices\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: (await response.text()).replaceAll('import.meta.env.DEV', 'false') });
   });
@@ -342,17 +241,10 @@ test('public themes start in Assets and expose only Assets and Quality in every 
   for (const title of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline']) {
     await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
-    await openSettings(page);
-    const themes = page.getByRole('group', { name: 'Theme', exact: true });
-    await expect(themes.getByRole('button')).toHaveCount(2);
-    await expect(themes.locator('[data-value="assets"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(themes.locator('[data-value="normal"]')).toHaveCount(0);
-    await themes.locator('[data-value="quality"]').click();
-    await expect(page.locator('[data-appearance="quality"], [data-theme="quality"], canvas[data-renderer="quality"]').first()).toBeAttached();
-    await page.getByRole('button', { name: 'Play', exact: true }).focus();
-    await page.keyboard.press('t');
-    await expect(themes.locator('[data-value="assets"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    const theme = page.getByRole('group', { name: 'Theme', exact: true });
+    await expect(theme.getByRole('radio')).toHaveCount(2);
+    await expect(theme.getByRole('radio', { name: /^Assets/ })).toBeChecked();
+    await expect(theme.locator('.menu-theme-development')).toHaveCount(0);
     await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   }
 });

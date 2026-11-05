@@ -1,5 +1,7 @@
-import { openMenu, chooseOption } from '../../menu.ts';
+import { useNormalBaseline } from '../../menu.ts';
+import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
+
 
 test('Skybreak sortie controls, suspension, outcomes, and switching release each session', async ({ page }, info) => {
   const errors: string[] = [];
@@ -15,7 +17,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.screenshot({ path: info.outputPath('selection-desktop.png') });
   await page.evaluate(() => {
@@ -56,12 +58,12 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.keyboard.up('Space'); await page.keyboard.press('Escape');
   const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
   await openMenu(page);
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   await page.clock.runFor(30); expect(await state()).toEqual(frozen);
   await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(100);
   await page.keyboard.press('Escape');
-  await openMenu(page); await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
+  await openMenu(page); await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   const afterTheme = await state();
   await page.evaluate(() => {

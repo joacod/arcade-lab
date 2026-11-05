@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { openSettings } from '../menu.ts';
 
 test.beforeEach(async ({ page }) => {
-  await page.route(/\/src\/common\/ui\/theme-select\.ts(?:\?.*)?$/, async route => {
+  await page.route(/\/src\/common\/ui\/theme-choices\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: (await response.text()).replaceAll('import.meta.env.DEV', 'false') });
   });
@@ -16,14 +15,15 @@ test('a failed default Assets load gates Play and retries inside the mounted pub
   await expect(page.locator('.game-menu-art-status')).toContainText('Artwork could not load');
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeEnabled();
-  await openSettings(page);
-  await expect(page.locator('.menu-theme-choices button')).toHaveCount(2);
-  await expect(page.locator('.menu-theme-choices [aria-pressed="true"]')).toHaveCount(0);
+
+  await expect(page.locator('.menu-theme-choices input')).toHaveCount(2);
+  await expect(page.locator('.menu-theme-choices input:checked')).toHaveCount(0);
   await page.unroute(keeper);
   await page.getByRole('button', { name: 'Retry artwork', exact: true }).click();
   await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   await expect(page.locator('.game-menu-art-status')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeFocused();
 });
 
 test('changing the initial theme follows the latest artwork request without a stale failure', async ({ page }) => {
@@ -40,8 +40,8 @@ test('changing the initial theme follows the latest artwork request without a st
   await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   await expect.poll(() => assetsRequested).toBe(true);
-  await openSettings(page);
-  await page.locator('.menu-theme-choices [data-value="quality"]').click();
+
+  await page.locator('.menu-theme-choices input[value="quality"]').click();
   await expect.poll(() => qualityRequested).toBe(true);
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
   await expect(page.locator('.game-menu-art-status')).toHaveText('Preparing artwork…');
@@ -50,5 +50,5 @@ test('changing the initial theme follows the latest artwork request without a st
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   releaseAssets();
   await expect(page.locator('.game-menu-art-status')).toBeHidden();
-  await expect(page.locator('.menu-theme-choices [data-value="quality"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.menu-theme-choices input[value="quality"]')).toBeChecked();
 });

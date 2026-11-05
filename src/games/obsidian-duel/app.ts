@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-select.ts';
+import { initialTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
@@ -83,10 +83,13 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
     if (disposed || screen === 'playing') return false;
     const request = preparation.begin();
     if (id === activeAppearance) {
-      ui.appearanceStatus(id, '');
-      return true;
+      if (id === 'normal' && !readiness.ready) {
+        try { await presentation!.prepare(); } catch { return false; }
+        if (!request.current()) return false;
+      }
+      ui.appearanceStatus(id, ''); return true;
     }
-    ui.appearanceStatus(id, id !== 'normal' ? `Preparing ${appearanceNames[id]}…` : '');
+    ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     let candidateDrawing: SanctumDrawingFactory | undefined;
     try {

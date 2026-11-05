@@ -1,4 +1,4 @@
-import { initialTheme, createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -21,7 +21,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
-  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
+  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
@@ -42,9 +42,9 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   }, { signal });
   let current: Screen = 'title', activeAppearance: Appearance = 'normal';
   return { controls,
-    appearanceStatus(id: Appearance, message: string) {
-      theme.setValue(id);menu.displayStatus(message);
-      if(!message){
+    appearanceStatus(id: Appearance, message: string, preparing = false) {
+      if (preparing) theme.prepare(id); else theme.setValue(id);menu.displayStatus(message);
+      if(!message && !preparing){
         activeAppearance=id;
         setText($('.duel-arena-label'), `${appearanceNames[id].toUpperCase()} · OBSIDIAN DUEL`);
         root.dataset.theme=id;

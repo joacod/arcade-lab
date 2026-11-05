@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-select.ts';
+import { initialTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -85,7 +85,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
       const theme = themes[id];
       if (!theme) return false;
       const request = preparation.begin();
-      ui.assetStatus(`Preparing ${theme.name}…`);
+      ui.appearancePending(id); ui.assetStatus(`Preparing ${theme.name}…`);
       let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
         if (theme.art) bundle = await prepareAssets(theme.art, request.signal);

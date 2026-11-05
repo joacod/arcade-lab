@@ -1,4 +1,4 @@
-import { initialTheme, createThemeSelect, type ThemeMode } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeChoices, type ThemeMode } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
@@ -20,7 +20,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
+  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
   const assetStatus = document.createElement('p'); assetStatus.className = 'skybreak-asset-status'; assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,
@@ -42,6 +42,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
     appearance(id: ThemeMode) { appearance.setValue(id); },
+    appearancePending(id: ThemeMode) { appearance.prepare(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,

@@ -42,7 +42,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
     <header class="game-menu-header"><p class="game-menu-eyebrow">ARCADE LAB <span aria-hidden="true">/</span> <span class="game-menu-name">${config.title}</span></p><h1 id="${config.id}-heading">${config.title}</h1></header>
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
       <p class="game-menu-description"></p><div class="game-menu-content"></div>
-      <div class="game-menu-settings"><details class="game-menu-preferences"><summary>Settings <span class="game-menu-shortcut">Sound &amp; visuals</span></summary><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div></details>
+      <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
       <details class="game-menu-controls"><summary>How to play</summary><div>${config.controls}<p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
@@ -61,6 +61,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const actionBar = layer.querySelector<HTMLElement>('.game-menu-actions')!;
   const heading = layer.querySelector('h1')!;
   const description = layer.querySelector<HTMLElement>('.game-menu-description')!;
+  const body = layer.querySelector<HTMLElement>('.game-menu-body')!;
   const content = layer.querySelector<HTMLElement>('.game-menu-content')!;
   const settings = layer.querySelector<HTMLElement>('.game-menu-settings')!;
   const controls = layer.querySelector<HTMLDetailsElement>('.game-menu-controls')!;
@@ -69,7 +70,12 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
   const retryArt = layer.querySelector<HTMLButtonElement>('.game-menu-retry-art')!;
   let retryArtwork: (() => void) | undefined;
-  retryArt.addEventListener('click', () => retryArtwork?.(), { signal: config.signal });
+  let returnFromRetry = false;
+  retryArt.addEventListener('click', () => {
+    returnFromRetry = document.activeElement === retryArt;
+    if (returnFromRetry) body.focus({ preventScroll: true });
+    retryArtwork?.();
+  }, { signal: config.signal });
   for (const button of actions) {
     if (button.dataset.menuAction === 'resume') {
       button.textContent += ' (P)'; button.setAttribute('aria-label', 'Resume'); button.setAttribute('aria-keyshortcuts', 'P');
@@ -83,7 +89,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       || !['KeyP', 'KeyF', 'KeyS', 'KeyT', 'Escape'].includes(event.code)) return;
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable
-      || target.closest('input, textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
+      || target.closest('input:not([type="radio"]):not([type="checkbox"]), textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
     if (event.code === 'KeyF') {
       if (!fullscreen.hidden && !fullscreen.disabled) { event.preventDefault(); fullscreen.click(); }
       return;
@@ -118,6 +124,12 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       retryArt.hidden = state !== 'failed';
       status('.game-menu-art-status', state === 'loading' ? 'Preparing artwork…' : state === 'failed' ? 'Artwork could not load. Retry or choose another theme.' : '');
       actions.forEach((button, i) => { if (config.actions[i]!.requiresReady !== false) button.disabled = state !== 'ready'; });
+      if (state !== 'loading' && returnFromRetry) {
+        if (document.activeElement === body && !document.hidden && document.hasFocus()) {
+          (state === 'failed' ? retryArt : actions.find(button => !button.hidden && !button.disabled))?.focus({ preventScroll: true });
+        }
+        returnFromRetry = false;
+      }
     },
     fullscreen(available: boolean, active: boolean) { fullscreen.hidden = !available; fullscreen.textContent = active ? 'Exit fullscreen (F)' : 'Fullscreen (F)'; fullscreen.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Fullscreen'); fullscreen.setAttribute('aria-pressed', String(active)); },
     soundStatus(message: string) { status('.game-menu-sound-status', message); },
@@ -128,7 +140,6 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       const moveFocus = focus || (next !== 'playing' && screen === 'playing'
         && !document.hidden && document.hasFocus() && root.contains(document.activeElement));
       if (next !== screen) {
-        for (const popup of layer.querySelectorAll<HTMLElement>('[popover]:popover-open')) popup.hidePopover();
         controls.open = false; layer.querySelector('.game-menu-body')!.scrollTop = 0; }
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
       name.hidden = next === 'title';

@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-select.ts';
+import { initialTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { hollowSpriteImages } from './sprite-art.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
@@ -51,8 +51,14 @@ export function mountHollow(container: HTMLElement, onExit: () => void, fullscre
   async function appearance(id: Appearance) {
     if (disposed || screen === 'playing') return false;
     const request = preparation.begin();
-    if (id === activeAppearance) { ui.appearanceStatus(id, ''); return true; }
-    ui.appearanceStatus(id, id === 'normal' ? '' : `Preparing ${appearanceNames[id]}…`);
+    if (id === activeAppearance) {
+      if (id === 'normal' && !readiness.ready) {
+        try { await presentation!.prepare(); } catch { return false; }
+        if (!request.current()) return false;
+      }
+      ui.appearanceStatus(id, ''); return true;
+    }
+    ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     let candidateQuality: LumenDrawingFactory | undefined;
     try {

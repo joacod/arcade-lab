@@ -1,5 +1,7 @@
+import { useNormalBaseline } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
-import { chooseOption } from '../../menu.ts';
+
+import { chooseTheme } from '../../menu.ts';
 
 async function openDuel(page: Page, controlled: 'assets' | 'quality' | false = false) {
   if (controlled) {
@@ -24,7 +26,7 @@ async function openDuel(page: Page, controlled: 'assets' | 'quality' | false = f
     const Original = window.Image;
     window.Image = class extends Original { constructor() { super(); images.push(this); } };
   });
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Obsidian Duel', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).duelImages.length === 2 && (window as any).duelImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
@@ -44,11 +46,11 @@ test('Eclipse Foundry replaces the complete presentation while retaining the due
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await openDuel(page);
   expect(await page.evaluate(() => (window as any).duelImages.length)).toBe(0);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
+  const theme = page.getByRole('group', { name: 'Theme', exact: true });
   const frozen = await state(page);
   await page.clock.runFor(50);
   const normal = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
-  await chooseOption(theme, 'assets');
+  await chooseTheme(theme, 'assets');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'assets');
   await page.clock.runFor(50);
   expect(await state(page)).toBe(frozen);
@@ -56,10 +58,10 @@ test('Eclipse Foundry replaces the complete presentation while retaining the due
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).not.toBe(normal);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
     .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [512, 256]]);
-  await chooseOption(theme, 'normal'); await page.clock.runFor(50);
+  await chooseTheme(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);
-  await chooseOption(theme, 'assets');
+  await chooseTheme(theme, 'assets');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'assets');
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(200);
   expect(await state(page)).not.toBe(frozen);
@@ -82,16 +84,16 @@ test('Eclipse Foundry replaces the complete presentation while retaining the due
 for (const mode of ['assets', 'quality'] as const) test(`${mode}: failed and superseded artwork, resume and disposal cannot replace the working duel`, async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await openDuel(page, mode);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), frozen = await state(page);
+  const theme = page.getByRole('group', { name: 'Theme', exact: true }), frozen = await state(page);
   await stageURL(page, '/duel-invalid.svg');
   await page.route('**/duel-invalid.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
-  await chooseOption(theme, mode);
+  await chooseTheme(theme, mode);
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Tempest citadel');
-  await expect(theme).toHaveAttribute('value', 'normal');
+  await expect(theme.locator('input[value="normal"]')).toBeChecked();
   expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
   await stageURL(page, '/duel-failure.svg');
   await page.route('**/duel-failure.svg', route => route.abort());
-  await chooseOption(theme, mode);
+  await chooseTheme(theme, mode);
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Tempest citadel');
   expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
   let finish: (() => Promise<void>) | undefined;
@@ -101,10 +103,10 @@ for (const mode of ['assets', 'quality'] as const) test(`${mode}: failed and sup
   for (const action of ['normal', 'resume', 'quit']) {
     finish = undefined;
     await stageURL(page, `/duel-${action === 'normal' ? 'delayed' : action === 'resume' ? 'resumed' : 'disposed'}.svg`);
-    await chooseOption(theme, mode); await expect.poll(() => !!finish).toBe(true);
+    await chooseTheme(theme, mode); await expect.poll(() => !!finish).toBe(true);
     await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
     await expect(page.locator('.duel-arena-label')).toContainText('TEMPEST CITADEL');
-    if (action === 'normal') await chooseOption(theme, 'normal');
+    if (action === 'normal') await chooseTheme(theme, 'normal');
     else await page.getByRole('button', { name: action === 'resume' ? 'Resume' : 'Game selection', exact: true }).click();
     await finish!(); await page.clock.runFor(50);
     expect(await released(page)).toBe(true);
@@ -127,7 +129,7 @@ test('a candidate draw failure restores the active arena and releases its images
       return (draw as any).apply(this, args);
     } as typeof draw;
   });
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'assets');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'assets');
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Tempest citadel');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
@@ -141,9 +143,9 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
   const requests: string[] = []; page.on('request', request => requests.push(request.url()));
   await openDuel(page);
   expect(requests.filter(url => /obsidian-duel\/(quality-|art\/moonfall)/.test(url))).toEqual([]);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), frozen = await state(page);
+  const theme = page.getByRole('group', { name: 'Theme', exact: true }), frozen = await state(page);
   const baseline = await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL());
-  await chooseOption(theme, 'quality');
+  await chooseTheme(theme, 'quality');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'quality');
   expect(await state(page)).toBe(frozen);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
@@ -156,11 +158,11 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
   await page.clock.runFor(1500);
   expect(await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL())).toBe(image);
   expect(await state(page)).toBe(frozen);
-  await chooseOption(theme, 'assets');
+  await chooseTheme(theme, 'assets');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'assets');
   expect(await page.evaluate(() => (window as any).duelImages.slice(0, 4).every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   expect(await state(page)).toBe(frozen);
-  await chooseOption(theme, 'quality');
+  await chooseTheme(theme, 'quality');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'quality');
   expect(await page.evaluate(() => (window as any).duelImages.slice(0, -4).every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(500);
@@ -188,8 +190,8 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
 
 test('Quality trial drawing preserves active sprites; reduced motion freezes decoration; runtime failure suspends and restores Normal', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await openDuel(page);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), frozen = await state(page);
-  await chooseOption(theme, 'assets'); await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'assets');
+  const theme = page.getByRole('group', { name: 'Theme', exact: true }), frozen = await state(page);
+  await chooseTheme(theme, 'assets'); await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'assets');
   await page.evaluate(() => {
     const ctx = document.querySelector('canvas')!.getContext('2d')!, original = ctx.drawImage;
     (window as any).restoreDuelDraw = () => { ctx.drawImage = original; };
@@ -198,14 +200,14 @@ test('Quality trial drawing preserves active sprites; reduced motion freezes dec
       return (original as any).apply(this, args);
     } as any;
   });
-  await chooseOption(theme, 'quality');
+  await chooseTheme(theme, 'quality');
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Eclipse Foundry');
-  await expect(theme).toHaveAttribute('value', 'assets');
+  await expect(theme.locator('input[value="assets"]')).toBeChecked();
   expect(await state(page)).toBe(frozen);
   expect(await page.evaluate(() => (window as any).duelImages.slice(-4).every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
   expect(await page.evaluate(() => (window as any).duelImages.slice(0,4).every((image: HTMLImageElement) => image.hasAttribute('src')))).toBe(true);
   await page.evaluate(() => (window as any).restoreDuelDraw());
-  await chooseOption(theme, 'quality'); await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'quality');
+  await chooseTheme(theme, 'quality'); await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Game setup', exact: true }).click(); await page.clock.runFor(50);
   const still = await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL());
   await page.clock.runFor(1100);
@@ -234,17 +236,17 @@ for (const action of ['normal', 'resume', 'quit'] as const) test(`late Quality i
   await page.route(/\/src\/games\/obsidian-duel\/quality-assets\.ts(?:\?.*)?$/, route => new Promise<void>(resolve => {
     finish = async () => { await route.continue(); resolve(); };
   }));
-  const frozen = await state(page), theme = page.getByRole('combobox', { name: 'Theme', exact: true });
-  await chooseOption(theme, 'quality'); await expect.poll(() => !!finish).toBe(true);
+  const frozen = await state(page), theme = page.getByRole('group', { name: 'Theme', exact: true });
+  await chooseTheme(theme, 'quality'); await expect.poll(() => !!finish).toBe(true);
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
-  if (action === 'normal') await chooseOption(theme, 'normal');
+  if (action === 'normal') await chooseTheme(theme, 'normal');
   else await page.getByRole('button', { name: action === 'resume' ? 'Resume' : 'Game selection', exact: true }).click();
   await finish!(); await page.clock.runFor(100);
   expect(await page.evaluate(() => (window as any).duelImages.length)).toBe(0);
   if (action === 'quit') await expect(page.locator('canvas')).toHaveCount(0);
   else {
     if (action === 'resume') await page.keyboard.press('Escape');
-    await expect(theme).toHaveAttribute('value', 'normal');
+    await expect(theme.locator('input[value="normal"]')).toBeChecked();
     await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'normal');
     if (action === 'normal') expect(await state(page)).toBe(frozen);
   }
@@ -262,7 +264,7 @@ test('combat artwork confirms actual contact and keeps special release and knock
   await openDuel(page);
   for (const mode of ['normal', 'assets', 'quality']) {
     if (mode !== 'normal') {
-      await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), mode);
+      await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), mode);
       await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', mode);
     }
     const result = await page.evaluate(() => {
@@ -286,7 +288,7 @@ test('combat artwork confirms actual contact and keeps special release and knock
 test('an active Assets draw failure pauses the retained run and releases the failed artwork', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await openDuel(page);
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'assets');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'assets');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'assets');
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(80);
   await page.evaluate(() => {

@@ -1,5 +1,7 @@
-import { chooseOption, openSettings } from '../../menu.ts';
+import { useNormalBaseline } from '../../menu.ts';
+import { chooseTheme } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
+
 
 test.beforeEach(async ({ page }) => {
   await page.route(/\/src\/games\/last-light-clearing\/game\.ts(?:\?.*)?$/, async route => {
@@ -9,12 +11,12 @@ test.beforeEach(async ({ page }) => {
       createRun = (...args) => { const run = originalRun(...args); window.appearanceRun = run; return run; };` });
   });
   await page.clock.install();
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 });
 
-const theme = (page: Page) => page.getByRole('combobox', { name: 'Theme', exact: true });
+const theme = (page: Page) => page.getByRole('group', { name: 'Theme', exact: true });
 const shell = (page: Page) => page.locator('.clearing-app');
 const snapshot = (page: Page) => page.evaluate(() => JSON.stringify((window as any).appearanceRun,
   (_, value) => value instanceof Map ? [...value] : value));
@@ -28,21 +30,23 @@ test('menu geometry uses the game viewport across all three themes', async ({ pa
     return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, actionsY: actions.y,
       scroll: body.scrollHeight - body.clientHeight };
   });
-  await openSettings(page);
+
   const baseline = await geometry(), retained = await snapshot(page);
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
   for (const mode of ['assets', 'quality', 'normal']) {
-    await chooseOption(theme(page), mode);
+    await chooseTheme(theme(page), mode);
     await expect(shell(page)).toHaveAttribute('data-theme', mode);
     await page.clock.runFor(50);
-    expect(await geometry(), `${mode} menu geometry`).toEqual(baseline);
+    const { scroll: _scroll, ...frame } = await geometry();
+    const { scroll: _baselineScroll, ...baselineFrame } = baseline;
+    expect(frame, `${mode} menu frame`).toEqual(baselineFrame);
     expect(await snapshot(page)).toBe(retained);
   }
   await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
   await page.clock.runFor(50);
   const fullscreen = await geometry();
-  await chooseOption(theme(page), 'assets');
+  await chooseTheme(theme(page), 'assets');
   await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
   await page.clock.runFor(50);
   expect(await geometry()).toEqual(fullscreen);

@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-select.ts';
+import { initialTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -52,7 +52,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void, fullscr
       suspend();
       if (readiness.ready) void presentation!.select(value); else readiness.watch(() => presentation!.select(value));
     });
-    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend, () => readiness.watch(() => presentation!.prepare()));
+    presentation = createAppearance(host.surface, (value, message, preparing) => ui.appearanceStatus(value, message, preparing), suspend, () => readiness.watch(() => presentation!.prepare()));
     readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : presentation!.select(initialTheme));
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,

@@ -1,4 +1,4 @@
-import { openMenu, chooseOption } from '../menu.ts';
+import { openMenu, chooseTheme } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
 for (const game of [
@@ -192,7 +192,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50); await page.keyboard.press('Escape');
-  await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.keyboard.down('d'); await page.clock.runFor(100);
@@ -228,7 +228,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   });
   await expect(page.locator('.asset-status')).toBeHidden();
   await expect(page.locator('.clearing-app')).toHaveCount(1);
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'assets');
   await expect(page.locator('canvas')).toHaveCount(2);
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(500);

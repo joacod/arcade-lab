@@ -1,7 +1,7 @@
-import { initialTheme } from '../../common/ui/theme-select.ts';
+import { initialTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
-import type { ThemeMode } from '../../common/ui/theme-select.ts';
+import type { ThemeMode } from '../../common/ui/theme-choices.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -60,7 +60,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void, fullsc
       const theme = themes[id];
       if (disposed || screen === 'playing' || !theme) return false;
       const request = preparation.begin();
-      ui.appearanceStatus(`Preparing ${theme.name}…`);
+      ui.appearancePending(id); ui.appearanceStatus(`Preparing ${theme.name}…`);
       let candidate: PreparedImages | undefined;
       let candidateDisplay: FlightPresentation | undefined;
       try {
