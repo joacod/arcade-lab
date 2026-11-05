@@ -52,6 +52,11 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
         if (!request.current()) return;
         candidate = await prepareEmberCoast(request.signal);
         if (!request.current()) return;
+      } else if (id === 'quality') {
+        const { prepareEmberReforged } = await import('./quality.ts');
+        if (!request.current()) return;
+        candidate = await prepareEmberReforged(request.signal);
+        if (!request.current()) return;
       }
       const rollback = presentation!.replaceTheme(themes[id], candidate?.images);
       try { presentation!.draw(run, host, false, performance.now() / 1000); }
@@ -96,10 +101,11 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
       try { presentation!.draw(run, host, screen === 'playing', now / 1000); }
       catch (error) {
         if (activeAppearance === 'normal') throw error;
+        const failed = appearanceNames[activeAppearance];
         suspend(); preparation.cancel(); presentation!.replaceTheme(themes.normal);
         activeArt?.dispose(); activeArt = undefined; activeAppearance = 'normal';
         host.root.dataset.appearance = 'normal';
-        ui.appearanceStatus('normal', 'Ember Coast could not draw. Restored Iron coast. Your operation is preserved.');
+        ui.appearanceStatus('normal', `${failed} could not draw. Restored Iron coast. Your operation is preserved.`);
         presentation!.draw(run, host, false, now / 1000);
       }
       ui.update(run);

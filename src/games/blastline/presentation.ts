@@ -39,9 +39,10 @@ export function createPresentation(surface: HTMLElement) {
     const image = running ? assets?.[operator === 'nova' ? 'novaRun' : 'boltRun'] : images().operators;
     if (!image) return;
     const {aim,state,runFrame} = operatorCel(airborne,pose.moving,pose.phase,motion.matches,aimX,aimY);
-    const row = (operator === 'bolt' ? 4 : 0) + state;
+    const painted = theme.finish === 'painted';
+    const row = painted ? (operator === 'bolt' ? 3 : 0) + (airborne ? 2 : firing && !motion.matches ? 1 : 0) : (operator === 'bolt' ? 4 : 0) + state;
     ctx.save(); ctx.translate(Math.round(x+9),Math.round(y+32)); ctx.scale(facing,1);
-    const cell = assets ? 128 : 64;
+    const cell = painted ? 192 : assets ? 128 : 64;
     ctx.drawImage(image,(running ? runFrame : aim)*cell,(running ? aim : row)*cell,cell,cell,-20,-45,48,48);
     if (firing && !motion.matches) {
       const angle = Math.atan2(aimY,aimX*facing);
@@ -55,18 +56,20 @@ export function createPresentation(surface: HTMLElement) {
   function object(frame: number,x: number,y: number,w: number,h: number,cells=1) {
     const image = images().objects;
     if (!image) return;
-    if (assets) ctx.drawImage(image,frame%4*128,Math.floor(frame/4)*128,128,128,x,y,w,h);
+    const cell = theme.finish === 'painted' ? 192 : 128;
+    if (assets) ctx.drawImage(image,frame%4*cell,Math.floor(frame/4)*cell,cell,cell,x,y,w,h);
     else ctx.drawImage(image,frame*64,0,64*cells,64,x,y,w,h);
   }
 
   function background(v: BlastView, run: Run, time: number) {
     const foundry = run.missionIndex > 0;
     if (assets?.backdrop) {
-      const height = Math.max(512, 675 - v.y), width = Math.max(height * 3, v.width), y = 675 - v.y - height;
+      const sourceWidth = assets.backdrop.naturalWidth, sourceHeight = assets.backdrop.naturalHeight / 2;
+      const height = Math.max(512, 675 - v.y), width = Math.max(height * sourceWidth / sourceHeight, v.width), y = 675 - v.y - height;
       rect(0, 0, v.width, v.height, foundry ? theme.foundrySky[0] : theme.sky[0]);
       const travel = Math.max(1, run.mission.columns * TILE - v.width);
       const x = -clamp(v.x / travel, 0, 1) * (width - v.width);
-      ctx.drawImage(assets.backdrop, 0, foundry ? 512 : 0, 1536, 512, Math.round(x), Math.round(y), width, height);
+      ctx.drawImage(assets.backdrop, 0, foundry ? sourceHeight : 0, sourceWidth, sourceHeight, Math.round(x), Math.round(y), width, height);
       return;
     }
     const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
@@ -177,7 +180,7 @@ export function createPresentation(surface: HTMLElement) {
       if (!gait) { gait = createGroundGait(); enemyGaits.set(e.id, gait); }
       const pose = gait.observe(e, dt);
       const frame = !motion.matches && pose.moving ? pose.phase < .5 ? 1 : 2 : 0;
-      const image = images().enemies, cell = assets ? 128 : 64;
+      const image = images().enemies, cell = theme.finish === 'painted' ? 192 : assets ? 128 : 64;
       if (e.flash > 0 && !motion.matches) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
       if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
       ctx.restore();
@@ -258,7 +261,8 @@ export function createPresentation(surface: HTMLElement) {
       }
       const w = Math.round(host.width * host.ratio), h = Math.round(host.height * host.ratio);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; camera = undefined; }
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = theme.finish === 'painted';
+      ctx.imageSmoothingQuality = 'high';
       const target = blastView(host.width, host.height, run.mission, run.player);
       if (!camera) camera = target;
       else { const ease = 1 - Math.exp(-12 * dt); camera = { ...target, x: camera.x + (target.x - camera.x) * ease, y: camera.y + (target.y - camera.y) * ease }; }
@@ -269,7 +273,9 @@ export function createPresentation(surface: HTMLElement) {
       world(run, v, sceneTime, playing, animate ? dt : 0); ctx.restore();
       if (run.collapse >= 0 && run.extraction === 0 && !motion.matches) { ctx.fillStyle = `rgba(221,94,57,${.018 + Math.max(0, Math.sin(sceneTime * 5)) * .025})`; ctx.fillRect(0, 0, v.width, v.height); }
       // Subtle scanline texture respects the pixel artwork without a postprocessing pass.
-      ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);
+      if (theme.finish === 'pixel') {
+        ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);
+      }
     },
     dispose() { if (disposed) return; disposed = true; artwork.dispose(); particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
   };
