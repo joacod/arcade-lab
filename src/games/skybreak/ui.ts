@@ -11,10 +11,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK</div>
     <div class="skybreak-score"><span>SCORE</span><output aria-label="Score">000000</output></div>
-    <div class="skybreak-condition"><output aria-label="Aircraft hull">Hull ●●●</output><output aria-label="Aircraft lives">3 lives</output></div>
+    <div class="skybreak-condition"><output aria-label="Aircraft hull"><span class="skybreak-condition-label" aria-hidden="true">Hull</span><span class="skybreak-hull-segments" aria-hidden="true">${Array.from({ length: flight.player.health }, () => '<span data-filled="true"></span>').join('')}</span><span class="skybreak-hull-value"></span></output><output aria-label="Aircraft lives"><span class="skybreak-condition-label">Lives</span> <span class="skybreak-lives-value"></span></output></div>
     <button data-intent="pause">Pause</button></header>
     <main class="skybreak-stage"><div class="skybreak-boss" hidden><div><strong>IRON TEMPEST</strong><output aria-label="Fortress phase"></output></div><progress aria-label="Iron Tempest hull" max="${fortress.health}" value="${fortress.health}"></progress><span class="skybreak-boss-pattern"></span></div></main>
-    <footer class="skybreak-footer"><div><output aria-label="Sortie progress">00 / 168 s</output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL (K) <span>READY</span></button></footer>`;
+    <footer class="skybreak-footer"><div><output aria-label="Sortie progress"></output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL (K) <span>READY</span></button></footer>`;
   const $ = createElementLookup(root);
   $('.skybreak-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
@@ -37,8 +37,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
   const description = menu.description;
   const evade = $<HTMLButtonElement>('.skybreak-evade');
-  const score = $('[aria-label="Score"]'), lives = $('[aria-label="Aircraft lives"]');
+  const score = $('[aria-label="Score"]'), lives = $('.skybreak-lives-value');
   const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
+  const hullValue = $('.skybreak-hull-value'), hullSegments = [...hull.querySelectorAll<HTMLElement>('.skybreak-hull-segments > span')];
+  const formatTime = (time: number) => `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
     appearance(id: ThemeMode) { appearance.setValue(id); },
@@ -56,10 +58,11 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       menu.show(screen, focus);
     },
     update(run: Run) {
-      setText(score, String(run.score).padStart(6, '0')); setText(lives, `${run.player.lives} lives`);
-      setText(hull, `Hull ${'●'.repeat(run.player.health)}${'○'.repeat(flight.player.health - run.player.health)}`);
+      setText(score, String(run.score).padStart(6, '0')); setText(lives, String(run.player.lives));
+      setText(hullValue, `${run.player.health} of ${flight.player.health}`);
+      hullSegments.forEach((segment, index) => setProperty(segment.dataset, 'filled', String(index < run.player.health)));
       hull.classList.toggle('skybreak-critical', run.player.health <= 1);
-      setText(progress, `${String(Math.min(flight.duration, Math.floor(run.elapsed))).padStart(2, '0')} / ${flight.duration} s`);
+      setText(progress, `${formatTime(Math.min(flight.duration, run.elapsed))} / ${formatTime(flight.duration)}`);
       setText(wave, run.boss ? run.boss.health <= 0 ? 'IRON TEMPEST · DESTROYED' : 'FINAL CONTACT · IRON TEMPEST' : run.nextWave ? `${String(run.nextWave).padStart(2, '0')} / ${waves.length} · ${waves[run.nextWave - 1]!.label.toUpperCase()}` : 'AWAITING TAKEOFF');
       setText($('[aria-label="Aircraft weapons"]'), `GUN ${['I', 'II', 'III'][run.player.power]}${run.player.spread > 0 ? ` + SPREAD ${Math.ceil(run.player.spread)}s` : ''}`);
       const bossPanel = $<HTMLElement>('.skybreak-boss');

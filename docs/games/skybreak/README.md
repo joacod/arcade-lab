@@ -50,7 +50,7 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 ## Presentation and source ownership
 
-The HUD emphasizes hull above remaining lives, with a warm warning at critical hull. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
+The HUD separates three spaced hull segments from the remaining lives count, with a warm warning at critical hull and a numeric hull readout for assistive technology. Sortie time uses minutes and seconds against the time limit. On narrow screens the brand and score stack beside hull, lives and Pause. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
 
 Normal draws procedural ocean scenery; Assets and Quality use their own committed coastal images and cloud sprites. Aircraft, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
