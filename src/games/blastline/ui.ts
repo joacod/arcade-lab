@@ -31,7 +31,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: true },
-      { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'jump', 'fire', 'grenade', 'switch'] as const).map(c => [c, $<HTMLButtonElement>(`[data-control="${c}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -40,6 +40,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   return { controls,
     appearanceStatus(value: Appearance, message: string) { theme.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     reset() { notice = ''; noticeUntil = 0; },
     consume(events: readonly BlastEvent[], run: Run) {

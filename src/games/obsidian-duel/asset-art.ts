@@ -1,4 +1,4 @@
-import type { ImageDimensions } from '../../engine/browser/images.ts';
+import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
 import { duelClips, type AnimationSample } from './animation.ts';
 
 /** Whole-body cels share a fixed ground pivot and pack consecutively, eight per row. */
@@ -12,8 +12,7 @@ export function foundryFrame(sample: AnimationSample): readonly [number, number,
   return [index % foundryCell.columns * foundryCell.width, Math.floor(index / foundryCell.columns) * foundryCell.height, foundryCell.width, foundryCell.height];
 }
 export function validateFoundryArt(dimensions: ImageDimensions): string[] {
-  return Object.entries(foundrySheets).flatMap(([name, [width, height]]) =>
-    dimensions[name]?.width === width && dimensions[name]?.height === height ? [] : [`Invalid Eclipse Foundry ${name} dimensions`]);
+  return validateImageDimensions(dimensions, foundrySheets);
 }
 
 export const fighterImages = {
@@ -21,5 +20,5 @@ export const fighterImages = {
   kael: new URL('./art/tempest-citadel/kael.png',import.meta.url).href,
 };
 export function validateDuelSprites(dimensions: ImageDimensions): string[] {
-  return (['nera','kael'] as const).flatMap(key => dimensions[key]?.width === 2560 && dimensions[key].height === 2240 ? [] : [`Invalid ${key} fighter atlas`]);
+  return validateImageDimensions(dimensions, { nera: foundrySheets.nera, kael: foundrySheets.kael });
 }

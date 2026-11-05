@@ -19,13 +19,13 @@
 
 To replace only the Keeper, copy the Assets mode's art definition, add its image key, and replace `art.actors.keeper`. Leave crawler, elite, environment, and palette unchanged. The renderer uses these roles rather than external filenames. Reuse other image keys if several actors share an atlas.
 
-The loader validates referenced frames, pivots, footprints and timing. Initial image failure uses silhouettes; subsequent replacements follow the [shared recovery contract](../../../../docs/architecture.md#replacement-and-recovery).
+The loader validates referenced frames, pivots, footprints and timing. Required initial artwork gates Play with retry on failure; theme replacements follow the [shared recovery contract](../../../../docs/architecture.md#replacement-and-recovery).
 
 ## Interface styling
 
 Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, and Ember accompanies Quality.
 
-## Rekindled scenery and retained sprites
+## Rekindled artwork and scenery
 
 Quality uses a new [illustrated actor, prop and spell bundle](rekindled/README.md) based on Ember Ruins' knight, goblin and demon designs. It does not load `dungeon.png`. New complete character cels, a separate charger, bronze-and-stone props, gems, Halo bodies and Shard projectiles share a modern painted finish. `../ember-scene.ts` composes the ground, new perimeter props, cached soft light stamps and a fixed ember field. Authored sprite footprints and animation layout remain separate from physical geometry. The [game guide](../../../../docs/games/last-light-clearing/README.md#quality-direction-ember-ruins--rekindled) owns the presentation brief.
 

@@ -24,6 +24,10 @@ test('initial image resources release loaded and pending sources without late ac
     const invalid=createImageResource({actor:'invalid.svg'},validate);
     images[2].naturalWidth=1;images[2].onload();await assert.rejects(invalid.ready,/Invalid actor/);
     assert.deepEqual(invalid.images,{});assert.equal(images[2].released,true);
-    invalid.dispose();
+    const retry = invalid.prepare();
+    assert.equal(invalid.prepare(), retry);
+    images[3].onload(); await retry;
+    assert.equal(invalid.images.actor, images[3]);
+    invalid.dispose(); assert.equal(images[3].released, true);
   }finally{globalThis.Image=original;}
 });

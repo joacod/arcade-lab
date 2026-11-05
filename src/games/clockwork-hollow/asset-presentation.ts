@@ -1,5 +1,5 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
-import type { LevelId, Rect } from './content.ts';
+import type { District, Rect } from './content.ts';
 import { movement } from './content.ts';
 import { keeperFrame, objectFrames, illustratedSpriteLayout, type HollowSpriteLayout, type BellgardenSheet } from './asset-art.ts';
 import type { Player } from './game.ts';
@@ -21,7 +21,7 @@ export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: I
   }
   return {
     object,
-    scenery(view: HollowView, level: LevelId, theme: HollowTheme) {
+    scenery(view: HollowView, level: District, theme: HollowTheme) {
       const palette = theme.districts[level];
       const sky = ctx.createLinearGradient(0, 0, 0, view.height);
       sky.addColorStop(0, palette.sky); sky.addColorStop(.62, palette.middle); sky.addColorStop(1, palette.deep);
@@ -44,7 +44,7 @@ export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: I
       haze.addColorStop(0, `${palette.deep}00`); haze.addColorStop(1, `${palette.deep}cc`);
       ctx.fillStyle = haze; ctx.fillRect(0, 0, view.width, view.height);
     },
-    stone(s: Rect, level: LevelId, index: number, view: HollowView) {
+    stone(s: Rect, level: District, index: number, view: HollowView) {
       const column = level === 'aqueduct' ? 0 : level === 'emberworks' ? 128 : 256;
       ctx.save(); ctx.beginPath(); ctx.rect(s.x, s.y, s.w, s.h); ctx.clip();
       // Cull tile ranges as well as platforms so wide ground stays cheap on phones.

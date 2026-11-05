@@ -700,3 +700,27 @@ test('Rekindled animates its modern cast and freezes its scene on pause and redu
   await expect(page.locator('.play-surface canvas')).toHaveCount(2);
   expect(errors).toEqual([]);
 });
+
+
+test('Resume cancels pending Clearing artwork and keeps the current run playable', async ({ page }) => {
+  await page.clock.install(); await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(80);
+  await page.keyboard.press('Escape');
+  const elapsed = await page.evaluate(() => (window as any).positionProbe.elapsed);
+  let finish: (() => Promise<void>) | undefined;
+  await page.route(/\/src\/games\/last-light-clearing\/ember-scene\.ts(?:\?.*)?$/, route => new Promise<void>(resolve => {
+    finish = async () => { await route.continue(); resolve(); };
+  }));
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'quality');
+  await expect.poll(() => !!finish).toBe(true);
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await finish!();
+  await page.clock.runFor(150);
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
+  expect(await page.evaluate(() => (window as any).positionProbe.elapsed)).toBeGreaterThan(elapsed);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toHaveAttribute('value', 'normal');
+  await expect(page.locator('.asset-status')).toBeHidden();
+});

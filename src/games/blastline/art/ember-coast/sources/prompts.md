@@ -1,6 +1,6 @@
 # Ember Coast artwork prompts
 
-Original artwork generated with the built-in imagegen tool. The retained final sheets are editable illustration sources; the packer only crops and resamples complete drawings.
+Original AI-generated artwork. The retained final sheets are editable illustration sources; the packer only crops and resamples complete drawings.
 
 
 ## Operator atlas

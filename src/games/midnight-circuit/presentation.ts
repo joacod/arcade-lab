@@ -132,7 +132,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     ctx.restore();
   }
   return {
-    ready: baseline?.ready ?? Promise.resolve(),
+    prepare: () => baseline?.prepare() ?? Promise.resolve(),
     reset() { gait.reset(); particles = []; rings = []; camera = undefined; last = undefined; shake = 0; },
     consume(events: readonly BrawlerEvent[]) {
       for (const e of events) {

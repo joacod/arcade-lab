@@ -2,7 +2,7 @@ import { createPreparationScope } from '../../engine/browser/preparation.ts';
 import { createPresentation } from './presentation.ts';
 import { appearances, type Appearance, type CircuitRenderer } from './graphics.ts';
 /** Owns replacement and cancellation; renderers never acquire a loop or simulation ownership. */
-export function createAppearance(surface: HTMLElement, status: (value: Appearance, message: string) => void, onRecovery: () => void) {
+export function createAppearance(surface: HTMLElement, status: (value: Appearance, message: string) => void, onRecovery: () => void, onReady: () => void) {
   let current: CircuitRenderer = createPresentation(surface), active: Appearance = 'normal';
   let disposed = false;
   const preparation = createPreparationScope();
@@ -12,7 +12,7 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
     onRecovery();
     preparation.cancel();
     current.dispose(); current = createPresentation(surface); active = 'normal';
-    status(active, message);
+    status(active, message); onReady();
   }
   async function select(value: Appearance) {
     if (disposed) return;
@@ -31,11 +31,11 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
         if (!request.current()) return;
         next = await createQuality(staging, request.signal);
       }
-      await next.ready;
+      await next.prepare();
       if (!request.current()) { next.dispose(); return; }
       if (snapshot) next.draw(...snapshot);
       current.dispose(); surface.append(...staging.childNodes); current = next; active = value;
-      status(active, '');
+      status(active, ''); onReady();
     } catch {
       next?.dispose();
       if (request.current()) { status(active, `${appearances[value]} unavailable. ${appearances[active]} retained.`); }
@@ -43,6 +43,7 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
   }
   return {
     select,
+    prepare: () => current.prepare(),
     cancel() { preparation.cancel(); status(active, ''); },
     reset() { current.reset(); },
     consume: ((events) => current.consume(events)) as CircuitRenderer['consume'],

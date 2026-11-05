@@ -1,4 +1,4 @@
-import { type LevelId, type Rect } from './content.ts';
+import { type District, type Rect } from './content.ts';
 import type { HollowView } from './presentation.ts';
 import { themes } from './themes.ts';
 
@@ -12,7 +12,7 @@ const district = {
 /** Original code-native copper, mineral and glass artwork. The session owns its lifetime. */
 export function createLumenDrawing(context: CanvasRenderingContext2D) {
   let c = context;
-  let tiles: HTMLCanvasElement[] = [], cachedDistrict: LevelId | undefined;
+  let tiles: HTMLCanvasElement[] = [], cachedDistrict: District | undefined;
   function gradient(x: number, y: number, w: number, h: number, colors: readonly string[]) {
     const g = c.createLinearGradient(x, y, x + w, y + h);
     colors.forEach((color, i) => g.addColorStop(i / (colors.length - 1), color));
@@ -81,7 +81,7 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
     c.lineTo(x + w, y + h); c.stroke();
   }
   function releaseTiles() { for (const tile of tiles) tile.width = tile.height = 1; tiles = []; cachedDistrict = undefined; }
-  function architecture(id: LevelId) {
+  function architecture(id: District) {
     if (cachedDistrict === id) return;
     releaseTiles();
     const p = district[id];
@@ -153,7 +153,7 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
     finally { c = context; }
   }
   return {
-    scenery(view: HollowView, id: LevelId, time: number, reduced: boolean) {
+    scenery(view: HollowView, id: District, time: number, reduced: boolean) {
       architecture(id); const p = district[id], { width: w, height: h } = view;
       box(0, 0, w, h, gradient(0, 0, w * .15, h, [p.sky, p.middle, p.deep]));
       // The light source and distant silhouettes stay behind every physical surface.
@@ -202,7 +202,7 @@ export function createLumenDrawing(context: CanvasRenderingContext2D) {
         c.globalAlpha = 1;
       }
     },
-    stone(s: Rect, id: LevelId, index: number, view: HollowView) {
+    stone(s: Rect, id: District, index: number, view: HollowView) {
       const p = district[id], bottom = Math.min(s.y + s.h, view.y + view.height + 10);
       c.save(); c.beginPath(); c.rect(s.x, s.y, s.w, bottom - s.y); c.clip();
       box(s.x, s.y, s.w, s.h, gradient(s.x, s.y, 0, Math.min(s.h, 260), [p.stone, p.deep]));

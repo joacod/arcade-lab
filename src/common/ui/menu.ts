@@ -1,10 +1,13 @@
 import './menu.css';
+import type { Readiness } from '../../engine/browser/preparation.ts';
 
 export interface MenuAction<Action extends string, Screen extends string> {
   id: Action;
   label: string;
   screens: readonly Screen[];
   primary?: boolean;
+  /** Navigation remains available when required artwork fails. */
+  requiresReady?: boolean;
 }
 interface MenuOptions<Action extends string, Screen extends string> {
   title: string;
@@ -41,7 +44,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-pressed="false">Mute sound</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
       <details class="game-menu-controls"><summary>Controls <span class="game-menu-shortcut">P · pause / resume</span></summary><div>${config.controls}<p><b>P</b> pauses / resumes. <b>F</b> toggles fullscreen. <b>Escape</b> pauses when available; in fullscreen, the browser may use it to exit fullscreen.</p></div></details></div>
     </div>
-    <div class="game-menu-notices" aria-live="polite"><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
+    <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
   </section>`;
   // HUD/footer wrapping must not constrain menu space or move its actions.
@@ -63,6 +66,9 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   if (config.game) content.append(config.game);
   layer.querySelector('.game-menu-theme')!.append(config.theme);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
+  const retryArt = layer.querySelector<HTMLButtonElement>('.game-menu-retry-art')!;
+  let retryArtwork: (() => void) | undefined;
+  retryArt.addEventListener('click', () => retryArtwork?.(), { signal: config.signal });
   for (const button of actions) {
     if (button.dataset.menuAction === 'resume') {
       button.textContent += ' (P)'; button.setAttribute('aria-label', 'Resume'); button.setAttribute('aria-keyshortcuts', 'P');
@@ -98,6 +104,12 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   }
   return {
     layer, heading, description, actions,
+    readiness(state: Readiness, retry: () => void) {
+      retryArtwork = retry;
+      retryArt.hidden = state !== 'failed';
+      status('.game-menu-art-status', state === 'loading' ? 'Preparing artwork…' : state === 'failed' ? 'Artwork could not load. Retry or choose another theme.' : '');
+      actions.forEach((button, i) => { if (config.actions[i]!.requiresReady !== false) button.disabled = state !== 'ready'; });
+    },
     fullscreen(available: boolean, active: boolean) { fullscreen.hidden = !available; fullscreen.textContent = active ? 'Exit fullscreen (F)' : 'Fullscreen (F)'; fullscreen.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Fullscreen'); fullscreen.setAttribute('aria-pressed', String(active)); },
     soundStatus(message: string) { status('.game-menu-sound-status', message); },
     displayStatus(message: string) { status('.game-menu-display-status', message); },

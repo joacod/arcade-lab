@@ -2,19 +2,34 @@ export type ImageBundle = Readonly<Record<string, HTMLImageElement>>;
 export type ImageDimensions = Readonly<Record<string, { width: number; height: number }>>;
 export interface PreparedImages { readonly images: ImageBundle; dispose(): void }
 
+/** Compare decoded sizes; callers retain sheet names and all atlas/role rules. */
+export function validateImageDimensions(actual: ImageDimensions,
+  expected: Readonly<Record<string, { width: number; height: number } | readonly [number, number]>>): string[] {
+  return Object.entries(expected).flatMap(([name, size]) => {
+    const [width, height] = 'width' in size ? [size.width, size.height] : size;
+    return actual[name]?.width === width && actual[name]?.height === height ? [] : [`Invalid ${name} dimensions`];
+  });
+}
+
 /** Synchronous presentation construction with session-owned initial image preparation. */
 export function createImageResource(urls: Readonly<Record<string, string>>,
   validate: (dimensions: ImageDimensions) => readonly string[]) {
   const lifetime = new AbortController();
   let bundle: PreparedImages | undefined;
-  const ready = prepareImages(urls, lifetime.signal, validate).then(prepared => {
-    if (lifetime.signal.aborted) prepared.dispose();
-    else bundle = prepared;
-  });
-  // The owner can await readiness; cancellation during synchronous mount/disposal is harmless.
-  void ready.catch(() => {});
+  let pending: Promise<void> | undefined;
+  function prepare(): Promise<void> {
+    if (bundle) return Promise.resolve();
+    if (pending) return pending;
+    pending = prepareImages(urls, lifetime.signal, validate).then(prepared => {
+      if (lifetime.signal.aborted) prepared.dispose();
+      else bundle = prepared;
+    }).finally(() => { pending = undefined; });
+    // Synchronous construction owns the request before the session observes it.
+    void pending.catch(() => {});
+    return pending;
+  }
   return {
-    ready,
+    ready: prepare(), prepare,
     get images(): ImageBundle { return bundle?.images ?? {}; },
     dispose() { lifetime.abort(); bundle?.dispose(); bundle = undefined; },
   };

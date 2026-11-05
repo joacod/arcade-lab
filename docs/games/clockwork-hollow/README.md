@@ -58,7 +58,7 @@ Paths below are relative to `src/games/clockwork-hollow/`.
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts` |
 
-`assets.ts` supplies decoded-dimension validation. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. Quality caches only the current district’s background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its raster actor atlases and shaded object bundle before replacing the current presentation.
+`asset-art.ts` supplies decoded-dimension validation and frame selection. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. `Level.id` identifies authored content independently of `Level.environment`, which selects a reusable district palette and scenery. Add or reorder levels without renaming a district or adding renderer branches. Quality caches only the current environment’s background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its raster actor atlases and shaded object bundle before replacing the current presentation.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable.
 

@@ -74,8 +74,8 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   function scenery(view: HollowView, time: number, level: Level) {
-    if (quality) { quality.scenery(view, level.id, time, motion.matches); return; }
-    if (art && theme === themes.assets) { art.scenery(view, level.id, theme); return; }
+    if (quality) { quality.scenery(view, level.environment, time, motion.matches); return; }
+    if (art && theme === themes.assets) { art.scenery(view, level.environment, theme); return; }
     const { width: w, height: h } = view;
     const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, palette.sky); sky.addColorStop(0.48, palette.middle); sky.addColorStop(1, palette.deep);
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
@@ -130,8 +130,8 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   function stone(s: Rect, index: number, level: Level, view: HollowView) {
-    if (quality) { quality.stone(s, level.id, index, view); return; }
-    if (art && theme === themes.assets) { art.stone(s, level.id, index, view); return; }
+    if (quality) { quality.stone(s, level.environment, index, view); return; }
+    if (art && theme === themes.assets) { art.stone(s, level.environment, index, view); return; }
     const fill = ctx.createLinearGradient(s.x, s.y, s.x, s.y + Math.min(s.h, 250));
     fill.addColorStop(0, palette.stone); fill.addColorStop(1, palette.deep); ctx.fillStyle = fill; ctx.fillRect(s.x, s.y, s.w, s.h);
     ctx.fillStyle = palette.edge; ctx.fillRect(s.x, s.y, s.w, 5);
@@ -180,7 +180,7 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.assets ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
   }
   return {
-    ready: baseline.ready,
+    prepare: baseline.prepare,
     replaceTheme(next: HollowTheme, images?: ImageBundle, factory?: LumenDrawingFactory) {
       const previous = { theme, art, quality, qualityFactory };
       const replacement = factory === qualityFactory ? quality : factory?.(ctx);
@@ -219,7 +219,7 @@ export function createPresentation(surface: HTMLElement) {
       if (disposed) return;
       const w = Math.max(1, Math.round(size.width * size.ratio)), h = Math.max(1, Math.round(size.height * size.ratio));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; camera = undefined; }
-      palette = theme.districts[run.level.id];
+      palette = theme.districts[run.level.environment];
       const target = hollowView(size.width, size.height, run.level, run.player);
       // Cosmetic tails keep moving after an outcome; pause and hidden-page gaps never advance them.
       const dt = screen === 'paused' || screen === 'title' || lastFrame === undefined ? 0 : clamp(now - lastFrame, 0, 0.05);

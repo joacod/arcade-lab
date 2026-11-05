@@ -1,5 +1,5 @@
 import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
-import { blastImages, validateBlastArt, operatorCel } from './sprite-art.ts';
+import { blastImages, validateBlastArt, operatorFrame, type ObjectRole } from './sprite-art.ts';
 import { themes, type BlastTheme } from './themes.ts';
 import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
 import { forTiles } from './terrain.ts';
@@ -35,41 +35,36 @@ export function createPresentation(surface: HTMLElement) {
     ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y)); ctx.textAlign = 'left';
   }
   function human(x: number, y: number, operator: Operator, facing: number, pose: GroundPose, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
-    const running = assets && pose.moving && !airborne && !motion.matches;
-    const image = running ? assets?.[operator === 'nova' ? 'novaRun' : 'boltRun'] : images().operators;
+    const frame = operatorFrame(theme.art, operator, airborne, pose.moving, pose.phase, motion.matches, aimX, aimY, firing);
+    const image = images()[frame.image];
     if (!image) return;
-    const {aim,state,runFrame} = operatorCel(airborne,pose.moving,pose.phase,motion.matches,aimX,aimY);
-    const painted = theme.finish === 'painted';
-    const row = painted ? (operator === 'bolt' ? 3 : 0) + (airborne ? 2 : firing && !motion.matches ? 1 : 0) : (operator === 'bolt' ? 4 : 0) + state;
-    ctx.save(); ctx.translate(Math.round(x+9),Math.round(y+32)); ctx.scale(facing,1);
-    const cell = painted ? 192 : assets ? 128 : 64;
-    ctx.drawImage(image,(running ? runFrame : aim)*cell,(running ? aim : row)*cell,cell,cell,-20,-45,48,48);
+    const { origin, draw } = theme.art.operators;
+    ctx.save(); ctx.translate(Math.round(x + origin[0]), Math.round(y + origin[1])); ctx.scale(facing, 1);
+    ctx.drawImage(image, ...frame.rect, ...draw);
     if (firing && !motion.matches) {
       const angle = Math.atan2(aimY,aimX*facing);
       if (assets) {
         ctx.save(); ctx.translate(Math.cos(angle)*19,-16+Math.sin(angle)*19); ctx.rotate(angle);
-        object(13,0,-5,14,10); ctx.restore();
+        object('muzzle',0,-5,14,10); ctx.restore();
       } else rect(Math.cos(angle)*18-2,-11+Math.sin(angle)*18,5,3,'#fff0b4');
     }
     ctx.restore();
   }
-  function object(frame: number,x: number,y: number,w: number,h: number,cells=1) {
-    const image = images().objects;
-    if (!image) return;
-    const cell = theme.finish === 'painted' ? 192 : 128;
-    if (assets) ctx.drawImage(image,frame%4*cell,Math.floor(frame/4)*cell,cell,cell,x,y,w,h);
-    else ctx.drawImage(image,frame*64,0,64*cells,64,x,y,w,h);
+  function object(role: ObjectRole, x: number, y: number, w: number, h: number) {
+    const image = images().objects, frame = theme.art.objects[role];
+    if (image && frame) ctx.drawImage(image, ...frame, x, y, w, h);
   }
 
   function background(v: BlastView, run: Run, time: number) {
-    const foundry = run.missionIndex > 0;
+    const foundry = run.mission.environment === 'foundry';
     if (assets?.backdrop) {
-      const sourceWidth = assets.backdrop.naturalWidth, sourceHeight = assets.backdrop.naturalHeight / 2;
+      const source = theme.art.backdrops![run.mission.environment];
+      const [, , sourceWidth, sourceHeight] = source;
       const height = Math.max(512, 675 - v.y), width = Math.max(height * sourceWidth / sourceHeight, v.width), y = 675 - v.y - height;
       rect(0, 0, v.width, v.height, foundry ? theme.foundrySky[0] : theme.sky[0]);
       const travel = Math.max(1, run.mission.columns * TILE - v.width);
       const x = -clamp(v.x / travel, 0, 1) * (width - v.width);
-      ctx.drawImage(assets.backdrop, 0, foundry ? sourceHeight : 0, sourceWidth, sourceHeight, Math.round(x), Math.round(y), width, height);
+      ctx.drawImage(assets.backdrop, ...source, Math.round(x), Math.round(y), width, height);
       return;
     }
     const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
@@ -132,7 +127,7 @@ export function createPresentation(surface: HTMLElement) {
       const damaged = t.health[i]! < materialHealth[m] * .75;
       if (assets) {
         rect(r.x, r.y, TILE, TILE, structure ? theme.structure[0] : armored ? theme.armor[0] : theme.masonry[0]);
-        object(structure ? 8 : armored ? damaged ? 12 : 10 : damaged ? 11 : 9, r.x, r.y, TILE, TILE);
+        object(structure ? 'structure' : armored ? damaged ? 'damagedArmor' : 'armor' : damaged ? 'damagedBrick' : 'brick', r.x, r.y, TILE, TILE);
         if (structure && Math.floor(i / t.columns) > 27) rect(r.x, r.y, TILE, TILE, '#10273766');
         if (i >= t.columns && !t.material[i - t.columns]) rect(r.x, r.y, TILE, 2, structure ? theme.ledge : '#e4bc7c');
         return;
@@ -149,40 +144,41 @@ export function createPresentation(surface: HTMLElement) {
       if (i >= t.columns && !t.material[i - t.columns]) { rect(r.x, r.y, TILE, 3, structure ? theme.ledge : '#d5ba80'); if (structure && Math.floor(i / t.columns) >= 27) for (let j = 0; j < 3; j++) rect(r.x + j * 8, r.y + 3, 4, 3, '#d0ad63'); }
     });
     run.mission.checkpoints.forEach((cp, i) => {
-      object(i <= run.checkpoint ? 4 : 3, cp.x-8,cp.y-25,42,58);
+      object(i <= run.checkpoint ? 'supplied' : 'supply', cp.x-8,cp.y-25,42,58);
       text(i <= run.checkpoint ? 'SUPPLIED' : 'SUPPLY', cp.x + 10, cp.y - 28, '#c6ddb9', 6, 'center');
     });
     for (const r of run.relays) {
-      object(r.health > 0 ? 0 : 1,r.x-8,r.y-8,43,42);
+      object(r.health > 0 ? 'relay' : 'offlineRelay',r.x-8,r.y-8,43,42);
       text(r.health > 0 ? 'POWER RELAY' : 'OFFLINE',r.x+14,r.y-18,'#ffd58a',6,'center');
     }
     for (const b of run.barrels) if (!b.detonated && b.x > v.x - 40 && b.x < v.x + v.width + 40) {
-      object(2,b.x-3,b.y-3,24,30);
+      object('barrel',b.x-3,b.y-3,24,30);
     }
     const rescue = run.mission.rescue;
     if (rescue && !run.rescued) {
       human(rescue.x, rescue.y, 'bolt', -1, { phase: 0, moving: false }, false);
-      object(5,rescue.x-8,rescue.y-10,38,42);
+      object('rescue',rescue.x-8,rescue.y-10,38,42);
       text('BOLT', rescue.x + 10, rescue.y - 28, '#ffe09a', 8, 'center'); text('REACH TO RESCUE', rescue.x + 10, rescue.y - 17, '#d7c69c', 6, 'center');
     }
     const exit = run.mission.exit, ready = readyToExtract(run);
     rect(exit.x - 14, 648, exit.w + 28, 8, '#182f3a');
     for (let i = 0; i < 12; i++) rect(exit.x - 14 + i * 17, 649, 8, 4, ready ? '#b2e6b4' : '#bba269');
     const shipX = exit.x + exit.w / 2, shipY = 593 - (run.extraction > 0 ? Math.pow(run.extraction, 2) * 25 : Math.sin(time * 2) * 2);
-    object(6,Math.round(shipX)-64,Math.round(shipY)-35,128,64,2);
+    object('extraction',Math.round(shipX)-64,Math.round(shipY)-35,128,64);
     text(ready ? 'EXTRACT ↑' : 'EXTRACTION / LOCKED', shipX, 549, ready ? '#c8f7c0' : '#dabd8e', 8, 'center');
     for (const e of run.enemies) {
       if (e.health <= 0 || e.x < v.x - 90 || e.x > v.x + v.width + 90) continue;
       ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y)); ctx.scale(e.facing, 1);
       const bastion = e.kind === 'bastion';
-      const row = bastion ? 2 : e.kind === 'heavy' ? 1 : 0;
+      const { cell, rows, draw } = theme.art.enemies;
+      const row = rows[e.kind];
       let gait = enemyGaits.get(e.id);
       if (!gait) { gait = createGroundGait(); enemyGaits.set(e.id, gait); }
       const pose = gait.observe(e, dt);
       const frame = !motion.matches && pose.moving ? pose.phase < .5 ? 1 : 2 : 0;
-      const image = images().enemies, cell = theme.finish === 'painted' ? 192 : assets ? 128 : 64;
+      const image = images().enemies;
       if (e.flash > 0 && !motion.matches) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
-      if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
+      if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,...draw[e.kind]);
       ctx.restore();
       if (e.warning > 0) {
         const from = { x: e.x + e.w / 2, y: e.y + (bastion ? 22 : 12) };
@@ -193,7 +189,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     for (const shot of run.projectiles) {
       if (shot.kind === 'grenade') {
-        if (assets) object(7, shot.x - 5, shot.y - 5, 10, 10);
+        if (assets) object('grenade', shot.x - 5, shot.y - 5, 10, 10);
         else { rect(shot.x - 3, shot.y - 3, 6, 6, '#e4b470'); rect(shot.x - 1, shot.y - 5, 2, 2, '#fdedb4'); }
       }
       else {
@@ -210,7 +206,7 @@ export function createPresentation(surface: HTMLElement) {
       const progress = 1 - ring.life / .38, r = ring.radius * (.3 + progress * .7);
       if (!motion.matches && progress < .5) {
         const fire = r * (1 - progress * .7);
-        if (assets) object(14, ring.x - fire, ring.y - fire, fire * 2, fire * 2);
+        if (assets) object('explosion', ring.x - fire, ring.y - fire, fire * 2, fire * 2);
         else {
           rect(ring.x - fire, ring.y - fire * .55, fire * 2, fire * 1.1, '#e78548');
           rect(ring.x - fire * .55, ring.y - fire, fire * 1.1, fire * 2, '#f7b55b');
@@ -223,7 +219,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     for (const p of particles) {
       ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5);
-      if (p.smoke && assets) { const size = 12 + (1 - p.life / p.max) * 18; object(15,p.x-size/2,p.y-size/2,size,size); }
+      if (p.smoke && assets) { const size = 12 + (1 - p.life / p.max) * 18; object('smoke',p.x-size/2,p.y-size/2,size,size); }
       else rect(p.x, p.y, p.size + (p.smoke ? (1 - p.life / p.max) * 12 : 0), p.size, p.color);
     }
     ctx.globalAlpha = 1;
@@ -243,6 +239,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { consume,
+    prepare: artwork.prepare,
     replaceTheme(next: BlastTheme, nextImages?: ImageBundle) {
       const previousTheme = theme, previousImages = assets;
       theme = next; assets = nextImages;
@@ -261,7 +258,7 @@ export function createPresentation(surface: HTMLElement) {
       }
       const w = Math.round(host.width * host.ratio), h = Math.round(host.height * host.ratio);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; camera = undefined; }
-      ctx.imageSmoothingEnabled = theme.finish === 'painted';
+      ctx.imageSmoothingEnabled = theme.art.smooth;
       ctx.imageSmoothingQuality = 'high';
       const target = blastView(host.width, host.height, run.mission, run.player);
       if (!camera) camera = target;

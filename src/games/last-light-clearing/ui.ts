@@ -84,8 +84,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       { id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
-      { id: 'exit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'choosing'] },
+      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
+      { id: 'exit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'choosing'] },
     ],
   });
   const assetStatus = document.createElement('p'); assetStatus.className = 'asset-status'; assetStatus.hidden = true;
@@ -122,7 +122,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const heading = menu.heading;
   const description = menu.description;
   const timer = $<HTMLOutputElement>('.timer');
-  const buttons = menu.actions;
   const health = $<HTMLMeterElement>('.health-meter');
   health.max = clearing.keeper.maxHealth;
   const healthValue = $<HTMLOutputElement>('.health-value');
@@ -137,10 +136,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     consume(events: readonly GameEvent[]) {
       for (const event of events) if (event.type === 'evolution') evolutionAt = event.at;
     },
-    preparing(value: boolean) {
-      for (const button of buttons) if (['start', 'resume', 'restart'].includes(button.dataset.menuAction!)) button.disabled = value;
-    },
     appearance(id: ThemeId) { appearance.setValue(id); },
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     displayStatus: menu.displayStatus,
     soundStatus: menu.soundStatus,

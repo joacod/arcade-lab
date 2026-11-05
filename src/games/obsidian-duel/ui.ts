@@ -31,8 +31,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
-      { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
+      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
+      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump', 'crouch', 'light', 'heavy', 'special', 'block'] as const).map(k => [k, $<HTMLButtonElement>(`[data-control="${k}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -51,6 +51,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       }
     },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;

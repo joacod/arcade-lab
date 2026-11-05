@@ -24,8 +24,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   const objects = !theme.art?.objects ? createImageResource({ objects: new URL('./art/objects.svg', import.meta.url).href }, d => d.objects?.width === 320 && d.objects.height === 64 ? [] : ['Invalid flight objects']) : undefined;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   surface.append(canvas);
-  const ready = Promise.all([baseline?.ready, objects?.ready]).then(() => {});
-  void ready.catch(() => {});
   let visualTime = 0;
   let particles: Particle[] = [], lastTime = 0, width = 0, height = 0, damageFlash = 0;
   let lastRecharge = 0, rollReadyAt = -Infinity;
@@ -223,7 +221,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   }
   return {
     element: canvas,
-    ready,
+    prepare: () => Promise.all([baseline?.prepare(), objects?.prepare()]).then(() => {}),
     reset() { particles = []; lastTime = 0; damageFlash = 0; lastRecharge = 0; rollReadyAt = -Infinity; flashes.clear(); },
     consume(events: readonly FlightEvent[]) {
       for (const event of events) {
