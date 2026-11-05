@@ -2,6 +2,58 @@ import { useNormalBaseline } from '../../menu.ts';
 import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
+test('Skybreak keeps shared menu typography and separates hull from lives in a compact HUD', async ({ page }, info) => {
+  await page.route(/\/src\/games\/skybreak\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createRun; createRun = () => { const run = original(); window.flightProbe = run; return run; };` });
+  });
+  await page.clock.install();
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  const theme = page.getByRole('group', { name: 'Theme', exact: true });
+  for (const mode of ['assets', 'quality'] as const) {
+    await chooseTheme(theme, mode);
+    await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', mode);
+    const menuButtons = await page.locator('.game-menu button:visible').evaluateAll(buttons => buttons.map(button => {
+      const style = getComputedStyle(button);
+      return { font: style.fontFamily, shadow: style.textShadow };
+    }));
+    expect(menuButtons.length).toBeGreaterThan(0);
+    for (const style of menuButtons) {
+      expect(style.font).toBe('system-ui, sans-serif');
+      expect(style.shadow).toBe('none');
+    }
+    await page.screenshot({ path: info.outputPath(`skybreak-${mode}-menu.png`) });
+    await page.getByRole('button', { name: mode === 'assets' ? 'Play' : 'Resume', exact: true }).click();
+    const surface = page.locator('.play-surface');
+    await expect(surface).toBeFocused();
+    expect(await surface.evaluate(element => getComputedStyle(element).outlineStyle)).toBe('none');
+    await page.evaluate(() => { (window as any).flightProbe.player.health = 1; });
+    await page.clock.runFor(50);
+    await expect(page.locator('.skybreak-app')).toHaveAttribute('data-screen', 'playing');
+    await expect(page.getByLabel('Aircraft hull')).toBeVisible();
+    await expect(page.getByLabel('Aircraft hull')).toContainText('1 of 3');
+    await expect(page.getByLabel('Aircraft lives')).toHaveText('Lives 3');
+    const segments = page.locator('.skybreak-hull-segments > span');
+    const boxes = await segments.evaluateAll(elements => elements.map(element => {
+      const box = element.getBoundingClientRect(); return { left: box.left, right: box.right };
+    }));
+    expect(boxes).toHaveLength(3);
+    expect(boxes[1]!.left).toBeGreaterThan(boxes[0]!.right);
+    expect(boxes[2]!.left).toBeGreaterThan(boxes[1]!.right);
+    const crowded = await page.locator('.skybreak-hud, .skybreak-footer').evaluateAll(elements => elements.some(element => element.scrollWidth > element.clientWidth));
+    expect(crowded).toBe(false);
+    await expect(page.getByLabel('Sortie progress')).toHaveText('0:00 / 2:48');
+    await page.screenshot({ path: info.outputPath(`skybreak-${mode}-hud.png`) });
+    await page.keyboard.press('p');
+    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+    await expect(page.locator('.game-menu-primary:visible')).toHaveCount(1);
+  }
+});
+
 
 test('Skybreak sortie controls, suspension, outcomes, and switching release each session', async ({ page }, info) => {
   const errors: string[] = [];
