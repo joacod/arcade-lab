@@ -40,7 +40,7 @@ All sheets use antialiased sampling. `bellgarden/generate.mjs` owns the SVG sour
 | `bellgarden/<district>-far.svg` | 960 × 900 for aqueduct, emberworks and belfry | Quiet silhouettes repeat horizontally at 12% camera displacement. |
 | `bellgarden/<district>-near.svg` | 960 × 900 for the same districts | Decorated arches and district props repeat at 32% camera displacement. |
 
-`asset-art.ts` owns decoded-dimension validation, object rectangles and keeper pose selection. `asset-presentation.ts` owns footprints, tiling, mirroring and scenery composition. Signs, celestial marks, vent columns and timing displays remain procedural.
+`asset-art.ts` owns decoded-dimension validation, object rectangles and keeper pose selection. `asset-presentation.ts` owns footprints, tiling, mirroring and scenery composition. Quality’s thorn frame contains two complete 64 × 56 copper teeth with brass sockets; alternate these cells across each hazard at approximately their native proportions, with the mounting rail entirely inside the authored rectangle. Lantern artwork has its visible sole at source y=156, independently of the 160-pixel cell height. Signs, celestial marks, vent columns and timing displays remain procedural. Sign `groundY` values in `content.ts` name the supporting surface; keep plaques clear of raised solids and foreground interaction cues.
 
 ## Editing and regeneration
 

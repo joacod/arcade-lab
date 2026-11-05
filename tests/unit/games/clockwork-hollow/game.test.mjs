@@ -202,7 +202,7 @@ test('failure records the lethal contact once and retry clears it without erasin
   }
 });
 
-test('authored checkpoints and patrol bounds have safe physical support independent of their art', () => {
+test('authored checkpoints, sign posts and patrol bounds have physical support independent of their art', () => {
   for (const level of journey) {
     assert.equal(level.checkpoints.length, 2);
     for (const checkpoint of level.checkpoints) {
@@ -210,5 +210,9 @@ test('authored checkpoints and patrol bounds have safe physical support independ
       assert.ok(!level.hazards.some(h => h.x < checkpoint.x + m.width && h.x + h.w > checkpoint.x));
     }
     for (const enemy of level.patrols) assert.ok(level.solids.some(s => enemy.x >= s.x && enemy.to + enemy.w <= s.x + s.w && enemy.y + enemy.h === s.y));
+    for (const sign of level.signs) {
+      assert.ok(level.solids.some(s => sign.x - 6 >= s.x && sign.x + 6 <= s.x + s.w && sign.groundY === s.y), `${level.id}: ${sign.title}`);
+      assert.ok(!level.solids.some(s => sign.x > s.x && sign.x < s.x + s.w && s.y < sign.groundY && s.y + s.h > sign.groundY - 96), 'post must not pass through a raised block');
+    }
   }
 });

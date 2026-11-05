@@ -30,6 +30,8 @@ Every mode uses complete keeper and beetle drawings. Quality’s AI-generated ac
 
 Quality uses Canvas 2D with shaded image assets, bevelled platform materials and cached architectural layers. A monumental waterwheel, foundry vessels and a belfry rose window distinguish the districts. Distant scenery stays quieter than landing lips, objectives and hazards. The interface uses dark mineral surfaces and brass rules.
 
+Signs stand on authored platform surfaces, in clear spaces away from lanterns, vents and jump blocks. Their posts and plaques sit behind the solid route. Lantern soles meet the landing edge, and bell chains attach to their arch crowns. Quality’s curved copper thorns repeat individually with shaded brass sockets, fitting each hazard patch without flattening a fixed strip or extending its danger bounds.
+
 ## Source ownership and customization
 
 Paths below are relative to `src/games/clockwork-hollow/`.
@@ -58,7 +60,7 @@ The camera provides minimum horizontal visibility on narrow displays, bounded ve
 
 Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, keeper lean, landing compression and bell swinging. All modes use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 
-![Lumen Conservatory: the sculpted porcelain keeper and wind-up beetle beneath layered aqueduct ribs and a monumental waterwheel](quality.webp)
+![Lumen Conservatory: the sculpted porcelain keeper, copper thorns and a grounded lantern sign beneath layered aqueduct ribs and a monumental waterwheel](quality.webp)
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain; only nearby vents are audible.
 

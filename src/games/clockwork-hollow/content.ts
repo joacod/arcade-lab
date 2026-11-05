@@ -4,7 +4,8 @@ export interface Mote { readonly x: number; readonly y: number }
 export interface Patrol extends Rect { readonly to: number; readonly speed: number }
 export interface Vent extends Rect { readonly period: number; readonly offset: number }
 export interface Checkpoint { readonly x: number; readonly y: number; readonly name: string }
-export interface Sign { readonly x: number; readonly y: number; readonly title: string; readonly detail: string }
+/** Posts end at an authored landing surface; signs are background decoration. */
+export interface Sign { readonly x: number; readonly groundY: number; readonly title: string; readonly detail: string }
 export type District = 'aqueduct' | 'emberworks' | 'belfry';
 export interface Level {
   readonly id: string;
@@ -34,10 +35,10 @@ export const hollow: Level = {
   checkpoints: [{ x: 3690, y: 570, name: 'Moss lantern' }, { x: 8100, y: 610, name: 'Waterwheel rest' }],
   patrols: [{ x: 4490, y: 624, w: 36, h: 26, to: 4800, speed: 62 }, { x: 10300, y: 624, w: 36, h: 26, to: 10600, speed: 76 }],
   vents: [],
-  signs: [{ x: 205, y: 618, title: 'THE BELL IS EAST →', detail: 'HOLD JUMP FOR HEIGHT' },
-    { x: 3750, y: 538, title: 'A LIGHT TO RETURN TO', detail: 'TOUCH LANTERNS TO SAVE' },
-    { x: 4260, y: 560, title: 'WIND-UP BEETLES →', detail: 'LAND ON TOP OR LEAP OVER' },
-    { x: 8150, y: 578, title: 'THE WATERWHEEL →', detail: 'MOTES REWARD EXPLORING' }],
+  signs: [{ x: 205, groundY: 690, title: 'THE BELL IS EAST →', detail: 'HOLD JUMP FOR HEIGHT' },
+    { x: 3910, groundY: 610, title: 'A LIGHT TO RETURN TO', detail: 'TOUCH LANTERNS TO SAVE' },
+    { x: 4290, groundY: 650, title: 'WIND-UP BEETLES →', detail: 'LAND ON TOP OR LEAP OVER' },
+    { x: 8180, groundY: 650, title: 'THE WATERWHEEL →', detail: 'MOTES REWARD EXPLORING' }],
   width: 12500, height: 960,
   start: { x: 110, y: 650 },
   solids: [
@@ -99,9 +100,9 @@ export const furnace: Level = {
   name: 'The Emberworks', id: 'emberworks', environment: 'emberworks', subtitle: 'Read the pressure. Cross between breaths.', width: 13600, height: 1000,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4350, y: 610, name: 'Foundry lantern' }, { x: 9000, y: 570, name: 'Pressure room' }],
-  signs: [{ x: 230, y: 618, title: 'THE EMBERWORKS →', detail: 'VENTS GLOW BEFORE FIRING' },
-    { x: 4370, y: 578, title: 'BREATHE. THEN CROSS.', detail: 'WAIT FOR THE BLUE LIGHT' },
-    { x: 9030, y: 538, title: 'THE PRESSURE ROOM →', detail: 'ONE CLEAN JUMP AT A TIME' }],
+  signs: [{ x: 230, groundY: 690, title: 'THE EMBERWORKS →', detail: 'VENTS GLOW BEFORE FIRING' },
+    { x: 4120, groundY: 650, title: 'BREATHE. THEN CROSS.', detail: 'WAIT FOR THE BLUE LIGHT' },
+    { x: 9070, groundY: 610, title: 'THE PRESSURE ROOM →', detail: 'ONE CLEAN JUMP AT A TIME' }],
   solids: [
     { x: 0, y: 690, w: 1100, h: 370 }, { x: 1200, y: 610, w: 180, h: 28 },
     { x: 1480, y: 530, w: 180, h: 28 }, { x: 1770, y: 650, w: 1050, h: 410 },
@@ -143,9 +144,9 @@ export const belfry: Level = {
   name: 'The Starlit Belfry', id: 'belfry', environment: 'belfry', subtitle: 'One last climb. Let the hollow sing.', width: 14400, height: 1100,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4570, y: 570, name: 'Moon lantern' }, { x: 9400, y: 530, name: 'Bellkeeper rest' }],
-  signs: [{ x: 210, y: 618, title: 'THE STARLIT BELFRY →', detail: 'EVERY SPRING HAS A SONG' },
-    { x: 4620, y: 538, title: 'ABOVE THE CANOPY →', detail: 'WATCH THE LANDING EDGE' },
-    { x: 9440, y: 498, title: 'THE LAST ASCENT →', detail: 'THE HOLLOW IS LISTENING' }],
+  signs: [{ x: 210, groundY: 690, title: 'THE STARLIT BELFRY →', detail: 'EVERY SPRING HAS A SONG' },
+    { x: 4650, groundY: 610, title: 'ABOVE THE CANOPY →', detail: 'WATCH THE LANDING EDGE' },
+    { x: 9180, groundY: 570, title: 'THE LAST ASCENT →', detail: 'THE HOLLOW IS LISTENING' }],
   solids: [
     { x: 0, y: 690, w: 760, h: 470 }, { x: 850, y: 610, w: 160, h: 28 },
     { x: 1110, y: 530, w: 160, h: 28 }, { x: 1370, y: 450, w: 180, h: 28 },

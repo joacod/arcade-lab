@@ -46,6 +46,8 @@ const materials = mode => mode === 'quality' ? `<defs>
  <linearGradient id="metal" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#fff1bc"/><stop offset=".24" stop-color="#d9ac68"/><stop offset=".6" stop-color="#94744e"/><stop offset="1" stop-color="#3d5355"/></linearGradient>
  <radialGradient id="glass" cx=".35" cy=".25" r=".85"><stop stop-color="#529c99"/><stop offset=".35" stop-color="#224b54"/><stop offset="1" stop-color="#091e2b"/></radialGradient>
  <radialGradient id="heart" cx=".35" cy=".3"><stop stop-color="#fff9cf"/><stop offset=".4" stop-color="#b1f1d7"/><stop offset="1" stop-color="#4b9b93"/></radialGradient>
+ <linearGradient id="thorn-copper" x1="0" y1="0" x2="1" y2=".3"><stop stop-color="#713c38"/><stop offset=".25" stop-color="#f1b18a"/><stop offset=".46" stop-color="#cf705a"/><stop offset=".7" stop-color="#9a4d43"/><stop offset="1" stop-color="#493d40"/></linearGradient>
+ <linearGradient id="thorn-socket" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f4d8a0"/><stop offset=".25" stop-color="#b28c5a"/><stop offset=".55" stop-color="#665b46"/><stop offset="1" stop-color="#253d40"/></linearGradient>
  </defs>` : '';
 for (const mode of ['normal', 'assets']) {
  const normal = mode === 'normal';
@@ -134,11 +136,20 @@ const qGate =
 const qMote = path('M64 51L83 78L64 105L45 78Z','url(#metal)',ink,2) +
  path('M64 54L64 78L48 78Z','#fff9d1') + path('M64 78L80 78L64 101Z','#88d4c0') +
  path('M64 54L80 78L64 78Z','#f9d588');
-const qThorns =
- path('M0 159L8 105L25 151L32 109L49 150L57 105L75 151L83 109L100 151L109 105L128 159Z','#b87263',ink,2) +
- path('M8 105L12 150L0 159ZM32 109L36 151L25 155ZM57 105L61 151L49 155ZM83 109L87 151L75 155ZM109 105L113 151L100 156Z','#ffc5a0') +
- path('M8 105L18 147L12 150ZM57 105L69 148L61 151ZM109 105L122 152L113 151Z','#db9277') +
- path('M0 155Q32 145 64 154T128 155L128 160L0 160Z','url(#metal)',ink,2);
+// Two complete forged thorns with their own sockets. Runtime repeats these
+// cells to preserve the tall curved profile at each authored patch width.
+const qThorns = [0, 1].map(i => group(i * 64, 0,
+ rect(0, 153, 64, 7, '#263c3d') +
+ path('M0 153L5 149L59 149L64 153L64 159L0 159Z','url(#thorn-socket)', '#263c3d', 1) +
+ ellipse(32, 149, 25, 6, '#213839') +
+ path(i === 0 ? 'M9 147Q24 128 33 105Q32 127 55 147Q36 157 9 147Z' : 'M9 147Q30 127 31 105Q40 130 55 147Q34 157 9 147Z','url(#thorn-copper)', '#4b3434', 1.5) +
+ path(i === 0 ? 'M12 146Q25 128 33 105Q29 130 28 150Z' : 'M12 146Q30 126 31 105Q34 130 28 150Z','#e9ae82') +
+ path(i === 0 ? 'M33 106Q33 131 51 146L35 150Z' : 'M31 106Q40 132 51 146L35 150Z','#8b4840') +
+ path(i === 0 ? 'M16 143Q27 126 32 111' : 'M16 143Q30 125 31 111','none','#ffe2b3',1.5) +
+ path('M8 146Q31 153 56 146L56 151Q32 159 8 151Z','url(#thorn-socket)', '#3c4440', 1) +
+ path('M10 146Q32 153 54 146','none','#f2c78b',1.5) +
+ [4,60].map(x => ellipse(x,155,1.6,1.6,'#20363a') + ellipse(x-.4,154.5,.5,.5,'#fce1a6')).join('')
+)).join('');
 const qVent =
  path('M13 130L23 122L105 122L116 130L116 157L13 157Z','url(#metal)',ink,2) +
  path('M21 132L107 132L101 142L27 142Z','url(#glass)',ink,2) +
