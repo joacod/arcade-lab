@@ -7,15 +7,6 @@ async function probe(page: import('@playwright/test').Page) {
     await route.fulfill({ response, body: `${await response.text()}
       const original = createRun; createRun = () => { const run = original(); window.flightProbe = run; return run; };` });
   });
-  await page.addInitScript(() => {
-    const original = HTMLCanvasElement.prototype.getContext;
-    (window as any).coastContexts = [];
-    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
-      const ctx = (original as any).call(this, type, ...args);
-      if (type === 'webgl2' && ctx && !(window as any).coastContexts.includes(ctx)) (window as any).coastContexts.push(ctx);
-      return ctx;
-    } as any;
-  });
   await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
@@ -31,7 +22,6 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   const frozen = await state();
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   expect(await state()).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
   await page.clock.runFor(100);
   const surface = page.locator('.play-surface'); const picture = await surface.screenshot();
   await page.clock.runFor(1200); expect((await surface.screenshot()).equals(picture), 'paused presentation stays unchanged').toBe(true); expect(await state()).toBe(frozen);
@@ -64,7 +54,6 @@ test('Quality preserves an ongoing sortie, freezes its output, survives restart 
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   await chooseOption(theme, 'normal');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
-  expect(await page.evaluate(() => (window as any).coastContexts.every((ctx: WebGL2RenderingContext) => ctx.isContextLost()))).toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0); expect(errors).toEqual([]);
 });
@@ -80,7 +69,6 @@ test('Quality handles cancelled and failed backdrop preparation without replacin
   await expect(page.locator('canvas')).toHaveCount(1);
   await chooseOption(theme, 'normal'); await finish!(); await page.clock.runFor(100);
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
-  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
   await page.unroute('**/tempest-coast/backdrop.webp');
   await page.evaluate(async () => {
     const path = '/src/games/skybreak/themes.ts'; const { themes } = await import(path);
@@ -101,16 +89,14 @@ test('Quality handles cancelled and failed backdrop preparation without replacin
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await finish!(); await page.clock.runFor(100);
   await expect(page.locator('canvas')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
 });
 
-test('Quality uses complete sprites without WebGL and freezes decoration for reduced motion', async ({ page }) => {
+test('Quality uses complete sprites through Canvas 2D and freezes decoration for reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await probe(page);
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
   await chooseOption(theme, 'quality'); await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
   await expect(page.locator('canvas')).toHaveCount(1);
-  expect(await page.evaluate(() => (window as any).coastContexts.length)).toBe(0);
   const picture = await page.locator('.play-surface').screenshot();
   await page.clock.runFor(1800); expect((await page.locator('.play-surface').screenshot()).equals(picture), 'reduced-motion title stays unchanged').toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();

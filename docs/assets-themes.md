@@ -2,7 +2,7 @@
 
 Assets is a focused artistic pass over the playable Normal foundation. By default, give the game an old-school character through retro or pixel-inspired artwork suited to its genre and setting. Coordinate actors, objects, scenery, feedback and interface into a pleasing, cohesive look and feel. Normal may already use images; this pass is distinguished by deliberate art direction, rather than by introducing the first assets. Keep the scope focused instead of chasing Quality's modern finish. Follow the [development progression and mode contracts](architecture.md#appearance-changes) and [Normal guide](normal-themes.md); mechanics and run state stay the same.
 
-When implementing or improving Assets, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, rendering technologies, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
+When implementing or improving Assets, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
 
 ## Inspect roles and choose a direction
 
@@ -10,7 +10,7 @@ Read the game's guide, presentation contract, theme data, animation observations
 
 Write a short creative brief in the owning game's documentation. Carry the game's setting and identity into a suitable retro treatment: pixel art, classic arcade sprites or an old-school hand-drawn style, for example. Pixel art is a direction, not a file-format requirement; choose sampling and detail that suit the artwork. Choose perspective, palette, shape language and materials that work together, and preserve the visual hierarchy that makes the actions readable. Follow an explicitly requested adaptation when supplied rather than imposing the default direction.
 
-Plan custom image coverage across all player characters, enemies and interactable objects, including their significant action and reaction states. Plan scenery images and relevant feedback alongside them. Effects, UI and some scenery can remain procedural if they support the same identity. Cohesion and meaningful coverage matter more than replacing every drawn element with an image.
+Plan custom image coverage across all player characters, enemies and interactable objects, including their significant action and reaction states. Plan scenery images and relevant feedback alongside them. Render through Canvas 2D. Effects, UI and some scenery can remain procedural if they support the same identity. Cohesion and meaningful coverage matter more than replacing every drawn element with an image.
 
 ## Specify artwork before integrating it
 

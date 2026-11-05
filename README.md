@@ -23,7 +23,7 @@ All enabled presentations include their required artwork in the repository; no m
 
 ## Learn more
 
-Built with TypeScript and Vite, using Canvas 2D, Three.js and vgpu/WebGPU for graphics. [AudioBits](https://github.com/joacod/audiobits) powers procedural game sound, with shared session lifecycle handling and original recipes for each game.
+Built with TypeScript and Vite, using Canvas 2D and committed image assets for graphics. [AudioBits](https://github.com/joacod/audiobits) powers procedural game sound, with shared session lifecycle handling and original recipes for each game.
 
 - [Architecture](docs/architecture.md): repository layout, shared engine ownership and local verification.
 - [Development guidance](AGENTS.md): contributor and agent instructions.

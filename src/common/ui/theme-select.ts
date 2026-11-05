@@ -1,11 +1,11 @@
 import { createSelectField } from './menu-components.ts';
 
 /** Collection-wide presentation modes. Definitions and renderer choices belong to games. */
-export type ThemeMode = 'normal' | 'assets' | 'quality' | 'custom';
+export type ThemeMode = 'normal' | 'assets' | 'quality';
 export type ThemeModes<Definition> = Readonly<Partial<Record<ThemeMode, Definition>>>;
-const labels: Record<ThemeMode, string> = { normal: 'Normal', assets: 'Assets', quality: 'Quality', custom: 'Custom' };
+const labels: Record<ThemeMode, string> = { normal: 'Normal', assets: 'Assets', quality: 'Quality' };
 
-/** Always show the three standard modes; expose Custom only when the game supplies it. */
+/** Always show all three modes, disabling presentations the game has not implemented. */
 export function createThemeSelect<Mode extends ThemeMode>(config: {
   modes: Readonly<Partial<Record<Mode, unknown>>>;
   value: NoInfer<Mode>;
@@ -15,7 +15,6 @@ export function createThemeSelect<Mode extends ThemeMode>(config: {
   onChange(mode: Mode): void;
 }) {
   const modes: ThemeMode[] = ['normal', 'assets', 'quality'];
-  if ('custom' in config.modes) modes.push('custom');
   const available = (mode: ThemeMode) => Object.hasOwn(config.modes, mode) && config.modes[mode as Mode] != null;
   const choices = Object.fromEntries(modes.map(mode => {
     const name = config.names?.[mode as Mode];

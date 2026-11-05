@@ -37,8 +37,6 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 **Normal**, the default, uses complete hooded-Keeper and briar-creature sprites over the procedural forest clearing and spell effects. **Assets** uses bundled Ember Ruins in development and production. **Quality · Ember Ruins · Rekindled** builds on the Assets presentation, redrawing its knight, goblin and demon designs as a cohesive modern illustrated art set, with new full-body animation cels, ruin props, gems and spell objects.
 
-**Custom** uses Abyssal Bloom, an experimental WebGPU/vgpu presentation with a procedural living field, domain-warped luminous veins, drifting marine snow, reactive ripples and shader-rendered organisms, spells and dissolve particles. It includes matching Abyss HUD styling and requires WebGPU.
-
 ### Quality direction: Ember Ruins · Rekindled
 
 Ember Ruins supplies the designs, not the finished Quality pixels. The Keeper becomes a dimensional silver-blue spell knight with a teal tabard, crimson plume and cape, warm belt lantern and compact sword. Pursuers are new olive-green goblins in weathered teal hoods and leather, carrying jagged cleavers. Chargers have a separate lean armored silhouette, paired scarlet crest spikes and hooked blades. The elite is a broad crimson demon with curved black horns, basalt armor and molten chest fissures. Complete authored cels carry breathing, cape movement and grounded strides.
@@ -68,18 +66,18 @@ Paths below are relative to `src/games/last-light-clearing/`.
 | Typed content and validation | `content.ts`, `content-validation.ts` |
 | Physical input | `input.ts` |
 | Camera transform, attack cues and CSS-space overlay | `view.ts`, `screen-overlay.ts` |
-| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `ember-scene.ts`, `vgpu/` |
+| Presentation contract and renderers | `world-presentation.ts`, `presentation.ts`, `ember-scene.ts` |
 | Artwork, appearances and animation | `art-pack.ts`, `assets.ts`, `themes.ts`, `animation.ts`, `art/` |
 | UI and sound adapters | `ui.ts`, `style.css`, `sound.ts` |
 
 ## Renderer composition
 
-`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Assets and Quality use the same Canvas sprite renderer, observations and clip helpers. Quality's local `ember-scene.ts` owns its cached painted floor, new perimeter props, light stamps and fixed ember field. `rekindledArt` in `themes.ts` maps the new actor cels and gem/Halo/Shard images independently of Assets. The preparation transaction validates and loads the Quality ground only when selected. Replacement releases cached canvases and the outgoing image bundle. No Three.js or WebGPU code is needed for Quality.
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Assets and Quality use the same Canvas sprite renderer, observations and clip helpers. Quality's local `ember-scene.ts` owns its cached painted floor, new perimeter props, light stamps and fixed ember field. `rekindledArt` in `themes.ts` maps the new actor cels and gem/Halo/Shard images independently of Assets. The preparation transaction validates and loads the Quality ground only when selected. Replacement releases cached canvases and the outgoing image bundle.
 
-The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Custom loads `vgpu/bloom.ts` and its WGSL field and organism shaders, retaining its explicitly experimental shader organisms. Palettes live in `themes.ts`; effect budgets stay with their presentation owner.
+The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Palettes live in `themes.ts`; effect budgets stay with their presentation owner.
 
-Bloom owns its device, surface, shader draws, effects, uniforms and storage buffers. Device acquisition cannot be interrupted, so a device arriving after cancellation is immediately released. The renderer/resource transaction follows the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery).
+The renderer/resource transaction follows the [shared replacement and recovery contract](../../architecture.md#replacement-and-recovery).
 
 ## Renderer verification
 
-The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Custom checks cover GPU loss separately. Normal prepares a small local sprite bundle and requests no graphics library. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Normal prepares a small local sprite bundle. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).

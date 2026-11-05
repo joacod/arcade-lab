@@ -1,21 +1,18 @@
 import { still, row, frame, type ActorArt, type ArtPack, type Decoration } from './art-pack.ts';
 /** Named visual presets combine art/environment, effects and a default interface. */
-interface Appearance {
+export interface Theme {
   readonly name: string;
-  readonly motif: 'grove' | 'crystal' | 'ruins';
-  readonly interface: 'classic' | 'rune' | 'ember' | 'abyss';
+  readonly motif: 'grove' | 'ruins';
+  readonly interface: 'classic' | 'rune' | 'ember';
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
     readonly light: string; readonly ground: string; readonly canopy: string;
     readonly enemy: string; readonly elite: string; readonly halo: string; readonly hit: string; readonly damage: string;
     readonly spark: string; readonly shard: string; readonly pulse: string; readonly gem: string;
   };
+  readonly presentation?: 'ember';
+  readonly art?: ArtPack;
 }
-/** Asset requirements are explicit: procedural worlds never need a dummy atlas. */
-export type Theme = Appearance & (
-  | { readonly presentation?: undefined; readonly art?: ArtPack }
-  | { readonly presentation: 'ember' | 'abyss'; readonly art?: ArtPack }
-);
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
     anchor: [0.5, 0.78], footprint, orientation: 'mirror' };
@@ -100,13 +97,7 @@ export const themes: Readonly<Record<ThemeId, Theme>> = {
       light: '#ffd494', ground: '#879580', canopy: '#273a3d', enemy: '#cc887e', elite: '#f1aa87',
       spark: '#ffe3a6', halo: '#ffe6ae', shard: '#c7c3ff', pulse: '#ffa578', gem: '#90edbd' },
   },
-  custom: {
-    name: 'Abyssal Bloom', motif: 'crystal', presentation: 'abyss', interface: 'abyss',
-    palette: { background: '#020510', floor: '#080f26', boundary: '#337b9c', ground: '#17345e', canopy: '#573cc0',
-      light: '#83fff0', enemy: '#8d91ff', elite: '#df8fff', spark: '#9aefff', halo: '#ffc77b',
-      pulse: '#4cffe2', shard: '#cbb1ff', gem: '#51eacb', hit: '#f1fffc', damage: '#ff6d9c' },
-  },
 };
-export type ThemeId = 'normal' | 'assets' | 'quality' | 'custom';
+export type ThemeId = 'normal' | 'assets' | 'quality';
 export const visualTiming = { hit: 0.16, defeat: 0.4, shot: 0.1, pulse: 0.3, pickup: 0.3 };
 export const MAX_EFFECTS = 128;

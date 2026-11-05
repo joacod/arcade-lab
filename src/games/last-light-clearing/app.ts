@@ -89,12 +89,6 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
           const { createEmberScene } = await import('./ember-scene.ts');
           if (!request.current()) return;
           next = createPresentation(theme, bundle!.images, createEmberScene);
-        } else if (theme.presentation === 'abyss') {
-          const { createBloom } = await import('./vgpu/bloom.ts');
-          if (!request.current()) return;
-          next = await createBloom(theme, request.signal, () => {
-            if (presentation === next) graphicsFailure();
-          });
         } else next = createPresentation(theme, bundle?.images);
         if (!request.current()) return;
         // Prepare and paint against the CURRENT run, including a retry made during loading.
@@ -108,7 +102,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         old.dispose(); oldAssets?.dispose();
       } catch (error) {
         if (request.current()) {
-          ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'graphics initialization failed'}). Keeping current appearance and run.`);
+          ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'presentation initialization failed'}). Keeping current appearance and run.`);
           ui.appearance(appearance);
         }
       } finally {
@@ -120,7 +114,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     function graphicsFailure() {
       if (disposed) return;
       suspend(); preparation.cancel(); preparing = false; ui.preparing(false);
-      // A fresh 2D canvas is immediately usable, without requiring a lost GPU context.
+      // A fresh canvas restores drawing state after an active presentation fails.
       const fallback = createPresentation(themes.normal);
       fallback.reset(run); fallback.resize(host);
       fallback.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
@@ -201,7 +195,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       const events = takeEvents(run);
       presentation.consume(events); overlay.consume(events); ui.consume(events); sound.consume(events);
       const view = createViewport(clearing.arena, host, run.player, viewMode);
-      try { presentation.resize(host); presentation.draw(run, view, screen === 'title' ? { titleTime: now / 1000 } : undefined); } catch { graphicsFailure(); }
+      try { presentation.resize(host); presentation.draw(run, view); } catch { graphicsFailure(); }
       overlay.draw(run, view, host, themes[appearance], input.stick, now / 1000);
       ui.update(run);
     });

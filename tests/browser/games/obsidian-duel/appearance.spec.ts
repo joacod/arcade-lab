@@ -21,13 +21,6 @@ async function openDuel(page: Page, controlled: 'assets' | 'quality' | false = f
   });
   await page.addInitScript(() => {
     const images: HTMLImageElement[] = []; (window as any).duelImages = images;
-    const originalContext = HTMLCanvasElement.prototype.getContext;
-    (window as any).duelContexts = [];
-    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
-      const ctx = (originalContext as any).call(this, type, ...args);
-      if (type === 'webgl2' && ctx && !(window as any).duelContexts.includes(ctx)) (window as any).duelContexts.push(ctx);
-      return ctx;
-    } as any;
     const Original = window.Image;
     window.Image = class extends Original { constructor() { super(); images.push(this); } };
   });
@@ -153,8 +146,6 @@ test('Moonfall Sanctum uses complete image sprites, preserves the duel, freezes,
   await chooseOption(theme, 'quality');
   await expect(page.locator('.duel-app')).toHaveAttribute('data-theme', 'quality');
   expect(await state(page)).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).duelContexts.length)).toBe(0);
-  expect(requests.filter(url => /three|vgpu/.test(url))).toEqual([]);
   expect(await page.evaluate(() => (window as any).duelImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
     .toEqual([[1600, 896], [2560, 2240], [2560, 2240], [1536, 768]]);
   expect(await page.evaluate(() => (window as any).duelImages.filter((image: HTMLImageElement) => /\/(nera|kael)\.png/.test(image.src)).every((image: HTMLImageElement) => image.src.includes('moonfall-sanctum')))).toBe(true);

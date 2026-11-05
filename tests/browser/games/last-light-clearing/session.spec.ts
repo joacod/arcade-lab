@@ -369,7 +369,6 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
         window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
       });
       expect(fetched.some(url => url.includes('/rekindled/') || url.includes('/ember-scene.ts'))).toBe(false);
-      expect(fetched.some(url => ['/three/', '/three.js', '/vgpu/', '/vgpu.js'].some(path => url.includes(path)))).toBe(false);
       const shell = page.locator('.clearing-app');
       await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
       await expect(shell).toHaveAttribute('data-theme', 'assets');
@@ -381,7 +380,6 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       await expect(shell).toHaveAttribute('data-skin', 'ember');
       expect(fetched.some(url => url.includes('/rekindled/ground.webp'))).toBe(true);
       await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'ember');
-      expect(fetched.some(url => url.includes('/three/') || url.includes('/three.js'))).toBe(false);
       await page.setViewportSize({ width: 780, height: 900 });
       await page.clock.runFor(60);
       expect(await snapshot()).toBe(retained);
