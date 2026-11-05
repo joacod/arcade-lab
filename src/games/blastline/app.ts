@@ -1,3 +1,5 @@
+import { initialTheme } from '../../common/ui/theme-choices.ts';
+import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
@@ -12,12 +14,12 @@ import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import './style.css';
-export function mountBlastline(container: HTMLElement, onExit: () => void): GameSession {
+export function mountBlastline(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   const preparation = createPreparationScope();
   let activeAppearance: Appearance = 'normal', activeArt: PreparedImages | undefined;
-  const host = createHost(container, { className: 'blast-app', label: 'Blastline',
+  const host = createHost(container, { fullscreen, className: 'blast-app', label: 'Blastline',
     surfaceLabel: 'Blastline playfield. A D move, Space jump, J fire, W S aim, K grenade, Q switch operator. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
@@ -42,34 +44,42 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     if (screen === 'playing') { pauseRun(run, true); transition('paused', false); }
   }
   async function appearance(id: Appearance) {
-    if (disposed || screen === 'playing') return;
+    if (disposed || screen === 'playing') return false;
     const request = preparation.begin();
-    if (id === activeAppearance) { ui.appearanceStatus(id, ''); return; }
-    ui.appearanceStatus(id, id === 'normal' ? '' : `Preparing ${appearanceNames[id]}…`);
+    if (id === activeAppearance) {
+      if (id === 'normal' && !readiness.ready) {
+        try { await presentation!.prepare(); } catch { return false; }
+        if (!request.current()) return false;
+      }
+      ui.appearanceStatus(id, ''); return true;
+    }
+    ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     try {
       if (id === 'assets') {
         const { prepareEmberCoast } = await import('./assets.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidate = await prepareEmberCoast(request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
       } else if (id === 'quality') {
         const { prepareEmberReforged } = await import('./quality.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidate = await prepareEmberReforged(request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
       }
-      if (id === 'normal') { await presentation!.prepare(); if (!request.current()) return; }
+      if (id === 'normal') { await presentation!.prepare(); if (!request.current()) return false; }
       const rollback = presentation!.replaceTheme(themes[id], candidate?.images);
       trialReplacement({ rollback }, () => presentation!.draw(run, host, false, performance.now() / 1000));
       const previous = activeArt; activeArt = candidate; candidate = undefined;
       activeAppearance = id; host.root.dataset.appearance = id;
       readiness.watch(() => Promise.resolve());
       ui.appearanceStatus(id, ''); previous?.dispose();
+      return true;
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance,
         `Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your operation is preserved.`);
     } finally { candidate?.dispose(); }
+    return false;
   }
   function act(intent: Intent) {
     if (disposed) return;
@@ -85,9 +95,11 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
   }
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), id => {
+      if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
+    });
     presentation = createPresentation(host.surface);
-    readiness.watch(() => presentation!.prepare());
+    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
     host.root.dataset.appearance = 'normal';
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,

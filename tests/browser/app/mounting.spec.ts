@@ -1,4 +1,4 @@
-import { openMenu, chooseOption } from '../menu.ts';
+import { openMenu, chooseTheme } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
 for (const game of [
@@ -21,6 +21,7 @@ for (const game of [
     await page.goto('/');
     const result = await page.evaluate(async game => {
       const { [game.entry]: mount } = await import(game.path);
+      const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
       const OriginalObserver = window.ResizeObserver, getContext = HTMLCanvasElement.prototype.getContext;
       const observers = new Set<ResizeObserver>();
       window.ResizeObserver = class extends OriginalObserver {
@@ -31,7 +32,7 @@ for (const game of [
       try {
         HTMLCanvasElement.prototype.getContext = () => null;
         let message = '';
-        try { mount(container, () => {}); }
+        try { mount(container, () => {}, createFullscreen(container)); }
         catch (error) { message = (error as Error).message; }
         const host = (window as any).hostProbe;
         // Exercise the listeners that would otherwise outlive the failed mount.
@@ -74,6 +75,7 @@ test('partial session setup failures release Clearing and Skybreak resources', a
   await page.goto('/');
   const results = await page.evaluate(async () => {
     const w = window as any;
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const OriginalObserver = window.ResizeObserver, getContext = HTMLCanvasElement.prototype.getContext;
     const observers = new Set<ResizeObserver>();
     window.ResizeObserver = class extends OriginalObserver {
@@ -96,7 +98,7 @@ test('partial session setup failures release Clearing and Skybreak resources', a
           return (getContext as any).apply(this, args);
         } as typeof getContext;
         try {
-          try { mount(container, () => {}); } catch (error) { message = (error as Error).message; }
+          try { mount(container, () => {}, createFullscreen(container)); } catch (error) { message = (error as Error).message; }
           const host = w.hostProbe;
           window.dispatchEvent(new Event('resize'));
           document.dispatchEvent(new Event('fullscreenchange'));
@@ -121,6 +123,7 @@ test('browser host owns one loop and cannot schedule work after disposal', async
   const result = await page.evaluate(async () => {
     const path = '/src/engine/browser/host.ts';
     const { createHost } = await import(path);
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const request = window.requestAnimationFrame, cancel = window.cancelAnimationFrame;
     const pending = new Map<number, FrameRequestCallback>();
     let id = 0, calls = 0;
@@ -128,7 +131,7 @@ test('browser host owns one loop and cannot schedule work after disposal', async
     window.cancelAnimationFrame = frame => { pending.delete(frame); };
     const container = document.createElement('div'); document.body.append(container);
     try {
-      const host = createHost(container, { className: 'test-game', label: 'Test game', surfaceLabel: 'Test surface',
+      const host = createHost(container, { fullscreen: createFullscreen(container), className: 'test-game', label: 'Test game', surfaceLabel: 'Test surface',
         onDisplayChange() {}, onFullscreenChange() {} });
       host.root.append(host.surface);
       const draw = () => { calls++; host.dispose(); host.dispose(); };
@@ -189,7 +192,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50); await page.keyboard.press('Escape');
-  await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.keyboard.down('d'); await page.clock.runFor(100);
@@ -221,11 +224,11 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   // Supersede initial artwork preparation several times, then let only the final session finish.
   await page.evaluate(async () => {
     const path = '/src/games/last-light-clearing/app.ts'; const { mountClearing } = await import(path);
-    for (let i = 0; i < 4; i++) (window as any).applicationProbe.mount({ mount: (host: HTMLElement) => mountClearing(host, () => {}) });
+    for (let i = 0; i < 4; i++) (window as any).applicationProbe.mount({ mount: (host: HTMLElement, fullscreen: any) => mountClearing(host, () => {}, fullscreen) });
   });
   await expect(page.locator('.asset-status')).toBeHidden();
   await expect(page.locator('.clearing-app')).toHaveCount(1);
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'assets');
   await expect(page.locator('canvas')).toHaveCount(2);
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(500);
@@ -250,6 +253,7 @@ test('hidden hosts cancel scheduling and restore exactly one loop without revivi
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { createHost } = await import('/src/engine/browser/host.ts');
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const request = window.requestAnimationFrame, cancel = window.cancelAnimationFrame;
     const pending = new Map<number, FrameRequestCallback>();
     let id = 0, calls = 0, hidden = true;
@@ -257,7 +261,7 @@ test('hidden hosts cancel scheduling and restore exactly one loop without revivi
     window.requestAnimationFrame = callback => { pending.set(++id, callback); return id; };
     window.cancelAnimationFrame = frame => { pending.delete(frame); };
     const container = document.createElement('div'); document.body.append(container);
-    const host = createHost(container, { className: 'fixture', label: 'Fixture', surfaceLabel: 'Fixture', onDisplayChange() {}, onFullscreenChange() {} });
+    const host = createHost(container, { fullscreen: createFullscreen(container), className: 'fixture', label: 'Fixture', surfaceLabel: 'Fixture', onDisplayChange() {}, onFullscreenChange() {} });
     host.root.append(host.surface);
     const visibility = (value: boolean) => { hidden = value; document.dispatchEvent(new Event('visibilitychange')); };
     try {
@@ -306,10 +310,11 @@ test('renderer cleanup failures still release every game sound owner and browser
   await page.goto('/');
   const results = await page.evaluate(async () => {
     const results = [];
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     for (const [slug, entry] of [['last-light-clearing', 'mountClearing'], ['skybreak', 'mountSkybreak'], ['clockwork-hollow', 'mountHollow'], ['midnight-circuit', 'mountCircuit'], ['obsidian-duel', 'mountDuel'], ['blastline', 'mountBlastline']]) {
       const module = await import(`/src/games/${slug}/app.ts`);
       const container = document.createElement('div'); document.body.append(container);
-      const session = module[entry!](container, () => {});
+      const session = module[entry!](container, () => {}, createFullscreen(container));
       (window as any).soundDisposed = false;
       let errors: string[] = [];
       try { session.dispose(); } catch (error) { errors = (error as AggregateError).errors.map(e => e.message); }

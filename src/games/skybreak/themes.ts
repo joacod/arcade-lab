@@ -1,4 +1,4 @@
-import type { ThemeModes } from '../../common/ui/theme-select.ts';
+import type { ThemeModes } from '../../common/ui/theme-choices.ts';
 import type { FlightArt } from './art-pack.ts';
 import { aircraftArt } from './art/aircraft.ts';
 

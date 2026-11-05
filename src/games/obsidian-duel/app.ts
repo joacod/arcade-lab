@@ -1,3 +1,5 @@
+import { initialTheme } from '../../common/ui/theme-choices.ts';
+import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
@@ -14,7 +16,7 @@ import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import type { SanctumDrawingFactory } from './quality-presentation.ts';
 import './style.css';
-export function mountDuel(container: HTMLElement, onExit: () => void): GameSession {
+export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false,
     selected: FighterId = 'nera',
     match = createMatch(),
@@ -25,7 +27,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     activeArt: PreparedImages | undefined;
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createPresentation> | undefined, sound: ReturnType<typeof createSound> | undefined;
-  const host = createHost(container, {
+  const host = createHost(container, { fullscreen,
     className: 'duel-app',
     label: 'Obsidian Duel',
     surfaceLabel: 'Obsidian Duel playfield. A D move, W jump, S crouch, J light, K heavy, L special, Shift guard. P pauses or resumes.',
@@ -78,13 +80,16 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
     presentation!.draw(match, host, screen, performance.now() / 1000);
   }
   async function appearance(id: Appearance) {
-    if (disposed || screen === 'playing') return;
+    if (disposed || screen === 'playing') return false;
     const request = preparation.begin();
     if (id === activeAppearance) {
-      ui.appearanceStatus(id, '');
-      return;
+      if (id === 'normal' && !readiness.ready) {
+        try { await presentation!.prepare(); } catch { return false; }
+        if (!request.current()) return false;
+      }
+      ui.appearanceStatus(id, ''); return true;
     }
-    ui.appearanceStatus(id, id !== 'normal' ? `Preparing ${appearanceNames[id]}…` : '');
+    ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     let candidateDrawing: SanctumDrawingFactory | undefined;
     try {
@@ -92,23 +97,23 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
         const {
           prepareFoundry
         } = await import('./assets.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidate = await prepareFoundry(request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
       }
       if (id === 'quality') {
         const {
           prepareSanctum,
           createSanctumDrawing
         } = await import('./quality-assets.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidate = await prepareSanctum(request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidateDrawing = createSanctumDrawing;
       }
       if (id === 'normal') {
         await presentation!.prepare();
-        if (!request.current()) return;
+        if (!request.current()) return false;
       }
       const replacement = presentation!.replaceTheme(themes[id], candidate?.images, candidateDrawing);
       trialReplacement(replacement, () => presentation!.draw(match, host, screen, performance.now() / 1000));
@@ -122,11 +127,13 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
       clock.reset();
       ui.appearanceStatus(id, '');
       previous?.dispose();
+      return true;
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance, `Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your match is preserved.`);
     } finally {
       candidate?.dispose();
     }
+    return false;
   }
   function act(intent: Intent) {
     if (disposed) return;
@@ -176,9 +183,11 @@ export function mountDuel(container: HTMLElement, onExit: () => void): GameSessi
         presentation?.reset();
         ui.update(match);
       }
-    }, value => sound?.setMuted(value), appearance);
+    }, value => sound?.setMuted(value), id => {
+      if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
+    });
     presentation = createPresentation(host.surface);
-    readiness.watch(() => presentation!.prepare());
+    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
     host.root.dataset.appearance = 'normal';
     input = bindInput(host.surface, ui.controls, () => screen === 'playing' && match.phase === 'fight', host.signal);
     bindSessionFocus(host.root, {

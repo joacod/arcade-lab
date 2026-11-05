@@ -1,5 +1,7 @@
-import { openMenu, chooseOption } from '../../menu.ts';
+import { useNormalBaseline } from '../../menu.ts';
+import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
+
 
 test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and disposes its session', async ({ page }, info) => {
   const errors: string[] = [], foreign: string[] = [];
@@ -15,7 +17,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const pending = new Set<number>(); (window as any).blastFrames = pending;
@@ -51,7 +53,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
   await page.clock.runFor(50);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await skyPixel()).toEqual(beforeTheme);

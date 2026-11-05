@@ -89,11 +89,5 @@
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-combo { color: #ffe0a0; text-shadow: 2px 3px #6f4233; }
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-boss small { color: #f1c297; }
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-boss meter::-webkit-meter-optimum-value { background: #df946b; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu-layer { background: #08191f88; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu { background: #15282ded; border-color: #8e927c; border-radius: 3px; box-shadow: 0 20px 90px #06151ccc; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu h1 { color: #f0dfbb; font-weight: 750; letter-spacing: -.04em; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu :is(.game-menu-description, .game-menu-name, .menu-note) { color: #bcc6b8; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu-actions { border-color: #8e927c44; }
-.circuit-app:has(canvas[data-renderer="quality"]) .game-menu button:not(.game-menu-primary) { background: #243a3d; border-color: #a6ac8d55; }
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-attack-buttons button { color: #e4ceb0; border-color: #b99c70; }
 .circuit-app:has(canvas[data-renderer="quality"]) [data-control="light"] { color: #cbe3cc; border-color: #9ac1a5; }

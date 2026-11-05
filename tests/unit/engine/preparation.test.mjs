@@ -39,6 +39,19 @@ test('required resources gate play, retry failures and ignore superseded complet
   retry(); await flush(); assert.equal(calls, 0); assert.equal(readiness.ready, false);
 });
 
+test('reported preparation failure cannot unlock play and a newer selection owns readiness', async () => {
+  const states = [], lifetime = new AbortController();
+  const readiness = createReadiness(lifetime.signal, state => states.push(state));
+  readiness.watch(async () => false);
+  await flush(); assert.equal(states.at(-1), 'failed'); assert.equal(readiness.ready, false);
+  let finish;
+  readiness.watch(() => new Promise(resolve => { finish = resolve; }));
+  await flush();
+  readiness.watch(async () => true);
+  await flush(); finish(false); await flush();
+  assert.equal(states.at(-1), 'ready'); assert.equal(readiness.ready, true);
+});
+
 test('replacement trials commit only successful draws and roll back failed candidates', () => {
   const events = [], replacement = { rollback() { events.push('rollback'); }, commit() { events.push('commit'); } };
   trialReplacement(replacement, () => events.push('draw'));

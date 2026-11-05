@@ -12,8 +12,8 @@ const selection: SelectionState = { scrollTop: 0 };
 function showSelection(message = '') {
   if (disposed) return;
   generation++;
-  application.mount({ mount: host => mountSelection(host, {
-    select: selectGame, cancel: () => showSelection(), state: selection, message,
+  application.mount({ mount: (host, fullscreen) => mountSelection(host, {
+    select: selectGame, cancel: () => showSelection(), state: selection, message, fullscreen,
   }) });
 }
 async function selectGame(id: GameId) {
@@ -21,7 +21,7 @@ async function selectGame(id: GameId) {
   try {
     const entry = games.find(game => game.id === id)!;
     const mount = await entry.load();
-    if (!disposed && request === generation) application.mount({ mount: host => mount(host, showSelection) });
+    if (!disposed && request === generation) application.mount({ mount: (host, fullscreen) => mount(host, showSelection, fullscreen) });
   } catch { if (!disposed && request === generation) showSelection('Could not load the game. Try again.'); }
 }
 showSelection();

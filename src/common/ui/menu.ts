@@ -24,6 +24,7 @@ interface MenuOptions<Action extends string, Screen extends string> {
   /** Composed game content. Only supply sections the game actually needs. */
   game?: HTMLElement;
   theme: HTMLElement;
+  cycleTheme?(): void;
   controls: string;
 }
 
@@ -38,11 +39,11 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   }
   const layer = document.createElement('div'); layer.className = 'game-menu-layer';
   layer.innerHTML = `<section class="game-menu" aria-labelledby="${config.id}-heading">
-    <header class="game-menu-header"><p class="game-menu-name" hidden>${config.title}</p><h1 id="${config.id}-heading">${config.title}</h1></header>
+    <header class="game-menu-header"><p class="game-menu-eyebrow">ARCADE LAB <span aria-hidden="true">/</span> <span class="game-menu-name">${config.title}</span></p><h1 id="${config.id}-heading">${config.title}</h1></header>
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
       <p class="game-menu-description"></p><div class="game-menu-content"></div>
-      <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-pressed="false">Mute sound</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
-      <details class="game-menu-controls"><summary>Controls <span class="game-menu-shortcut">P · pause / resume</span></summary><div>${config.controls}<p><b>P</b> pauses / resumes. <b>F</b> toggles fullscreen. <b>Escape</b> pauses when available; in fullscreen, the browser may use it to exit fullscreen.</p></div></details></div>
+      <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
+      <details class="game-menu-controls"><summary>How to play</summary><div>${config.controls}<p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
@@ -60,15 +61,21 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const actionBar = layer.querySelector<HTMLElement>('.game-menu-actions')!;
   const heading = layer.querySelector('h1')!;
   const description = layer.querySelector<HTMLElement>('.game-menu-description')!;
+  const body = layer.querySelector<HTMLElement>('.game-menu-body')!;
   const content = layer.querySelector<HTMLElement>('.game-menu-content')!;
   const settings = layer.querySelector<HTMLElement>('.game-menu-settings')!;
-  const controls = layer.querySelector<HTMLDetailsElement>('details')!;
+  const controls = layer.querySelector<HTMLDetailsElement>('.game-menu-controls')!;
   if (config.game) content.append(config.game);
   layer.querySelector('.game-menu-theme')!.append(config.theme);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
   const retryArt = layer.querySelector<HTMLButtonElement>('.game-menu-retry-art')!;
   let retryArtwork: (() => void) | undefined;
-  retryArt.addEventListener('click', () => retryArtwork?.(), { signal: config.signal });
+  let returnFromRetry = false;
+  retryArt.addEventListener('click', () => {
+    returnFromRetry = document.activeElement === retryArt;
+    if (returnFromRetry) body.focus({ preventScroll: true });
+    retryArtwork?.();
+  }, { signal: config.signal });
   for (const button of actions) {
     if (button.dataset.menuAction === 'resume') {
       button.textContent += ' (P)'; button.setAttribute('aria-label', 'Resume'); button.setAttribute('aria-keyshortcuts', 'P');
@@ -79,12 +86,18 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   let muted = false, screen = '';
   root.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey
-      || !['KeyP', 'KeyF', 'Escape'].includes(event.code)) return;
+      || !['KeyP', 'KeyF', 'KeyS', 'KeyT', 'Escape'].includes(event.code)) return;
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable
-      || target.closest('input, textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
+      || target.closest('input:not([type="radio"]):not([type="checkbox"]), textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
     if (event.code === 'KeyF') {
       if (!fullscreen.hidden && !fullscreen.disabled) { event.preventDefault(); fullscreen.click(); }
+      return;
+    }
+    if (event.code === 'KeyS' || event.code === 'KeyT') {
+      if (screen !== 'title' && screen !== 'paused') return;
+      if (event.code === 'KeyS') { event.preventDefault(); mute.click(); }
+      else if (config.cycleTheme) { event.preventDefault(); config.cycleTheme(); }
       return;
     }
     const button = screen === 'playing' ? config.pause : screen === 'paused' && event.code === 'KeyP'
@@ -96,7 +109,9 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   }, { signal: config.signal });
   actions.forEach((button, i) => button.addEventListener('click', () => config.onAction(config.actions[i]!.id), { signal: config.signal }));
   mute.addEventListener('click', () => {
-    muted = !muted; mute.setAttribute('aria-pressed', String(muted)); mute.textContent = muted ? 'Unmute sound' : 'Mute sound'; config.onMute(muted);
+    muted = !muted; mute.setAttribute('aria-pressed', String(muted));
+    mute.textContent = muted ? 'Unmute sound (S)' : 'Mute sound (S)';
+    mute.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound'); config.onMute(muted);
   }, { signal: config.signal });
   fullscreen.addEventListener('click', config.onFullscreen, { signal: config.signal });
   function status(selector: string, message: string) {
@@ -109,6 +124,12 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       retryArt.hidden = state !== 'failed';
       status('.game-menu-art-status', state === 'loading' ? 'Preparing artwork…' : state === 'failed' ? 'Artwork could not load. Retry or choose another theme.' : '');
       actions.forEach((button, i) => { if (config.actions[i]!.requiresReady !== false) button.disabled = state !== 'ready'; });
+      if (state !== 'loading' && returnFromRetry) {
+        if (document.activeElement === body && !document.hidden && document.hasFocus()) {
+          (state === 'failed' ? retryArt : actions.find(button => !button.hidden && !button.disabled))?.focus({ preventScroll: true });
+        }
+        returnFromRetry = false;
+      }
     },
     fullscreen(available: boolean, active: boolean) { fullscreen.hidden = !available; fullscreen.textContent = active ? 'Exit fullscreen (F)' : 'Fullscreen (F)'; fullscreen.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Fullscreen'); fullscreen.setAttribute('aria-pressed', String(active)); },
     soundStatus(message: string) { status('.game-menu-sound-status', message); },
@@ -119,23 +140,21 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       const moveFocus = focus || (next !== 'playing' && screen === 'playing'
         && !document.hidden && document.hasFocus() && root.contains(document.activeElement));
       if (next !== screen) {
-        for (const popup of layer.querySelectorAll<HTMLElement>('[popover]:popover-open')) popup.hidePopover();
         controls.open = false; layer.querySelector('.game-menu-body')!.scrollTop = 0; }
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
       name.hidden = next === 'title';
       description.hidden = !description.textContent;
-      settings.hidden = next === 'choosing';
+      settings.hidden = next !== 'title' && next !== 'paused';
       if (next === 'playing') stage.append(notices);
       else actionBar.before(notices);
       config.pause.hidden = next !== 'playing';
       surface.tabIndex = next === 'playing' ? 0 : -1; surface.setAttribute('aria-hidden', String(next !== 'playing'));
-      let primary = false;
+      const visible = config.actions.filter(action => action.screens.includes(next));
+      const primary = visible.find(action => action.primary) ?? visible.find(action => action.requiresReady !== false);
       actions.forEach((button, i) => {
         const action = config.actions[i]!;
         button.hidden = !action.screens.includes(next);
-        const highlighted = !button.hidden && !!action.primary && !primary;
-        button.classList.toggle('game-menu-primary', highlighted);
-        primary ||= highlighted;
+        button.classList.toggle('game-menu-primary', action === primary);
       });
       if (moveFocus) {
         if (next === 'playing') surface.focus({ preventScroll: true });

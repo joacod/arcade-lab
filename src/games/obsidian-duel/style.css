@@ -83,7 +83,6 @@
 .duel-app[data-theme='quality'] .duel-enemy meter::-webkit-meter-optimum-value { background: linear-gradient(90deg,#97613e,#e8c489); }
 .duel-app[data-theme='quality'] .duel-arena-label { color: #b9c7bb; letter-spacing: .22em; }
 .duel-app[data-theme='quality'] .duel-announcement strong { color: #e8e4c9; text-shadow: 0 2px 2px #06131b,0 0 30px #9fcbbd40; }
-.duel-app[data-theme='quality'] .game-menu { border-color: #b5a87870; background: linear-gradient(145deg,#142d34f7,#0b1b24f7); }
 .duel-app[data-theme='quality'] button { border-color: #b2ae7650; background: #162d35; }
 .duel-app[data-theme='quality'] button:hover { background: #28463f; border-color: #dac79a; }
 .duel-app .duel-roster b { padding-right: 20px; }

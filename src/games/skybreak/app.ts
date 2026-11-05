@@ -1,5 +1,7 @@
+import { initialTheme } from '../../common/ui/theme-choices.ts';
+import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
-import type { ThemeMode } from '../../common/ui/theme-select.ts';
+import type { ThemeMode } from '../../common/ui/theme-choices.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -17,7 +19,7 @@ import type { FlightPresentation } from './flight-presentation.ts';
 import './style.css';
 
 /** Browser session and composition. Restart replaces the entire mutable run. */
-export function mountSkybreak(container: HTMLElement, onExit: () => void): GameSession {
+export function mountSkybreak(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   let host: ReturnType<typeof createHost>;
@@ -35,15 +37,17 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     disposeAll(() => input?.clear(), () => presentation?.dispose(), () => activeArt?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
-    host = createHost(container, { className: 'skybreak-app', label: 'Skybreak',
+    host = createHost(container, { fullscreen, className: 'skybreak-app', label: 'Skybreak',
       surfaceLabel: 'Skybreak playfield. WASD or arrows to move, Space or J to fire, Shift or K to roll. P pauses or resumes. Drag to steer and fire.',
       onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), selectTheme);
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), id => {
+      if (readiness.ready) void selectTheme(id); else readiness.watch(() => selectTheme(id));
+    });
     input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
     presentation = createPresentation(host.surface, themes.normal!);
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
-    readiness.watch(() => presentation.prepare());
+    readiness.watch(() => initialTheme === 'normal' ? presentation.prepare() : selectTheme(initialTheme));
     applyPalette();
     function applyPalette() {
       const theme = themes[appearance]!;
@@ -54,19 +58,19 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     }
     async function selectTheme(id: ThemeMode) {
       const theme = themes[id];
-      if (disposed || screen === 'playing' || !theme) return;
+      if (disposed || screen === 'playing' || !theme) return false;
       const request = preparation.begin();
-      ui.appearanceStatus(`Preparing ${theme.name}…`);
+      ui.appearancePending(id); ui.appearanceStatus(`Preparing ${theme.name}…`);
       let candidate: PreparedImages | undefined;
       let candidateDisplay: FlightPresentation | undefined;
       try {
         const staging = document.createElement('div');
         candidate = await prepareFlightImages(theme, request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
         candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
-        if (!request.current()) return;
+        if (!request.current()) return false;
         await candidateDisplay.prepare();
-        if (!request.current()) return;
+        if (!request.current()) return false;
         // A candidate must draw the current sortie successfully before replacing its working owner.
         candidateDisplay.draw(run, host, screen === 'title' ? performance.now() / 1000 : undefined);
         const previousDisplay = presentation;
@@ -75,12 +79,14 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus('');
         readiness.watch(() => presentation.prepare());
         disposeAll(() => previousDisplay.dispose(), () => previous?.dispose());
+        return true;
       } catch {
         if (request.current()) {
           ui.appearance(appearance);
           ui.appearanceStatus(`Could not load ${theme.name}. Keeping ${themes[appearance]!.name}. Your sortie is preserved.`);
         }
       } finally { disposeAll(() => candidateDisplay?.dispose(), () => candidate?.dispose()); }
+      return false;
     }
     function recoverPresentation() {
       if (disposed || appearance === 'normal') return;

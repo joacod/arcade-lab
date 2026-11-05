@@ -1,5 +1,7 @@
-import { openMenu, chooseOption, chooseRound } from '../../menu.ts';
+import { useNormalBaseline } from '../../menu.ts';
+import { openMenu, chooseTheme, chooseRound } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
+
 
 test.beforeEach(async ({ page }) => {
   await page.route(/\/src\/games\/last-light-clearing\/game\.ts(?:\?.*)?$/, async route => {
@@ -29,7 +31,7 @@ function expectStationary(actual: { x: number; y: number }, expected: { x: numbe
 test('opening guidance, shield layout, evolution feedback and dawn preserve session timing', async ({ page }, testInfo) => {
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -59,7 +61,7 @@ test('opening guidance, shield layout, evolution feedback and dawn preserve sess
   const frozen = await page.evaluate(() => (window as any).positionProbe.elapsed);
   await page.clock.runFor(4000);
   expect(await page.evaluate(() => (window as any).positionProbe.elapsed)).toBe(frozen);
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.evaluate(async () => {
@@ -94,7 +96,7 @@ test('movement, resize, pause, repeated restart, suspension and scoped keys', as
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
@@ -182,7 +184,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
@@ -238,6 +240,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   const cleanup = await page.evaluate(async () => {
     const modulePath = '/src/games/last-light-clearing/app.ts';
     const { mountClearing } = await import(modulePath);
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const container = document.createElement('div');
     document.body.append(container);
     const originalRequest = window.requestAnimationFrame;
@@ -255,7 +258,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
     };
     try {
       for (let i = 0; i < 5; i++) {
-        const session = mountClearing(container, () => {});
+        const session = mountClearing(container, () => {}, createFullscreen(container));
         session.dispose(); session.dispose();
       }
       return { remainingFrames: scheduled.size, children: container.childElementCount,
@@ -309,14 +312,14 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     ` });
   });
   await page.clock.install();
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
   await expect(page.locator('.asset-status')).toBeHidden();
   for (const [configuration, theme] of [['clearing', 'normal'], ['dusk', 'normal']]) {
     await chooseRound(page, configuration!);
-    await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), theme!);
+    await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), theme!);
     await expect(page.locator('.asset-status')).toBeHidden();
     await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', theme!);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -370,10 +373,10 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       });
       expect(fetched.some(url => url.includes('/rekindled/') || url.includes('/ember-scene.ts'))).toBe(false);
       const shell = page.locator('.clearing-app');
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(shell).toHaveAttribute('data-theme', 'quality');
       await page.clock.runFor(20);
       expect(await snapshot()).toBe(retained);
@@ -409,7 +412,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
           return original.call(this, type, ...args);
         } as typeof original;
       });
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
       await page.evaluate(() => (window as unknown as { restoreContext: () => void }).restoreContext());
       await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
@@ -423,9 +426,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
       expect(await page.locator('.play-surface').evaluate(surface => surface === (window as unknown as { retainedSurface: Element }).retainedSurface)).toBe(true);
       await page.clock.runFor(40);
       expect(await page.evaluate(() => (window as unknown as { pendingFrames: () => number }).pendingFrames())).toBe(1);
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'normal');
       await expect(shell).toHaveAttribute('data-theme', 'normal');
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
       await expect(shell).toHaveAttribute('data-theme', 'assets');
       await expect(shell).toHaveAttribute('data-skin', 'rune');
       await page.clock.fastForward(60000);
@@ -451,10 +454,10 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
     await expect(page.locator('.loadout')).toHaveText('Spark 1');
     if (configuration === 'clearing') {
       await page.keyboard.press('Escape');
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
       await page.clock.runFor(20);
-      await openMenu(page); await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
+      await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'normal');
       await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
       await expect(page.locator('.play-surface canvas')).toHaveCount(2);
       await page.getByRole('button', { name: 'Resume' }).click();
@@ -477,8 +480,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   const closed = await page.evaluate(async () => {
     const path = '/src/games/last-light-clearing/app.ts';
     const { mountClearing } = await import(path);
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const container = document.createElement('div'); document.body.append(container);
-    const session = mountClearing(container, () => {});
+    const session = mountClearing(container, () => {}, createFullscreen(container));
     await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
     // Initial preparation uses detached images, so wait for its status mutation.
     await new Promise<void>(resolve => {
@@ -521,9 +525,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   await page.reload();
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
 
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.asset-status')).toContainText('Keeping current appearance');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -536,7 +540,7 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
 test('Close camera preserves a held CSS drag; layout and fullscreen require deliberate resume', async ({ page }) => {
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -572,13 +576,13 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
 
   // A rejected browser request leaves the viewport playable and reports the failure.
   await page.evaluate(() => {
-    const root = document.querySelector<HTMLElement>('.clearing-app')!;
+    const root = document.querySelector<HTMLElement>('#app')!;
     root.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied for this check'));
   });
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.locator('.game-menu-display-status')).toContainText('Fullscreen could not open');
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
-  await page.evaluate(() => { delete (document.querySelector('.clearing-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
+  await page.evaluate(() => { delete (document.querySelector('#app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
 
@@ -587,7 +591,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await page.keyboard.up('d');
   await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible();
-  expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('clearing-app');
+  expect(await page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await page.evaluate(() => document.exitFullscreen());
   await page.clock.runFor(100);
@@ -611,7 +615,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
 test('compact upgrade choices explain roles and acknowledge one keyboard decision', async ({ page }, testInfo) => {
   await page.clock.install();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -668,10 +672,10 @@ test('Rekindled animates its modern cast and freezes its scene on pause and redu
     ` });
   });
   await page.clock.install();
-  await page.goto('/');
+  await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'quality');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.keyboard.down('a'); await page.clock.runFor(180); await page.keyboard.up('a');
@@ -695,7 +699,7 @@ test('Rekindled animates its modern cast and freezes its scene on pause and redu
   await page.clock.runFor(30);
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
   await page.keyboard.press('Escape');
-  await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'normal');
   await expect(page.locator('.world-canvas')).toHaveAttribute('data-renderer', 'canvas');
   await expect(page.locator('.play-surface canvas')).toHaveCount(2);
   expect(errors).toEqual([]);
@@ -703,7 +707,7 @@ test('Rekindled animates its modern cast and freezes its scene on pause and redu
 
 
 test('Resume cancels pending Clearing artwork and keeps the current run playable', async ({ page }) => {
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(80);
@@ -713,7 +717,7 @@ test('Resume cancels pending Clearing artwork and keeps the current run playable
   await page.route(/\/src\/games\/last-light-clearing\/ember-scene\.ts(?:\?.*)?$/, route => new Promise<void>(resolve => {
     finish = async () => { await route.continue(); resolve(); };
   }));
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'quality');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'quality');
   await expect.poll(() => !!finish).toBe(true);
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await finish!();
@@ -721,6 +725,6 @@ test('Resume cancels pending Clearing artwork and keeps the current run playable
   await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'normal');
   expect(await page.evaluate(() => (window as any).positionProbe.elapsed)).toBeGreaterThan(elapsed);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toHaveAttribute('value', 'normal');
+  await expect(page.getByRole('group', { name: 'Theme', exact: true }).locator('input[value="normal"]')).toBeChecked();
   await expect(page.locator('.asset-status')).toBeHidden();
 });

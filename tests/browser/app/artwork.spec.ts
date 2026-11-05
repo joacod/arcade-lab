@@ -11,7 +11,8 @@ for (const name of ['Last Light Clearing', 'Clockwork Hollow', 'Midnight Circuit
     await expect(page.locator('.game-menu-art-status')).toContainText('Artwork could not load');
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Game selection', exact: true })).toBeEnabled();
-    await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toBeEnabled();
+
+    await expect(page.getByRole('radio', { name: /^Quality/ })).toBeEnabled();
     await page.unroute(artwork);
     await page.getByRole('button', { name: 'Retry artwork', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();

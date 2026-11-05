@@ -1,4 +1,4 @@
-import { createThemeSelect, type ThemeMode } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeChoices, type ThemeMode } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
@@ -20,13 +20,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: 'normal', onChange: onTheme });
+  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
   const assetStatus = document.createElement('p'); assetStatus.className = 'skybreak-asset-status'; assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: appearance.element,
+    game: results.element, theme: appearance.element, cycleTheme: appearance.cycle,
     controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -42,6 +42,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
     appearance(id: ThemeMode) { appearance.setValue(id); },
+    appearancePending(id: ThemeMode) { appearance.prepare(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,

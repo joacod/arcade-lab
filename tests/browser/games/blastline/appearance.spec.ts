@@ -1,5 +1,7 @@
+import { useNormalBaseline } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
-import { chooseOption } from '../../menu.ts';
+
+import { chooseTheme } from '../../menu.ts';
 
 type Mode = 'assets' | 'quality';
 async function openBlastline(page: Page, controlled?: Mode) {
@@ -23,7 +25,7 @@ async function openBlastline(page: Page, controlled?: Mode) {
     const Original = window.Image;
     window.Image = class extends Original { constructor() { super(); images.push(this); } };
   });
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Blastline', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).blastImages.length === 3 && (window as any).blastImages.every((i: HTMLImageElement) => i.complete && i.naturalWidth))).toBeTruthy();
@@ -52,11 +54,11 @@ test(`${name} retains the live operation, presents both missions and releases it
     };
   });
   await openBlastline(page); expect(requests).toEqual([]);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), root = page.locator('.blast-app');
+  const theme = page.getByRole('group', { name: 'Theme', exact: true }), root = page.locator('.blast-app');
   const frozen = await state(page);
   const pixels = () => page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL());
   const normal = await pixels();
-  await chooseOption(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
+  await chooseTheme(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
   await page.clock.runFor(50);
   expect(await pixels()).not.toBe(normal); expect(await state(page)).toBe(frozen);
   expect(await page.evaluate(() => (window as any).retainedBlast === (window as any).blastProbe)).toBe(true);
@@ -64,12 +66,12 @@ test(`${name} retains the live operation, presents both missions and releases it
     .toEqual(mode === 'quality'
       ? [[960, 1152], [576, 576], [768, 768], [2048, 1024], [1152, 960], [1152, 960]]
       : [[640, 1024], [384, 384], [512, 512], [1536, 1024], [768, 640], [768, 640]]);
-  await chooseOption(theme, 'normal'); await page.clock.runFor(50);
+  await chooseTheme(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   if (mode === 'quality') {
-    await chooseOption(theme, 'assets'); await expect(root).toHaveAttribute('data-appearance', 'assets');
+    await chooseTheme(theme, 'assets'); await expect(root).toHaveAttribute('data-appearance', 'assets');
   }
-  await chooseOption(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
+  await chooseTheme(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
   expect(await state(page)).toBe(frozen);
   if (mode === 'quality') {
     expect(await page.evaluate(() => (window as any).blastImages.filter((i: HTMLImageElement) => i.src.includes('/ember-coast/')).length)).toBe(0);
@@ -119,30 +121,30 @@ test(`${name} retains the live operation, presents both missions and releases it
 test(`${name}: failed, superseded, resumed and disposed preparation retains the working presentation`, async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await openBlastline(page, mode);
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), root = page.locator('.blast-app');
+  const theme = page.getByRole('group', { name: 'Theme', exact: true }), root = page.locator('.blast-app');
   const frozen = await state(page);
   await source(page, '/blast-invalid.svg');
   await page.route('**/blast-invalid.svg', r => r.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
-  await chooseOption(theme, mode);
+  await chooseTheme(theme, mode);
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Iron coast');
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   await source(page, '/blast-failure.svg'); await page.route('**/blast-failure.svg', r => r.abort());
-  await chooseOption(theme, mode);
+  await chooseTheme(theme, mode);
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Iron coast');
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   let finish: (() => Promise<void>) | undefined;
   await page.route(/\/blast-(delayed|resumed|disposed)\.svg$/, route => new Promise<void>(resolve => {
     finish = async () => { await route.fulfill({ contentType: 'image/svg+xml', body: `<svg xmlns="http://www.w3.org/2000/svg" width="${mode === 'quality' ? 960 : 640}" height="${mode === 'quality' ? 1152 : 1024}"/>` }); resolve(); };
   }));
-  await source(page, '/blast-delayed.svg'); await chooseOption(theme, mode); await expect.poll(() => !!finish).toBe(true);
-  await chooseOption(theme, 'normal'); await finish!(); await page.clock.runFor(50);
+  await source(page, '/blast-delayed.svg'); await chooseTheme(theme, mode); await expect.poll(() => !!finish).toBe(true);
+  await chooseTheme(theme, 'normal'); await finish!(); await page.clock.runFor(50);
   await expect(root).toHaveAttribute('data-appearance', 'normal');
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
-  finish = undefined; await source(page, '/blast-resumed.svg'); await chooseOption(theme, mode); await expect.poll(() => !!finish).toBe(true);
+  finish = undefined; await source(page, '/blast-resumed.svg'); await chooseTheme(theme, mode); await expect.poll(() => !!finish).toBe(true);
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await finish!(); await page.clock.runFor(50);
   await expect(root).toHaveAttribute('data-appearance', 'normal'); expect(await released(page)).toBe(true);
   await page.keyboard.press('Escape'); finish = undefined;
-  await source(page, '/blast-disposed.svg'); await chooseOption(theme, mode); await expect.poll(() => !!finish).toBe(true);
+  await source(page, '/blast-disposed.svg'); await chooseTheme(theme, mode); await expect.poll(() => !!finish).toBe(true);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click(); await finish!(); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); await expect(page.locator('canvas')).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -162,13 +164,13 @@ test(`${name}: candidate and active drawing failures recover to Normal and relea
   });
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await openBlastline(page);
-  const frozen = await state(page), root = page.locator('.blast-app'), theme = page.getByRole('combobox', { name: 'Theme', exact: true });
+  const frozen = await state(page), root = page.locator('.blast-app'), theme = page.getByRole('group', { name: 'Theme', exact: true });
   await page.evaluate(() => { (window as any).blastDrawFailure = true; });
-  await chooseOption(theme, mode);
+  await chooseTheme(theme, mode);
   await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Iron coast');
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   await page.evaluate(() => { (window as any).blastDrawFailure = false; });
-  await chooseOption(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
+  await chooseTheme(theme, mode); await expect(root).toHaveAttribute('data-appearance', mode);
   await page.evaluate(() => { (window as any).blastDrawFailure = true; }); await page.clock.runFor(50);
   await expect(root).toHaveAttribute('data-appearance', 'normal');
   await expect(page.locator('.game-menu-display-status')).toContainText('Restored Iron coast');
@@ -182,7 +184,7 @@ test('reused environments render independently of content identity and sequence'
   await page.emulateMedia({ reducedMotion: 'reduce' }); await openBlastline(page);
   for (const mode of ['normal', 'assets', 'quality']) {
     if (mode !== 'normal') {
-      await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), mode);
+      await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), mode);
       await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', mode);
     }
     await page.clock.runFor(50);

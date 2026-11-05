@@ -1,4 +1,4 @@
-import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -20,12 +20,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Operation results');
-  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: theme.element,
+    game: results.element, theme: theme.element, cycleTheme: theme.cycle,
     controls: `<b>A D / ← →</b> MOVE　 <b>SPACE</b> JUMP　 <b>J</b> HOLD TO FIRE<br><b>W S / ↑ ↓</b> AIM　 <b>K</b> GRENADE　 <b>Q</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p>Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
@@ -38,7 +38,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   let screen: Screen = 'title', notice = '', detail = '', noticeUntil = 0;
   function write(selector: string, value: string) { const el = $(selector); if (el.textContent !== value) el.textContent = value; }
   return { controls,
-    appearanceStatus(value: Appearance, message: string) { theme.setValue(value); menu.displayStatus(message); },
+    appearanceStatus(value: Appearance, message: string, preparing = false) { if (preparing) theme.prepare(value); else theme.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,

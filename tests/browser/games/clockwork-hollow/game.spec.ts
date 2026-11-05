@@ -1,5 +1,7 @@
-import { openMenu, chooseOption } from '../../menu.ts';
+import { useNormalBaseline } from '../../menu.ts';
+import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
+
 
 test('Clockwork Hollow movement, touch, outcomes and switching respect session lifetimes', async ({ page }, info) => {
   const errors: string[] = [], foreignRequests: string[] = [];
@@ -15,7 +17,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await page.goto('/');
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const pending = new Set<number>(); (window as any).hollowFrames = pending;
@@ -48,7 +50,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
   await page.clock.runFor(50);
   await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
   expect(await skyPixel()).toEqual(beforeTheme);

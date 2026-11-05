@@ -1,3 +1,5 @@
+import { initialTheme } from '../../common/ui/theme-choices.ts';
+import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
@@ -21,7 +23,7 @@ import type { GameSession } from '../../engine/session.ts';
 import './style.css';
 
 /** One browser session owns input, timing and disposal. Restart replaces the run. */
-export function mountClearing(container: HTMLElement, onExit: () => void): GameSession {
+export function mountClearing(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   const errors = validateContent();
   if (errors.length) {
     const message = document.createElement('pre'); message.setAttribute('role', 'alert');
@@ -45,7 +47,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       () => overlay?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
-    host = createHost(container, { className: 'clearing-app', label: 'Last Light Clearing',
+    host = createHost(container, { fullscreen, className: 'clearing-app', label: 'Last Light Clearing',
       surfaceLabel: 'Clearing arena. Move with WASD or arrow keys. Press P to pause or resume. Drag to move with touch or mouse.',
       onDisplayChange: suspend,
       onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
@@ -65,35 +67,37 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         if (screen !== 'title') return;
         configuration = id; run = newRun(); pauseRun(run, true); presentation.reset(run); overlay.reset(); ui.reset(); ui.update(run);
       },
-      onTheme: selectTheme,
+      onTheme: id => {
+        if (readiness.ready) void selectTheme(id); else readiness.watch(() => selectTheme(id));
+      },
       onMute: value => sound.setMuted(value),
       onFullscreen() {
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
       },
     });
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
-    readiness.watch(() => presentation.prepare());
+    readiness.watch(() => initialTheme === 'normal' ? presentation.prepare() : selectTheme(initialTheme));
     host.surface.prepend(presentation.canvas);
     overlay = createScreenOverlay(host.surface);
     ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     async function selectTheme(id: ThemeId) {
-      if (disposed || screen === 'playing' || screen === 'choosing') return;
+      if (disposed || screen === 'playing' || screen === 'choosing') return false;
       const theme = themes[id];
-      if (!theme) return;
+      if (!theme) return false;
       const request = preparation.begin();
-      ui.assetStatus(`Preparing ${theme.name}…`);
+      ui.appearancePending(id); ui.assetStatus(`Preparing ${theme.name}…`);
       let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
         if (theme.art) bundle = await prepareAssets(theme.art, request.signal);
-        if (!request.current()) return;
+        if (!request.current()) return false;
         if (theme.presentation === 'ember') {
           const { createEmberScene } = await import('./ember-scene.ts');
-          if (!request.current()) return;
+          if (!request.current()) return false;
           next = createPresentation(theme, bundle!.images, createEmberScene);
         } else next = createPresentation(theme, bundle?.images);
-        if (!request.current()) return;
+        if (!request.current()) return false;
         await next.prepare();
-        if (!request.current()) return;
+        if (!request.current()) return false;
         // Prepare and paint against the CURRENT run, including a retry made during loading.
         next.reset(run); next.resize(host);
         next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
@@ -104,6 +108,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         readiness.watch(() => presentation.prepare());
         ui.appearance(id); ui.assetStatus('');
         old.dispose(); oldAssets?.dispose();
+        return true;
       } catch (error) {
         if (request.current()) {
           ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'presentation initialization failed'}). Keeping current appearance and run.`);
@@ -113,6 +118,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         if (next !== presentation) next?.dispose();
         if (bundle !== activeAssets) bundle?.dispose();
       }
+      return false;
     }
     function graphicsFailure() {
       if (disposed) return;
