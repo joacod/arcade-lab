@@ -2,9 +2,8 @@ import { openMenu, chooseOption } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('Skybreak sortie controls, suspension, outcomes, and switching release each session', async ({ page }, info) => {
-  const errors: string[] = [], graphicsRequests: string[] = [];
+  const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (/\/src\/games\/last-light-clearing\/(three|vgpu)\//.test(request.url()) && !request.url().includes('/art/')) graphicsRequests.push(request.url()); });
   // Observe real run construction without shipping a production debug API.
   await page.route(/\/src\/games\/skybreak\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
@@ -179,5 +178,5 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await page.evaluate(() => (window as any).flightFrames.size)).toBe(0);
   expect(await page.evaluate(() => (window as any).flightContexts.every((c: AudioContext) => c.state === 'closed'))).toBe(true);
-  expect(graphicsRequests).toEqual([]); expect(errors).toEqual([]);
+  expect(errors).toEqual([]);
 });

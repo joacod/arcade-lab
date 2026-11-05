@@ -163,7 +163,6 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(x - 3, y); ctx.lineTo(x, y - (theme.motif === 'grove' ? 5 : 9)); ctx.lineTo(x + 3, y);
-          if (theme.motif === 'crystal') { ctx.lineTo(x, y + 4); ctx.closePath(); }
           ctx.stroke();
           if (i % 11 === 0) circle(x + 5, y + 3, 2, palette.ground);
         }
@@ -194,7 +193,6 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
           ctx.beginPath(); ctx.moveTo(atX - size, edgeY + 12);
           ctx.lineTo(atX - size * 0.6, edgeY - 9); ctx.lineTo(atX, edgeY - size);
           ctx.lineTo(atX + size, edgeY + 12); ctx.closePath(); ctx.fill();
-          if (theme.motif === 'crystal') { ctx.strokeStyle = palette.ground; ctx.stroke(); }
         }
       }
 

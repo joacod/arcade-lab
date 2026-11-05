@@ -2,7 +2,7 @@
 
 Normal is the gameplay-first baseline: establish a game that is new to the catalog, work out its mechanics and deliver a complete, playable and enjoyable experience. Spend the effort on controls, rules, progression and readable feedback, with a simple, coherent presentation. Normal can look appealing and use image assets; the Assets mode name does not reserve artwork for later. A dedicated art or visual-polish pass is not the goal here. Follow the [development progression and mode contracts](architecture.md#appearance-changes); preserve useful artwork and animation in existing games.
 
-When implementing or improving Normal, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, rendering technologies, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
+When implementing or improving Normal, incorporate genuinely reusable lessons into this guide. Keep guidance independent of specific games, genres, models, providers and development tools; game-specific art decisions belong with the owning game. Refine outdated guidance instead of accumulating rules, improving practical usefulness without unnecessary length or restrictions.
 
 ## Start with the game
 
@@ -20,7 +20,7 @@ Keep one authoritative uniform world transform, with framing that exposes the sp
 
 ## Use a lightweight asset presentation
 
-Use custom image assets for the player, enemies and interactive objects, keeping their scope modest: a small, coherent sprite set and the action frames needed to communicate the game. Simple complete character cels keep anatomy, clothing and silhouette together. Reuse suitable committed artwork where it fits. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Browser-native Canvas drawing is usually sufficient to present them without a graphics dependency. The renderer serves the playable foundation; detailed materials, extensive scenery and elaborate animation can wait for the focused visual passes.
+Use custom image assets for the player, enemies and interactive objects, keeping their scope modest: a small, coherent sprite set and the action frames needed to communicate the game. Simple complete character cels keep anatomy, clothing and silhouette together. Reuse suitable committed artwork where it fits. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Use Canvas 2D to draw them. The renderer serves the playable foundation; detailed materials, extensive scenery and elaborate animation can wait for the focused visual passes.
 
 Temporary shapes are useful while establishing mechanics. Replace that scaffolding before treating the presentation as finished. Do not build a procedural body-part system or skeleton renderer as the Normal foundation and then carry it into later themes. Existing procedural games can migrate in their own scoped passes.
 

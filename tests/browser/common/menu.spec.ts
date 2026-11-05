@@ -2,14 +2,12 @@ import { chooseOption } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('shared menus fit compact screens and keep actions accessible with a single theme selector', async ({ page }) => {
-  const errors: string[] = [], requests: string[] = [];
-  page.on('request', request => requests.push(request.url()));
+  const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const games = ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline'];
   for (const title of games) {
-    requests.length = 0;
     await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.locator('[data-control]:visible')).toHaveCount(0);
@@ -42,8 +40,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
       await expect(page.locator('.menu-theme-note')).not.toContainText('Unavailable:');
     }
     if (title === 'Last Light Clearing') await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Ruins · Rekindled');
-    expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\//.test(url)), `${title} starts without optional graphics libraries`).toEqual([]);
-    expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
+    expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(['normal', 'assets', 'quality']);
     await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', 'false');
     await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'false');
     await theme.focus();
@@ -132,7 +129,7 @@ test('composed menu fields retain labels, values and session-owned listeners', a
     const field = createSelectField({ label: 'Difficulty', choices: { gentle: 'Gentle', brisk: 'Brisk' }, value: 'gentle', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
     const themePath = '/src/common/ui/theme-select.ts';
     const { createThemeSelect } = await import(themePath);
-    const theme = createThemeSelect({ modes: { custom: {} }, value: 'custom', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
+    const theme = createThemeSelect({ modes: { quality: {} }, value: 'quality', signal: lifetime.signal, onChange: (value: string) => events.push(value) });
     const readout = createMenuReadout('Test results'); readout.update('100 POINTS\n2 lives'); readout.element.hidden = false;
     const settings = document.createElement('div'); settings.append(field.element, readout.element);
     const root = document.createElement('div'), stage = document.createElement('div'), surface = document.createElement('div'), pause = document.createElement('button');
@@ -147,14 +144,14 @@ test('composed menu fields retain labels, values and session-owned listeners', a
 
   await expect(page.getByLabel('Difficulty', { exact: true })).toHaveAttribute('value', 'gentle');
   await chooseOption(page.getByLabel('Difficulty', { exact: true }), 'brisk');
-  await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'custom');
+  await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'quality');
   await expect(page.getByLabel('Theme', { exact: true }).locator('..').locator('[role="option"][data-value="normal"]')).toHaveAttribute('aria-disabled', 'true');
   await page.getByLabel('Theme', { exact: true }).evaluate(control => { control.parentElement!.querySelector<HTMLElement>('[data-value="normal"]')!.click(); });
   expect(await page.evaluate(() => (window as any).menuProbe.events)).toEqual(['brisk']);
   const result = await page.evaluate(() => {
     const { lifetime, events, field, theme, readout } = (window as any).menuProbe;
     // Programmatic synchronization must not emit another game intent.
-    field.setValue('gentle'); theme.setValue('custom');
+    field.setValue('gentle'); theme.setValue('quality');
     const observer = new MutationObserver(() => {}); observer.observe(readout.element, { childList: true, subtree: true, characterData: true });
     readout.update('100 POINTS\n2 lives');
     const unchangedMutations = observer.takeRecords().length; observer.disconnect();

@@ -64,7 +64,7 @@ Actors sort by ground lane independently of jump elevation; shadows remain on th
 
 The projected camera and sprite animation stay local because they depend on horizontal position, ground lane and elevation. A single Canvas owner composes every mode with the same world transform, semantic cues and bounded effects. Quality uses painted image plates instead of a separate 3D scene, keeping the people and architecture in the same illustrated perspective. Only the quiet asphalt portion stretches on tall displays; architectural proportions and the source curb anchor stay stable. Alternate Quality tiles mirror their matching edges. Sources contain no baked actors, combat effects or pickups.
 
-Assets and Quality each own lazy, validated image bundles. The session retains its current presentation until the replacement is ready and successfully drawn, then releases the previous owner. Image or draw failure uses the shared recovery contract. No optional graphics backend or capability gate is required for these modes.
+Assets and Quality each own lazy, validated image bundles. The session retains its current presentation until the replacement is ready and successfully drawn, then releases the previous owner. Image or draw failure uses the shared recovery contract.
 
 ## Verification
 

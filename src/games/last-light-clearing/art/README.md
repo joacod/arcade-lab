@@ -23,7 +23,7 @@ The loader validates referenced frames, pivots, footprints and timing. Initial i
 
 ## Interface styling
 
-Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, Ember accompanies Quality, and Abyss accompanies Custom.
+Each mode chooses its matching interface in `themes.ts`; `style.css` defines its `[data-skin]` custom properties. Classic accompanies Normal, Rune accompanies Assets, and Ember accompanies Quality.
 
 ## Rekindled scenery and retained sprites
 
