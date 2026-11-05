@@ -8,8 +8,6 @@ A vertical arcade shooter with three image-based Canvas 2D appearances. The [art
 
 **Normal · Pacific Run** uses simple aircraft sprites and a procedural ocean. **Assets · Aurora Fleet** gives the coastal sortie a detailed arcade fleet, distinct aircraft silhouettes, pixel reefs, scrolling sea currents and matching supply capsules. **Quality · Tempest Coast** reinterprets that fleet with newly painted metal aircraft, illustrated supplies and reactor housings, a separate detailed fortress hull, and a continuously scrolling coastal sea. The same ivory fighter and colored hostile roles carry through both directed modes.
 
-![Aurora Fleet: arcade fleet over a scrolling pixel reef route](skybreak-assets.png)
-
 ## Functional presentation
 
 The scenery passes beneath the aircraft in the direction of flight, with faster cloud layers establishing altitude. Offshore detail stays near the margins, leaving open water for projectile gaps, attack preparation and evasive movement. The coast, clouds and shadows are decorative; the world projection, physical circles, formation timings and movement rules remain the same across modes. The [coastal sortie brief](../../../src/games/skybreak/art/coastal-sortie/README.md#direction-and-functional-composition) owns the specific visual identities, travel contract and artwork layout.
