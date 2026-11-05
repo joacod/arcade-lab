@@ -1,7 +1,9 @@
 import type { GameEntry, GameSession } from '../engine/session.ts';
+import { createFullscreen } from '../engine/browser/fullscreen.ts';
 
 /** Own only the active game's lifetime and mount point. Games own everything inside it. */
 export function createApplication(container: HTMLElement) {
+  const fullscreen = createFullscreen(container);
   let active: { session: GameSession; host: HTMLElement } | undefined;
   let disposed = false;
   function unmount() {
@@ -17,7 +19,7 @@ export function createApplication(container: HTMLElement) {
       const host = document.createElement('div');
       host.className = 'game-mount';
       container.append(host);
-      try { active = { session: game.mount(host), host }; }
+      try { active = { session: game.mount(host, fullscreen), host }; }
       catch (error) { host.remove(); throw error; }
     },
     dispose() {

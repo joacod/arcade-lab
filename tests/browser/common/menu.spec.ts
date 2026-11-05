@@ -1,4 +1,4 @@
-import { chooseOption } from '../menu.ts';
+import { chooseOption, openSettings } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
 test('shared menus fit compact screens and keep actions accessible with a single theme selector', async ({ page }) => {
@@ -31,6 +31,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
     });
     expect(contrast, `${title} primary action remains readable on hover`).toBeGreaterThanOrEqual(4.5);
     await expect(page.getByRole('tab')).toHaveCount(0);
+    await openSettings(page);
     const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
     await expect(theme).toHaveAttribute('value', 'normal');
     await expect(page.locator('.menu-theme-note')).toContainText('keeps your run');
@@ -58,6 +59,7 @@ test('shared menus fit compact screens and keep actions accessible with a single
       await theme.scrollIntoViewIfNeeded();
       await expect(theme).toBeInViewport({ ratio: 1 });
       await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeInViewport({ ratio: 1 });
+      await controls.scrollIntoViewIfNeeded();
       await expect(controls).toBeInViewport({ ratio: 1 });
       await expect(play).toBeInViewport({ ratio: 1 });
       await page.screenshot({ path: 'test-results/theme-menu-landscape.png' });
@@ -142,6 +144,7 @@ test('composed menu fields retain labels, values and session-owned listeners', a
   await expect(page.getByLabel('Test results', { exact: true })).toHaveText('100 POINTS\n2 lives');
   await expect(page.getByLabel('Test results', { exact: true })).toHaveAttribute('aria-live', 'off');
 
+  await openSettings(page);
   await expect(page.getByLabel('Difficulty', { exact: true })).toHaveAttribute('value', 'gentle');
   await chooseOption(page.getByLabel('Difficulty', { exact: true }), 'brisk');
   await expect(page.getByLabel('Theme', { exact: true })).toHaveAttribute('value', 'quality');
@@ -208,6 +211,7 @@ test('web options preview without applying, dismiss cleanly and stay usable in f
   await page.setViewportSize({ width: 390, height: 700 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
+  await openSettings(page);
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
   const options = page.getByRole('listbox', { name: 'Theme options', exact: true });
   await theme.focus(); await page.keyboard.press('ArrowDown');
@@ -266,7 +270,89 @@ test('web options preview without applying, dismiss cleanly and stay usable in f
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toHaveText('Resume (P)');
   await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+  await openSettings(page);
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toHaveText('Exit fullscreen (F)');
   await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+});
+
+test('fullscreen belongs to the arcade across selection and game replacement', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
+  for (const title of ['Skybreak', 'Obsidian Duel']) {
+    await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
+    await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+    await expect(page.getByRole('button', { name: `Open game: ${title}`, exact: true })).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
+    await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
+  }
+  await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBe(null);
+});
+
+test('menu sound and theme shortcuts retain the paused run and leave gameplay keys alone', async ({ page }) => {
+  await page.route(/\/src\/games\/skybreak\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createRun;
+      createRun = (...args) => { const run = original(...args); window.shortcutRun = run; return run; };` });
+  });
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.clock.runFor(150);
+  await page.keyboard.press('p');
+  const state = () => page.evaluate(() => JSON.stringify((window as any).shortcutRun));
+  const frozen = await state();
+  await page.keyboard.down('s');
+  const mute = page.locator('.game-menu-mute');
+  await expect(mute).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.down('s');
+  await expect(mute).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.up('s');
+  await page.keyboard.press('s');
+  await expect(mute).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.press('t');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  await page.keyboard.press('t');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
+  await page.clock.runFor(100);
+  expect(await state()).toBe(frozen);
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Restart', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.keyboard.down('s'); await page.clock.runFor(200); await page.keyboard.up('s');
+  await page.keyboard.press('p');
+  await expect(mute).toHaveAttribute('aria-pressed', 'false');
+  expect(await state()).not.toBe(frozen);
+});
+
+test('public themes start in Assets and expose only Assets and Quality in every game', async ({ page }) => {
+  // Exercise the production policy through Vite while retaining the suite's one Chromium target.
+  await page.route(/\/src\/common\/ui\/theme-select\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: (await response.text()).replaceAll('import.meta.env.DEV', 'false') });
+  });
+  await page.goto('/');
+  for (const title of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline']) {
+    await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    await openSettings(page);
+    const themes = page.getByRole('group', { name: 'Theme', exact: true });
+    await expect(themes.getByRole('button')).toHaveCount(2);
+    await expect(themes.locator('[data-value="assets"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(themes.locator('[data-value="normal"]')).toHaveCount(0);
+    await themes.locator('[data-value="quality"]').click();
+    await expect(page.locator('[data-appearance="quality"], [data-theme="quality"], canvas[data-renderer="quality"]').first()).toBeAttached();
+    await page.getByRole('button', { name: 'Play', exact: true }).focus();
+    await page.keyboard.press('t');
+    await expect(themes.locator('[data-value="assets"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  }
 });

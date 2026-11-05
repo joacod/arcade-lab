@@ -1,3 +1,5 @@
+import { initialTheme } from '../../common/ui/theme-select.ts';
+import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -10,12 +12,12 @@ import { createUI, type Intent, type Screen } from './ui.ts';
 import { createAppearance } from './appearance.ts';
 import { createSound } from './sound.ts';
 import './style.css';
-export function mountCircuit(container: HTMLElement, onExit: () => void): GameSession {
+export function mountCircuit(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createAppearance> | undefined, sound: ReturnType<typeof createSound> | undefined;
-  const host = createHost(container, { className: 'circuit-app', label: 'Midnight Circuit',
+  const host = createHost(container, { fullscreen, className: 'circuit-app', label: 'Midnight Circuit',
     surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
@@ -46,9 +48,12 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   }
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => { suspend(); void presentation?.select(value); });
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => {
+      suspend();
+      if (readiness.ready) void presentation!.select(value); else readiness.watch(() => presentation!.select(value));
+    });
     presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend, () => readiness.watch(() => presentation!.prepare()));
-    readiness.watch(() => presentation!.prepare());
+    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : presentation!.select(initialTheme));
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });

@@ -70,4 +70,3 @@
 .hollow-app[data-appearance="quality"] .hollow-location > div { padding: 7px 13px; background: #0b202bd9; border-left: 2px solid #d9bd87; }
 .hollow-app[data-appearance="quality"] .hollow-location > span { border-color: #d9bd8766; background: #0b202baa; }
 .hollow-app[data-appearance="quality"] .hollow-announcement { color: #e4efd6; background: #102d35f2; border-color: #d9bd87; box-shadow: 0 8px 30px #020e1b88, inset 0 0 20px #a2d9bf0a; }
-.hollow-app[data-appearance="quality"] .game-menu { background: linear-gradient(145deg, #18343df7, #091b29fa); border-color: #d9bd8755; box-shadow: 0 24px 80px #020b16aa, inset 0 1px #e0c38d33; }

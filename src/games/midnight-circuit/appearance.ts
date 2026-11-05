@@ -15,31 +15,33 @@ export function createAppearance(surface: HTMLElement, status: (value: Appearanc
     status(active, message); onReady();
   }
   async function select(value: Appearance) {
-    if (disposed) return;
+    if (disposed) return false;
     const request = preparation.begin();
-    if (value === active) { status(active, ''); return; }
+    if (value === active) { status(active, ''); return true; }
     status(value, `Preparing ${appearances[value]}…`);
     const staging = document.createElement('div'); let next: CircuitRenderer | undefined;
     try {
       if (value === 'normal') next = createPresentation(staging);
       else if (value === 'assets') {
         const { createAssets } = await import('./assets.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         next = await createAssets(staging, request.signal);
       } else {
         const { createQuality } = await import('./quality.ts');
-        if (!request.current()) return;
+        if (!request.current()) return false;
         next = await createQuality(staging, request.signal);
       }
       await next.prepare();
-      if (!request.current()) { next.dispose(); return; }
+      if (!request.current()) { next.dispose(); return false; }
       if (snapshot) next.draw(...snapshot);
       current.dispose(); surface.append(...staging.childNodes); current = next; active = value;
       status(active, ''); onReady();
+      return true;
     } catch {
       next?.dispose();
       if (request.current()) { status(active, `${appearances[value]} unavailable. ${appearances[active]} retained.`); }
     }
+    return false;
   }
   return {
     select,

@@ -36,7 +36,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).flightProbe)));
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('skybreak-app');
+  expect(await page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
   await expect(page.locator('.skybreak-hud')).toBeHidden();
   await expect(page.locator('.skybreak-footer')).toBeHidden();
   await openMenu(page); await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();
@@ -65,12 +65,12 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
   const afterTheme = await state();
   await page.evaluate(() => {
-    document.querySelector<HTMLElement>('.skybreak-app')!.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied'));
+    document.querySelector<HTMLElement>('#app')!.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied'));
   });
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.locator('.game-menu-display-status')).toContainText('Fullscreen could not open');
   expect(await state()).toEqual(afterTheme);
-  await page.evaluate(() => { delete (document.querySelector('.skybreak-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
+  await page.evaluate(() => { delete (document.querySelector('#app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit fullscreen', exact: true })).toBeVisible();
   await expect(page.locator('.game-menu-display-status')).toBeHidden();

@@ -238,6 +238,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
   const cleanup = await page.evaluate(async () => {
     const modulePath = '/src/games/last-light-clearing/app.ts';
     const { mountClearing } = await import(modulePath);
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const container = document.createElement('div');
     document.body.append(container);
     const originalRequest = window.requestAnimationFrame;
@@ -255,7 +256,7 @@ test('pointer mapping and cancellation, menu isolation, and complete session dis
     };
     try {
       for (let i = 0; i < 5; i++) {
-        const session = mountClearing(container, () => {});
+        const session = mountClearing(container, () => {}, createFullscreen(container));
         session.dispose(); session.dispose();
       }
       return { remainingFrames: scheduled.size, children: container.childElementCount,
@@ -477,8 +478,9 @@ test('themes, both configurations, upgrade confirmation, outcomes, retry and ass
   const closed = await page.evaluate(async () => {
     const path = '/src/games/last-light-clearing/app.ts';
     const { mountClearing } = await import(path);
+    const displayPath = '/src/engine/browser/fullscreen.ts'; const { createFullscreen } = await import(displayPath);
     const container = document.createElement('div'); document.body.append(container);
-    const session = mountClearing(container, () => {});
+    const session = mountClearing(container, () => {}, createFullscreen(container));
     await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
     // Initial preparation uses detached images, so wait for its status mutation.
     await new Promise<void>(resolve => {
@@ -572,13 +574,13 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
 
   // A rejected browser request leaves the viewport playable and reports the failure.
   await page.evaluate(() => {
-    const root = document.querySelector<HTMLElement>('.clearing-app')!;
+    const root = document.querySelector<HTMLElement>('#app')!;
     root.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied for this check'));
   });
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await expect(page.locator('.game-menu-display-status')).toContainText('Fullscreen could not open');
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
-  await page.evaluate(() => { delete (document.querySelector('.clearing-app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
+  await page.evaluate(() => { delete (document.querySelector('#app') as unknown as { requestFullscreen?: unknown }).requestFullscreen; });
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.clock.runFor(50);
 
@@ -587,7 +589,7 @@ test('Close camera preserves a held CSS drag; layout and fullscreen require deli
   await openMenu(page); await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await page.keyboard.up('d');
   await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible();
-  expect(await page.evaluate(() => document.fullscreenElement?.className)).toBe('clearing-app');
+  expect(await page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await page.evaluate(() => document.exitFullscreen());
   await page.clock.runFor(100);

@@ -28,3 +28,10 @@
   .game-menu-layer .menu-choice:has(:checked), .game-menu-layer .menu-select-options [aria-selected='true'] { border: 2px solid Highlight; }
   .game-menu-layer .menu-select-options [aria-disabled='true'] { color: GrayText; }
 }
+
+.game-menu-layer .menu-theme-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.game-menu-layer .menu-theme-choices button { position: relative; display: grid; align-content: start; gap: 5px; text-align: left; padding: 14px; background: #192e34; }
+.game-menu-layer .menu-theme-choices strong { font-size: 14px; }
+.game-menu-layer .menu-theme-choices small { font: 11px/1.5 system-ui, sans-serif; color: #b7cac5; }
+.game-menu-layer .menu-theme-choices [aria-pressed='true'] { border-color: var(--menu-accent, #b9efd4); background: #263e43; }
+.game-menu-layer .menu-theme-choices [aria-pressed='true']::after { content: '✓'; position: absolute; top: 13px; right: 13px; color: var(--menu-accent, #b9efd4); }

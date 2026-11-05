@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openMenu, chooseOption } from '../../menu.ts';
+import { openMenu, openSettings, chooseOption } from '../../menu.ts';
 
 test('Skybreak retains its run through failed, superseded and disposed appearance loads', async ({ page }) => {
   const errors: string[] = [];
@@ -96,6 +96,7 @@ test('bundled Aurora Fleet loads every sheet, preserves the paused run and relea
   const state = () => page.evaluate(() => JSON.stringify((window as any).flightProbe));
   const frozen = await state();
   const appearance = page.getByRole('combobox', { name: 'Theme', exact: true });
+  await openSettings(page);
   await expect(appearance.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'false');
   await chooseOption(appearance, 'assets');
   await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');

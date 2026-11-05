@@ -30,4 +30,6 @@ pnpm dev
 
 Open the local URL printed in the terminal and choose a game. Keyboard and touch controls are available, with fullscreen where supported. All required artwork is included.
 
+Development starts in Normal; production builds start in Assets and offer Assets / Quality. In title and pause menus, S toggles sound and T switches themes. P pauses or resumes and F toggles fullscreen, which stays active when returning to game selection.
+
 [Architecture](docs/architecture.md) · [Development guidance](AGENTS.md) · [MIT license](LICENSE)

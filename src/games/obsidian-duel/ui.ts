@@ -1,4 +1,4 @@
-import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeSelect } from '../../common/ui/theme-select.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -21,12 +21,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const gameContent = document.createElement('div');
   gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   gameContent.append(results.element);
-  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, theme: theme.element,
+    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
     controls: `<b>A D / ← →</b> move　 <b>W / ↑</b> jump　 <b>S / ↓</b> crouch<br><b>J</b> light　 <b>K</b> heavy　 <b>L</b> special　 <b>SHIFT</b> guard<br>Crouch + J sweeps. Jump + J / K attacks overhead.<br>Hold a direction at takeoff to jump forward or back. Attacks keep the jump arc.<br>Jump over to switch sides. Strike after crossing to turn back toward your opponent.<br>Stand guard for overheads. Crouch guard for sweeps.<br><span>Let a heavy miss. Step in when RECOVERING appears.</span><p>Touch: use the on-screen controls.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

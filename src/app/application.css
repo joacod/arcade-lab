@@ -1,2 +1,3 @@
 html, body, #app { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+#app:fullscreen { background: #101a21; }
 .game-mount { width: 100%; height: 100%; }

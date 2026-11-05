@@ -1,4 +1,4 @@
-import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeSelect } from '../../common/ui/theme-select.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, upgrades, weapons, type ConfigurationId } from './content.ts';
@@ -71,14 +71,14 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     }, { signal });
   }
   gameContent.querySelector('.menu-setup')!.append(rounds);
-  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: 'normal', onChange: onTheme });
+  const appearance = createThemeSelect({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
     onAction: action => action === 'exit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
     game: gameContent,
-    theme: appearance.element,
+    theme: appearance.element, cycleTheme: appearance.cycle,
     controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       { id: 'start', label: 'Play', screens: ['title'], primary: true },

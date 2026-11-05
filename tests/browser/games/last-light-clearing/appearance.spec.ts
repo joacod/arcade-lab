@@ -1,4 +1,4 @@
-import { chooseOption } from '../../menu.ts';
+import { chooseOption, openSettings } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
@@ -28,8 +28,9 @@ test('menu geometry uses the game viewport across all three themes', async ({ pa
     return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, actionsY: actions.y,
       scroll: body.scrollHeight - body.clientHeight };
   });
+  await openSettings(page);
   const baseline = await geometry(), retained = await snapshot(page);
-  expect(baseline.scroll).toBe(0);
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
   for (const mode of ['assets', 'quality', 'normal']) {
     await chooseOption(theme(page), mode);
     await expect(shell(page)).toHaveAttribute('data-theme', mode);

@@ -1,4 +1,4 @@
-import { createThemeSelect } from '../../common/ui/theme-select.ts';
+import { initialTheme, createThemeSelect } from '../../common/ui/theme-select.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -25,12 +25,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Adventure results');
-  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: 'normal', onChange: appearance });
+  const theme = createThemeSelect({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.hollow-stage'), {
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: theme.element,
+    game: results.element, theme: theme.element, cycleTheme: theme.cycle,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Vents: cross on CLEAR. The bar drains toward the next phase.<br>Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
