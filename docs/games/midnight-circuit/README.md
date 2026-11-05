@@ -16,17 +16,17 @@ Three lives cover the whole run. Losing a life cancels enemy attacks, restores h
 | --- | --- |
 | **Normal · Street sketch** | Simple flat whole-character cels, silhouette buildings, broad windows and an open road. A lightweight, readable playable foundation. |
 | **Assets · Signal / Rain** | The painted arcade cast against an original inked city: noodle bar, radio repair shop, laundrette, railway steel and distinct industrial control bays. Warm paper, oxidized teal and charcoal carry through the instruments. |
-| **Quality · Afterglow** | The painted cast inhabits richly illustrated masonry, copper, ceramic, glass and wet asphalt. Warm practical lights, quiet reflections and graphite-and-ivory instruments give the whole street and station a coherent modern finish. |
+| **Quality · Afterglow** | A separately redrawn, more detailed cast inhabits richly illustrated masonry, copper, ceramic, glass and wet asphalt. Warm practical lights, quiet reflections and graphite-and-ivory instruments give the whole street and station a coherent modern finish. |
 
-The [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns all three briefs, source artwork, layout and maintenance contracts. The cast keeps its identity across modes: Rook's teal jacket and red scarf, red-uniformed Strikers, ochre Bruisers and the ivory Warden. Assets and Quality retain the existing complete painted fighter drawings; Normal has a separate modest vector cel sheet.
+The [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns all three briefs, source artwork, layout and maintenance contracts. The cast keeps its identity across modes: Rook's teal jacket and red scarf, red-uniformed Strikers, ochre Bruisers and the ivory Warden. Assets retains the classic painted combat cels with new locomotion artwork. Quality has its own newly drawn, higher-resolution fighter sheet with richer clothing, armor and materials. Normal uses a separate modest vector cel sheet.
 
 ![Afterglow: painted shops and warm lights behind the open fighting lane](afterglow.png)
 
 ![Signal / Rain: distinct inked storefronts and sparse road reflections](signal-rain.png)
 
-All modes use idle, two walking steps, anticipation, punch, kick, hurt and defeat cels. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Each drawing remains a complete figure with a stable foot pivot.
+All modes use twelve cels per fighter: idle, four walking contacts/passing poses, anticipation, punch, kick, neutral jump rise/fall, hurt and defeat. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Each drawing remains a complete figure with a stable foot pivot. A full stride follows observed travel distance instead of wall time. An ordinary jump uses guarded rise and landing poses; only an actual aerial attack selects the kick contact.
 
-Scenery has no physical obstacles in the traversable lane. Facades, transformers, gutter details and furniture stay behind its rear curb. Near scenery and pavement share world alignment; only distant skylines use parallax. The station control installation frames the final arena. Enemy attack footprints, repairs, encounter locks and the Warden's **OPEN** cue remain separate readable layers above the road. Reduced motion suppresses rain, walking animation, shake and moving impact effects while preserving movement and combat cels. The finale restores indicators and warms the city above the retained battle scene.
+Scenery has no physical obstacles in the traversable lane. Facades, transformers, gutter details and furniture stay behind its rear curb. Near scenery and pavement share world alignment; only distant skylines use parallax. The station control installation frames the final arena. Quality frames its lower foreground facades beneath a visible distant skyline on desktop and portrait displays; the station roof has transparent openings into that same city layer. Enemy attack footprints, repairs, encounter locks and the Warden's **OPEN** cue remain separate readable layers above the road. Reduced motion suppresses rain, flashes, shake and moving impact effects while preserving the locomotion cels that communicate actual travel, as well as combat poses. The finale restores indicators and warms the city above the retained battle scene.
 
 ![Afterglow: the Circuit Warden at the main power station](afterglow-station.png)
 
@@ -52,7 +52,7 @@ Paths below are relative to `src/games/midnight-circuit/`.
 | `presentation.ts` | Uniform projection, encounter-framed camera, depth sorting, sprite composition, parallax, weather and bounded effects |
 | `assets.ts`, `asset-art.ts`, `art/signal-rain/` | Inked Assets scenery, image preparation and layout validation |
 | `quality.ts`, `quality-art.ts`, `art/afterglow/` | Painted Quality scenery, inspected curb anchors, image preparation and validation |
-| `animation.ts`, `sprite-art.ts`, `art/normal/`, `art/fighters/` | Displacement observations, semantic cel selection, role footprints, simple and painted complete-cel atlases and sources |
+| `animation.ts`, `sprite-art.ts`, `art/normal/`, `art/fighters/` | Displacement observations, semantic cel selection, role footprints, simple, classic painted and separate modern complete-cel atlases and sources |
 | `graphics.ts`, `appearance.ts` | Renderer contract, lazy loading, atomic replacement, cancellation and recovery |
 | `ui.ts`, `style.css` | Scoped menus, HUD, boss bar, touch layout and user intents |
 | `sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities, batch coalescing and throttling |
@@ -74,6 +74,6 @@ Assets and Quality each own lazy, validated image bundles. The session retains i
 
 `tests/unit/games/midnight-circuit/assets.test.mjs` checks the committed sprite and environment layouts and rejection of missing or mismatched images.
 
-The [browser checks](../../../tests/browser/games/midnight-circuit/game.spec.ts) cover lane combat, simultaneous touch actions, boss-result composition, distinct appearances, paused frame stability, retained-run replacement, drawing recovery and failed/cancelled image preparation.
+The [browser checks](../../../tests/browser/games/midnight-circuit/game.spec.ts) cover rendered four-cel walking under reduced motion, neutral jumps versus attack kicks, lane combat, simultaneous touch actions, boss-result composition, distinct appearances, paused frame stability, retained-run replacement, drawing recovery and failed/cancelled image preparation.
 
 Use the [shared verification commands](../../architecture.md#local-verification).

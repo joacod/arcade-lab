@@ -2,7 +2,7 @@ import { prepareImages, type ImageBundle } from '../../engine/browser/images.ts'
 import { validateCircuitArt } from './asset-art.ts';
 import { stageOf } from './game.ts';
 import { createPresentation, type CircuitArtwork } from './presentation.ts';
-import fighters from './art/fighters/fighters.png';
+import fighters from './art/fighters/animated.webp';
 import skyline from './art/signal-rain/skyline.svg';
 import backstreets from './art/signal-rain/backstreets.svg';
 import station from './art/signal-rain/station.svg';

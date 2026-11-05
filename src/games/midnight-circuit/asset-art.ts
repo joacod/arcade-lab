@@ -1,7 +1,7 @@
 import type { ImageDimensions } from '../../engine/browser/images.ts';
-/** Complete 256-square cels; four fighter rows and eight semantic poses. */
+/** Complete 256-square cels; four fighter rows and twelve semantic poses. */
 export const signalRain = {
-  fighters: { width: 2048, height: 1024 },
+  fighters: { width: 3072, height: 1024 },
   skyline: { width: 1920, height: 480 },
   backstreets: { width: 1920, height: 600 },
   station: { width: 1920, height: 600 },

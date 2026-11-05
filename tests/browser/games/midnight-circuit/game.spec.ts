@@ -15,6 +15,18 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
+  await page.addInitScript(() => {
+    (window as any).circuitPoses = new Set<number>();
+    const original = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      const result = (original as any).apply(this, args);
+      if (args.length === 9 && args[0] instanceof HTMLImageElement && args[0].src.includes('fighters') && args[2] === 0) {
+        (window as any).circuitPoses.add(args[1] / args[3]);
+      }
+      return result;
+    } as typeof original;
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install(); await page.goto('/'); await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const frames = new Set<number>(); (window as any).circuitFrames = frames;
@@ -31,9 +43,16 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await expect(page.getByLabel('Combat tip', { exact: true })).toContainText('MOVE RIGHT');
   await page.keyboard.down('d'); await page.clock.runFor(1150); await page.keyboard.up('d');
   expect((await state()).gated).toBe(true); expect((await state()).enemies.length).toBe(2);
+  expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => frame >= 1 && frame <= 4).sort())).toEqual([1, 2, 3, 4]);
   await page.keyboard.down('j'); await page.clock.runFor(400); await page.keyboard.up('j');
   const firstSwing = (await state()).nextSwing; await page.clock.runFor(250); expect((await state()).nextSwing).toBe(firstSwing);
-  await page.keyboard.down('Space'); await page.keyboard.down('j'); await page.clock.runFor(150);
+  await page.evaluate(() => (window as any).circuitPoses.clear());
+  await page.keyboard.down('Space'); await page.clock.runFor(150);
+  expect((await state()).player.attack).toBeNull();
+  expect(await page.evaluate(() => [...(window as any).circuitPoses])).toContain(8);
+  expect(await page.evaluate(() => [...(window as any).circuitPoses])).not.toContain(7);
+  await page.keyboard.down('j'); await page.clock.runFor(150);
+  expect(await page.evaluate(() => [...(window as any).circuitPoses])).toContain(7);
   expect((await state()).player.elevation).toBeGreaterThan(20); expect((await state()).player.attack.kind).toBe('air');
   await page.keyboard.up('Space'); await page.keyboard.up('j');
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
@@ -224,18 +243,18 @@ test('Midnight Circuit Assets failures and cancelled preparation retain the work
   await expect.poll(() => page.evaluate(() => (window as any).circuitImages.length === 2 && (window as any).circuitImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
   await page.evaluate(() => { (window as any).circuitBaselineImages = (window as any).circuitImages.splice(0); });
   // A decoded image with the wrong layout must fail before activation.
-  await page.route('**/fighters/fighters.png', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
+  await page.route('**/fighters/animated.webp', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('.game-menu-display-status')).toContainText('Assets unavailable. Normal retained.');
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   const released = () => page.evaluate(() => (window as any).circuitImages.every((image: HTMLImageElement) => image.getAttribute('src') === null));
   expect(await released()).toBe(true);
-  await page.unroute('**/fighters/fighters.png');
+  await page.unroute('**/fighters/animated.webp');
   let release!: () => void;
   const delayed = new Promise<void>(resolve => { release = resolve; });
   let arrived!: () => void;
   const requested = new Promise<void>(resolve => { arrived = resolve; });
-  await page.route('**/fighters/fighters.png', async route => {
+  await page.route('**/fighters/animated.webp', async route => {
     arrived(); await delayed; await route.continue().catch(() => {});
   });
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
@@ -243,7 +262,7 @@ test('Midnight Circuit Assets failures and cancelled preparation retain the work
   await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'normal');
   expect(await released()).toBe(true);
-  release(); await page.unroute('**/fighters/fighters.png');
+  release(); await page.unroute('**/fighters/animated.webp');
   await chooseOption(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -257,7 +276,7 @@ test('Midnight Circuit Assets failures and cancelled preparation retain the work
   let finish!: () => void;
   const pending = new Promise<void>(resolve => { finish = resolve; });
   const started = new Promise<void>(resolve => { arrived = resolve; });
-  await page.route('**/fighters/fighters.png', async route => {
+  await page.route('**/fighters/animated.webp', async route => {
     arrived(); await pending; await route.continue().catch(() => {});
   });
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
@@ -265,7 +284,7 @@ test('Midnight Circuit Assets failures and cancelled preparation retain the work
   await started;
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   expect(await released()).toBe(true);
-  finish(); await page.unroute('**/fighters/fighters.png');
+  finish(); await page.unroute('**/fighters/animated.webp');
   await page.waitForTimeout(100);
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(errors).toEqual([]);

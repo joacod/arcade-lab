@@ -1,5 +1,5 @@
 import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
-import { normalSprites, validateCircuitSprites, drawCircuitFighter } from './sprite-art.ts';
+import { normalSprites, validateCircuitSprites, drawCircuitFighter, type FighterAtlas } from './sprite-art.ts';
 import { createGait, fighterFrame } from './animation.ts';
 import { attacks } from './content.ts';
 import { attackPhase, attackWarning, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
@@ -14,6 +14,7 @@ export function circuitView(width: number, height: number, run: Run) {
 /** Local artwork replaces visual roles while sharing projection, gait, warnings and event effects. */
 export interface CircuitArtwork {
   readonly mode: 'assets' | 'quality';
+  readonly fighterAtlas?: FighterAtlas;
   scenery(ctx: CanvasRenderingContext2D, view: ReturnType<typeof circuitView>, run: Run, time: number, reducedMotion: boolean): void;
   pickup(ctx: CanvasRenderingContext2D, pickup: Run['pickups'][number], ground: number, time: number): void;
 }
@@ -98,8 +99,8 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     }
   }
   function body(a: Actor, time: number, reflection = false) {
-    const frame = fighterFrame(a,gait.get(a.id),motion.matches);
-    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches);
+    const frame = fighterFrame(a,gait.get(a.id));
+    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches,artwork?.fighterAtlas);
     if (a.attack && attackPhase(a.attack) === 'active') {
       ctx.save();ctx.translate(0,-a.elevation);ctx.scale(a.facing,1);
       ctx.strokeStyle=a.kind==='player'?'#b5f7db':'#ffb784';ctx.lineWidth=3;

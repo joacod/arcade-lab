@@ -1,8 +1,9 @@
 import { prepareImages, type ImageBundle } from '../../engine/browser/images.ts';
 import { stageOf } from './game.ts';
 import { createPresentation, type CircuitArtwork } from './presentation.ts';
-import { afterglowPlates, validateAfterglowArt } from './quality-art.ts';
-import fighters from './art/fighters/fighters.png';
+import { afterglowPlates, stationIndicators, validateAfterglowArt } from './quality-art.ts';
+import fighters from './art/afterglow/fighters/fighters.webp';
+import { qualityFighterAtlas } from './sprite-art.ts';
 import streets from './art/afterglow/streets.webp';
 import station from './art/afterglow/station.webp';
 import repair from './art/afterglow/repair.svg';
@@ -11,12 +12,14 @@ import skyline from './art/afterglow/skyline.webp';
 function createArtwork(images: ImageBundle): CircuitArtwork {
   return {
     mode: 'quality',
+    fighterAtlas: qualityFighterAtlas,
     scenery(ctx, view, run, time, reducedMotion) {
       const stage = stageOf(run);
       const role = stage.environment === 'station' ? 'station' : 'streets';
       const plate = afterglowPlates[role], image = images[role]!;
       const { width, height, ground, x: camera } = view;
-      const span = 1280, finale = stage.encounters.at(-1)!;
+      const online = run.finale > 0 || run.status === 'victory';
+      const span = 800, finale = stage.encounters.at(-1)!;
       const origin = role === 'station' ? (finale.left + finale.right) / 2 - span / 2 : 0;
       const scale = span / plate.width, facadeHeight = plate.curb * scale;
       const sky = ctx.createLinearGradient(0, 0, 0, ground);
@@ -26,7 +29,7 @@ function createArtwork(images: ImageBundle): CircuitArtwork {
       const distantSpan = 1600, distantOffset = camera * .18;
       ctx.save(); ctx.globalAlpha = .65;
       for (let tile = Math.floor(distantOffset / distantSpan); tile * distantSpan - distantOffset < width; tile++) {
-        ctx.save(); ctx.translate(tile * distantSpan - distantOffset, ground - facadeHeight + 24 - 800);
+        ctx.save(); ctx.translate(tile * distantSpan - distantOffset, ground + 24 - 800);
         if (Math.abs(tile % 2) === 1) { ctx.translate(distantSpan, 0); ctx.scale(-1, 1); }
         ctx.drawImage(images.skyline!, 0, 0, distantSpan, 800); ctx.restore();
       }
@@ -39,13 +42,16 @@ function createArtwork(images: ImageBundle): CircuitArtwork {
         ctx.drawImage(image, 0, 0, plate.width, plate.curb, 0, ground - facadeHeight, span, facadeHeight);
         ctx.drawImage(image, 0, plate.curb, plate.width, plate.height - plate.curb, 0, ground, span,
           Math.max((plate.height - plate.curb) * scale, height - ground));
+        if (online && role === 'station') {
+          ctx.fillStyle = '#b8ffe1';
+          for (const [x,y] of stationIndicators) {
+            ctx.beginPath(); ctx.arc(x * scale, ground + (y - plate.curb) * scale, 2, 0, Math.PI * 2); ctx.fill();
+          }
+        }
         ctx.restore();
       }
-      if (run.finale > 0 || run.status === 'victory') {
+      if (online) {
         ctx.fillStyle = '#a7e7ad16'; ctx.fillRect(0, 0, width, ground);
-        // Restoration is a live state cue, not a lit state baked into an actor or the floor.
-        ctx.fillStyle = '#b8ffe1';
-        for (let x = 90 - camera % 210; x < width; x += 210) ctx.fillRect(x, ground - 111, 5, 3);
       }
       if (!reducedMotion && role === 'streets') {
         ctx.strokeStyle = '#bdd6d51c'; ctx.lineWidth = .8; ctx.beginPath();
