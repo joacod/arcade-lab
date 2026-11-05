@@ -5,6 +5,7 @@ import './application.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing application container.');
+container.replaceChildren(); // Replace the static, crawlable introduction with the interactive collection.
 const application = createApplication(container);
 let generation = 0, disposed = false;
 const selection: SelectionState = { scrollTop: 0 };

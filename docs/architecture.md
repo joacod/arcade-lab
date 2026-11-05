@@ -11,7 +11,7 @@ src/
   engine/              Game-independent contracts, fixed-step clock and collision math
     browser/           Host, input capture, focus/lifetime bindings and AudioBits owner
   games/<game-slug>/    Each game's content, simulation, session, input, UI and presentation
-    art/               Bundled artwork, collection cover and asset guides
+    art/               Bundled artwork and asset guides
 
 docs/
   architecture.md      Shared ownership and maintenance guide
@@ -29,9 +29,9 @@ tests/
 
 The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests use the same game slug. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. All modes render through Canvas 2D. Detailed scenery code and image preparation stay inside the owning game, behind its lazy imports. Appearance controllers own cancellation, replacement and graphics-failure recovery. Preparing a replacement retains the active renderer until the candidate can draw; simulation state and the host loop remain session-owned. Shared pose observations belong with the game when multiple renderers need the same animation.
 
-Runtime artwork belongs in the owning game's `art/` folder. Collection covers are SVG assets imported by `src/app/catalog.ts`; one Quality screenshot per game lives beside its guide and is reused by the README and catalog, never imported by the application. Commit all artwork required by enabled modes. Keep useful prompts, templates, dimensions and role mappings with the game. Development and production import the same committed bundles. Generated builds and browser reports stay ignored.
+Runtime artwork belongs in the owning game's `art/` folder. One canonical Quality screenshot per game lives beside its guide as `quality.webp`. The landing, README, catalog and game guide all use that file; collection metadata lives in `src/app/catalog-data.ts` and lazy game loaders in `src/app/catalog.ts`. See [collection previews and site identity](#collection-previews-and-site-identity) when replacing screenshots. Commit all artwork required by enabled modes. Keep useful prompts, templates, dimensions and role mappings with the game. Development and production import the same committed bundles. Generated builds and browser reports stay ignored.
 
-`src/engine/` and `src/common/` have no imports from the application or games. Games depend on the engine's session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders in one catalog; adding a game does not require a second loader switch or card template.
+`src/engine/` and `src/common/` have no imports from the application or games. Games depend on the engine's session contract rather than importing the application implementation. The application owns collection metadata and lazy game loaders; each entry supplies one metadata record and loader without adding a second card template.
 
 Engine code supplies game-independent execution and resource mechanisms. `engine/browser/` marks browser dependencies, not a place for every file using a browser API. Collection-specific presentation conventions belong in `common/ui/`: menus, their layout, fields and DOM updates. A game's browser session, renderer, theme definitions and asset-role mapping remain under that game. `common/` is not a holding area for helpers without a clear owner.
 
@@ -39,7 +39,9 @@ Engine code supplies game-independent execution and resource mechanisms. `engine
 
 | Responsibility | Owner |
 | --- | --- |
-| Collection metadata, covers and lazy game imports | `src/app/catalog.ts` |
+| Collection metadata and canonical screenshots | `src/app/catalog-data.ts` |
+| Lazy game imports | `src/app/catalog.ts` |
+| Site identity, metadata and generated share assets | `src/app/site.ts`, `public/icon.svg`, `scripts/site-assets.mjs` |
 | Entrypoint and selection screen | `src/app/main.ts`, `src/app/selection.ts` |
 | Synchronous mount/dispose contracts | `src/engine/session.ts` |
 | Cleanup that attempts every owner and aggregates failures | `src/engine/disposal.ts` |
@@ -112,6 +114,22 @@ Each game's sound adapter owns recipes, event mapping, batch coalescing, priorit
 ## Local development
 
 See the [README](../README.md#play-locally) to start the development server. `pnpm build` creates a production build in `dist/`; `pnpm preview` serves it locally.
+
+## Collection previews and site identity
+
+Keep exactly one committed screenshot per game at `docs/games/<slug>/quality.webp`. Use a representative active **Quality** scene, without a pause/menu overlay. After changing Quality artwork, replace that screenshot as part of the same change. The landing, README, catalog and game guide link to the same stable file, so they cannot drift into separate image sets. Do not add hand-maintained thumbnails or retain the input PNG alongside it.
+
+Capture the game through its existing Chromium flow, then run:
+
+```sh
+pnpm screenshot clearing /tmp/quality-capture.png
+```
+
+The first argument is the collection ID from `src/app/catalog-data.ts`. The command encodes WebP at quality 82, caps width at 1440 without enlargement and replaces the canonical file. It also refreshes the generated social card. At the current screenshot sizes, one shared image is small enough for cards and detailed enough for documentation; separate thumbnail files add no useful maintenance benefit.
+
+`public/icon.svg` owns the arcade cabinet mark. `src/app/site.ts` owns the public URL, repository link and search/share copy. Vite generates the PNG favicon, Apple touch icon, 1200×630 social card, robots.txt and sitemap.xml at startup and on every build. Those files stay ignored; the social card composes the canonical screenshots in collection order. Only the icon SVG and six screenshot files need to be maintained. Restart development or rebuild after changing branding or site metadata.
+
+The Vite HTML transform emits canonical, Open Graph, Twitter and WebSite structured data plus a static collection introduction. Search and link-preview clients receive this content before JavaScript runs. Only the collection URL belongs in the sitemap: games currently mount within it rather than exposing individual routes. A production build remains a static `dist/` directory.
 
 ## Local verification
 

@@ -58,7 +58,7 @@ The camera provides minimum horizontal visibility on narrow displays, bounded ve
 
 Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, keeper lean, landing compression and bell swinging. All modes use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 
-![Lumen Conservatory: the sculpted porcelain keeper and wind-up beetle beneath layered aqueduct ribs and a monumental waterwheel](clockwork-lumen.png)
+![Lumen Conservatory: the sculpted porcelain keeper and wind-up beetle beneath layered aqueduct ribs and a monumental waterwheel](quality.webp)
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain; only nearby vents are audible.
 

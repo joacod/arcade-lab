@@ -2,7 +2,7 @@
 
 [Game presentations](../../../../docs/games/last-light-clearing/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-`cover.svg` is an editable vector illustration. Normal uses complete Keeper and crawler cels in `grove/actors.svg` and the committed `grove/gem.svg`. Ground marks and spells remain procedural. Briar chargers add a forked crest; the persistent overlay carries their locked attack warnings across themes.
+Normal uses complete Keeper and crawler cels in `grove/actors.svg` and the committed `grove/gem.svg`. Ground marks and spells remain procedural. Briar chargers add a forked crest; the persistent overlay carries their locked attack warnings across themes.
 
 **Ember Ruins** uses 0x72 DungeonTileset II v1.7. The atlas, frame list, upstream README, and [source credit and license](ember-ruins/PROVENANCE.md) live together.
 

@@ -23,7 +23,7 @@ All artwork required by enabled presentations ships with the repository. Screens
 
 ## Last Light Clearing
 
-![Last Light Clearing · Quality: the spell knight faces goblins and a horned demon in painted ruins](docs/games/last-light-clearing/ember-rekindled.png)
+![Last Light Clearing · Quality: the spell knight faces goblins and a horned demon in painted ruins](docs/games/last-light-clearing/quality.webp)
 
 Move the Keeper through a crowded forest, collect XP gems and choose upgrades while weapons fire automatically. Spark, Halo, Pulse and Shard offer different ways to survive, with a Spark evolution, lane-charging briar creatures and a late elite ground-slam encounter. Survive **Until dawn** for three minutes or try the 90-second **Brief dusk** round.
 
@@ -39,7 +39,7 @@ See [game rules and implementation](docs/games/last-light-clearing/README.md) an
 
 ## Skybreak
 
-![Skybreak · Quality: painted aircraft exchange fire over the Tempest Coast](docs/games/skybreak/skybreak-quality.png)
+![Skybreak · Quality: painted aircraft exchange fire over the Tempest Coast](docs/games/skybreak/quality.webp)
 
 Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an armored flying fortress with three telegraphed attack patterns. Collect Power, temporary Spread and Repair supplies. Three lives and a rechargeable evasive roll help you reach the boss and earn a survival bonus.
 
@@ -54,7 +54,7 @@ The portrait playfield scales uniformly and stays centered. Roll supports a seco
 
 ## Clockwork Hollow
 
-![Clockwork Hollow · Quality: the porcelain keeper and a beetle beneath cathedral arches and a waterwheel](docs/games/clockwork-hollow/clockwork-lumen.png)
+![Clockwork Hollow · Quality: the porcelain keeper and a beetle beneath cathedral arches and a waterwheel](docs/games/clockwork-hollow/quality.webp)
 
 Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** and **The Starlit Belfry**. Three authored districts progress from mossy spans to pressure-powered machinery and moonlit climbs. Leap over copper thorns, stomp wind-up beetles, read vent warnings, collect optional motes and wake all three bells. The intended first-play pace is 3–6 minutes. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
 
@@ -68,7 +68,7 @@ Six checkpoint lanterns shorten retries. Falling or touching danger ends the att
 
 ## Midnight Circuit
 
-![Midnight Circuit · Quality: Rook faces street fighters in the painted Afterglow backstreets](docs/games/midnight-circuit/afterglow.png)
+![Midnight Circuit · Quality: Rook faces street fighters in the painted Afterglow backstreets](docs/games/midnight-circuit/quality.webp)
 
 The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstreets** and **The Power Station**, then break the blackout by defeating the **Circuit Warden**. Align in the ground-depth lane, tap through a three-hit combo, reposition during recovery, clear crowds with a heavy strike and jump into a flying kick. Contextual prompts help with alignment and chaining. Authored encounters mix fast Strikers and committed Bruisers before the Warden's charge and ground-impact patterns. Three lives, repair cells that wait until health is needed and a station health refill support the roughly 4–6 minute first-run pace.
 
@@ -84,7 +84,7 @@ Encounter gates keep enemies reachable, the camera frames the arena, and depth s
 
 ## Obsidian Duel
 
-![Obsidian Duel · Quality: Nera and Kael duel beneath the lunar orrery of Moonfall Sanctum](docs/games/obsidian-duel/moonfall-sanctum.png)
+![Obsidian Duel · Quality: Nera and Kael duel beneath the lunar orrery of Moonfall Sanctum](docs/games/obsidian-duel/quality.webp)
 
 Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps or over your opponent to switch sides, and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
 
@@ -102,7 +102,7 @@ Action-specific poses and feedback distinguish misses, contact and guard. The fi
 
 ## Blastline
 
-![Blastline · Quality: Bolt approaches the tracked Bastion against a painted coastal foundry](docs/games/blastline/blastline-quality.png)
+![Blastline · Quality: Bolt approaches the tracked Bastion against a painted coastal foundry](docs/games/blastline/quality.webp)
 
 Make an entrance. Catch the last ride out. Run, jump and blast through **Border Station** and **Foundry Run**, breaking cover, dropping elevated defenses and setting off explosive barrel chains. Start with **Nova** and her automatic rifle, rescue **Bolt** to unlock a slower rocket launcher, then swap between both weapon styles. Disable power relays, break the fortified **Bastion** and extract before each facility collapses. The intended first-play pace is 3–5 minutes.
 

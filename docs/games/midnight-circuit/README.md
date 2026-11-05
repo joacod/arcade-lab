@@ -20,7 +20,7 @@ Three lives cover the whole run. Losing a life cancels enemy attacks, restores h
 
 The [artwork guide](../../../src/games/midnight-circuit/art/README.md) owns all three briefs, source artwork, layout and maintenance contracts. The cast keeps its identity across modes: Rook's teal jacket and red scarf, red-uniformed Strikers, ochre Bruisers and the ivory Warden. Assets retains the classic painted combat cels with new locomotion artwork. Quality has its own newly drawn, higher-resolution fighter sheet with richer clothing, armor and materials. Normal uses a separate modest vector cel sheet.
 
-![Afterglow: painted shops and warm lights behind the open fighting lane](afterglow.png)
+![Afterglow: painted shops and warm lights behind the open fighting lane](quality.webp)
 
 All modes use twelve cels per fighter: idle, four walking contacts/passing poses, anticipation, punch, kick, neutral jump rise/fall, hurt and defeat. Ground travel selects walking cels; startup, contact and recovery select action cels from simulation timing. Blocked input, jumps and hit pushes do not advance the gait. Each drawing remains a complete figure with a stable foot pivot. A full stride follows observed travel distance instead of wall time. An ordinary jump uses guarded rise and landing poses; only an actual aerial attack selects the kick contact.
 
