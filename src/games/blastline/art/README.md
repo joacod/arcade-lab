@@ -53,3 +53,33 @@ node src/games/blastline/art/ember-coast/pack.mjs
 ```
 
 The packer uses the installed Playwright Chromium for offline Canvas export. Normal's `generate.mjs` remains independent. Runtime preparation uses `assets.ts` and the shared image owner; regeneration is never required to play a fresh checkout.
+
+## Ember Reforged / Quality
+
+The [game guide](../../../../docs/games/blastline/README.md#theme-modes) owns the creative brief. This is a newly illustrated, smooth painted interpretation of Ember Coast's cast, equipment and occupied industrial coast. The artwork supplies volume, cloth, weathered metal and warm edge lighting before any effects. All actors are complete sprites, including authored aim, standing recoil, tucked airborne and running cels. Quiet harbor and furnace plates leave the dynamic action separate. No existing retro sprite is enlarged to form the Quality cast.
+
+### Runtime atlas contracts
+
+All files below live in `ember-reforged/`. PNG atlases retain transparency and use high-quality smooth sampling. Physical bodies, material health and mission placements remain in gameplay content. World draw rectangles remain in `presentation.ts`.
+
+| Image | Layout | Anchor and playback |
+| --- | --- | --- |
+| `operators.png` | 960 × 1152; five columns and six rows of 192-square cels. Columns aim up, diagonal up, forward, diagonal down, down. Rows 0–2 Nova idle, recoil, airborne; rows 3–5 Bolt idle, recoil, airborne. | Sole pivot (80, 180), 48-square world draw rectangle. Mirror whole cels. Existing weapon recovery selects standing recoil; airborne takes precedence. Reduced motion holds idle instead of recoil. |
+| `nova-run.png`, `bolt-run.png` | Each 1152 × 960; six stride columns and five aim rows of 192-square cels. | Same operator pivot and world draw rectangle. The existing grounded-distance phase drives one complete left/right stride. Uniform per-sheet scale and aligned opaque boot baselines avoid size changes between contact and passing poses. |
+| `enemies.png` | 576 × 576; three columns idle, step A, step B; rows guard, heavy, Bastion. | Bottom-center pivot (96, 180), preserving the existing enemy draw rectangles. The packer centers each complete illustration and uses one scale per role. Bastion cels vary tracks and vent illumination. |
+| `objects.png` | 768 × 768; sixteen 192-square cels, row-major. | Same semantic object order as Ember Coast: live/offline relay, barrel, dormant/supplied post, cage, aircraft, grenade, steel, brick, armor, damaged brick/armor, muzzle, explosion, smoke. Inspected crops retain complete objects, the wide aircraft and flush tile edges. |
+| `backdrop.webp` | 2048 × 1024; top 2048 × 512 harbor, bottom 2048 × 512 foundry. | Two opaque panoramas, preserving the source aspect ratio. The existing bounded mission-relative parallax follows the same camera as the other modes. |
+
+Muzzle flashes, explosions, smoke, damage cues and extraction observe the existing presentation events and run time. UI colors and surfaces match the painted art. Pixel-mode scanlines are omitted. Reduced motion preserves movement and warning lines while suppressing decorative recoil, shake, flash and moving effects.
+
+### Sources and exports
+
+Original AI-generated artwork ships under the repository's [MIT license](../../../../LICENSE), with no third-party asset dependencies. `ember-reforged/sources/` retains the full-resolution transparent operator, running, enemy and object PNGs, the opaque scenery PNG and the [production prompt set](ember-reforged/sources/prompts.md). Edit whole illustrations; never split characters into body parts.
+
+`ember-reforged/pack.mjs` records the inspected source row boundaries and object crops, aligns grounded soles, matches full-body scale between idle and running sources, and exports the committed runtime atlases. It checks source transparency before packing sprites. Source dimensions can differ from the runtime atlas; decoded runtime dimensions are validated by `quality.ts` before activation. Regenerate the bundle with:
+
+```sh
+node src/games/blastline/art/ember-reforged/pack.mjs
+```
+
+An optional sheet name, such as `bolt-run`, exports only that sheet. The packer uses offline Chromium Canvas with smooth resampling and WebP quality 0.94 for scenery. Runtime never loads production sources or invokes generation.

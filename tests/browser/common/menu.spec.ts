@@ -38,12 +38,13 @@ test('shared menus fit compact screens and keep actions accessible with a single
     await expect(page.locator('.menu-theme-note')).toContainText('keeps your run');
     if (title === 'Blastline') {
       await expect(theme.locator('..').locator('[role="option"][aria-selected="true"]')).toHaveText('Normal · Iron coast');
-      await expect(page.locator('.menu-theme-note')).toContainText('Unavailable: Quality');
+      await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Reforged');
+      await expect(page.locator('.menu-theme-note')).not.toContainText('Unavailable:');
     }
     if (title === 'Last Light Clearing') await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveText('Quality · Ember Ruins · Rekindled');
     expect(requests.filter(url => /\/src\/games\/[^/]+\/(three|vgpu|quality)\//.test(url)), `${title} starts without optional graphics libraries`).toEqual([]);
     expect(await theme.locator('..').locator('[role="option"]').evaluateAll(options => options.map(o => (o as HTMLElement).dataset.value))).toEqual(title === 'Last Light Clearing' ? ['normal', 'assets', 'quality', 'custom'] : ['normal', 'assets', 'quality']);
-    await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', String(!['Last Light Clearing', 'Midnight Circuit', 'Skybreak', 'Clockwork Hollow', 'Obsidian Duel'].includes(title)));
+    await expect(theme.locator('..').locator('[role="option"][data-value="quality"]')).toHaveAttribute('aria-disabled', 'false');
     await expect(theme.locator('..').locator('[role="option"][data-value="assets"]')).toHaveAttribute('aria-disabled', 'false');
     await theme.focus();
     await page.keyboard.press('Tab');

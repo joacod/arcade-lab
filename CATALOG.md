@@ -15,7 +15,7 @@ The table lists the presentations currently implemented; their artwork and rende
 | Clockwork Hollow | Verdant clockwork | Porcelain Bellgarden, illustrated retro sanctuary | Lumen Conservatory, dimensional ceramic-and-brass cathedral gardens |
 | Midnight Circuit | Street sketch, simple flat cels | Signal / Rain, inked arcade shops and industrial bays | Afterglow, detailed modern fighters and painted city with wet-road reflections |
 | Obsidian Duel | Tempest citadel, simple flat-color fighters | Eclipse Foundry, painted arcade fighters and forge-lit arena | Moonfall Sanctum, detailed fighters and jade-and-gold combat artwork |
-| Blastline | Iron coast | Ember Coast, detailed arcade commandos and rusted harbor defenses | Not available |
+| Blastline | Iron coast | Ember Coast, detailed arcade commandos and rusted harbor defenses | Ember Reforged, dimensional painted commandos and industrial coast |
 
 All games start in **Normal**, the gameplay-first baseline with simple, readable visuals that can already use image assets. **Assets** is the focused retro or pixel-inspired artistic pass. **Quality** reinterprets the Assets designs through new or substantially improved artwork and animation, with a coherent modern finish across characters, objects, scenery, effects and interface. Modern refers to visual finish, not a futuristic setting; graphics libraries are optional. Existing standard presentations follow these roles while sharing their gameplay. **Custom** is optional and appears only for explicitly requested, implemented experiments. Last Light Clearing offers Abyssal Bloom as Custom; that presentation requires WebGPU. See the [mode contract](docs/architecture.md#mode-contract) for development guidance.
 
@@ -117,7 +117,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 | Q | Switch operator after rescuing Bolt |
 | Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
 
-Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete pixel sprites, bounded debris and procedural AudioBits sounds power the action. See [gameplay and source ownership](docs/games/blastline/README.md).
+Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete sprites, bounded debris and procedural AudioBits sounds power the action. Quality adds painted commandos, machines, equipment and coastal scenery. See [gameplay and source ownership](docs/games/blastline/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 
