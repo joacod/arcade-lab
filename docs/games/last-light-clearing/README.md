@@ -47,7 +47,7 @@ The interface uses warm brass accents, stone surfaces and a serif title. Soft co
 
 Quality uses Canvas 2D and its own [art bundle, sources, prompts and atlas layout](../../../src/games/last-light-clearing/art/rekindled/README.md). Smooth sampling presents the new high-resolution whole-character drawings. All motion follows active run time and freezes on pause. Reduced motion holds the first cel and steady brazier light, suppresses drifting embers and defeat fragments, and retains physical movement, attack warnings and state cues. Ground, props and light stamps are cached per presentation; the ember field has a fixed small budget.
 
-![Ember Ruins · Rekindled: newly illustrated spell knight, goblins and horned demon with matching ruin props and spells](ember-rekindled.png)
+![Ember Ruins · Rekindled: newly illustrated spell knight, goblins and horned demon with matching ruin props and spells](quality.webp)
 
 ## Sound identity
 

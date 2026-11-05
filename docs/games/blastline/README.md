@@ -22,7 +22,7 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 
 **Quality / Ember Reforged** reinterprets the same cast and coast as smooth, dimensional painted illustrations. Nova retains her teal field jacket, dark hair and red scarf; Bolt keeps his ochre helmet, goggles and broad launcher. Olive security, rust-armored heavies and the orange-eyed tracked Bastion retain their silhouettes. New whole-character aim, recoil, airborne and six-cel running illustrations accompany new relay, supply, rescue, extraction and cover artwork. Steel, chipped ochre brick and X-braced rust armor stay distinct. Harbor cranes and furnace halls sit behind the action in quiet atmospheric layers; warm rim light and cool metal give volume without obscuring contacts. Amber relay glass, green supplies, sharp weapon flares and the extraction aircraft provide the scene's focal moments. A brushed navy-and-brass interface completes the treatment. Canvas 2D renders the image bundle. The [Quality artwork contract](../../../src/games/blastline/art/README.md#ember-reforged--quality) owns its sources, atlas layouts and exports.
 
-![Ember Reforged: painted commandos and a tracked Bastion against the coastal foundry](blastline-quality.png)
+![Ember Reforged: painted commandos and a tracked Bastion against the coastal foundry](quality.webp)
 
 ## Source ownership
 

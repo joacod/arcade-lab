@@ -16,7 +16,7 @@ Banking and evasive rolls transform complete aircraft images. Distinct wings and
 
 World scenery uses active run time, so pause freezes travel and a theme replacement resumes at the current sortie time. Reduced motion freezes scenery, clouds, propeller/exhaust animation and banking while retaining physical movement, immunity, recharge and attack cues. Both directed themes prepare and validate their complete image bundle before activation. Drawing failure pauses the retained sortie and restores Pacific Run. The renderer remains Canvas 2D.
 
-![Tempest Coast: painted aircraft and coastal scenery in active flight](skybreak-quality.png)
+![Tempest Coast: painted aircraft and coastal scenery in active flight](quality.webp)
 
 ## Operation Iron Tempest
 

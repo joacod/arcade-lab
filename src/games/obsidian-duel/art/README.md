@@ -2,7 +2,7 @@
 
 [Game and combat presentation](../../../../docs/games/obsidian-duel/README.md#theme-modes) | [Shared artwork workflow](../../../../docs/assets-themes.md)
 
-`cover.svg` is the collection cover. All required outputs and editable inputs live here. New raster illustrations were generated with the built-in image generation tool; prompts accompany the source sheets. Project artwork uses the repository's [MIT license](../../../../LICENSE). No third-party artwork inputs are included.
+All required outputs and editable inputs live here. New raster illustrations were generated with the built-in image generation tool; prompts accompany the source sheets. Project artwork uses the repository's [MIT license](../../../../LICENSE). No third-party artwork inputs are included.
 
 ## Direction across modes
 
