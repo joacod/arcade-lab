@@ -172,12 +172,18 @@ export function createPresentation(surface: HTMLElement) {
     else circle(p.x + m.width/2, p.y + m.height/2, 16, theme.brass);
   }
 
-  function sign(x: number, y: number, title: string, detail: string) {
-    line(x, y, x, y + 72, '#7d7860', 5);
-    ctx.fillStyle = theme === themes.assets ? '#fff0cf' : '#1d3b3bf0'; ctx.beginPath(); ctx.roundRect(x - 9, y - 33, 166, 52, 4); ctx.fill();
-    line(x - 8, y - 33, x + 156, y - 33, '#a6ad7d', 2);
-    ctx.font = '10px monospace'; ctx.fillStyle = theme === themes.assets ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 3, y - 12);
-    ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.assets ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 3, y + 5);
+  function sign(x: number, groundY: number, title: string, detail: string) {
+    const top = groundY - 96;
+    // A narrow, grounded post and recessed plaque read as scenery, not a ledge.
+    line(x, top + 40, x, groundY, '#344a46', 7);
+    line(x - 1, top + 40, x - 1, groundY, '#a39267', 3);
+    ctx.fillStyle = '#344a46'; ctx.fillRect(x - 6, groundY - 5, 12, 5);
+    const fill = theme === themes.assets ? '#fff0cf' : '#1d3b3bf0';
+    ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(x - 14, top, 182, 52, 4); ctx.fill();
+    line(x - 9, top + 2, x + 163, top + 2, '#a6ad7d', 1);
+    for (const pin of [x - 8, x + 162]) circle(pin, top + 26, 1.5, '#a39267');
+    ctx.font = '10px monospace'; ctx.fillStyle = theme === themes.assets ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 1, top + 22);
+    ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.assets ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 1, top + 39);
   }
   return {
     prepare: baseline.prepare,
@@ -240,12 +246,13 @@ export function createPresentation(surface: HTMLElement) {
         gear(x, y, 110, motion.matches ? 0 : run.elapsed * 0.06 * (i % 2 ? -1 : 1), '#4a665166');
         circle(x, y, 12, '#b7dca188'); glow(x, y, 130, '#a2ddb315');
       }
+      for (const item of run.level.signs) if (item.x > view.x - 180 && item.x < view.x + view.width + 14) sign(item.x, item.groundY, item.title, item.detail);
       run.level.solids.forEach((s, i) => { if (s.x + s.w >= view.x - 20 && s.x <= view.x + view.width + 20) stone(s, i, run.level, view); });
-      for (const item of run.level.signs) if (item.x > view.x - 180 && item.x < view.x + view.width) sign(item.x, item.y, item.title, item.detail);
       run.level.checkpoints.forEach((point, i) => {
         const x = point.x + 13, y = point.y, lit = run.checkpoint >= i;
         glow(x, y - 25, lit ? 105 : 45, lit ? '#a6ffcc55' : '#f4d8a922');
-        sprites()?.object(lit ? 'savedLantern' : 'lantern', x - 40, y + m.height - 100, 80, 100);
+        // All lantern sheets have their visible sole at source y=156 of 160.
+        sprites()?.object(lit ? 'savedLantern' : 'lantern', x - 40, y + m.height - 97.5, 80, 100);
         ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = lit ? '#b9ffcf' : '#edd9a4';
         ctx.fillText(lit ? 'SAVED' : 'CHECKPOINT', x, y - 62); ctx.textAlign = 'left';
       });
@@ -289,14 +296,15 @@ export function createPresentation(surface: HTMLElement) {
       });
       for (const s of run.level.hazards) {
         if (s.x + s.w < view.x || s.x > view.x + view.width) continue;
-        sprites()?.object('thorns', s.x, s.y, s.w, s.h);
+        sprites()?.thorns(s);
       }
       const goal = run.level.goal, gx = goal.x + goal.w / 2;
       const objectArt = sprites();
       if (objectArt) {
         objectArt.object('gate', gx - 76, goal.y + goal.h - 190, 152, 190);
         glow(gx, goal.y + 22, ['victory', 'interlude'].includes(run.status) ? 220 : 120, '#f6ce7f44');
-        ctx.save(); ctx.translate(gx, goal.y - 30);
+        // Hang from the arch's crown instead of leaving a gap above the chain.
+        ctx.save(); ctx.translate(gx, goal.y + goal.h - 181);
         if (['victory', 'interlude'].includes(run.status) && !motion.matches) ctx.rotate(Math.sin(cosmeticTime * 5) * .18);
         objectArt.object('bell', -41, 0, 82, 102); ctx.restore();
       }

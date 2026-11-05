@@ -1,7 +1,7 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import type { District, Rect } from './content.ts';
 import { movement } from './content.ts';
-import { keeperFrame, objectFrames, illustratedSpriteLayout, type HollowSpriteLayout, type BellgardenSheet } from './asset-art.ts';
+import { keeperFrame, objectFrames, illustratedSpriteLayout, lumenSpriteLayout, type HollowSpriteLayout, type BellgardenSheet } from './asset-art.ts';
 import type { Player } from './game.ts';
 import type { KeeperPose } from './animation.ts';
 import type { HollowView } from './presentation.ts';
@@ -21,6 +21,15 @@ export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: I
   }
   return {
     object,
+    thorns(s: Rect) {
+      if (layout !== lumenSpriteLayout) { object('thorns', s.x, s.y, s.w, s.h); return; }
+      const [sx, sy, sw, sh] = objectFrames.thorns;
+      // Repeat complete teeth at near-native proportions, fitting both end sockets
+      // inside the hazard instead of flattening a fixed five-tooth strip.
+      const cell = sw / 2, count = Math.max(1, Math.round(s.w / (s.h * cell / sh)));
+      const width = s.w / count;
+      for (let i = 0; i < count; i++) image('objects', [sx + i % 2 * cell, sy, cell, sh], s.x + i * width, s.y, width, s.h);
+    },
     scenery(view: HollowView, level: District, theme: HollowTheme) {
       const palette = theme.districts[level];
       const sky = ctx.createLinearGradient(0, 0, 0, view.height);

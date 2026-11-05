@@ -54,7 +54,7 @@ The portrait playfield scales uniformly and stays centered. Roll supports a seco
 
 ## Clockwork Hollow
 
-![Clockwork Hollow · Quality: the porcelain keeper and a beetle beneath cathedral arches and a waterwheel](docs/games/clockwork-hollow/quality.webp)
+![Clockwork Hollow · Quality: the porcelain keeper, copper thorns and a checkpoint beneath cathedral arches and a waterwheel](docs/games/clockwork-hollow/quality.webp)
 
 Guide a little brass keeper through **The Waking Aqueduct**, **The Emberworks** and **The Starlit Belfry**. Three authored districts progress from mossy spans to pressure-powered machinery and moonlit climbs. Leap over copper thorns, stomp wind-up beetles, read vent warnings, collect optional motes and wake all three bells. The intended first-play pace is 3–6 minutes. Responsive acceleration, variable jump height, coyote time and buffered jumps help you find a comfortable rhythm. There is no time limit.
 
