@@ -1,5 +1,5 @@
 import { themes, appearanceNames, type Appearance } from './themes.ts';
-import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
@@ -20,6 +20,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
   const host = createHost(container, { className: 'blast-app', label: 'Blastline',
     surfaceLabel: 'Blastline playfield. A D move, Space jump, J fire, W S aim, K grenade, Q switch operator. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
+  const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
   let sound: ReturnType<typeof createSound> | undefined;
   let input: ReturnType<typeof bindInput> | undefined;
   let presentation: ReturnType<typeof createPresentation> | undefined;
@@ -58,11 +59,12 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
         candidate = await prepareEmberReforged(request.signal);
         if (!request.current()) return;
       }
+      if (id === 'normal') { await presentation!.prepare(); if (!request.current()) return; }
       const rollback = presentation!.replaceTheme(themes[id], candidate?.images);
-      try { presentation!.draw(run, host, false, performance.now() / 1000); }
-      catch (error) { rollback(); presentation!.draw(run, host, false, performance.now() / 1000); throw error; }
+      trialReplacement({ rollback }, () => presentation!.draw(run, host, false, performance.now() / 1000));
       const previous = activeArt; activeArt = candidate; candidate = undefined;
       activeAppearance = id; host.root.dataset.appearance = id;
+      readiness.watch(() => Promise.resolve());
       ui.appearanceStatus(id, ''); previous?.dispose();
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance,
@@ -74,7 +76,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     if (intent === 'quit') { onExit(); return; }
     if (intent === 'pause') { suspend(); return; }
     if (intent === 'fullscreen') { void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return; }
-    if (document.hidden || !document.hasFocus()) return;
+    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
     if (intent === 'start' && screen === 'title' || intent === 'restart' && screen !== 'playing') {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); ui.reset(); transition('playing');
     } else if (intent === 'continue' && screen === 'interlude') {
@@ -85,6 +87,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
     presentation = createPresentation(host.surface);
+    readiness.watch(() => presentation!.prepare());
     host.root.dataset.appearance = 'normal';
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
@@ -92,6 +95,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'playing') {
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, input!.read(), FIXED_STEP);
@@ -104,6 +108,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void): Game
         const failed = appearanceNames[activeAppearance];
         suspend(); preparation.cancel(); presentation!.replaceTheme(themes.normal);
         activeArt?.dispose(); activeArt = undefined; activeAppearance = 'normal';
+        readiness.watch(() => presentation!.prepare());
         host.root.dataset.appearance = 'normal';
         ui.appearanceStatus('normal', `${failed} could not draw. Restored Iron coast. Your operation is preserved.`);
         presentation!.draw(run, host, false, now / 1000);

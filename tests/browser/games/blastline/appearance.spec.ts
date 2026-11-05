@@ -176,3 +176,19 @@ test(`${name}: candidate and active drawing failures recover to Normal and relea
   expect(errors).toEqual([]);
 });
 }
+
+
+test('reused environments render independently of content identity and sequence', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await openBlastline(page);
+  for (const mode of ['normal', 'assets', 'quality']) {
+    if (mode !== 'normal') {
+      await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), mode);
+      await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', mode);
+    }
+    await page.clock.runFor(50);
+    const before = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+    await page.evaluate(() => { const run = (window as any).blastProbe; run.missionIndex += 10; });
+    await page.clock.runFor(50);
+    expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL()), mode).toBe(before);
+  }
+});

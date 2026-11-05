@@ -1,4 +1,4 @@
-import type { ImageDimensions } from '../../engine/browser/images.ts';
+import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
 import type { Player } from './game.ts';
 import type { KeeperPose } from './animation.ts';
 
@@ -35,10 +35,7 @@ export const objectFrames = {
   foliage: [896, 0, 128, 160],
 } as const;
 export function validateBellgardenArt(dimensions: ImageDimensions): readonly string[] {
-  return Object.entries(bellgardenSheets).flatMap(([name, expected]) => {
-    const actual = dimensions[name];
-    return actual?.width === expected.width && actual.height === expected.height ? [] : [`Porcelain Bellgarden: invalid ${name} dimensions.`];
-  });
+  return validateImageDimensions(dimensions, bellgardenSheets);
 }
 /** Distance-observed stride drives grounded poses; no wall-clock walk animation. */
 export function keeperFrame(player: Pick<Player, 'grounded' | 'vx' | 'vy'>, pose: KeeperPose, defeated: boolean, reduced: boolean) {
@@ -49,8 +46,6 @@ export function keeperFrame(player: Pick<Player, 'grounded' | 'vx' | 'vy'>, pose
 }
 
 export function validateHollowSprites(mode: 'normal' | 'quality', dimensions: ImageDimensions): readonly string[] {
-  return (['keeper','beetle','objects'] as const).flatMap(key => {
-    const expected = (mode === 'quality' ? lumenSpriteSheets : bellgardenSheets)[key], actual = dimensions[key];
-    return actual?.width === expected.width && actual.height === expected.height ? [] : [`Invalid Hollow ${key}`];
-  });
+  const { keeper, beetle, objects } = mode === 'quality' ? lumenSpriteSheets : bellgardenSheets;
+  return validateImageDimensions(dimensions, { keeper, beetle, objects });
 }

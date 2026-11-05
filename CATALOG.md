@@ -2,7 +2,7 @@
 
 Choose a game from the collection screen. **Game selection** returns there; each visit starts a fresh session. Games fill the viewport, with fullscreen including the arena, HUD and menus where supported.
 
-Every game menu provides Theme, sound/fullscreen controls and expandable control instructions. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable.
+Every game menu provides Theme, sound/fullscreen controls and expandable control instructions. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
 Theme changes retain the paused run. Restart creates a fresh run while keeping the selected theme for this visit. Missing themes are disabled; a failed replacement keeps the working presentation, and a graphics failure pauses play and restores Normal.
 

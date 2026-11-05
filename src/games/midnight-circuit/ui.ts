@@ -29,7 +29,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: true },
-      { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, $<HTMLButtonElement>(`[data-control="${key}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -38,6 +38,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   return { controls,
     appearanceStatus(value: Appearance, message: string) { style.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;

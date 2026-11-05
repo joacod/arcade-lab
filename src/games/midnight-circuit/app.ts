@@ -1,3 +1,4 @@
+import { createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
@@ -17,6 +18,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   const host = createHost(container, { className: 'circuit-app', label: 'Midnight Circuit',
     surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
+  const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
   function dispose() { if (disposed) return; disposed = true; disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose()); }
   function transition(next: Screen, focus = true) {
     if (next === 'playing') presentation?.cancel();
@@ -33,7 +35,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
     if (intent === 'quit') { onExit(); return; }
     if (intent === 'pause') { suspend(); return; }
     if (intent === 'fullscreen') { void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return; }
-    if (document.hidden || !document.hasFocus()) return;
+    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
     if (intent === 'start' && screen === 'title' || intent === 'restart' && screen !== 'playing') {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); transition('playing');
     } else if (intent === 'resume' && screen === 'paused') {
@@ -45,13 +47,15 @@ export function mountCircuit(container: HTMLElement, onExit: () => void): GameSe
   try {
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => { suspend(); void presentation?.select(value); });
-    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend);
+    presentation = createAppearance(host.surface, (value, message) => ui.appearanceStatus(value, message), suspend, () => readiness.watch(() => presentation!.prepare()));
+    readiness.watch(() => presentation!.prepare());
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'playing') {
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) {

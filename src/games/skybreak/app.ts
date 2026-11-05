@@ -1,4 +1,4 @@
-import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import type { ThemeMode } from '../../common/ui/theme-select.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
@@ -42,6 +42,8 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), selectTheme);
     input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
     presentation = createPresentation(host.surface, themes.normal!);
+    const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
+    readiness.watch(() => presentation.prepare());
     applyPalette();
     function applyPalette() {
       const theme = themes[appearance]!;
@@ -63,7 +65,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         if (!request.current()) return;
         candidateDisplay = createPresentation(staging, theme, { images: candidate?.images ?? {} });
         if (!request.current()) return;
-        await candidateDisplay.ready;
+        await candidateDisplay.prepare();
         if (!request.current()) return;
         // A candidate must draw the current sortie successfully before replacing its working owner.
         candidateDisplay.draw(run, host, screen === 'title' ? performance.now() / 1000 : undefined);
@@ -71,6 +73,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
         host.surface.append(candidateDisplay.element); presentation = candidateDisplay; candidateDisplay = undefined;
         const previous = activeArt; activeArt = candidate; candidate = undefined;
         appearance = id; applyPalette(); ui.appearance(id); ui.appearanceStatus('');
+        readiness.watch(() => presentation.prepare());
         disposeAll(() => previousDisplay.dispose(), () => previous?.dispose());
       } catch {
         if (request.current()) {
@@ -82,12 +85,13 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     function recoverPresentation() {
       if (disposed || appearance === 'normal') return;
       const failedName = themes[appearance]!.name;
-      suspend(); preparation.begin();
+      suspend(); preparation.cancel();
       const next = createPresentation(document.createElement('div'), themes.normal!);
       next.draw(run, host);
       const previous = presentation, previousArt = activeArt;
       host.surface.append(next.element); presentation = next; activeArt = undefined;
       appearance = 'normal'; applyPalette(); ui.appearance('normal');
+      readiness.watch(() => presentation.prepare());
       ui.appearanceStatus(`${failedName} graphics stopped. Pacific Run is ready. Your sortie is preserved.`);
       disposeAll(() => previous.dispose(), () => previousArt?.dispose());
     }
@@ -103,9 +107,9 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
       if (intent === 'fullscreen') {
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
       }
-      if (document.hidden || !document.hasFocus()) return;
+      if (document.hidden || !document.hasFocus() || !readiness.ready) return;
       if (intent === 'start' || intent === 'restart' || intent === 'resume') {
-        preparation.begin(); ui.appearance(appearance); ui.appearanceStatus('');
+        preparation.cancel(); ui.appearance(appearance); ui.appearanceStatus('');
       }
       if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
         sound.reset(); sound.activate(); run = createRun(); presentation.reset(); transition('playing');
@@ -123,6 +127,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void): GameS
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'playing') {
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, input.read(), FIXED_STEP);

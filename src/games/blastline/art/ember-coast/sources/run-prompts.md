@@ -1,6 +1,6 @@
 # Running-cycle artwork
 
-Original complete-character running cels generated with the built-in imagegen tool, using `../operators.png` as the cast/style reference. Final source sheets are `nova-run.png` and `bolt-run.png` in this folder. `../pack.mjs` aligns and resamples whole cels for runtime.
+Original complete-character running cels created with AI image generation, using `../operators.png` as the cast/style reference. Final source sheets are `nova-run.png` and `bolt-run.png` in this folder. `../pack.mjs` aligns and resamples whole cels for runtime.
 
 ## Nova running cycle
 

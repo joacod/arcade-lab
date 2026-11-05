@@ -281,3 +281,26 @@ test('combat artwork confirms actual contact and keeps special release and knock
     expect(result, mode).toEqual({ releaseUnchanged: true, hitVisible: true, guardDistinct: true, unchangedMatch: true });
   }
 });
+
+
+test('an active Assets draw failure pauses the retained run and releases the failed artwork', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await openDuel(page);
+  await chooseOption(page.getByRole('combobox', { name: 'Theme', exact: true }), 'assets');
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'assets');
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(80);
+  await page.evaluate(() => {
+    const context = document.querySelector('canvas')!.getContext('2d')!, draw = context.drawImage;
+    context.drawImage = function (...args: any[]) {
+      if (args[0] instanceof HTMLImageElement && /eclipse-foundry/.test(args[0].src)) throw new Error('Assets failed');
+      return (draw as any).apply(this, args);
+    } as typeof draw;
+  });
+  await page.clock.runFor(50);
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
+  expect(await released(page)).toBe(true);
+  const recovered = await state(page); await page.clock.runFor(300); expect(await state(page)).toBe(recovered);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
+  expect(await state(page)).not.toBe(recovered); expect(errors).toEqual([]);
+});

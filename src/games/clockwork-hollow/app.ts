@@ -1,6 +1,6 @@
 import { hollowSpriteImages } from './sprite-art.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
-import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
 import { prepareImages } from '../../engine/browser/images.ts';
 import { validateHollowSprites } from './asset-art.ts';
 import type { PreparedImages } from '../../engine/browser/images.ts';
@@ -25,6 +25,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
   const host = createHost(container, { className: 'hollow-app', label: 'Clockwork Hollow',
     surfaceLabel: 'Clockwork Hollow playfield. A D or arrows to move. Space, W, Up or Z to jump. Hold for height. P pauses or resumes.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
+  const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
   let sound: ReturnType<typeof createSound> | undefined;
   let input: ReturnType<typeof bindInput> | undefined;
   let presentation: ReturnType<typeof createPresentation> | undefined;
@@ -67,12 +68,12 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
       }
       // Validate the replacement against the current run before releasing active artwork.
       // The existing renderer keeps its camera, gait and bounded cosmetic effects.
+      if (id === 'normal') { await presentation!.prepare(); if (!request.current()) return; }
       const replacement = presentation!.replaceTheme(themes[id], candidate?.images, candidateQuality);
-      try { presentation!.draw(run, host, screen, performance.now() / 1000); }
-      catch (error) { replacement.rollback(); throw error; }
-      replacement.commit();
+      trialReplacement(replacement, () => presentation!.draw(run, host, screen, performance.now() / 1000));
       const previous = activeArt; activeArt = candidate; candidate = undefined;
       activeAppearance = id; host.root.dataset.appearance = id;
+      readiness.watch(() => Promise.resolve());
       ui.appearanceStatus(id, ''); previous?.dispose();
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance,
@@ -86,7 +87,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     if (intent === 'fullscreen') {
       void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
     }
-    if (document.hidden || !document.hasFocus()) return;
+    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
     if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); transition('playing');
     } else if ((intent === 'retry' && screen === 'defeat') || (intent === 'continue' && screen === 'interlude')) {
@@ -101,6 +102,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), appearance);
     presentation = createPresentation(host.surface);
+    readiness.watch(() => presentation!.prepare());
     host.root.dataset.appearance = 'normal';
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
@@ -108,6 +110,7 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'playing') {
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, input!.read(), FIXED_STEP);
@@ -116,11 +119,14 @@ export function mountHollow(container: HTMLElement, onExit: () => void): GameSes
       }
       try { presentation!.draw(run, host, screen, now / 1000); }
       catch (error) {
-        if (activeAppearance !== 'quality') throw error;
+        if (activeAppearance === 'normal') throw error;
+        const failed = appearanceNames[activeAppearance];
         suspend(); preparation.cancel();
         presentation!.replaceTheme(themes.normal).commit(); activeAppearance = 'normal';
+        activeArt?.dispose(); activeArt = undefined;
+        readiness.watch(() => presentation!.prepare());
         host.root.dataset.appearance = 'normal';
-        ui.appearanceStatus('normal', 'Lumen Conservatory could not draw. Restored Verdant clockwork. Your journey is preserved.');
+        ui.appearanceStatus('normal', `${failed} could not draw. Restored Verdant clockwork. Your journey is preserved.`);
         presentation!.draw(run, host, screen, now / 1000);
       }
       ui.update(run);

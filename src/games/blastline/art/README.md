@@ -28,7 +28,7 @@ Complete right-facing operator cels include idle, a six-frame running cycle and 
 
 ### Runtime atlas contracts
 
-All files below live in `ember-coast/`. PNG sprites have transparency and use nearest-neighbor sampling. Draw footprints remain in `presentation.ts`; physical geometry remains in `content.ts`.
+All files below live in `ember-coast/`. PNG sprites have transparency and use nearest-neighbor sampling. Typed `blastLayouts` in `sprite-art.ts` owns atlas cells, actor rows, draw footprints, origins, object roles and environment source rectangles. Update that mapping when replacing artwork; physical geometry remains in `content.ts`.
 
 | Image | Layout | Anchors and playback |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ Muzzle flashes follow weapon recovery, explosions expand during their existing 0
 
 ### Sources, provenance and export
 
-Original artwork was generated for this repository with the built-in imagegen tool and ships under the repository's [MIT license](../../../../LICENSE), with no third-party asset dependencies. `ember-coast/sources/` retains the final full-resolution PNG illustration sheets, [production prompts](ember-coast/sources/prompts.md) including transparency cleanup, and [run-cycle prompts](ember-coast/sources/run-prompts.md). Edit complete illustrations there; do not split actors into articulated pieces.
+Original AI-generated artwork was created for this repository and ships under the repository's [MIT license](../../../../LICENSE), with no third-party asset dependencies. `ember-coast/sources/` retains the final full-resolution PNG illustration sheets, [production prompts](ember-coast/sources/prompts.md) including transparency cleanup, and [run-cycle prompts](ember-coast/sources/run-prompts.md). Edit complete illustrations there; do not split actors into articulated pieces.
 
 `ember-coast/pack.mjs` crops and resamples the existing whole drawings, normalizes operator and enemy pivots, and exports the committed runtime bundle. Object crops are inspected coordinates, including the wider helicopter. Backdrop WebP export uses quality 0.94. Export after changing source sheets with:
 
@@ -60,7 +60,7 @@ The [game guide](../../../../docs/games/blastline/README.md#theme-modes) owns th
 
 ### Runtime atlas contracts
 
-All files below live in `ember-reforged/`. PNG atlases retain transparency and use high-quality smooth sampling. Physical bodies, material health and mission placements remain in gameplay content. World draw rectangles remain in `presentation.ts`.
+All files below live in `ember-reforged/`. PNG atlases retain transparency and use high-quality smooth sampling. Physical bodies, material health and mission placements remain in gameplay content. World draw rectangles and atlas role mappings live in `sprite-art.ts`.
 
 | Image | Layout | Anchor and playback |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Muzzle flashes, explosions, smoke, damage cues and extraction observe the existi
 
 Original AI-generated artwork ships under the repository's [MIT license](../../../../LICENSE), with no third-party asset dependencies. `ember-reforged/sources/` retains the full-resolution transparent operator, running, enemy and object PNGs, the opaque scenery PNG and the [production prompt set](ember-reforged/sources/prompts.md). Edit whole illustrations; never split characters into body parts.
 
-`ember-reforged/pack.mjs` records the inspected source row boundaries and object crops, aligns grounded soles, matches full-body scale between idle and running sources, and exports the committed runtime atlases. It checks source transparency before packing sprites. Source dimensions can differ from the runtime atlas; decoded runtime dimensions are validated by `quality.ts` before activation. Regenerate the bundle with:
+`ember-reforged/pack.mjs` records the inspected source row boundaries and object crops, aligns grounded soles, matches full-body scale between idle and running sources, and exports the committed runtime atlases. It checks source transparency before packing sprites. Source dimensions can differ from the runtime atlas; `quality.ts` validates decoded dimensions and checks the local role mappings against sheet bounds before activation. Regenerate the bundle with:
 
 ```sh
 node src/games/blastline/art/ember-reforged/pack.mjs

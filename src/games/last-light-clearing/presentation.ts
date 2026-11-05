@@ -121,6 +121,7 @@ export function createPresentation(theme: Theme, images: ImageBundle = {}, creat
 
   return {
     canvas,
+    prepare: () => Promise.all([baseline?.prepare(), gemArt?.prepare()]).then(() => {}),
     resize(next: DisplaySize) {
       size = { width: next.width, height: next.height, ratio: next.ratio };
       const w = Math.round(size.width * size.ratio), h = Math.round(size.height * size.ratio);

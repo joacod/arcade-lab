@@ -1,4 +1,5 @@
-import { prepareImages, type ImageDimensions } from '../../engine/browser/images.ts';
+import { blastLayouts, validateBlastLayout } from './sprite-art.ts';
+import { prepareImages, validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
 
 export const reforgedImages = {
   operators: new URL('./art/ember-reforged/operators.png', import.meta.url).href,
@@ -13,8 +14,7 @@ export const reforgedSheets = {
   backdrop: [2048, 1024], novaRun: [1152, 960], boltRun: [1152, 960],
 } as const;
 export function validateReforgedArt(dimensions: ImageDimensions) {
-  return Object.entries(reforgedSheets).flatMap(([key, [width, height]]) =>
-    dimensions[key]?.width === width && dimensions[key].height === height ? [] : [`Invalid Ember Reforged ${key}`]);
+  return [...validateImageDimensions(dimensions, reforgedSheets), ...validateBlastLayout(blastLayouts.quality, dimensions)];
 }
 export function prepareEmberReforged(signal: AbortSignal) {
   return prepareImages(reforgedImages, signal, validateReforgedArt);

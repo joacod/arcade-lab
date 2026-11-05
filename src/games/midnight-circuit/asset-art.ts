@@ -1,4 +1,4 @@
-import type { ImageDimensions } from '../../engine/browser/images.ts';
+import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
 /** Complete 256-square cels; four fighter rows and twelve semantic poses. */
 export const signalRain = {
   fighters: { width: 3072, height: 1024 },
@@ -9,8 +9,5 @@ export const signalRain = {
   repair: { width: 64, height: 64 },
 } as const;
 export function validateCircuitArt(dimensions: ImageDimensions): readonly string[] {
-  return Object.entries(signalRain).flatMap(([name, expected]) => {
-    const actual = dimensions[name];
-    return actual?.width === expected.width && actual.height === expected.height ? [] : [`Signal / Rain: invalid ${name} dimensions`];
-  });
+  return validateImageDimensions(dimensions, signalRain);
 }

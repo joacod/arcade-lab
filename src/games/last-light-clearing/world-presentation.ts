@@ -10,5 +10,6 @@ export interface WorldPresentation {
   reset(run: Readonly<RunState>): void;
   consume(events: readonly GameEvent[]): void;
   draw(run: Readonly<RunState>, view: Viewport): void;
+  prepare(): Promise<void>;
   dispose(): void;
 }

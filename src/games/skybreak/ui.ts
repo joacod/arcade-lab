@@ -31,7 +31,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
+      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
   });
 
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
@@ -43,6 +43,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   return { evade,
     appearance(id: ThemeMode) { appearance.setValue(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     show(screen: Screen, focus = true) {

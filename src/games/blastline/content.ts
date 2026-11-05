@@ -21,7 +21,9 @@ export const fuel = { w: 18, h: 26, health: 2, radius: 104, damage: 9, tileDamag
 export const relay = { w: 28, h: 32, health: 22 } as const;
 export const grenade = { radius: 116, damage: 8, tileDamage: 8, fuse: 1.05 } as const;
 export interface EnemyDefinition extends Point { kind: 'guard' | 'heavy' | 'bastion'; patrol: number }
+export type Environment = 'harbor' | 'foundry';
 export interface Mission {
+  environment: Environment;
   name: string; subtitle: string; columns: number; rows: number;
   terrain: readonly Material[]; start: Point; checkpoints: readonly Point[];
   enemies: readonly EnemyDefinition[]; barrels: readonly Point[]; relays: readonly Point[];
@@ -76,7 +78,7 @@ function author(foundry: boolean): Mission {
     fill(428, 24, 2, 3, 3); fill(436, 24, 2, 3, 3);
     barrels.push({ x: 431 * TILE, y: 635 }, { x: 434 * TILE, y: 635 });
   }
-  return { name: foundry ? 'Foundry Run' : 'Border Station', subtitle: foundry ? 'CUT THE POWER. BREAK THE BASTION.' : 'BREAK IN. BRING BOLT HOME.',
+  return { environment: foundry ? 'foundry' : 'harbor', name: foundry ? 'Foundry Run' : 'Border Station', subtitle: foundry ? 'CUT THE POWER. BREAK THE BASTION.' : 'BREAK IN. BRING BOLT HOME.',
     columns, rows, terrain, start: at(4), checkpoints, enemies, barrels, relays, rescue, exit,
     signs: foundry ? [
       { x: 120, y: 560, text: '02 / FOUNDRY RUN', sub: '3 RELAYS + THE BASTION →' },

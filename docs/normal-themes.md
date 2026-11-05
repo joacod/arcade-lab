@@ -22,7 +22,7 @@ Keep one authoritative uniform world transform, with framing that exposes the sp
 
 Use custom image assets for the player, enemies and interactive objects, keeping their scope modest: a small, coherent sprite set and the action frames needed to communicate the game. Simple complete character cels keep anatomy, clothing and silhouette together. Reuse suitable committed artwork where it fits. Keep role mappings, frame rectangles and stable anchors local and easy to replace. Use Canvas 2D to draw them. The renderer serves the playable foundation; detailed materials, extensive scenery and elaborate animation can wait for the focused visual passes.
 
-Temporary shapes are useful while establishing mechanics. Replace that scaffolding before treating the presentation as finished. Do not build a procedural body-part system or skeleton renderer as the Normal foundation and then carry it into later themes. Existing procedural games can migrate in their own scoped passes.
+Temporary shapes are useful while establishing mechanics. Replace that scaffolding before treating the presentation as finished. Do not build a procedural body-part system or skeleton renderer as the Normal foundation and then carry it into later themes.
 
 Keep the action visually dominant. Procedural paths, gradients, parallax and restrained environmental animation can support the sprite artwork. Bound temporary effects and keep the initial asset scope proportional to the game. Reuse image preparation and semantic animation owners rather than building elaborate renderer or rig systems. Use the [Assets guide](assets-themes.md#specify-artwork-before-integrating-it) for image layout and anchor contracts.
 

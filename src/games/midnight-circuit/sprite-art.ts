@@ -1,4 +1,4 @@
-import type { ImageBundle, ImageDimensions } from '../../engine/browser/images.ts';
+import { validateImageDimensions, type ImageBundle, type ImageDimensions } from '../../engine/browser/images.ts';
 import type { Actor } from './game.ts';
 import { fighterCelCount } from './animation.ts';
 export interface FighterAtlas { readonly cell: number; readonly drawSize: number; readonly width: number; readonly height: number }
@@ -9,8 +9,7 @@ export const normalSprites = {
   repair: new URL('./art/normal/repair.svg', import.meta.url).href,
 };
 export function validateCircuitSprites(dimensions: ImageDimensions) {
-  return [dimensions.fighters?.width === arcadeFighterAtlas.width && dimensions.fighters.height === arcadeFighterAtlas.height ? '' : 'Invalid complete fighter atlas',
-    dimensions.repair?.width === 64 && dimensions.repair.height === 64 ? '' : 'Invalid repair sprite'].filter(Boolean);
+  return validateImageDimensions(dimensions, { fighters: arcadeFighterAtlas, repair: { width: 64, height: 64 } });
 }
 export const fighterRow = (actor: Actor) => actor.kind === 'player' ? 0 : actor.kind === 'striker' ? 1 : actor.kind === 'bruiser' ? 2 : 3;
 export const fighterScale = (actor: Actor) => actor.kind === 'warden' ? 1.48 : actor.kind === 'bruiser' ? 1.2 : 1;

@@ -1,4 +1,4 @@
-import { createPreparationScope } from '../../engine/browser/preparation.ts';
+import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
@@ -52,7 +52,6 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     const clock = createClock();
     const viewMode = 'close';
     presentation = createPresentation(themes.normal);
-    let preparing = false;
     let appearance: ThemeId = 'normal';
     let configuration: ConfigurationId = 'clearing';
     const newRun = () => createRun(undefined, configurations[configuration].round);
@@ -72,6 +71,8 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
       },
     });
+    const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
+    readiness.watch(() => presentation.prepare());
     host.surface.prepend(presentation.canvas);
     overlay = createScreenOverlay(host.surface);
     ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
@@ -79,7 +80,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       if (disposed || screen === 'playing' || screen === 'choosing') return;
       const theme = themes[id];
       if (!theme) return;
-      const request = preparation.begin(); preparing = true; ui.preparing(true);
+      const request = preparation.begin();
       ui.assetStatus(`Preparing ${theme.name}…`);
       let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
@@ -91,6 +92,8 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
           next = createPresentation(theme, bundle!.images, createEmberScene);
         } else next = createPresentation(theme, bundle?.images);
         if (!request.current()) return;
+        await next.prepare();
+        if (!request.current()) return;
         // Prepare and paint against the CURRENT run, including a retry made during loading.
         next.reset(run); next.resize(host);
         next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
@@ -98,6 +101,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
         presentation = next; activeAssets = bundle;
         old.canvas.replaceWith(next.canvas);
         appearance = id; host.root.dataset.theme = id; applyInterface();
+        readiness.watch(() => presentation.prepare());
         ui.appearance(id); ui.assetStatus('');
         old.dispose(); oldAssets?.dispose();
       } catch (error) {
@@ -108,18 +112,18 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
       } finally {
         if (next !== presentation) next?.dispose();
         if (bundle !== activeAssets) bundle?.dispose();
-        if (request.current()) { preparing = false; ui.preparing(false); }
       }
     }
     function graphicsFailure() {
       if (disposed) return;
-      suspend(); preparation.cancel(); preparing = false; ui.preparing(false);
+      suspend(); preparation.cancel();
       // A fresh canvas restores drawing state after an active presentation fails.
       const fallback = createPresentation(themes.normal);
       fallback.reset(run); fallback.resize(host);
       fallback.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
       const old = presentation;
       old.canvas.replaceWith(fallback.canvas); presentation = fallback;
+      readiness.watch(() => presentation.prepare());
       old.dispose(); activeAssets?.dispose(); activeAssets = undefined;
       appearance = 'normal'; host.root.dataset.theme = appearance; applyInterface(); ui.appearance(appearance);
       ui.assetStatus('Graphics unavailable. Restored Normal. Your run is safe; use Resume when ready.');
@@ -146,7 +150,10 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     }
     function act(action: MenuAction) {
       if (disposed) return;
-      if (preparing && ['start', 'restart', 'resume'].includes(action)) return;
+      if (['start', 'restart', 'resume'].includes(action)) {
+        if (!readiness.ready) return;
+        preparation.cancel(); ui.appearance(appearance); ui.assetStatus('');
+      }
       if (action === 'start' || action === 'restart') {
         if (document.hidden || !document.hasFocus()) return;
         sound.reset(); sound.activate();
@@ -179,6 +186,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void): GameS
     for (const name of ['pointerup', 'pointercancel'] as const) window.addEventListener(name, event => pointers.delete(event.pointerId), { signal: host.signal });
     pauseRun(run, true); transition('title', false);
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'choosing' && run.progression.confirming && !confirmations.size && !pointers.size
         && !document.hidden && document.hasFocus() && host.root.contains(document.activeElement)) {
         releaseChoice(run);

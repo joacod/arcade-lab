@@ -1,3 +1,4 @@
+import { createCooldowns } from '../../engine/cooldowns.ts';
 import type { GameEvent } from './game-state.ts';
 import { createGameAudio } from '../../engine/browser/audio.ts';
 import { clearingRecipes } from './sound-recipes.ts';
@@ -14,8 +15,7 @@ export function clearingCue(event: GameEvent): Cue {
 /** Fantasy sound identity and event policy belong to Clearing, outside simulation. */
 export function createSound(onStatus: (message: string) => void) {
   const audio = createGameAudio(clearingRecipes, onStatus);
-  const next = new Map<Cue, number>();
-  let lastTime = 0;
+  const next = createCooldowns<Cue>();
   return {
     ...audio,
     reset() { next.clear(); audio.reset(); },
@@ -31,13 +31,11 @@ export function createSound(onStatus: (message: string) => void) {
       for (const cue of ['victory', 'defeat', 'evolution', 'upgrade'] as const) {
         if (frame.has(cue)) { audio.reset(); next.clear(); audio.play(cue); return; }
       }
-      const now = audio.time;
-      if (now < lastTime) next.clear(); // A recovered engine has a fresh clock.
-      lastTime = now;
+      next.advance(audio.time);
       for (const cue of priority) {
-        if (!frame.has(cue) || now < (next.get(cue) ?? 0)) continue;
+        if (!frame.has(cue) || !next.allows(cue)) continue;
         const options = cue === 'pickup' ? { parameters: { cluster: Math.min(1, Math.max(0, (pickups - 1) / 5)) } } : undefined;
-        if (audio.play(cue, options)) next.set(cue, now + (interval[cue] ?? 0));
+        if (audio.play(cue, options)) next.record(cue, (interval[cue] ?? 0));
       }
     },
   };

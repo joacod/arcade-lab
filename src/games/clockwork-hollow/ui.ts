@@ -37,7 +37,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { id: 'retry', label: 'Retry checkpoint', screens: ['defeat'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: false },
-      { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -48,6 +48,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   return { controls,
     appearanceStatus(value: Appearance, message: string) { theme.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
+    readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       menu.heading.textContent = screen === 'title' ? 'Clockwork Hollow' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';

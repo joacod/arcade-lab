@@ -5,9 +5,10 @@ export interface Patrol extends Rect { readonly to: number; readonly speed: numb
 export interface Vent extends Rect { readonly period: number; readonly offset: number }
 export interface Checkpoint { readonly x: number; readonly y: number; readonly name: string }
 export interface Sign { readonly x: number; readonly y: number; readonly title: string; readonly detail: string }
-export type LevelId = 'aqueduct' | 'emberworks' | 'belfry';
+export type District = 'aqueduct' | 'emberworks' | 'belfry';
 export interface Level {
-  readonly id: LevelId;
+  readonly id: string;
+  readonly environment: District;
   readonly name: string;
   readonly subtitle: string;
   readonly checkpoints: readonly Checkpoint[];
@@ -29,7 +30,7 @@ export const movement = {
 } as const;
 
 export const hollow: Level = {
-  name: 'The Waking Aqueduct', id: 'aqueduct', subtitle: 'Follow the water. Find your spring.',
+  name: 'The Waking Aqueduct', id: 'aqueduct', environment: 'aqueduct', subtitle: 'Follow the water. Find your spring.',
   checkpoints: [{ x: 3690, y: 570, name: 'Moss lantern' }, { x: 8100, y: 610, name: 'Waterwheel rest' }],
   patrols: [{ x: 4490, y: 624, w: 36, h: 26, to: 4800, speed: 62 }, { x: 10300, y: 624, w: 36, h: 26, to: 10600, speed: 76 }],
   vents: [],
@@ -95,7 +96,7 @@ export const hollow: Level = {
 
 /** Individually authored routes: geometry and timing are content, never generated. */
 export const furnace: Level = {
-  name: 'The Emberworks', id: 'emberworks', subtitle: 'Read the pressure. Cross between breaths.', width: 13600, height: 1000,
+  name: 'The Emberworks', id: 'emberworks', environment: 'emberworks', subtitle: 'Read the pressure. Cross between breaths.', width: 13600, height: 1000,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4350, y: 610, name: 'Foundry lantern' }, { x: 9000, y: 570, name: 'Pressure room' }],
   signs: [{ x: 230, y: 618, title: 'THE EMBERWORKS →', detail: 'VENTS GLOW BEFORE FIRING' },
@@ -139,7 +140,7 @@ export const furnace: Level = {
   goal: { x: 13400, y: 460, w: 70, h: 120 },
 };
 export const belfry: Level = {
-  name: 'The Starlit Belfry', id: 'belfry', subtitle: 'One last climb. Let the hollow sing.', width: 14400, height: 1100,
+  name: 'The Starlit Belfry', id: 'belfry', environment: 'belfry', subtitle: 'One last climb. Let the hollow sing.', width: 14400, height: 1100,
   start: { x: 110, y: 650 },
   checkpoints: [{ x: 4570, y: 570, name: 'Moon lantern' }, { x: 9400, y: 530, name: 'Bellkeeper rest' }],
   signs: [{ x: 210, y: 618, title: 'THE STARLIT BELFRY →', detail: 'EVERY SPRING HAS A SONG' },

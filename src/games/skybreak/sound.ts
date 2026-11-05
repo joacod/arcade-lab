@@ -1,3 +1,4 @@
+import { createCooldowns } from '../../engine/cooldowns.ts';
 import { createGameAudio } from '../../engine/browser/audio.ts';
 import type { FlightEvent } from './game.ts';
 import { flight } from './content.ts';
@@ -9,8 +10,7 @@ const interval: Partial<Record<Cue, number>> = { shot: 0.06, hit: 0.065, 'boss-h
 
 export function createSound(onStatus: (message: string) => void) {
   const audio = createGameAudio(skybreakRecipes, onStatus);
-  const next = new Map<Cue, number>();
-  let lastTime = 0;
+  const next = createCooldowns<Cue>();
   return {
     ...audio,
     reset() { next.clear(); audio.reset(); },
@@ -20,16 +20,14 @@ export function createSound(onStatus: (message: string) => void) {
       for (const cue of ['victory', 'defeat', 'boss-break', 'life'] as const) {
         if (frame.has(cue)) { audio.reset(); next.clear(); audio.play(cue); return; }
       }
-      const now = audio.time;
-      if (now < lastTime) next.clear(); // A recovered engine has a fresh clock.
-      lastTime = now;
+      next.advance(audio.time);
       for (const cue of priority) {
         const event = frame.get(cue);
-        if (!event || now < (next.get(cue) ?? 0)) continue;
+        if (!event || !next.allows(cue)) continue;
         // Restrained world-space placement; the aircraft's own feedback stays centered.
         const spatial = ['hit', 'boss-hit', 'explosion', 'boss-shot'].includes(cue);
         const pan = spatial && Number.isFinite(event.x) ? Math.max(-0.65, Math.min(0.65, (event.x / flight.width * 2 - 1) * 0.65)) : 0;
-        if (audio.play(cue, { pan })) next.set(cue, now + (interval[cue] ?? 0));
+        if (audio.play(cue, { pan })) next.record(cue, (interval[cue] ?? 0));
       }
     },
   };

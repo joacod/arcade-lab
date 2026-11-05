@@ -1,4 +1,4 @@
-import type { LevelId } from './content.ts';
+import type { District } from './content.ts';
 
 interface DistrictStyle {
   readonly environment: 'garden' | 'foundry' | 'belfry';
@@ -6,7 +6,7 @@ interface DistrictStyle {
   readonly stone: string; readonly edge: string; readonly light: string;
 }
 export interface HollowTheme {
-  readonly districts: Readonly<Record<LevelId, DistrictStyle>>;
+  readonly districts: Readonly<Record<District, DistrictStyle>>;
   readonly foliage: readonly [string, string];
   readonly brass: string;
   readonly scarf: string;
