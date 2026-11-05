@@ -5,6 +5,7 @@ import { TILE, limits, materialHealth, type Mission, type Operator } from './con
 import { forTiles } from './terrain.ts';
 import { readyToExtract } from './game.ts';
 import type { BlastEvent, Player, Run } from './state.ts';
+import { createGroundGait, type GroundPose } from './animation.ts';
 export interface BlastView { x: number; y: number; width: number; height: number; scale: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 export function blastView(width: number, height: number, mission: Mission, player: Pick<Player, 'x' | 'y' | 'vx'>): BlastView {
@@ -22,6 +23,7 @@ export function createPresentation(surface: HTMLElement) {
   const artwork = createImageResource(blastImages, validateBlastArt);
   let theme = themes.normal;
   let assets: ImageBundle | undefined, animationTime = 0;
+  const playerGait = createGroundGait(), enemyGaits = new Map<number, ReturnType<typeof createGroundGait>>();
   const images = () => assets ?? artwork.images;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
@@ -32,14 +34,15 @@ export function createPresentation(surface: HTMLElement) {
   function text(value: string, x: number, y: number, color = '#e5d4b2', size = 7, align: CanvasTextAlign = 'left') {
     ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y)); ctx.textAlign = 'left';
   }
-  function human(x: number, y: number, operator: Operator, facing: number, stride: number, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
-    const image = images().operators;
+  function human(x: number, y: number, operator: Operator, facing: number, pose: GroundPose, airborne: boolean, aimX = 1, aimY = 0, firing = false) {
+    const running = assets && pose.moving && !airborne && !motion.matches;
+    const image = running ? assets?.[operator === 'nova' ? 'novaRun' : 'boltRun'] : images().operators;
     if (!image) return;
-    const {aim,state} = operatorCel(airborne,stride,motion.matches,aimX,aimY);
+    const {aim,state,runFrame} = operatorCel(airborne,pose.moving,pose.phase,motion.matches,aimX,aimY);
     const row = (operator === 'bolt' ? 4 : 0) + state;
     ctx.save(); ctx.translate(Math.round(x+9),Math.round(y+32)); ctx.scale(facing,1);
     const cell = assets ? 128 : 64;
-    ctx.drawImage(image,aim*cell,row*cell,cell,cell,-20,-45,48,48);
+    ctx.drawImage(image,(running ? runFrame : aim)*cell,(running ? aim : row)*cell,cell,cell,-20,-45,48,48);
     if (firing && !motion.matches) {
       const angle = Math.atan2(aimY,aimX*facing);
       if (assets) {
@@ -113,7 +116,7 @@ export function createPresentation(surface: HTMLElement) {
       rect(x, y, 1, 1, theme.weather === 'snow' ? '#e5f5ffbb' : i % 3 === 0 ? '#ffd39088' : '#e1cc9633');
     }
   }
-  function world(run: Run, v: BlastView, time: number, playing: boolean) {
+  function world(run: Run, v: BlastView, time: number, playing: boolean, dt: number) {
     const t = run.terrain;
     for (const sign of run.mission.signs) {
       if (sign.x + 280 < v.x || sign.x > v.x + v.width) continue;
@@ -155,7 +158,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     const rescue = run.mission.rescue;
     if (rescue && !run.rescued) {
-      human(rescue.x, rescue.y, 'bolt', -1, 0, false);
+      human(rescue.x, rescue.y, 'bolt', -1, { phase: 0, moving: false }, false);
       object(5,rescue.x-8,rescue.y-10,38,42);
       text('BOLT', rescue.x + 10, rescue.y - 28, '#ffe09a', 8, 'center'); text('REACH TO RESCUE', rescue.x + 10, rescue.y - 17, '#d7c69c', 6, 'center');
     }
@@ -170,7 +173,10 @@ export function createPresentation(surface: HTMLElement) {
       ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y)); ctx.scale(e.facing, 1);
       const bastion = e.kind === 'bastion';
       const row = bastion ? 2 : e.kind === 'heavy' ? 1 : 0;
-      const frame = !motion.matches && e.vx ? Math.floor(e.x/10)%2+1 : 0;
+      let gait = enemyGaits.get(e.id);
+      if (!gait) { gait = createGroundGait(); enemyGaits.set(e.id, gait); }
+      const pose = gait.observe(e, dt);
+      const frame = !motion.matches && pose.moving ? pose.phase < .5 ? 1 : 2 : 0;
       const image = images().enemies, cell = assets ? 128 : 64;
       if (e.flash > 0 && !motion.matches) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
       if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,bastion?-36:-18,bastion?-10:-1,bastion?72:36,bastion?64:34);
@@ -194,7 +200,8 @@ export function createPresentation(surface: HTMLElement) {
       }
     }
     const p = run.player;
-    if (p.health > 0 && run.extraction === 0 && (!playing || p.immune <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, Math.abs(p.vx) > 5 ? p.x * .15 : 0, !p.grounded, p.aimX, p.aimY, p.cooldown > (p.operator === 'nova' ? .055 : .55));
+    const pose = playerGait.observe(p, dt);
+    if (p.health > 0 && run.extraction === 0 && (!playing || p.immune <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, pose, !p.grounded, p.aimX, p.aimY, p.cooldown > (p.operator === 'nova' ? .055 : .55));
     if (p.health <= 0) text('REDEPLOYING…', p.x + p.w / 2, p.y - 18, '#ffe1ac', 9, 'center');
     for (const ring of rings) {
       const progress = 1 - ring.life / .38, r = ring.radius * (.3 + progress * .7);
@@ -239,7 +246,7 @@ export function createPresentation(surface: HTMLElement) {
       ctx.reset();
       return () => { theme = previousTheme; assets = previousImages; ctx.reset(); };
     },
-    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; },
+    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; playerGait.reset(); enemyGaits.clear(); },
     draw(run: Run, host: { width: number; height: number; ratio: number }, playing: boolean, time: number) {
       if (disposed) return;
       const dt = Math.max(0, Math.min(.05, last === undefined ? 0 : time - last)); last = time;
@@ -259,7 +266,7 @@ export function createPresentation(surface: HTMLElement) {
       const sceneTime = motion.matches ? 0 : run.elapsed === 0 ? time : animationTime;
       ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run, sceneTime);
       ctx.save(); ctx.translate(-Math.round(v.x) + (motion.matches ? 0 : Math.sin(sceneTime * 83) * shake), -Math.round(v.y) + (motion.matches ? 0 : Math.cos(sceneTime * 71) * shake * .5));
-      world(run, v, sceneTime, playing); ctx.restore();
+      world(run, v, sceneTime, playing, animate ? dt : 0); ctx.restore();
       if (run.collapse >= 0 && run.extraction === 0 && !motion.matches) { ctx.fillStyle = `rgba(221,94,57,${.018 + Math.max(0, Math.sin(sceneTime * 5)) * .025})`; ctx.fillRect(0, 0, v.width, v.height); }
       // Subtle scanline texture respects the pixel artwork without a postprocessing pass.
       ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);

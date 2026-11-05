@@ -35,6 +35,7 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 | Fresh runs, respawn, checkpoints, rescue and mission progression | `game.ts` |
 | Action translation using shared button capture | `input.ts` |
 | Uniform camera, complete sprite drawing, procedural scenery and bounded effects | `presentation.ts` |
+| Grounded travel observations and continuous walking/running phase | `animation.ts` |
 | Mission skies, material palettes, weather and operator/machine colors | `themes.ts` |
 | Ember Coast image URLs, preparation and decoded-dimension validation | `assets.ts` |
 | HUD, menus and announcements | `ui.ts`, `style.css` |

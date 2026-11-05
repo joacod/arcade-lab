@@ -37,6 +37,14 @@ test('Ember Coast retains the live operation, presents both missions and release
   const errors: string[] = [], requests: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('request', r => { if (r.url().includes('/ember-coast/')) requests.push(r.url()); });
+  await page.addInitScript(() => {
+    const frames: number[] = []; (window as any).blastRunFrames = frames;
+    const draw = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      if (args[0] instanceof HTMLImageElement && /\/(nova|bolt)-run\.png/.test(args[0].src)) frames.push(args[1] / 128);
+      return draw.apply(this, args as Parameters<typeof draw>);
+    };
+  });
   await openBlastline(page); expect(requests).toEqual([]);
   const theme = page.getByRole('combobox', { name: 'Theme', exact: true }), root = page.locator('.blast-app');
   const frozen = await state(page);
@@ -47,13 +55,20 @@ test('Ember Coast retains the live operation, presents both missions and release
   expect(await pixels()).not.toBe(normal); expect(await state(page)).toBe(frozen);
   expect(await page.evaluate(() => (window as any).retainedBlast === (window as any).blastProbe)).toBe(true);
   expect(await page.evaluate(() => (window as any).blastImages.map((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])))
-    .toEqual([[640, 1024], [384, 384], [512, 512], [1536, 1024]]);
+    .toEqual([[640, 1024], [384, 384], [512, 512], [1536, 1024], [768, 640], [768, 640]]);
   await chooseOption(theme, 'normal'); await page.clock.runFor(50);
   expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
   await chooseOption(theme, 'assets'); await expect(root).toHaveAttribute('data-appearance', 'assets');
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(200);
+  await page.evaluate(() => { (window as any).blastRunFrames.length = 0; (window as any).blastProbe.player.immune = 0; });
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page.keyboard.down('d'); await page.clock.runFor(650); await page.keyboard.up('d');
+  expect(await page.evaluate(() => [...new Set((window as any).blastRunFrames)].sort())).toEqual([0, 1, 2, 3, 4, 5]);
   expect(await state(page)).not.toBe(frozen);
   await page.keyboard.press('Escape');
+  await page.clock.runFor(50);
+  const heldFrame = await page.evaluate(() => (window as any).blastRunFrames.at(-1));
+  await page.clock.runFor(500);
+  expect(await page.evaluate(() => (window as any).blastRunFrames.at(-1))).toBe(heldFrame);
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(100);
   await expect(root).toHaveAttribute('data-appearance', 'assets');
   expect(await page.evaluate(() => (window as any).blastProbe.destroyed)).toBe(0);
