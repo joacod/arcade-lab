@@ -168,9 +168,6 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
         pauseRun(run, true); syncScreen();
       } else if (action === 'resume' && screen === 'paused') {
         if (!document.hidden && document.hasFocus()) { sound.activate(); pauseRun(run, false); syncScreen(); }
-      } else if (action === 'title') {
-        sound.reset(); run = newRun(); pauseRun(run, true); suspendedChoice = false;
-        presentation.reset(run); overlay.reset(); ui.reset(); transition('title');
       }
     }
     function suspend() {

@@ -38,7 +38,8 @@ export function mountCircuit(container: HTMLElement, onExit: () => void, fullscr
     if (intent === 'quit') { onExit(); return; }
     if (intent === 'pause') { suspend(); return; }
     if (intent === 'fullscreen') { void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return; }
-    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
+    if (document.hidden || !document.hasFocus()) return;
+    if (!readiness.ready) return;
     if (intent === 'start' && screen === 'title' || intent === 'restart' && screen !== 'playing') {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); transition('playing');
     } else if (intent === 'resume' && screen === 'paused') {

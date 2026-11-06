@@ -1,6 +1,7 @@
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createMenuReadout } from '../../common/ui/menu-components.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, upgrades, weapons, type ConfigurationId } from './content.ts';
 import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
@@ -8,7 +9,7 @@ import type { GameEvent } from './game-state.ts';
 import { themes, type ThemeId } from './themes.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
-export type MenuAction = 'start' | 'pause' | 'resume' | 'restart' | 'title';
+export type MenuAction = Exclude<CommonMenuIntent, 'quit' | 'fullscreen'>;
 
 interface UIOptions {
   signal: AbortSignal;
@@ -53,7 +54,9 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   let configuration: ConfigurationId = 'clearing';
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="menu-setup"></div><div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
+  gameContent.innerHTML = `<div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div>`;
+  const results = createMenuReadout('Run results');
+  gameContent.append(results.element);
   const rounds = document.createElement('fieldset'); rounds.className = 'menu-choice-group';
   rounds.innerHTML = '<legend>Choose your round</legend><div class="menu-choice-grid"></div>';
   for (const [id, config] of Object.entries(configurations)) {
@@ -70,22 +73,20 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       menu.description.textContent = roundDescription(); onConfiguration(configuration);
     }, { signal });
   }
-  gameContent.querySelector('.menu-setup')!.append(rounds);
   const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: defaultTheme(themes), onChange: onTheme });
-  const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
+  const menu = createGameMenu<MenuAction | 'quit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
-    onAction: action => action === 'exit' ? options.onExit() : onAction(action),
+    onAction: action => action === 'quit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
-    game: gameContent,
-    theme: appearance.element, cycleTheme: appearance.cycle,
+    game: gameContent, setup: rounds,
+    theme: appearance.element,
     controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
-      { id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
-      { id: 'exit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'choosing'] },
+      menuActions.start,
+      menuActions.resume,
+      menuActions.restart,
+      { ...menuActions.quit, screens: [...menuActions.quit.screens, 'choosing'] },
     ],
   });
   const assetStatus = document.createElement('p'); assetStatus.className = 'asset-status'; assetStatus.hidden = true;
@@ -114,9 +115,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       buttons[(selected + direction + buttons.length) % buttons.length]?.focus();
     }
   }, { signal });
-  const loadout = $<HTMLOutputElement>('.loadout');
   const progress = $<HTMLOutputElement>('.progress');
-  const modifiers = $<HTMLOutputElement>('.modifiers');
   const stage = $<HTMLElement>('.stage');
   stage.prepend(surface);
   const heading = menu.heading;
@@ -125,7 +124,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const health = $<HTMLMeterElement>('.health-meter');
   health.max = clearing.keeper.maxHealth;
   const healthValue = $<HTMLOutputElement>('.health-value');
-  const kills = $<HTMLOutputElement>('.kills');
   const shieldValue = $<HTMLOutputElement>('.shield-value');
   const evolutionProgress = $<HTMLOutputElement>('.evolution-progress');
   const fieldMessage = $<HTMLElement>('.field-message');
@@ -159,16 +157,16 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
         : run.round.duration - run.elapsed <= 30 && !run.outcome ? 'Dawn approaches · keep moving'
         : '';
       setText(fieldMessage, message); setProperty(fieldMessage, 'hidden', !message);
-      setProperty(loadout, 'value', run.loadout.map(slot => `${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · '));
+      const loadout = run.loadout.map(slot => `${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · ');
       setText($('.equipped-weapons'), run.loadout.map(slot => `${weaponCues[slot.base].icon} ${slot.id === evolution.replacement ? evolution.name : weapons[slot.base].name} ${slot.rank}`).join(' · '));
       setProperty(progress, 'value', `Level ${run.progression.level} · XP ${run.progression.xp} / ${xpThreshold(run)}`);
-      setProperty(modifiers, 'value', `Shield ${run.player.shield} · Power +${Math.round(run.modifiers.power * 100)}% · Pickup ${pickupRadius(run)}`);
+      results.update(`${loadout}\nShield ${run.player.shield} · Power +${Math.round(run.modifiers.power * 100)}% · Pickup ${pickupRadius(run)}\n${run.stats.kills} defeated`);
       if (run.status === 'choosing') {
         setText(heading, `Level ${choiceLevel(run) - Number(run.progression.confirming)} · Choose an upgrade`);
         setText(description, run.progression.confirming ? 'Upgrade applied. Release to continue.'
           : `${run.progression.pending} earned ${run.progression.pending === 1 ? 'choice' : 'choices'} remaining. Action is paused.`);
         const signature = `${choiceLevel(run)}:${run.progression.confirming}:${run.progression.choices.map(choice => choice.id).join(',')}`;
-        setText($('.choice-context'), `Equipped: ${loadout.value} · ${evolutionProgress.value}`);
+        setText($('.choice-context'), `Equipped: ${loadout} · ${evolutionProgress.value}`);
         for (const button of choices.querySelectorAll('button')) {
           setAttribute(button, 'aria-disabled', String(run.progression.confirming));
           const confirmed = run.progression.confirming && button.dataset.choice === chosenId;
@@ -195,18 +193,15 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
           if (focused || root.dataset.screen === 'choosing') choices.querySelector('button')?.focus({ preventScroll: true });
         }
       } else choiceSignature = '';
-      setProperty(kills, 'value', `${run.stats.kills} defeated`);
       root.classList.toggle('in-danger', run.player.health <= clearing.keeper.maxHealth * 0.3);
       if (run.outcome) {
         setText(description, `${run.outcome === 'victory' ? 'The clearing welcomes the first light. ' : ''}${formatTime(Math.floor(run.elapsed))} survived · ${run.stats.kills} enemies defeated · ${run.stats.eliteKills} elite defeated · Level ${run.progression.level} · ${run.player.health} HP remaining.`);
       }
     },
     show(screen: Screen, focus = true) {
-      $<HTMLElement>('.menu-setup').hidden = screen !== 'title';
-      $<HTMLElement>('.run-details').hidden = screen === 'title' || screen === 'choosing';
+      results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
       $<HTMLElement>('.upgrade-panel').hidden = screen !== 'choosing';
-      heading.textContent = screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat'
-        : screen === 'choosing' ? 'Choose an upgrade' : screen === 'paused' ? 'Paused' : 'Last Light Clearing';
+      if (screen === 'choosing') heading.textContent = 'Choose an upgrade';
       description.textContent = screen === 'paused' ? '' : roundDescription();
       menu.show(screen, focus);
     },

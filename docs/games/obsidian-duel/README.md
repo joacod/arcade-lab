@@ -18,7 +18,7 @@ Nera moves faster and recovers sooner. Her **Stormglass** bolt covers distance, 
 
 The timer runs only during combat. A knockout ends the round immediately; time-out awards it to the healthier fighter. Equal health or simultaneous knockout is a draw, awarding neither fighter a win and starting another round. Each round restores health, spacing and cooldowns. A knockdown leads through a protected wake-up; short protection at the end of hitstun prevents corner loops. Grounded push bodies prevent walking through an opponent; sufficient vertical clearance permits a jump-over. Landing restores separation in the current left/right order. Guard uses the Guard button and height rather than a directional input, so holding the correct guard still protects after a side switch.
 
-**Game setup** from pause or results returns to fighter selection. **Restart** begins a fresh match with the selected fighter.
+Choose Nera or Kael on the main menu. See [shared menu navigation](../../../CATALOG.md) for Restart and Game selection behavior.
 
 ## Theme modes
 

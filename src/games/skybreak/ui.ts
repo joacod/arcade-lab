@@ -1,12 +1,12 @@
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
 import { themes, type Appearance } from './themes.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
-export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen';
+export type Intent = CommonMenuIntent;
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: Appearance) => void) {
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK</div>
@@ -26,12 +26,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: appearance.element, cycleTheme: appearance.cycle,
+    game: results.element, theme: appearance.element,
     controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
-    actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
+    actions: [menuActions.start,
+      menuActions.resume,
+      menuActions.restart,
+      menuActions.quit],
   });
 
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
@@ -50,7 +50,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     show(screen: Screen, focus = true) {
-      menu.heading.textContent = screen === 'title' ? 'Skybreak' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'paused' ? '' : screen === 'victory' ? 'Iron Tempest destroyed.' : screen === 'defeat' ? 'Sortie ended.' : 'Destroy Iron Tempest before 2:48. Collect supplies to upgrade your guns and repair your hull.';
 
       results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);

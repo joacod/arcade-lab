@@ -141,14 +141,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
       return;
     }
     if (document.hidden || !document.hasFocus()) return;
-    if (!readiness.ready && intent !== 'title') return;
-    if (intent === 'title' && screen !== 'playing') {
-      sound?.reset();
-      match = createMatch(selected);
-      presentation?.reset();
-      transition('title');
-      return;
-    }
+    if (!readiness.ready) return;
     if (intent === 'start' && screen === 'title' || intent === 'restart' && screen !== 'playing') {
       sound?.reset();
       sound?.activate();

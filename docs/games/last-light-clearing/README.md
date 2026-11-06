@@ -17,6 +17,8 @@ The source of numerical tuning is [`src/games/last-light-clearing/content.ts`](.
 
 ## Opening and upgrade flow
 
+Choose Until dawn or Brief dusk on the main menu. See [shared menu navigation](../../../CATALOG.md) for Restart and Game selection behavior.
+
 Starting positions and body geometry live in `content.ts`. A nearby opening gem, a restrained guide line and a contextual prompt introduce collection before the first upgrade. Entry selection samples safe world edges with a run-owned seed, varying approach angles while preserving separation.
 
 Projectile-radius collision uses a swept intersection, with movement limited to remaining projectile lifetime. Death drops and gem collection resolve synchronously. Combat/outcome resolves before pickups so a terminal tick cannot open a stale upgrade panel.

@@ -2,7 +2,7 @@ import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
 import type { Run, BlastEvent } from './state.ts';
@@ -10,7 +10,7 @@ import { initialLayout, layouts, type Layout, type Control } from './input.ts';
 import { bindingLabel } from '../../engine/bindings.ts';
 import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
-export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'continue' | 'quit' | 'fullscreen';
+export type Intent = CommonMenuIntent | 'continue';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void, onLayout: (value: Layout) => void) {
   root.innerHTML = `<header class="blast-hud"><div class="blast-identity"><span class="blast-emblem" aria-hidden="true">↗</span><div><b class="blast-operator">NOVA</b><small class="blast-weapon">ASSAULT / AUTO RIFLE</small><span class="blast-health" aria-label="Health">▰ ▰ ▰ ▰ ▰</span></div></div><div class="blast-orders"><small class="blast-mission">01 / BORDER STATION</small><output class="blast-objective" aria-label="Mission objective"></output></div><div class="blast-resources"><span><b class="blast-lives">5</b> LIVES</span><span><b class="blast-grenades">4</b> GRENADES</span></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="blast-stage"><div class="blast-topline"><span>ROGUE MACHINE TERRITORY</span><span class="blast-sector">SECTOR 01 / BORDER STATION</span></div><div class="blast-banner" role="status" hidden><b></b><span></span></div>
@@ -27,8 +27,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const keyboard = createKeyboardChoices({ id: 'blast', choices: layouts, value: layout, signal, onChange(value) {
     layout = value; onLayout(layout); reflectBindings();
   } });
-  const gameContent = document.createElement('div');
-  gameContent.append(keyboard, results.element);
   function reflectBindings() {
     const { bindings } = layouts[layout];
     const move = `${bindingLabel(bindings.left)} / ${bindingLabel(bindings.right)}`;
@@ -45,13 +43,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
-    controls: help,
-    actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
+    game: results.element, theme: theme.element,
+    preferences: keyboard, controls: help,
+    actions: [menuActions.start,
+      menuActions.resume,
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: true },
-      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { ...menuActions.restart, screens: [...menuActions.restart.screens, 'interlude'] },
+      { ...menuActions.quit, screens: [...menuActions.quit.screens, 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'jump', 'fire', 'grenade', 'switch'] as const).map(c => [c, $<HTMLButtonElement>(`[data-control="${c}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -71,9 +69,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     },
     show(next: Screen, focus = true) {
       screen = next;
-      keyboard.hidden = next !== 'title' && next !== 'paused';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
-      menu.heading.textContent = next === 'title' ? 'Blastline' : next === 'paused' ? 'Paused' : next === 'victory' ? 'Victory' : next === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = next === 'title' ? 'Rescue Bolt, cut the power and reach extraction. Supply posts save progress and refill your resources.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';
 
       for (const b of Object.values(controls)) b.disabled = next !== 'playing';

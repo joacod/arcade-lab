@@ -2,14 +2,14 @@ import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { fighters, type FighterId } from './content.ts';
 import type { Match } from './game.ts';
 import { initialLayout, layouts, type Layout, type Control } from './input.ts';
 import { bindingLabel } from '../../engine/bindings.ts';
 import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
-export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'title';
+export type Intent = CommonMenuIntent;
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, select: (id: FighterId) => void, mute: (muted: boolean) => void, appearance: (id: Appearance) => void, onLayout: (value: Layout) => void) {
   root.innerHTML = `<header class="duel-hud"><div class="duel-health duel-player"><div><b class="duel-player-name">NERA</b><small>YOU <span class="duel-player-wins">◇ ◇</span></small></div><meter aria-label="Your health" min="0" max="100" value="100"></meter><span class="duel-player-special">STORMGLASS READY</span></div><div class="duel-clock"><small>BEST OF THREE</small><output aria-label="Round timer">75</output><span class="duel-round">ROUND 01</span></div><div class="duel-health duel-enemy"><div><b class="duel-enemy-name">KAEL</b><small><span class="duel-enemy-wins">◇ ◇</span> CPU</small></div><meter aria-label="Opponent health" min="0" max="100" value="100"></meter><span class="duel-enemy-special">RIFTBREAKER READY</span></div><button class="duel-pause" data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="duel-stage"><div class="duel-arena-label">THE TEMPEST CITADEL <span>·</span> OBSIDIAN DUEL</div><div class="duel-announcement" aria-live="polite"><strong></strong><span></span></div>
@@ -25,9 +25,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const keyboard = createKeyboardChoices({ id: 'duel', choices: layouts, value: layout, signal, onChange(value) {
     layout = value; onLayout(layout); reflectBindings();
   } });
-  const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
-  gameContent.append(keyboard, results.element);
+  const rosterChoices = document.createElement('fieldset'); rosterChoices.className = 'menu-choice-group';
+  rosterChoices.innerHTML = `<legend>Choose your fighter</legend><div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   function reflectBindings() {
     const { bindings } = layouts[layout];
     const move = `${bindingLabel(bindings.left)} / ${bindingLabel(bindings.right)}`;
@@ -45,13 +44,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
-    controls: help,
-    actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
-      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
+    game: results.element, setup: rosterChoices, theme: theme.element,
+    preferences: keyboard, controls: help,
+    actions: [menuActions.start,
+      menuActions.resume,
+      menuActions.restart,
+      menuActions.quit],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump', 'crouch', 'light', 'heavy', 'special', 'block'] as const).map(k => [k, $<HTMLButtonElement>(`[data-control="${k}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -74,10 +72,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;
-      keyboard.hidden = screen !== 'title' && screen !== 'paused';
-      $<HTMLElement>('.duel-roster').hidden = screen !== 'title';
       results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
-      menu.heading.textContent = screen === 'title' ? 'Obsidian Duel' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = screen === 'title' ? 'Win two rounds against the CPU. Choose your fighter.' : '';
 
       for (const b of Object.values(controls)) b.disabled = screen !== 'playing';

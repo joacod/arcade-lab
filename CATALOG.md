@@ -2,9 +2,9 @@
 
 Choose a game from the collection screen. **Game selection** returns there; each visit starts a fresh session. Games fill the viewport, with fullscreen including the arena, HUD and menus where supported.
 
-Game menus provide available presentation choices, sound/fullscreen controls and expandable control instructions. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
+Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Theme changes retain the paused run. Restart creates a fresh run while keeping the selected theme for this visit. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
+Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
 The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
 
@@ -80,7 +80,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 |  Space, then Z / X  |
 |  Touch arrows + Strike / Heavy / Jump  |
 
-**Keyboard layout** on title and pause menus also offers WASD movement with J/K attacks and Space jump. The selection lasts for this visit, including restarts.
+**Keyboard layout** in Settings also offers WASD movement with J/K attacks and Space jump. The selection lasts for this visit, including restarts.
 
 Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. See [gameplay and source ownership](docs/games/midnight-circuit/README.md) and the [artwork guide](src/games/midnight-circuit/art/README.md).
 
@@ -99,9 +99,9 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 |  Low sweep / overhead jump attack  |  Crouch + J / airborne J or K  |
 |  Guard; crouch as well to stop sweeps  |  Shift  |
 
-**Keyboard layout** on title and pause menus chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to Game setup. Touch directions + Light / Heavy / Special / Guard support independent held controls and attack presses.
+**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to fighter selection. Touch directions + Light / Heavy / Special / Guard support independent held controls and attack presses.
 
-Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. **Game setup** returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
+Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
 
 ## Blastline
 
@@ -118,7 +118,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 |  Throw a fused grenade  |  K  |
 |  Switch operator after rescuing Bolt  |  L  |
 
-**Keyboard layout** on title and pause menus chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch directions + Jump / Fire / Grenade / Switch support independent simultaneous controls.
+**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch directions + Jump / Fire / Grenade / Switch support independent simultaneous controls.
 
 Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete sprites, bounded debris and procedural AudioBits sounds power the action. Deluxe adds painted commandos, machines, equipment and coastal scenery. See [gameplay and source ownership](docs/games/blastline/README.md).
 

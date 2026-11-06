@@ -29,9 +29,8 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
   const element = document.createElement('fieldset'); element.className = 'menu-field menu-theme';
   element.hidden = modes.length < 2;
   element.setAttribute('aria-label', 'Theme');
-  const legend = document.createElement('legend'); legend.textContent = 'Theme';
-  const shortcut = document.createElement('span'); shortcut.className = 'menu-theme-shortcut'; shortcut.textContent = 'T to switch';
-  legend.append(shortcut);
+  const legend = document.createElement('legend');
+  legend.innerHTML = '<svg class="menu-theme-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.8 1.8 0 0 1 1.3-3.1H18a3 3 0 0 0 3-3A9 9 0 0 0 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="11" cy="6.5" r="1"/><circle cx="16" cy="8" r="1"/></svg><span>Theme</span>';
   const group = document.createElement('div'); group.className = 'menu-theme-choices';
   const note = document.createElement('small'); note.className = 'menu-theme-note'; note.id = `theme-note-${++groupId}`;
   element.setAttribute('aria-describedby', note.id);
@@ -44,7 +43,11 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
     const detail = document.createElement('small'); detail.textContent = config.names?.[mode as Mode] ?? (mode === 'prototype' ? 'Gameplay development' : mode === 'arcade' ? 'Finished artwork' : 'Enhanced artwork');
     input.setAttribute('aria-label', `${labels[mode]}${config.names?.[mode as Mode] ? ` · ${config.names[mode as Mode]}` : ''}`);
     const loading = document.createElement('span'); loading.className = 'menu-theme-loading'; loading.textContent = 'Loading…'; loading.hidden = true; loading.setAttribute('aria-hidden', 'true');
-    label.append(input, title, detail, loading);
+    const icon = document.createElement('span'); icon.className = 'menu-theme-icon'; icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = mode === 'deluxe'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/><path d="m20 2 .5 1.5L22 4l-1.5.5L20 6l-.5-1.5L18 4l1.5-.5Z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+    label.append(input, icon, title, detail, loading);
     group.append(label);
     input.addEventListener('change', () => select(mode), { signal: config.signal });
     input.addEventListener('click', () => select(mode), { signal: config.signal });
@@ -69,11 +72,6 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
     if (mode === pending || mode === current && pending === undefined) { render(); return; }
     prepare(mode as Mode); config.onChange(mode as Mode);
   }
-  function cycle() {
-    const enabled = modes;
-    const next = enabled[(enabled.indexOf((pending ?? current) as Mode) + 1) % enabled.length];
-    if (enabled.length > 1 && next) select(next);
-  }
   render();
-  return { element, input: choices[0]!.input, setValue, prepare, cycle };
+  return { element, input: choices[0]!.input, setValue, prepare };
 }
