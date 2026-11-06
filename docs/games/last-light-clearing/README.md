@@ -82,4 +82,4 @@ The renderer/resource transaction follows the [shared replacement and recovery c
 
 ## Renderer verification
 
-The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) protect frame bounds, clip/anchor metadata, animation timing and prepared-image lifetimes. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. The collection [startup smoke](../../../tests/browser/app/startup.spec.ts) verifies Arcade readiness and starting play. Use the [shared verification guidance](../../architecture.md#local-verification).

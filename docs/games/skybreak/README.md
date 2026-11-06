@@ -69,4 +69,4 @@ Dry gun transients leave room for metal impacts, enemy blasts, hull fractures an
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover image roles, decoded file dimensions, frame contracts and continuous coastal tile coverage. [Browser checks](../../../tests/browser/games/skybreak/) cover flight controls, appearance replacement and Tempest Coast recovery. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/skybreak/game.test.mjs) cover pickups, respawn, boss patterns and scoring; [art checks](../../../tests/unit/games/skybreak/art.test.mjs) cover image roles, decoded dimensions, frame contracts and continuous coastal tile coverage. The collection [startup smoke](../../../tests/browser/app/startup.spec.ts) verifies Arcade readiness and starting play. Use the [shared verification guidance](../../architecture.md#local-verification).

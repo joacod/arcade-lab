@@ -21,13 +21,12 @@ tests/
   unit/engine/         Shared pure infrastructure invariants
   unit/games/<slug>/   Game rules and presentation invariants
   unit/                Cross-game recipe validation
-  browser/app/         Collection and session replacement
+  browser/app/         Startup smokes, artwork retry and collection/session lifetimes
   browser/engine/      Shared browser/audio lifecycle
-  browser/common/      Collection-wide UI behavior
-  browser/games/<slug>/ Game-specific input, rendering and session behavior
+  browser/common/      Representative presentation/menu integration
 ```
 
-The [catalog](../CATALOG.md) links to each game's guide. Source, guide and tests use the same game slug. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. All modes render through Canvas 2D. Detailed scenery code and image preparation stay inside the owning game, behind its lazy imports. Appearance controllers own cancellation, replacement and graphics-failure recovery. Preparing a replacement retains the active renderer until the candidate can draw; simulation state and the host loop remain session-owned. Shared pose observations belong with the game when multiple renderers need the same animation.
+The [catalog](../CATALOG.md) links to each game's guide. Source, guides and unit tests use the same game slug; browser startup checks iterate the collection catalog. Open `app.ts` inside a game to trace its composition; follow `content.ts` for tuning and `game.ts` for simulation rules. All modes render through Canvas 2D. Detailed scenery code and image preparation stay inside the owning game, behind its lazy imports. Appearance controllers own cancellation, replacement and graphics-failure recovery. Preparing a replacement retains the active renderer until the candidate can draw; simulation state and the host loop remain session-owned. Shared pose observations belong with the game when multiple renderers need the same animation.
 
 Runtime artwork belongs in the owning game's `art/` folder. One canonical screenshot of the best completed presentation lives beside each game guide as `preview.webp`. The landing, README, catalog and game guide all use that file; collection metadata lives in `src/app/catalog-data.ts` and lazy game loaders in `src/app/catalog.ts`. See [collection previews and site identity](#collection-previews-and-site-identity) when replacing screenshots. Commit all artwork required by enabled modes. Keep useful prompts, templates, dimensions and role mappings with the game. Development and production import the same committed bundles. Generated builds and browser reports stay ignored.
 
@@ -125,7 +124,7 @@ See the [README](../README.md#play-locally) to start the development server. `pn
 
 Keep exactly one committed screenshot per game at `docs/games/<slug>/preview.webp`. Use a representative active scene from the best completed presentation, Deluxe when available or Arcade otherwise, without a pause/menu overlay. After changing that artwork, replace the screenshot as part of the same change. Deluxe is never required for a finished catalog entry. The landing, README, catalog and game guide link to the same stable file, so they cannot drift into separate image sets. Do not add hand-maintained thumbnails or retain the input PNG alongside it.
 
-Capture the game through its existing Chromium flow, then run:
+Capture gameplay on demand with browser tooling, outside the permanent test suite, then run:
 
 ```sh
 pnpm screenshot clearing /tmp/preview-capture.png
@@ -139,7 +138,19 @@ The Vite HTML transform emits canonical, Open Graph, Twitter and WebSite structu
 
 ## Local verification
 
-Run `pnpm check` for types, invariants and the build. Run `pnpm check:browser` for input or lifecycle changes; install Chromium with `pnpm exec playwright install chromium` if needed. Renderer-specific checks belong with the owning game's documentation.
+Follow the mandatory [testing policy](../AGENTS.md#testing-policy) when choosing or changing coverage. `pnpm check` runs TypeScript, fast Node invariants and the production build. There is no separate lint runner.
+
+`pnpm check:browser` runs the focused Chromium suite for browser integration, shared UI, presentation lifecycle and input changes. Minor artwork, documentation and game-data edits do not automatically require it. Install Chromium with `pnpm exec playwright install chromium` if needed. During individual game work, select the relevant checks, for example:
+
+```sh
+node --test 'tests/unit/games/<slug>/*.test.mjs'
+pnpm check:browser tests/browser/app/startup.spec.ts --grep '<game title>'
+pnpm check:browser tests/browser/common/appearance.spec.ts
+```
+
+The [startup suite](../tests/browser/app/startup.spec.ts) gives every catalog entry one ready-presentation/start smoke. Shared contracts use representative checks for required-artwork retry, paused-run presentation replacement, host suspension/disposal, cancelled lazy imports, captured input and native audio activation races. Deterministic rules, image validation, cancellation and replacement rollback stay in Node. Existing bounded simulation checks remain useful when they protect mechanics cheaply; they are not a template for adding gameplay bots or browser journeys.
+
+Playwright uses two workers with sequential tests within each file, one local Vite server per invocation (reusing a running server when available), fresh page/context fixtures and Chromium only. Keep retries, routine screenshots, video and tracing off; enable diagnostics only for a concrete failure. The on-demand `pnpm screenshot` command maintains collection previews independently of tests. Timing comparisons belong in the task response, never in committed benchmark artifacts.
 
 ## Documentation ownership
 
@@ -224,4 +235,4 @@ When a change needs asynchronous resources or a new presentation owner, the game
 
 Release failed construction resources, cancelled candidates and late completions, including images, cached canvases, buffers and listeners. A failed Deluxe preparation retains the working Arcade and current run. An active Deluxe draw failure pauses the retained run, releases the failed presentation and prepares Arcade with fresh Canvas state. Readiness gates Resume until recovery succeeds, and only explicit Resume continues. If Arcade itself fails, offer Retry artwork or navigation; never fall back to retired Prototype. Retry prepares and trial-draws Arcade against the same run. Prototype-only games use the same actionable loading-error policy for any required resources. A failed recovery stays gated rather than repeatedly throwing from the frame loop.
 
-Verify an appearance change with an ongoing paused run: visible output changes while the same state object, position, progress and timers remain intact, then Resume advances that run. Check selection retention on restart and release on unmount through the existing session checks. Async asset changes also need cancellation, failure and late-completion coverage. Keep these checks focused rather than adding a screenshot matrix.
+Use the existing representative browser check to verify that presentation replacement preserves a paused run and Resume advances it. Pure preparation, readiness, rollback and image-lifetime checks protect cancellation, failure and late completion. Follow the [testing policy](../AGENTS.md#testing-policy) before adding coverage: only a distinct integration risk justifies another browser scenario. Inspect appearance and motion on demand without building a per-game failure or screenshot matrix.

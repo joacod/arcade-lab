@@ -66,4 +66,4 @@ Sound uses a spring lift, soft stone/metal landing, descending unwinding damage,
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/clockwork-hollow/game.test.mjs) cover movement, collision, checkpoints, scoring and a complete route through all three districts. [Asset checks](../../../tests/unit/games/clockwork-hollow/assets.test.mjs) cover the Bellgarden layout; [browser checks](../../../tests/browser/games/clockwork-hollow/) cover the live journey and presentation replacement. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/clockwork-hollow/game.test.mjs) cover movement, collision, checkpoints, scoring and the authored route. [Asset checks](../../../tests/unit/games/clockwork-hollow/assets.test.mjs) validate committed sheets and frame bounds. The collection [startup smoke](../../../tests/browser/app/startup.spec.ts) verifies Arcade readiness and starting play. Use the [shared verification guidance](../../architecture.md#local-verification).
