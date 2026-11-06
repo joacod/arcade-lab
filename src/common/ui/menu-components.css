@@ -1,33 +1,37 @@
-.game-menu-layer .menu-readout { display: block; white-space: pre-line; overflow-wrap: anywhere; font: 13px/1.6 ui-monospace, monospace; color: #d2e8dd; }
+.game-menu-layer .menu-readout { display: block; white-space: pre-line; overflow-wrap: anywhere; padding: 14px 16px; border: 1px solid #ffffff12; border-radius: 10px; background: #0b181e99; box-shadow: inset 0 1px #ffffff08; font: 13px/1.6 ui-monospace, monospace; color: #d2e8dd; }
 .game-menu-layer .menu-choice-group { border: 0; padding: 0; margin: 0; min-width: 0; }
 .game-menu-layer .menu-choice-group legend { padding: 0; margin-bottom: 8px; color: #bbcfcc; font-size: 13px; }
 .game-menu-layer .menu-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.game-menu-layer .menu-choice { position: relative; display: grid; align-content: start; gap: 6px; padding: 14px; border: 1px solid #65817e88; border-radius: 8px; background: #1b2e35; cursor: pointer; }
+.game-menu-layer .menu-choice { position: relative; display: grid; align-content: start; gap: 6px; padding: 14px; border: 1px solid #65817e88; border-radius: 9px; background: linear-gradient(180deg, #21363d, #1a2d34); cursor: pointer; box-shadow: inset 0 1px #ffffff0a; }
 .game-menu-layer .menu-choice strong { color: #e6eeed; padding-right: 20px; font-size: 14px; }
 .game-menu-layer .menu-choice small { color: #bbcfcc; font: 12px/1.5 system-ui, sans-serif; }
 .game-menu-layer .menu-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.game-menu-layer .menu-choice:hover { background: #304b52; }
-.game-menu-layer .menu-choice:has(:checked) { border-color: var(--menu-accent, #b9efd4); background: #243c42; }
-.game-menu-layer .menu-choice:has(:checked)::after { content: '✓'; position: absolute; right: 12px; top: 12px; color: var(--menu-accent, #b9efd4); }
+.game-menu-layer .menu-choice:hover { background: linear-gradient(180deg, #2a454c, #223a41); border-color: color-mix(in srgb, var(--menu-accent, #b9efd4) 55%, transparent); }
+.game-menu-layer .menu-choice:has(:checked) { border-color: var(--menu-accent, #b9efd4); background: linear-gradient(160deg, color-mix(in srgb, var(--menu-accent, #b9efd4) 16%, #1b2f36), #182b32); box-shadow: inset 3px 0 var(--menu-accent, #b9efd4), inset 0 1px #ffffff0f; }
+.game-menu-layer .menu-choice:has(:checked)::after { content: '✓'; position: absolute; right: 12px; top: 12px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--menu-accent, #b9efd4); color: #102b24; font: 700 11px/1 system-ui, sans-serif; }
 .game-menu-layer .menu-choice:has(:focus-visible) { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 2px; }
 @media (max-width: 360px) { .game-menu-layer .menu-choice-grid { grid-template-columns: 1fr; } }
 @media (forced-colors: active) {
   .game-menu-layer .menu-choice:has(:checked) { border: 2px solid Highlight; }
+  .game-menu-layer .menu-choice:has(:checked)::after { background: Highlight; color: HighlightText; }
 }
 
 .game-menu-layer .menu-field { border: 0; padding: 0; margin: 0; min-width: 0; color: #bbcfcc; font: 13px/1.4 system-ui, sans-serif; }
 .game-menu-layer .menu-theme > legend { display: flex; justify-content: space-between; gap: 16px; width: 100%; padding: 0; margin-bottom: 10px; color: #d7e5de; font-weight: 600; }
 .game-menu-layer .menu-theme-shortcut { color: #9db5ae; font-size: 11px; font-weight: 400; }
 .game-menu-layer .menu-theme-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.game-menu-layer .menu-theme-choice { position: relative; display: grid; align-content: start; gap: 4px; min-height: 70px; padding: 12px 30px 12px 14px; border: 1px solid #7b9b9155; border-radius: 8px; background: #192e34; cursor: pointer; }
+.game-menu-layer .menu-theme-choice { position: relative; display: grid; align-content: start; gap: 4px; min-height: 70px; padding: 12px 32px 12px 14px; border: 1px solid #7b9b9155; border-radius: 9px; background: linear-gradient(180deg, #1d333a, #172b31); cursor: pointer; box-shadow: inset 0 1px #ffffff0a; }
 .game-menu-layer .menu-theme-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .game-menu-layer .menu-theme-choice strong { color: #e6eeed; font-size: 14px; }
 .game-menu-layer .menu-theme-choice small { font: 11px/1.5 system-ui, sans-serif; color: #b7cac5; }
-.game-menu-layer .menu-theme-choice:hover { border-color: var(--menu-accent, #b9efd4); background: #263e43; }
-.game-menu-layer .menu-theme-choice:has(input:checked) { border-color: var(--menu-accent, #b9efd4); background: #263e43; }
-.game-menu-layer .menu-theme-choice:has(input:checked)::after { content: ''; position: absolute; top: 15px; right: 13px; width: 5px; height: 9px; border: solid var(--menu-accent, #b9efd4); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.game-menu-layer .menu-theme-choice:hover { border-color: color-mix(in srgb, var(--menu-accent, #b9efd4) 60%, transparent); background: linear-gradient(180deg, #294147, #203740); box-shadow: inset 0 1px #ffffff12; }
+.game-menu-layer .menu-theme-choice:has(input:checked) { border-color: var(--menu-accent, #b9efd4); background: linear-gradient(160deg, color-mix(in srgb, var(--menu-accent, #b9efd4) 18%, #1d343b), #1a2f36); box-shadow: inset 3px 0 var(--menu-accent, #b9efd4), inset 0 1px #ffffff12; }
+.game-menu-layer .menu-theme-choice:has(input:checked)::after { content: '✓'; position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: var(--menu-accent, #b9efd4); color: #102b24; font: 700 11px/1 system-ui, sans-serif; box-shadow: 0 0 12px color-mix(in srgb, var(--menu-accent, #b9efd4) 40%, transparent); }
 .game-menu-layer .menu-theme-choice:has(input:focus-visible) { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 3px; }
-.game-menu-layer .menu-theme-choice[data-pending] { border-style: dashed; }
+.game-menu-layer .menu-theme-choice[data-pending] { border-style: dashed; background: color-mix(in srgb, var(--menu-accent, #b9efd4) 8%, #172b31); }
 .game-menu-layer .menu-theme-loading { position: absolute; top: 14px; right: 12px; color: var(--menu-accent, #b9efd4); font-size: 11px; }
 .game-menu-layer .menu-theme-note { display: block; margin-top: 8px; font: 11px/1.5 system-ui, sans-serif; color: #a9bfb7; }
-@media (forced-colors: active) { .game-menu-layer .menu-theme-choice:has(input:checked) { border: 2px solid Highlight; } }
+@media (forced-colors: active) {
+  .game-menu-layer .menu-theme-choice:has(input:checked) { border: 2px solid Highlight; }
+  .game-menu-layer .menu-theme-choice:has(input:checked)::after { background: Highlight; color: HighlightText; }
+}

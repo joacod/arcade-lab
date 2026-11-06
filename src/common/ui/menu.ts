@@ -41,9 +41,11 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   layer.innerHTML = `<section class="game-menu" aria-labelledby="${config.id}-heading">
     <header class="game-menu-header"><p class="game-menu-eyebrow">ARCADE LAB <span aria-hidden="true">/</span> <span class="game-menu-name">${config.title}</span></p><h1 id="${config.id}-heading">${config.title}</h1></header>
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
-      <p class="game-menu-description"></p><div class="game-menu-content"></div>
-      <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
-      <details class="game-menu-controls"><summary>How to play</summary><div><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details></div>
+      <p class="game-menu-description"></p>
+      <div class="game-menu-settings"><div class="game-menu-theme"></div></div>
+      <div class="game-menu-content"></div>
+      <div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
+      <details class="game-menu-controls"><summary>How to play</summary><div><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
@@ -64,6 +66,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const body = layer.querySelector<HTMLElement>('.game-menu-body')!;
   const content = layer.querySelector<HTMLElement>('.game-menu-content')!;
   const settings = layer.querySelector<HTMLElement>('.game-menu-settings')!;
+  const utilities = layer.querySelector<HTMLElement>('.game-menu-utilities')!;
   const controls = layer.querySelector<HTMLDetailsElement>('.game-menu-controls')!;
   const instructions = layer.querySelector<HTMLElement>('.game-menu-instructions')!;
   if (typeof config.controls === 'string') instructions.innerHTML = config.controls;
@@ -147,7 +150,9 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
       name.hidden = next === 'title';
       description.hidden = !description.textContent;
-      settings.hidden = next !== 'title' && next !== 'paused';
+      const setupScreen = next === 'title' || next === 'paused';
+      settings.hidden = !setupScreen || config.theme.hidden;
+      utilities.hidden = !setupScreen;
       if (next === 'playing') stage.append(notices);
       else actionBar.before(notices);
       config.pause.hidden = next !== 'playing';
