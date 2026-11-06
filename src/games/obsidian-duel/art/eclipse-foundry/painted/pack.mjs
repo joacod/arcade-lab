@@ -2,6 +2,7 @@ import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { duelClips } from '../../../animation.ts';
 import { foundryCell, foundryFrame, foundrySheets } from '../../../asset-art.ts';
+import { packMotion } from '../../pack-motion.mjs';
 
 // Mechanical atlas preparation only. Painted anatomy, faces, clothing and lighting come from
 // the committed source drawings; this pipeline never draws limbs or reconstructs a skeleton.
@@ -69,6 +70,7 @@ try {
         extracted.set(key, value); return value;
       }
       for (const [clip, slots] of Object.entries(cells)) {
+        if (clip === 'idle' || clip === 'walk') continue; // Dedicated motion sources own locomotion.
         if (clips[clip]?.length !== slots.length) throw new Error(`Wrong ${kind} ${clip} slot count`);
         for (let frame = 0; frame < slots.length; frame++) {
           const [sheet, index, offsetX = 0, offsetY = 0] = clips[clip][frame], sprite = extract(`${kind}-${sheet}`, index);
@@ -80,7 +82,7 @@ try {
       }
       return { png: canvas.toDataURL('image/png').split(',')[1], report, uniqueDrawings: extracted.size };
     }, { kind, sources, clips: layout.clips[kind], cells, cell: foundryCell, size: foundrySheets[kind] });
-    writeFileSync(new URL(`../${kind}.png`, import.meta.url), Buffer.from(result.png, 'base64'));
+    writeFileSync(new URL(`../${kind}.png`, import.meta.url), await packMotion('eclipse-foundry/painted', kind, Buffer.from(result.png, 'base64')));
     console.log(`${kind}: ${result.report.length} timed slots from ${result.uniqueDrawings} painted drawings`);
   }
 } finally { await browser.close(); }

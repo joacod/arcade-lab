@@ -45,6 +45,7 @@ test('Eclipse Foundry committed artwork covers every whole-body cel and rejects 
     for (const { rect: [x, y, w, h] } of source.frames) assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= source.size[0] && y + h <= source.size[1], name);
   }
   for (const kind of ['nera', 'kael']) for (const [clip, count] of Object.entries(duelClips)) {
+    if (clip === 'idle' || clip === 'walk') continue; // Dedicated sources own these clips.
     assert.equal(layout.clips[kind][clip].length, count);
     for (const [sheet, index] of layout.clips[kind][clip]) assert.ok(layout.sources[`${kind}-${sheet}`].frames[index], `${kind} ${clip} has a painted source`);
   }
@@ -78,6 +79,22 @@ test('Arcade and Deluxe own distinct complete artwork with valid semantic covera
     const images = ['eclipse-foundry', 'moonfall-sanctum'].map(folder =>
       readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}.png`, import.meta.url)));
     for (let i = 0; i < images.length; i++) for (let j = i + 1; j < images.length; j++) assert.ok(!images[i].equals(images[j]), 'Each mode requires independent actor artwork');
+    for (const folder of ['eclipse-foundry/painted', 'moonfall-sanctum/fighters']) for (const family of ['motion', 'walk', 'combat']) {
+      const base = new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}-${family}`, import.meta.url);
+      const layout = JSON.parse(readFileSync(new URL(`${base.href}-layout.json`)));
+      const png = readFileSync(new URL(`${base.href}.png`));
+      assert.equal(png[25], 6, 'Authored cels retain transparency');
+      assert.deepEqual(layout.size, [png.readUInt32BE(16), png.readUInt32BE(20)]);
+      for (const { rect: [x, y, w, h] } of layout.frames) assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= layout.size[0] && y + h <= layout.size[1]);
+      for (const [clip, slots] of Object.entries(layout.selections)) for (const [slot, index] of Object.entries(slots)) {
+        assert.ok(Number(slot) >= 0 && Number(slot) < duelClips[clip] && layout.frames[index], `${kind} ${clip}:${slot} has a complete source drawing`);
+      }
+      const loop = family === 'motion' ? 'idle' : family === 'walk' ? 'walk' : null;
+      if (loop) {
+        assert.equal(layout.selections[loop].length, duelClips[loop], 'The whole authored loop is packed');
+        assert.equal(new Set(layout.selections[loop]).size, duelClips[loop], 'Loop slots cannot repeat a partial sequence');
+      }
+    }
   }
   for (const folder of ['moonfall-sanctum']) {
     const layout = JSON.parse(readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/layout.json`, import.meta.url)));
@@ -94,6 +111,7 @@ test('Arcade and Deluxe own distinct complete artwork with valid semantic covera
       }
     }
     for (const [clip, count] of Object.entries(duelClips)) {
+      if (clip === 'idle' || clip === 'walk') continue;
       assert.equal(layout.clips[clip].length, count);
       for (const index of layout.clips[clip]) assert.ok(index >= 0 && index < 36);
       if (['light', 'heavy', 'sweep', 'air', 'special'].includes(clip)) {
