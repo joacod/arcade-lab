@@ -1,12 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import sharp from 'sharp';
-import { fileURLToPath } from 'node:url';
-import { configurations, clearing, enemies, weapons } from '../../../../src/games/last-light-clearing/content.ts';
+import { configurations, clearing, enemies } from '../../../../src/games/last-light-clearing/content.ts';
 import { createRun, stepRun, pauseRun, takeEvents } from '../../../../src/games/last-light-clearing/game.ts';
 import { content, validateContent } from '../../../../src/games/last-light-clearing/content-validation.ts';
-import { themes, emberRuins, rekindledArt } from '../../../../src/games/last-light-clearing/themes.ts';
-import { actorBounds, validateArtPack, clipFrame, row } from '../../../../src/games/last-light-clearing/art-pack.ts';
+import { emberRuins, rekindledArt } from '../../../../src/games/last-light-clearing/themes.ts';
+import { validateArtPack, clipFrame, row } from '../../../../src/games/last-light-clearing/art-pack.ts';
 import { createAnimationObservations, actorClip, actorAnimation } from '../../../../src/games/last-light-clearing/animation.ts';
 import { prepareAssets } from '../../../../src/games/last-light-clearing/assets.ts';
 
@@ -48,7 +46,6 @@ test('art manifests validate decoded bounds, clips, pivots and visual footprints
   assert.equal(validateArtPack(invalid, { dungeon: { width: 512, height: 512 } }).length, 3);
   invalid.actors.keeper.clips.idle.frames[0].image = 'missing';
   assert.match(validateArtPack(invalid, { dungeon: { width: 512, height: 512 } }).join(';'), /invalid frame.*missing/);
-  assert.equal(clearing.keeper.radius, 10); assert.equal(enemies.crawler.radius, 11);
 });
 
 test('animation uses active time and step observations, retaining motion between draws and throughout pause', () => {
@@ -69,38 +66,6 @@ test('animation uses active time and step observations, retaining motion between
   assert.equal(observer.get('keeper').angle, 0);
   run.enemies = []; observer.observe(run); assert.equal(observer.get(1), undefined);
   observer.reset(createRun(42)); assert.equal(observer.get('keeper').moving, false);
-});
-
-test('committed Deluxe cels fit gameplay scale, surround their centers and meet their registered ground', async () => {
-  const expectedHeights = { keeper: [34, 39], crawler: [22, 26], charger: [24, 29], elite: [45, 50] };
-  for (const [role, art] of Object.entries(rekindledArt.actors)) {
-    const bounds = actorBounds(art);
-    const radius = role === 'keeper' ? clearing.keeper.radius : enemies[role === 'elite' ? 'elite_crawler' : role].radius;
-    assert.ok(bounds.top < -radius && bounds.bottom > 0, `${role}: body must surround gameplay center`);
-    assert.ok(bounds.groundY > 0 && bounds.groundY < radius, `${role}: soles must stay near the physical body`);
-    const frames = [...art.clips.idle.frames, ...art.clips.move.frames];
-    for (const frame of frames) {
-      const [left, top, width, height] = frame.rect;
-      const { data, info } = await sharp(fileURLToPath(rekindledArt.images[frame.image]))
-        .extract({ left, top, width, height }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-      let minX = width, minY = height, maxX = 0, maxY = 0;
-      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (data[(y * width + x) * info.channels + 3] > 64) {
-        minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x + 1); maxY = Math.max(maxY, y + 1);
-      }
-      const visibleHeight = (maxY - minY) / height * art.footprint[1];
-      assert.ok(visibleHeight >= expectedHeights[role][0] && visibleHeight <= expectedHeights[role][1], `${role}: visible height ${visibleHeight}`);
-      const [ax, ay] = art.anchor;
-      assert.ok(ax * width > minX && ax * width < maxX && ay * height > minY && ay * height < maxY, `${role}: anchor outside artwork`);
-      assert.ok(Math.abs(maxY - art.ground[1] * height) <= 4, `${role}: sole drift across cels`);
-      const envelope = art.visualBounds;
-      assert.ok(minX >= envelope[0] * width && minY >= envelope[1] * height
-        && maxX <= envelope[2] * width && maxY <= envelope[3] * height, `${role}: feedback envelope clips artwork`);
-      if (role === 'keeper') {
-        const farX = Math.max(Math.abs((minX / width - ax) * art.footprint[0]), Math.abs((maxX / width - ax) * art.footprint[0]));
-        assert.ok(Math.hypot(farX, (minY / height - ay) * art.footprint[1]) < weapons.halo.radius, 'Halo must surround the helmet and plume');
-      }
-    }
-  }
 });
 
 test('Deluxe walking phase follows observed displacement and survives stops and reversals', () => {

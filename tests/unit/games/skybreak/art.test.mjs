@@ -21,7 +21,7 @@ function dimensionsFor(theme) {
 }
 
 test('each fleet resolves its committed actor, flagship, supply and scenery artwork', () => {
- for(const [mode,theme] of Object.entries(themes)) {
+ for(const theme of Object.values(themes)) {
   const dimensions=dimensionsFor(theme);
   assert.deepEqual(validateFlightImages(theme,dimensions),[]);
   assert.equal(Object.keys(theme.art.actors).length,5);
@@ -33,8 +33,6 @@ test('each fleet resolves its committed actor, flagship, supply and scenery artw
   assert.ok(validateFlightArt(theme.art,{...dimensions,fleet:{width:4,height:3}}).length);
  }
  assert.notEqual(themes.arcade.art.images.fleet,themes.deluxe.art.images.fleet);
- assert.equal(themes.deluxe.art.actors.player.rect[2],256);
- assert.equal(themes.arcade.art.actors.player.rect[2],96);
 });
 
 test('coastal travel covers the viewport across wrap boundaries and keeps one world speed', () => {

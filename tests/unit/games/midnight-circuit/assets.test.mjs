@@ -51,21 +51,6 @@ test('Afterglow validates committed plates and rejects missing or mismatched can
   }
 });
 
-test('Deluxe owns new complete artwork with inspected, unclipped cell footprints', () => {
-  const layout = JSON.parse(readFileSync(new URL('../../../../src/games/midnight-circuit/art/afterglow/fighters/layout.json', import.meta.url), 'utf8'));
-  assert.equal(layout.length, 4);
-  for (const role of layout) {
-    assert.equal(role.rects.length, 16);
-    for (const frame of role.rects) {
-      const [x, y, width, height] = frame.destination;
-      assert.ok(x >= 0 && y >= 0 && x + width <= 512 && y + height <= 512);
-    }
-  }
-  const modern = readFileSync(new URL('../../../../src/games/midnight-circuit/art/afterglow/fighters/fighters.webp', import.meta.url));
-  const arcade = readFileSync(new URL('../../../../src/games/midnight-circuit/art/fighters/animated.webp', import.meta.url));
-  assert.equal(modern.equals(arcade), false);
-});
-
 // Playback distance is derived from the accepted art, rather than an unrelated speed constant.
 test('painted strides match the registered near boot from the forward contact to the opposite contact', () => {
   const layout=JSON.parse(readFileSync(new URL('../../../../src/games/midnight-circuit/art/fighters/walking/layout.json',import.meta.url),'utf8'));

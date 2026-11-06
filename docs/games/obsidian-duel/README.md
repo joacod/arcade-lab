@@ -73,6 +73,6 @@ Round-phase changes clear held controls and buffered commands.
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/obsidian-duel/game.test.mjs) cover guards, wake-up, body bounds, bilateral trades, timer decisions and complete CPU matches. [Animation](../../../tests/unit/games/obsidian-duel/animation.test.mjs) and [asset](../../../tests/unit/games/obsidian-duel/assets.test.mjs) checks cover stable pivots, cel coverage, displacement-driven walking and attack timing. [Browser checks](../../../tests/browser/games/obsidian-duel/) cover the retained match, theme replacement, drawing-failure recovery, simultaneous touch actions and contact-only hit confirmation across modes.
+The [game invariants](../../../tests/unit/games/obsidian-duel/game.test.mjs) cover guards, wake-up, body bounds, bilateral trades, timer decisions and bounded CPU matches. [Animation](../../../tests/unit/games/obsidian-duel/animation.test.mjs) and [asset](../../../tests/unit/games/obsidian-duel/assets.test.mjs) checks protect pivots, cel coverage, displacement-driven walking and attack timing. The collection [startup smoke](../../../tests/browser/app/startup.spec.ts) verifies Arcade readiness and starting play.
 
 See the [shared commands](../../architecture.md#local-verification).

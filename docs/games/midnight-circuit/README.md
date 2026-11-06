@@ -77,6 +77,6 @@ Arcade and Deluxe each own lazy, validated image bundles. The session retains it
 
 `tests/unit/games/midnight-circuit/assets.test.mjs` checks the committed sprite and environment layouts and rejection of missing or mismatched images.
 
-The [browser checks](../../../tests/browser/games/midnight-circuit/game.spec.ts) cover eight-cel painted walking under reduced motion, neutral jumps versus attack kicks, lane combat, simultaneous touch actions, boss-result composition, distinct appearances, paused frame stability, retained-run replacement, drawing recovery and failed/cancelled image preparation.
+The collection [startup smoke](../../../tests/browser/app/startup.spec.ts) verifies Arcade readiness and starting play.
 
 Use the [shared verification commands](../../architecture.md#local-verification).
