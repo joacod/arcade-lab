@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { chooseTheme } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
@@ -11,7 +10,7 @@ test.beforeEach(async ({ page }) => {
       createRun = (...args) => { const run = originalRun(...args); window.appearanceRun = run; return run; };` });
   });
   await page.clock.install();
-  await useNormalBaseline(page); await page.goto('/');
+  await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Last Light Clearing', exact: true }).click();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 });
@@ -21,7 +20,7 @@ const shell = (page: Page) => page.locator('.clearing-app');
 const snapshot = (page: Page) => page.evaluate(() => JSON.stringify((window as any).appearanceRun,
   (_, value) => value instanceof Map ? [...value] : value));
 
-test('menu geometry uses the game viewport across all three themes', async ({ page }) => {
+test('menu geometry uses the game viewport across both presentations', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 620 });
   await page.clock.runFor(50);
   const geometry = () => page.locator('.game-menu').evaluate(menu => {
@@ -33,7 +32,7 @@ test('menu geometry uses the game viewport across all three themes', async ({ pa
 
   const baseline = await geometry(), retained = await snapshot(page);
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeInViewport({ ratio: 1 });
-  for (const mode of ['assets', 'quality', 'normal']) {
+  for (const mode of ['deluxe', 'arcade']) {
     await chooseTheme(theme(page), mode);
     await expect(shell(page)).toHaveAttribute('data-theme', mode);
     await page.clock.runFor(50);
@@ -46,8 +45,8 @@ test('menu geometry uses the game viewport across all three themes', async ({ pa
   await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
   await page.clock.runFor(50);
   const fullscreen = await geometry();
-  await chooseTheme(theme(page), 'assets');
-  await expect(shell(page)).toHaveAttribute('data-theme', 'assets');
+  await chooseTheme(theme(page), 'arcade');
+  await expect(shell(page)).toHaveAttribute('data-theme', 'arcade');
   await page.clock.runFor(50);
   expect(await geometry()).toEqual(fullscreen);
   await page.getByRole('button', { name: 'Exit fullscreen', exact: true }).click();

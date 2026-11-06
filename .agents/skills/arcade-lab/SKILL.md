@@ -1,6 +1,6 @@
 ---
 name: arcade-lab
-description: Create, improve, customize and polish browser games in Arcade Lab using its existing engine and game foundations. Use for new games, gameplay and game feel, menus and player-facing UI, Normal/Assets/Quality presentations, game audio, and engine or browser-session maintenance in this repository.
+description: Create, improve, customize and polish browser games in Arcade Lab using its existing engine and game foundations. Use for new games, gameplay and game feel, menus and player-facing UI, Prototype/Arcade/Deluxe presentations, game audio, and engine or browser-session maintenance in this repository.
 ---
 
 # Arcade Lab
@@ -11,9 +11,9 @@ Build toward the requested player experience using the actual repository as the 
 
 ### Create a new game
 
-Read the [catalog](../../../CATALOG.md), [architecture](../../../docs/architecture.md) and [Normal guide](../../../docs/normal-themes.md). Identify the core actions, decisions, progression and outcomes that make this game worth playing. Use the relevant section of [genre guidance](references/genre-guidance.md) when applicable; a new genre can borrow infrastructure without borrowing another game's rules.
+Read the [catalog](../../../CATALOG.md), [architecture](../../../docs/architecture.md) and [Prototype guide](../../../docs/prototype.md). Identify the core actions, decisions, progression and outcomes that make this game worth playing. Use the relevant section of [genre guidance](references/genre-guidance.md) when applicable; a new genre can borrow infrastructure without borrowing another game's rules.
 
-Implement a complete playable game in Normal first, following the [development progression](../../../docs/architecture.md#development-progression). Inspect the closest implementations through their game guides and trace their source owners before choosing shared mechanisms. Use [player experience](references/player-experience.md) for concrete design questions as they arise.
+Implement a complete playable game with simple graphics in temporary Prototype first, following the [development progression](../../../docs/architecture.md#development-progression). Inspect the closest implementations through their game guides and trace their source owners before choosing shared mechanisms. Use [player experience](references/player-experience.md) for concrete design questions as they arise.
 
 ### Adapt a game or add levels
 
@@ -21,9 +21,9 @@ Open the owning game guide through the catalog and read [adapting an existing ga
 
 ### Create or improve a presentation
 
-Identify the game and requested mode, then open its guide through the catalog and the corresponding [Normal](../../../docs/normal-themes.md), [Assets](../../../docs/assets-themes.md) or [Quality](../../../docs/quality-themes.md) guide. The [mode contract](../../../docs/architecture.md#mode-contract) owns their meaning and artistic scope; avoid repeating it in local briefs.
+Identify the game and requested stage or presentation, then open its guide through the catalog and the corresponding [Prototype](../../../docs/prototype.md), [Arcade](../../../docs/arcade.md) or [Deluxe](../../../docs/deluxe.md) guide. The [mode contract](../../../docs/architecture.md#mode-contract) owns their meaning and artistic scope; avoid repeating it in local briefs.
 
-Trace the local presentation contract, visual roles, theme data and preparation owner. Follow the [appearance workflow](../../../docs/architecture.md#appearance-changes) for simulation independence, retained-run replacement, failure recovery and resource lifetimes. Keep required artwork committed and redistributable. Use [visual hierarchy and art direction](references/player-experience.md#visual-hierarchy-and-art-direction) for composition and role separation, or [layered feedback](references/player-experience.md#layered-feedback-and-game-feel) for motion and impacts. Load only the relevant sections.
+Trace the local presentation contract, visual roles, theme data and preparation owner. Follow the [appearance workflow](../../../docs/architecture.md#appearance-changes) for simulation independence, retained-run replacement, failure recovery and resource lifetimes. Keep required artwork committed and redistributable. Arcade replaces Prototype: verify Arcade, then delete the temporary renderer, dedicated art, fallbacks and obsolete tests. Deluxe is optional and should reuse the primary game-owned Canvas pipeline with artwork and effect definitions where practical. Use [visual hierarchy and art direction](references/player-experience.md#visual-hierarchy-and-art-direction) for composition and role separation, or [layered feedback](references/player-experience.md#layered-feedback-and-game-feel) for motion and impacts. Load only the relevant sections.
 
 ### Improve gameplay or game feel
 

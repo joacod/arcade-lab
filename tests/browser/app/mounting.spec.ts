@@ -4,7 +4,6 @@ import { test, expect } from '@playwright/test';
 for (const game of [
   { name: 'Clearing', path: '/src/games/last-light-clearing/app.ts', entry: 'mountClearing', message: 'Canvas 2D is required to play.' },
   { name: 'Clockwork Hollow', path: '/src/games/clockwork-hollow/app.ts', entry: 'mountHollow', message: 'Canvas 2D is unavailable.' },
-  { name: 'Midnight Circuit', path: '/src/games/midnight-circuit/app.ts', entry: 'mountCircuit', message: 'Canvas 2D is unavailable.' },
   { name: 'Obsidian Duel', path: '/src/games/obsidian-duel/app.ts', entry: 'mountDuel', message: 'Canvas 2D is unavailable.' },
   { name: 'Blastline', path: '/src/games/blastline/app.ts', entry: 'mountBlastline', message: 'Canvas 2D is unavailable.' },
   { name: 'Skybreak', path: '/src/games/skybreak/app.ts', entry: 'mountSkybreak', message: 'Canvas 2D is unavailable.' },
@@ -192,8 +191,8 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   await expect(page.locator('.asset-status')).toBeHidden();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50); await page.keyboard.press('Escape');
-  await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'quality');
+  await openMenu(page); await chooseTheme(page.getByLabel('Theme', { exact: true }), 'deluxe');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'deluxe');
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.keyboard.down('d'); await page.clock.runFor(100);
   const replaced = await page.evaluate(() => {
@@ -228,7 +227,7 @@ test('application replaces a running game, isolates styles, and remounts a fresh
   });
   await expect(page.locator('.asset-status')).toBeHidden();
   await expect(page.locator('.clearing-app')).toHaveCount(1);
-  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'assets');
+  await expect(page.locator('.clearing-app')).toHaveAttribute('data-theme', 'arcade');
   await expect(page.locator('canvas')).toHaveCount(2);
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(500);
@@ -324,7 +323,7 @@ test('renderer cleanup failures still release every game sound owner and browser
     }
     return results;
   });
-  expect(results).toEqual(Array.from({ length: 6 }, () => ({ errors: ['renderer cleanup fixture'], soundDisposed: true, aborted: true, children: 0 })));
+  expect(results).toEqual(Array.from({ length: 6 }, (_, index) => ({ errors: index === 3 ? [] : ['renderer cleanup fixture'], soundDisposed: true, aborted: true, children: 0 })));
 });
 
 test('collection restores navigation and ignores a cancelled lazy load that finishes late', async ({ page }) => {

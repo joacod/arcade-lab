@@ -1,5 +1,5 @@
 Use case: stylized-concept
-Reference image: existing classic painted arcade fighter sheet. Preserve these FOUR character designs and its illustrated retro arcade style. This is a supplementary MOVEMENT sheet, NOT the premium modern Quality cast.
+Reference image: existing classic painted arcade fighter sheet. Preserve these FOUR character designs and its illustrated retro arcade style. This is a supplementary MOVEMENT sheet, NOT the premium modern Deluxe cast.
 Asset: transparent production sprite atlas, EXACT 6 columns by 4 rows, twenty-four complete figures, landscape 2400 x 1600. Uniform evenly separated cells. Every figure faces RIGHT in side/slight-three-quarter view, fully visible including boots and hands. No visible grid, floor, shadows, text, labels, effects or detached parts.
 Rows in exact order: row1 Rook (dark tousled hair, ivory headband, teal short courier jacket with ivory sleeves, red scarf, dark cargo trousers, brown boots); row2 red-uniformed lean security Striker with dark helmet and orange visor; row3 stocky bare-faced bearded Bruiser in ochre work armor with ivory shoulder guards; row4 massive ivory ceramic-armored Circuit Warden with enclosed helmet, orange visor and orange chest core.
 Each row repeats the SAME six pose positions:

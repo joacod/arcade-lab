@@ -35,7 +35,6 @@ test('round profiles validate and preserve start, pause, outcome precedence and 
 });
 
 test('art manifests validate decoded bounds, clips, pivots and visual footprints independently of bodies', () => {
-  for (const theme of [themes.normal]) assert.deepEqual(validateArtPack(theme.art, { grove: {width:256,height:192}, gem: {width:32,height:32} }), []);
   const painted = { keeper: { width: 1024, height: 512 }, goblins: { width: 1024, height: 512 },
     elite: { width: 1024, height: 512 }, props: { width: 768, height: 512 }, ground: { width: 1536, height: 1024 } };
   assert.deepEqual(validateArtPack(rekindledArt, painted), []);
@@ -72,7 +71,7 @@ test('animation uses active time and step observations, retaining motion between
   observer.reset(createRun(42)); assert.equal(observer.get('keeper').moving, false);
 });
 
-test('committed Quality cels fit gameplay scale, surround their centers and meet their registered ground', async () => {
+test('committed Deluxe cels fit gameplay scale, surround their centers and meet their registered ground', async () => {
   const expectedHeights = { keeper: [34, 39], crawler: [22, 26], charger: [24, 29], elite: [45, 50] };
   for (const [role, art] of Object.entries(rekindledArt.actors)) {
     const bounds = actorBounds(art);
@@ -104,7 +103,7 @@ test('committed Quality cels fit gameplay scale, surround their centers and meet
   }
 });
 
-test('Quality walking phase follows observed displacement and survives stops and reversals', () => {
+test('Deluxe walking phase follows observed displacement and survives stops and reversals', () => {
   const art = rekindledArt.actors.keeper;
   const run = createRun(42), observer = createAnimationObservations(); observer.reset(run);
   run.player.x += art.stride / 4; run.elapsed = .1; observer.observe(run);

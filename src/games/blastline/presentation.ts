@@ -1,5 +1,5 @@
-import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
-import { blastImages, validateBlastArt, operatorFrame, type ObjectRole } from './sprite-art.ts';
+import { type ImageBundle } from '../../engine/browser/images.ts';
+import { operatorFrame, type ObjectRole } from './sprite-art.ts';
 import { themes, type BlastTheme } from './themes.ts';
 import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
 import { forTiles } from './terrain.ts';
@@ -20,11 +20,10 @@ export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.className = 'blast-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.prepend(canvas);
-  const artwork = createImageResource(blastImages, validateBlastArt);
-  let theme = themes.normal;
+  let theme = themes.arcade;
   let assets: ImageBundle | undefined, animationTime = 0;
   const playerGait = createGroundGait(), enemyGaits = new Map<number, ReturnType<typeof createGroundGait>>();
-  const images = () => assets ?? artwork.images;
+  const images = () => assets ?? {};
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
   const rect = (x: number, y: number, w: number, h: number, color: string) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h)); };
@@ -46,7 +45,7 @@ export function createPresentation(surface: HTMLElement) {
       if (assets) {
         ctx.save(); ctx.translate(Math.cos(angle)*19,-16+Math.sin(angle)*19); ctx.rotate(angle);
         object('muzzle',0,-5,14,10); ctx.restore();
-      } else rect(Math.cos(angle)*18-2,-11+Math.sin(angle)*18,5,3,'#fff0b4');
+      }
     }
     ctx.restore();
   }
@@ -55,7 +54,7 @@ export function createPresentation(surface: HTMLElement) {
     if (image && frame) ctx.drawImage(image, ...frame, x, y, w, h);
   }
 
-  function background(v: BlastView, run: Run, time: number) {
+  function background(v: BlastView, run: Run) {
     const foundry = run.mission.environment === 'foundry';
     if (assets?.backdrop) {
       const source = theme.art.backdrops![run.mission.environment];
@@ -66,52 +65,6 @@ export function createPresentation(surface: HTMLElement) {
       const x = -clamp(v.x / travel, 0, 1) * (width - v.width);
       ctx.drawImage(assets.backdrop, ...source, Math.round(x), Math.round(y), width, height);
       return;
-    }
-    const gradient = ctx.createLinearGradient(0, 0, 0, v.height);
-    const sky = foundry ? theme.foundrySky : theme.sky;
-    gradient.addColorStop(0, sky[0]); gradient.addColorStop(.62, sky[1]); gradient.addColorStop(1, sky[2]);
-    ctx.fillStyle = gradient; ctx.fillRect(0, 0, v.width, v.height);
-    const sunX = v.width * .78 - v.x * .025, sunY = v.height * .23;
-    rect(sunX - 29, sunY - 24, 58, 48, theme.sun); rect(sunX - 24, sunY - 30, 48, 60, theme.sun);
-    rect(sunX - 34, sunY + 9, 68, 3, foundry ? '#745649' : '#9b7d64');
-    for (let layer = 0; layer < 3; layer++) {
-      const factor = [.12, .28, .48][layer]!, spacing = [200, 290, 360][layer]!, base = 655 - v.y + layer * 8;
-      const start = Math.floor(v.x * factor / spacing) - 1, end = start + Math.ceil(v.width / spacing) + 3;
-      for (let i = start; i < end; i++) {
-        const x = i * spacing - v.x * factor, h = (layer === 2 ? 105 : 140) + ((i * 37 + layer * 21) % 5 + 5) % 5 * 22;
-        const facade = spacing * (layer === 2 ? .58 : .72);
-        const color = theme.skyline[layer]!;
-        rect(x, base - h, facade, h + v.height, color);
-        if (layer > 0) {
-          rect(x + 30, base - h - 90, 22, 100, color); rect(x + 27, base - h - 90, 28, 7, '#ba8c6b');
-          rect(x + 85, base - h - 42, 12, 60, color);
-          for (let row = 0; row < 3; row++) {
-            rect(x + 8, base - h + 37 + row * 27, facade - 16, 2, '#8e9d7d22');
-            for (let col = 0; col < 5; col++) rect(x + 14 + col * 28, base - h + 23 + row * 27, 9, 6, (i + row + col) % 4 ? '#b3aa7d22' : '#d4af7044');
-          }
-          rect(x + facade - 20, base - h + 23, 4, h - 25, '#82907933');
-          line(x + facade - 23, base - h + 23, x + facade - 23, base - 10, '#172e3877', 2);
-          // Blocky smoke ribbons, deterministic and cosmetic only.
-          for (let puff = 0; puff < 5; puff++) {
-            const drift = motion.matches ? 0 : Math.sin(time * .28 + i + puff) * 9;
-            rect(x + 15 + puff * 11 + drift, base - h - 105 - puff * 15, 40 + puff * 7, 13, layer === 1 ? '#69706a44' : '#8c877044');
-          }
-          for (let j = 0; j < 5; j++) { rect(x + 12 + j * 28, base - 50, 12, 4, '#d5b37344'); rect(x + 12 + j * 28, base - 70, 12, 4, '#d5b37322'); }
-          rect(x, base - h + 15, facade, 3, '#a5a67d22');
-        }
-        if (layer === 2 && i % 2 === 0) {
-          rect(x + 190, base - 230, 7, 220, '#263b43'); rect(x + 122, base - 231, 142, 5, '#263b43');
-          line(x + 125, base - 229, x + 194, base - 270, '#263b43', 3); line(x + 194, base - 270, x + 262, base - 229, '#263b43', 3);
-          line(x + 135, base - 228, x + 135, base - 165, '#6b7668'); rect(x + 129, base - 165, 12, 8, '#b99b68');
-        }
-      }
-    }
-    // Long utility cables tie the industrial skyline together.
-    for (let i = 0; i < 3; i++) line(0, 170 - v.y * .2 + i * 8, v.width, 195 - v.y * .2 + i * 8, '#1d373c66');
-    for (let i = 0; i < 16; i++) {
-      const x = ((i * 87 - v.x * .08 + (motion.matches ? 0 : time * (i % 2 ? 4 : -3))) % v.width + v.width) % v.width;
-      const y = (i * 97 + (motion.matches ? 0 : time * (theme.weather === 'snow' ? 18 : 5))) % v.height;
-      rect(x, y, 1, 1, theme.weather === 'snow' ? '#e5f5ffbb' : i % 3 === 0 ? '#ffd39088' : '#e1cc9633');
     }
   }
   function world(run: Run, v: BlastView, time: number, playing: boolean, dt: number) {
@@ -132,16 +85,6 @@ export function createPresentation(surface: HTMLElement) {
         if (i >= t.columns && !t.material[i - t.columns]) rect(r.x, r.y, TILE, 2, structure ? theme.ledge : '#e4bc7c');
         return;
       }
-      rect(r.x, r.y, TILE, TILE, structure ? theme.structure[0] : armored ? theme.armor[0] : theme.masonry[0]);
-      rect(r.x + 1, r.y + 2, TILE - 2, TILE - 3, structure ? theme.structure[1] : armored ? theme.armor[1] : theme.masonry[1]);
-      rect(r.x + 2, r.y + TILE - 5, TILE - 4, 3, structure ? '#1c353e' : '#5d5e50');
-      if (structure) { rect(r.x + 3, r.y + 4, 2, 2, '#748479'); rect(r.x + 19, r.y + 18, 2, 2, '#182b36'); line(r.x + 6, r.y + 6, r.x + 18, r.y + 18, '#3a5356'); }
-      else {
-        rect(r.x + 3, r.y + 5, 7, 2, '#d1b383'); rect(r.x + 14, r.y + 13, 6, 2, '#736c53');
-        if (armored) { line(r.x + 4, r.y + 5, r.x + 19, r.y + 19, '#604e43', 3); line(r.x + 19, r.y + 5, r.x + 4, r.y + 19, '#604e43', 3); }
-        if (t.health[i]! < materialHealth[m] * .75) { line(r.x + 11, r.y, r.x + 7, r.y + 12, '#302f30'); line(r.x + 7, r.y + 12, r.x + 16, r.y + 19, '#302f30'); }
-      }
-      if (i >= t.columns && !t.material[i - t.columns]) { rect(r.x, r.y, TILE, 3, structure ? theme.ledge : '#d5ba80'); if (structure && Math.floor(i / t.columns) >= 27) for (let j = 0; j < 3; j++) rect(r.x + j * 8, r.y + 3, 4, 3, '#d0ad63'); }
     });
     run.mission.checkpoints.forEach((cp, i) => {
       object(i <= run.checkpoint ? 'supplied' : 'supply', cp.x-8,cp.y-25,42,58);
@@ -190,7 +133,6 @@ export function createPresentation(surface: HTMLElement) {
     for (const shot of run.projectiles) {
       if (shot.kind === 'grenade') {
         if (assets) object('grenade', shot.x - 5, shot.y - 5, 10, 10);
-        else { rect(shot.x - 3, shot.y - 3, 6, 6, '#e4b470'); rect(shot.x - 1, shot.y - 5, 2, 2, '#fdedb4'); }
       }
       else {
         const length = shot.kind === 'rocket' || shot.kind === 'shell' ? 12 : 8, speed = Math.hypot(shot.vx, shot.vy);
@@ -207,12 +149,6 @@ export function createPresentation(surface: HTMLElement) {
       if (!motion.matches && progress < .5) {
         const fire = r * (1 - progress * .7);
         if (assets) object('explosion', ring.x - fire, ring.y - fire, fire * 2, fire * 2);
-        else {
-          rect(ring.x - fire, ring.y - fire * .55, fire * 2, fire * 1.1, '#e78548');
-          rect(ring.x - fire * .55, ring.y - fire, fire * 1.1, fire * 2, '#f7b55b');
-          rect(ring.x - fire * .7, ring.y - fire * .7, fire * 1.4, fire * 1.4, '#f7b55b');
-          rect(ring.x - fire * .38, ring.y - fire * .45, fire * .76, fire * .9, '#fff0ac');
-        }
       }
       ctx.globalAlpha = ring.life / .38; ctx.strokeStyle = progress < .25 ? '#fff2b7' : '#f6b56b'; ctx.lineWidth = Math.max(1, 8 * (1 - progress));
       ctx.beginPath(); ctx.arc(ring.x, ring.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
@@ -239,7 +175,6 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { consume,
-    prepare: artwork.prepare,
     replaceTheme(next: BlastTheme, nextImages?: ImageBundle) {
       const previousTheme = theme, previousImages = assets;
       theme = next; assets = nextImages;
@@ -248,7 +183,7 @@ export function createPresentation(surface: HTMLElement) {
     },
     reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; playerGait.reset(); enemyGaits.clear(); },
     draw(run: Run, host: { width: number; height: number; ratio: number }, playing: boolean, time: number) {
-      if (disposed) return;
+      if (disposed || !assets) return;
       const dt = Math.max(0, Math.min(.05, last === undefined ? 0 : time - last)); last = time;
       const animate = playing && run.status === 'active';
       if (animate) {
@@ -265,7 +200,7 @@ export function createPresentation(surface: HTMLElement) {
       else { const ease = 1 - Math.exp(-12 * dt); camera = { ...target, x: camera.x + (target.x - camera.x) * ease, y: camera.y + (target.y - camera.y) * ease }; }
       const v = camera;
       const sceneTime = motion.matches ? 0 : run.elapsed === 0 ? time : animationTime;
-      ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run, sceneTime);
+      ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run);
       ctx.save(); ctx.translate(-Math.round(v.x) + (motion.matches ? 0 : Math.sin(sceneTime * 83) * shake), -Math.round(v.y) + (motion.matches ? 0 : Math.cos(sceneTime * 71) * shake * .5));
       world(run, v, sceneTime, playing, animate ? dt : 0); ctx.restore();
       if (run.collapse >= 0 && run.extraction === 0 && !motion.matches) { ctx.fillStyle = `rgba(221,94,57,${.018 + Math.max(0, Math.sin(sceneTime * 5)) * .025})`; ctx.fillRect(0, 0, v.width, v.height); }
@@ -274,6 +209,6 @@ export function createPresentation(surface: HTMLElement) {
         ctx.fillStyle = '#0719230b'; for (let y = 1; y < v.height; y += 3) ctx.fillRect(0, y, v.width, 1);
       }
     },
-    dispose() { if (disposed) return; disposed = true; artwork.dispose(); particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

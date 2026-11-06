@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateAfterglowArt, afterglowPlates, afterglowSkyline } from '../../../../src/games/midnight-circuit/quality-art.ts';
-import { arcadeFighterAtlas, qualityFighterAtlas, validateCircuitSprites } from '../../../../src/games/midnight-circuit/sprite-art.ts';
+import { validateAfterglowArt, afterglowPlates, afterglowSkyline } from '../../../../src/games/midnight-circuit/deluxe-art.ts';
+import { arcadeFighterAtlas, deluxeFighterAtlas } from '../../../../src/games/midnight-circuit/sprite-art.ts';
 import { signalRain, validateCircuitArt } from '../../../../src/games/midnight-circuit/asset-art.ts';
 
 function webpSize(image) {
@@ -34,19 +34,6 @@ test('Signal / Rain images match the validated layout, including every complete 
   }
 });
 
-test('Street sketch ships separate complete cels and a complete repair image', () => {
-  const dimensions = Object.fromEntries(['fighters', 'repair'].map(name => {
-    const svg = readFileSync(new URL(`../../../../src/games/midnight-circuit/art/normal/${name}.svg`, import.meta.url), 'utf8');
-    const root = svg.match(/<svg[^>]+width="(\d+)"[^>]+height="(\d+)"/);
-    assert.ok(root, name);
-    assert.doesNotMatch(svg, /(?:href|src)="(?:https?:|\/\/)/);
-    return [name, { width: Number(root[1]), height: Number(root[2]) }];
-  }));
-  assert.deepEqual(validateCircuitSprites(dimensions), []);
-  assert.equal(validateCircuitSprites({ fighters: dimensions.fighters }).length, 1);
-  assert.equal(validateCircuitSprites({ ...dimensions, fighters: { width: 1, height: 1 } }).length, 1);
-});
-
 test('Afterglow validates committed plates and rejects missing or mismatched candidates', () => {
   const atlas = readFileSync(new URL('../../../../src/games/midnight-circuit/art/afterglow/fighters/fighters.webp', import.meta.url));
   const dimensions = { fighters: webpSize(atlas), repair: { width: 64, height: 64 } };
@@ -64,7 +51,7 @@ test('Afterglow validates committed plates and rejects missing or mismatched can
   }
 });
 
-test('Quality owns new complete artwork with inspected, unclipped cell footprints', () => {
+test('Deluxe owns new complete artwork with inspected, unclipped cell footprints', () => {
   const layout = JSON.parse(readFileSync(new URL('../../../../src/games/midnight-circuit/art/afterglow/fighters/layout.json', import.meta.url), 'utf8'));
   assert.equal(layout.length, 4);
   for (const role of layout) {
@@ -83,7 +70,7 @@ test('Quality owns new complete artwork with inspected, unclipped cell footprint
 test('painted strides match the registered near boot from the forward contact to the opposite contact', () => {
   const layout=JSON.parse(readFileSync(new URL('../../../../src/games/midnight-circuit/art/fighters/walking/layout.json',import.meta.url),'utf8'));
   const roles=['player','striker','bruiser','warden'];
-  for(const [row,role] of layout.entries())for(const [mode,atlas] of [arcadeFighterAtlas,qualityFighterAtlas].entries()){
+  for(const [row,role] of layout.entries())for(const [mode,atlas] of [arcadeFighterAtlas,deluxeFighterAtlas].entries()){
     const clip=role.modes[mode],size=row===3?1.48:row===2?1.2:1;
     const sweep=clip.nearBootContacts[0]-clip.nearBootContacts[1];
     assert.ok(sweep>0);

@@ -2,7 +2,7 @@
 
 [Presentation brief](../../../../../docs/games/last-light-clearing/README.md#quality-direction-ember-ruins--rekindled) | [Creative prompts](prompts.md)
 
-Compact painted dark-fantasy miniatures reinterpret Assets' knight, goblins, demon and ruined courtyard. Large expressive heads, broad connected bodies, short legs and controlled material shapes are authored for the game's overhead combat scale. All images in this directory and `sources/` are original AI-generated artwork included under the repository's MIT license. The separate Assets atlas retains its [CC0 provenance](../ember-ruins/PROVENANCE.md).
+Compact painted dark-fantasy miniatures reinterpret Arcade' knight, goblins, demon and ruined courtyard. Large expressive heads, broad connected bodies, short legs and controlled material shapes are authored for the game's overhead combat scale. All images in this directory and `sources/` are original AI-generated artwork included under the repository's MIT license. The separate Arcade atlas retains its [CC0 provenance](../ember-ruins/PROVENANCE.md).
 
 ## Images and registration
 

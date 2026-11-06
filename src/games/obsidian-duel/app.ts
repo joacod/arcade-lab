@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-choices.ts';
+import { defaultTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
@@ -14,7 +14,7 @@ import { bindInput } from './input.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
-import type { SanctumDrawingFactory } from './quality-presentation.ts';
+import type { SanctumDrawingFactory } from './deluxe-presentation.ts';
 import './style.css';
 export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false,
@@ -23,7 +23,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
     screen: Screen = 'title';
   const clock = createClock();
   const preparation = createPreparationScope();
-  let activeAppearance: Appearance = 'normal',
+  let activeAppearance: Appearance = 'arcade',
     activeArt: PreparedImages | undefined;
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createPresentation> | undefined, sound: ReturnType<typeof createSound> | undefined;
@@ -64,36 +64,29 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
     }
   }
   function recoverGraphics() {
-    if (disposed || activeAppearance === 'normal') return;
-    const failed = appearanceNames[activeAppearance];
-    preparation.cancel();
-    suspend();
-    const previous = activeArt;
-    activeArt = undefined;
-    presentation!.replaceTheme(themes.normal);
-    activeAppearance = 'normal';
-    host.root.dataset.appearance = 'normal';
-    ui.appearanceStatus('normal', '');
-    ui.displayStatus(`${failed} graphics interrupted. Restored Tempest citadel. Your match is preserved. Resume when ready.`);
-    previous?.dispose();
-    readiness.watch(() => presentation!.prepare());
-    presentation!.draw(match, host, screen, performance.now() / 1000);
+    if (disposed) return;
+    const failed = activeAppearance;
+    suspend(); preparation.cancel();
+    activeArt?.dispose(); activeArt = undefined;
+    // Release corrupted Canvas state and mode-owned effects before preparing Arcade.
+    presentation!.dispose(); presentation = createPresentation(host.surface);
+    delete host.root.dataset.appearance;
+    let reportFailure = failed === 'arcade';
+    ui.displayStatus(`${appearanceNames[failed]} graphics interrupted. Your run is preserved. ${reportFailure ? 'Retry artwork to continue.' : 'Recovering Arcade; resume when ready.'}`);
+    readiness.watch(() => {
+      if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+      return appearance('arcade');
+    });
   }
   async function appearance(id: Appearance) {
-    if (disposed || screen === 'playing') return false;
+    if (disposed || screen === 'playing' || !Object.hasOwn(themes, id)) return false;
     const request = preparation.begin();
-    if (id === activeAppearance) {
-      if (id === 'normal' && !readiness.ready) {
-        try { await presentation!.prepare(); } catch { return false; }
-        if (!request.current()) return false;
-      }
-      ui.appearanceStatus(id, ''); return true;
-    }
+    if (id === activeAppearance && activeArt) { ui.appearanceStatus(id, ''); return true; }
     ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     let candidateDrawing: SanctumDrawingFactory | undefined;
     try {
-      if (id === 'assets') {
+      if (id === 'arcade') {
         const {
           prepareFoundry
         } = await import('./assets.ts');
@@ -101,21 +94,17 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
         candidate = await prepareFoundry(request.signal);
         if (!request.current()) return false;
       }
-      if (id === 'quality') {
+      if (id === 'deluxe') {
         const {
           prepareSanctum,
           createSanctumDrawing
-        } = await import('./quality-assets.ts');
+        } = await import('./deluxe-assets.ts');
         if (!request.current()) return false;
         candidate = await prepareSanctum(request.signal);
         if (!request.current()) return false;
         candidateDrawing = createSanctumDrawing;
       }
-      if (id === 'normal') {
-        await presentation!.prepare();
-        if (!request.current()) return false;
-      }
-      const replacement = presentation!.replaceTheme(themes[id], candidate?.images, candidateDrawing);
+      const replacement = presentation!.replaceTheme(themes[id], candidate!.images, candidateDrawing);
       trialReplacement(replacement, () => presentation!.draw(match, host, screen, performance.now() / 1000));
       const previous = activeArt;
       activeArt = candidate;
@@ -129,7 +118,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
       previous?.dispose();
       return true;
     } catch {
-      if (request.current()) ui.appearanceStatus(activeAppearance, `Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your match is preserved.`);
+      if (request.current()) ui.appearanceStatus(activeAppearance, `Could not load ${appearanceNames[id]}. ${activeArt ? `Keeping ${appearanceNames[activeAppearance]}.` : 'Retry artwork or return to game selection.'} Your match is preserved.`);
     } finally {
       candidate?.dispose();
     }
@@ -187,8 +176,8 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
       if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
     }, layout => input?.setLayout(layout));
     presentation = createPresentation(host.surface);
-    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
-    host.root.dataset.appearance = 'normal';
+    readiness.watch(() => appearance(defaultTheme(themes)));
+
     input = bindInput(host.surface, ui.controls, () => screen === 'playing' && match.phase === 'fight', host.signal);
     bindSessionFocus(host.root, {
       signal: host.signal,
@@ -225,8 +214,8 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
       }
       try {
         presentation!.draw(match, host, screen, now / 1000);
-      } catch (error) {
-        if (activeAppearance !== 'normal') recoverGraphics();else throw error;
+      } catch {
+        recoverGraphics();
       }
       ui.update(match);
     });

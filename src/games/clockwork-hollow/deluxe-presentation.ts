@@ -4,9 +4,9 @@ import { themes } from './themes.ts';
 
 const TAU = Math.PI * 2;
 const district = {
-  aqueduct: { ...themes.quality.districts.aqueduct, copper: '#af8559' },
-  emberworks: { ...themes.quality.districts.emberworks, copper: '#c18b64' },
-  belfry: { ...themes.quality.districts.belfry, copper: '#b9a279' },
+  aqueduct: { ...themes.deluxe.districts.aqueduct, copper: '#af8559' },
+  emberworks: { ...themes.deluxe.districts.emberworks, copper: '#c18b64' },
+  belfry: { ...themes.deluxe.districts.belfry, copper: '#b9a279' },
 } as const;
 
 /** Original code-native copper, mineral and glass artwork. The session owns its lifetime. */

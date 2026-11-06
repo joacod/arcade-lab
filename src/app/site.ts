@@ -9,5 +9,5 @@ export const site = {
   description: 'Six original browser games. Survive the night, take to the skies, explore clockwork gardens and fight your way home. Play with keyboard or touch.',
   url: 'https://arcade.joacod.com/',
   repository: 'https://github.com/joacod/arcade-lab',
-  socialAlt: 'Arcade Lab: six original browser games, with Quality gameplay screenshots from the full collection.',
+  socialAlt: 'Arcade Lab: six original browser games, with gameplay screenshots from the full collection.',
 } as const;

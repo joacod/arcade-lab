@@ -20,11 +20,11 @@
 .skybreak-app .skybreak-stage { min-height: 0; position: relative; overflow: hidden; }
 .skybreak-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; user-select: none; -webkit-user-select: none; }
 .skybreak-app .skybreak-canvas { width: 100%; height: 100%; display: block; }
-.skybreak-app[data-theme='quality'] { --sky-ink: #e2eee7; --sky-dim: #89b0b8; }
-.skybreak-app[data-theme='quality'] .skybreak-hud,
-.skybreak-app[data-theme='quality'] .skybreak-footer { background: linear-gradient(110deg, #0e2530, #07121d 65%); border-color: #93d5d62b; }
-.skybreak-app[data-theme='quality'] .skybreak-brand { color: #d2eee7; text-shadow: 0 0 20px #8ee9e535; }
-.skybreak-app[data-theme='quality'] :is(.skybreak-hud, .skybreak-footer) button { background: #152d38; border-color: #9ce9e440; }
+.skybreak-app[data-theme='deluxe'] { --sky-ink: #e2eee7; --sky-dim: #89b0b8; }
+.skybreak-app[data-theme='deluxe'] .skybreak-hud,
+.skybreak-app[data-theme='deluxe'] .skybreak-footer { background: linear-gradient(110deg, #0e2530, #07121d 65%); border-color: #93d5d62b; }
+.skybreak-app[data-theme='deluxe'] .skybreak-brand { color: #d2eee7; text-shadow: 0 0 20px #8ee9e535; }
+.skybreak-app[data-theme='deluxe'] :is(.skybreak-hud, .skybreak-footer) button { background: #152d38; border-color: #9ce9e440; }
 .skybreak-app .skybreak-footer { padding: 10px max(18px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #789da52b; }
 .skybreak-app .skybreak-footer output { font: 12px monospace; display: block; }
 .skybreak-app .skybreak-footer > div { min-width: 0; }
@@ -55,13 +55,13 @@
 .skybreak-app .skybreak-boss progress::-webkit-progress-value { background: #ffc78e; }
 .skybreak-app .skybreak-boss-pattern { font-size: 8px; color: #bcd7d5; }
 .skybreak-app .skybreak-asset-status { color: #ffd48e; font-size: 12px; }
-.skybreak-app[data-theme='assets'] .skybreak-brand,
-.skybreak-app[data-theme='quality'] .skybreak-brand { color: var(--sky-accent); }
+.skybreak-app[data-theme='arcade'] .skybreak-brand,
+.skybreak-app[data-theme='deluxe'] .skybreak-brand { color: var(--sky-accent); }
 @media (max-height: 680px) {
   .skybreak-app .skybreak-hud { min-height: 60px; padding-block: 8px; }
 }
-.skybreak-app[data-theme='assets'] { --sky-ink: #f4e3bd; --sky-dim: #9fbab2; }
-.skybreak-app[data-theme='assets'] .skybreak-hud,
-.skybreak-app[data-theme='assets'] .skybreak-footer { background: #102c38; border-color: #bca77455; }
-.skybreak-app[data-theme='assets'] :is(.skybreak-hud, .skybreak-footer) button,
-.skybreak-app[data-theme='assets'] .skybreak-brand { font-family: monospace; text-shadow: 2px 2px #031521; }
+.skybreak-app[data-theme='arcade'] { --sky-ink: #f4e3bd; --sky-dim: #9fbab2; }
+.skybreak-app[data-theme='arcade'] .skybreak-hud,
+.skybreak-app[data-theme='arcade'] .skybreak-footer { background: #102c38; border-color: #bca77455; }
+.skybreak-app[data-theme='arcade'] :is(.skybreak-hud, .skybreak-footer) button,
+.skybreak-app[data-theme='arcade'] .skybreak-brand { font-family: monospace; text-shadow: 2px 2px #031521; }

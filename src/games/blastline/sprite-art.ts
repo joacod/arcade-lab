@@ -1,13 +1,4 @@
-import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
-export const blastImages = {
-  operators: new URL('./art/operators.svg',import.meta.url).href,
-  enemies: new URL('./art/enemies.svg',import.meta.url).href,
-  objects: new URL('./art/objects.svg',import.meta.url).href,
-};
-export const blastSheets = { operators: [320,512], enemies: [192,192], objects: [512,64] } as const;
-export function validateBlastArt(dimensions: ImageDimensions) {
-  return [...validateImageDimensions(dimensions, blastSheets), ...validateBlastLayout(blastLayouts.normal, dimensions)];
-}
+import { type ImageDimensions } from '../../engine/browser/images.ts';
 export function operatorCel(airborne: boolean, moving: boolean, phase: number, reduced: boolean, aimX: number, aimY: number) {
   const aim = aimY < -.4 ? Math.abs(aimX) < .4 ? 0 : 1 : aimY > .4 ? Math.abs(aimX) < .4 ? 4 : 3 : 2;
   const state = airborne ? 3 : reduced || !moving ? 0 : phase < .5 ? 1 : 2;
@@ -48,18 +39,12 @@ const enemyDrawing = { rows: { guard: 0, heavy: 1, bastion: 2 },
   draw: { guard: [-18, -1, 36, 34], heavy: [-18, -1, 36, 34], bastion: [-36, -10, 72, 64] } } as const;
 const run = { images: { nova: 'novaRun', bolt: 'boltRun' }, frames: 6 } as const;
 export const blastLayouts: Readonly<Record<Appearance, BlastArtLayout>> = {
-  normal: {
-    smooth: false, operators: { ...operatorDrawing, cell: 64, rows: arcadeRows },
-    enemies: { ...enemyDrawing, cell: 64 },
-    objects: { relay: [0, 0, 64, 64], offlineRelay: [64, 0, 64, 64], barrel: [128, 0, 64, 64],
-      supply: [192, 0, 64, 64], supplied: [256, 0, 64, 64], rescue: [320, 0, 64, 64], extraction: [384, 0, 128, 64] },
-  },
-  assets: {
+  arcade: {
     smooth: false, operators: { ...operatorDrawing, cell: 128, rows: arcadeRows, run },
     enemies: { ...enemyDrawing, cell: 128 }, objects: objectGrid(128),
     backdrops: { harbor: [0, 0, 1536, 512], foundry: [0, 512, 1536, 512] },
   },
-  quality: {
+  deluxe: {
     smooth: true, operators: { ...operatorDrawing, cell: 192, run, rows: {
       nova: { idle: 0, stepA: 0, stepB: 0, airborne: 2, recoil: 1 },
       bolt: { idle: 3, stepA: 3, stepB: 3, airborne: 5, recoil: 4 },

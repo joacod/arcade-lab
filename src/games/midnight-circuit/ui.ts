@@ -1,7 +1,7 @@
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
+import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 import { bindingLabel } from '../../engine/bindings.ts';
@@ -37,7 +37,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     surface.setAttribute('aria-label', `Midnight Circuit playfield. ${movement} move and align. ${light} light combo, ${heavy} heavy, ${jump} jump, ${light} in air flying kick. P pauses or resumes.`);
   }
   reflectBindings();
-  const style = createThemeChoices({ names: { normal: 'Street sketch', assets: 'Signal / Rain', quality: 'Afterglow' }, modes: appearances, value: initialTheme, signal, onChange: appearance });
+  const style = createThemeChoices({ names: { arcade: 'Signal / Rain', deluxe: 'Afterglow' }, modes: appearances, value: defaultTheme(appearances), signal, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),

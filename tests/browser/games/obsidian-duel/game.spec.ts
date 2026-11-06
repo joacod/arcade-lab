@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
@@ -17,7 +16,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/'); await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.clock.install(); await page.goto('/'); await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const pending = new Set<number>(); (window as any).duelFrames = pending;
     const request = window.requestAnimationFrame.bind(window), cancel = window.cancelAnimationFrame.bind(window);
@@ -79,9 +78,9 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
       Math.floor((canvas.height - Math.min(canvas.width / 1000, canvas.height / 560) * 560) / 2) + 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'arcade');
   await page.clock.runFor(50);
-  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'arcade');
   expect(await skyPixel()).toEqual(beforeTheme);
   expect(await state()).toEqual(paused);
   expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).duelProbe)).toBe(true);
@@ -93,7 +92,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Restart', exact: false }).click(); await page.clock.runFor(3100);
-  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'arcade');
   await page.evaluate(() => { const e = (window as any).duelProbe.fighters[1]; e.state = 'hitstun'; e.stateTime = 10; e.attack = null; });
   const touch = await page.context().newCDPSession(page);
   const point = async (name: string, id: number) => { const b = (await page.getByRole('button', { name, exact: true }).boundingBox())!; return { x: b.x + b.width / 2, y: b.y + b.height / 2, id }; };
@@ -153,7 +152,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.getByRole('button', { name: 'Open game: Obsidian Duel', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Obsidian Duel' })).toBeVisible(); await page.clock.runFor(50);
   expect((await state()).elapsed).toBe(0);
-  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'normal'); expect((await state()).fighters[0].kind).toBe('nera');
+  await expect(page.locator('.duel-app')).toHaveAttribute('data-appearance', 'arcade'); expect((await state()).fighters[0].kind).toBe('nera');
   expect(await page.evaluate(() => (window as any).duelFrames.size)).toBe(1);
   expect(unrelated).toEqual([]); expect(errors).toEqual([]);
 });

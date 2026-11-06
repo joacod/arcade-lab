@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
@@ -8,7 +7,7 @@ test('keyboard layouts update hints, retain the paused run and survive restart',
     await route.fulfill({ response, body: `${await response.text()}
       const original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
   const layout = page.getByRole('group', { name: 'Keyboard layout', exact: true });
   const arrows = layout.getByRole('radio', { name: /Arrows/ }), wasd = layout.getByRole('radio', { name: /WASD/ });
@@ -82,7 +81,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
     } as typeof original;
   });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/'); await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+  await page.clock.install(); await page.goto('/'); await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const frames = new Set<number>(); (window as any).circuitFrames = frames;
     const request = window.requestAnimationFrame.bind(window), cancel = window.cancelAnimationFrame.bind(window);
@@ -114,11 +113,11 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
   await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(700);
-  // Exercise Assets through movement, combat, mobile layout, the station and restart.
+  // Exercise Arcade through movement, combat, mobile layout, the station and restart.
   await page.keyboard.press('Escape');
 
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
-  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'arcade');
+  await expect(page.locator('canvas[data-renderer="arcade"]')).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(250);
   await page.evaluate(() => { (window as any).circuitPoses.clear(); (window as any).circuitProbe.player.immune = 10; });
   await page.keyboard.down('ArrowRight'); await page.clock.runFor(800); await page.keyboard.up('ArrowRight');
@@ -192,9 +191,9 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
 });
 
 test('Midnight Circuit appearances retain a paused run and recover from drawing and image failures', async ({ page }, info) => {
-  const errors: string[] = [], qualityRequests: string[] = [];
+  const errors: string[] = [], deluxeRequests: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
-  page.on('request', request => { if (/midnight-circuit\/(quality\.ts|art\/afterglow\/)/.test(request.url())) qualityRequests.push(request.url()); });
+  page.on('request', request => { if (/midnight-circuit\/(deluxe\.ts|art\/afterglow\/)/.test(request.url())) deluxeRequests.push(request.url()); });
   await page.route(/\/src\/games\/midnight-circuit\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nconst original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
@@ -218,12 +217,12 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
       get src() { return super.src; }
     };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  expect(qualityRequests).toEqual([]);
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
+  expect(deluxeRequests).toEqual([]);
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'deluxe');
+  await expect(page.locator('canvas[data-renderer="deluxe"]')).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.keyboard.down('ArrowRight'); await page.clock.runFor(800); await page.keyboard.up('ArrowRight');
@@ -234,14 +233,14 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   await page.clock.runFor(32);
   const picture = await page.locator('canvas').screenshot();
   await page.clock.fastForward(1000);
-  expect((await page.locator('canvas').screenshot()).equals(picture), 'paused Quality output stays unchanged').toBe(true);
+  expect((await page.locator('canvas').screenshot()).equals(picture), 'paused Deluxe output stays unchanged').toBe(true);
   expect(await state()).toBe(paused);
   // All appearances retain the exact run and produce visibly different artwork.
-  for (const mode of ['normal', 'assets', 'quality']) {
+  for (const mode of ['arcade', 'deluxe']) {
     await chooseTheme(page.getByLabel('Theme', { exact: true }), mode);
-    await expect(page.locator(`canvas[data-renderer="${mode === 'normal' ? 'canvas' : mode}"]`)).toBeVisible();
+    await expect(page.locator(`canvas[data-renderer="${mode}"]`)).toBeVisible();
     expect(await state()).toBe(paused);
-    if (mode !== 'quality') expect((await page.locator('canvas').screenshot()).equals(picture)).toBe(false);
+    if (mode !== 'deluxe') expect((await page.locator('canvas').screenshot()).equals(picture)).toBe(false);
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(32);
@@ -251,7 +250,7 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   expect(await state()).toBe(paused);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.setViewportSize({ width: 1280, height: 1000 }); await page.clock.runFor(32);
-  // An active drawing failure pauses and restores Normal without resetting the run.
+  // An active drawing failure pauses and restores Arcade without resetting the run.
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.evaluate(() => {
     const original = CanvasRenderingContext2D.prototype.drawImage;
@@ -266,23 +265,23 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   });
   await page.clock.runFor(32);
   await expect(page.locator('.circuit-app')).toHaveAttribute('data-screen', 'paused');
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
-  await expect(page.getByLabel('Theme', { exact: true }).locator('input[value="normal"]')).toBeChecked();
+  await expect(page.locator('canvas[data-renderer="arcade"]')).toBeVisible();
+  await expect(page.getByLabel('Theme', { exact: true }).locator('input[value="arcade"]')).toBeChecked();
   expect(await state()).toBe(await page.evaluate(() => (window as any).circuitFailureState));
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'deluxe');
+  await expect(page.locator('canvas[data-renderer="deluxe"]')).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page.screenshot({ path: info.outputPath('midnight-afterglow.png') });
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Restart', exact: true }).click();
-  await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
+  await expect(page.locator('canvas[data-renderer="deluxe"]')).toBeVisible();
   await page.keyboard.press('Escape');
   expect(JSON.parse(await state()).score).toBe(0);
-  await expect(page.getByLabel('Theme', { exact: true }).locator('input[value="quality"]')).toBeChecked();
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'normal');
+  await expect(page.getByLabel('Theme', { exact: true }).locator('input[value="deluxe"]')).toBeChecked();
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'arcade');
   paused = await state();
   await page.route(/\/afterglow\/streets\.webp(?:\?.*)?$/, route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Quality unavailable. Normal retained.');
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'deluxe');
+  await expect(page.locator('.game-menu-display-status')).toContainText('Deluxe unavailable. Arcade retained.');
   expect(await state()).toBe(paused);
   await page.unroute(/\/afterglow\/streets\.webp(?:\?.*)?$/);
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
@@ -294,76 +293,11 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   const requested = new Promise<void>(resolve => { arrived = resolve; });
   await page.route(/\/afterglow\/streets\.webp(?:\?.*)?$/, async route => { arrived(); await delayed; await route.continue().catch(() => {}); });
   await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality'); await requested;
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
+  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'deluxe'); await requested;
+  await expect(page.locator('canvas[data-renderer="arcade"]')).toBeVisible();
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   release(); await page.unroute(/\/afterglow\/streets\.webp(?:\?.*)?$/);
   await page.waitForTimeout(100);
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await released()).toBe(true); expect(errors).toEqual([]);
-});
-
-test('Midnight Circuit Assets failures and cancelled preparation retain the working presentation', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => {
-    const Original = window.Image;
-    (window as any).circuitImages = [];
-    let sequence = 0;
-    window.Image = class extends Original {
-      constructor() { super(); (window as any).circuitImages.push(this); }
-      set src(value: string) { super.src = value.includes('/fighters/animated.webp') ? `${value}?probe=${sequence++}` : value; }
-      get src() { return super.src; }
-    };
-  });
-  await useNormalBaseline(page); await page.goto('/');
-  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).circuitImages.length === 2 && (window as any).circuitImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
-  await page.evaluate(() => { (window as any).circuitBaselineImages = (window as any).circuitImages.splice(0); });
-  // A decoded image with the wrong layout must fail before activation.
-  await page.route(/\/fighters\/animated\.webp(?:\?.*)?$/, route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Assets unavailable. Normal retained.');
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
-  const released = () => page.evaluate(() => (window as any).circuitImages.every((image: HTMLImageElement) => image.getAttribute('src') === null));
-  expect(await released()).toBe(true);
-  await page.unroute(/\/fighters\/animated\.webp(?:\?.*)?$/);
-  let release!: () => void;
-  const delayed = new Promise<void>(resolve => { release = resolve; });
-  let arrived!: () => void;
-  const requested = new Promise<void>(resolve => { arrived = resolve; });
-  await page.route(/\/fighters\/animated\.webp(?:\?.*)?$/, async route => {
-    arrived(); await delayed; await route.continue().catch(() => {});
-  });
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
-  await requested;
-  await expect(page.locator('canvas[data-renderer="canvas"]')).toBeVisible();
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'normal');
-  expect(await released()).toBe(true);
-  release(); await page.unroute(/\/fighters\/animated\.webp(?:\?.*)?$/);
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
-  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Restart', exact: true }).click();
-  await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  expect(await released()).toBe(true);
-  // Unmounting while decoding also invalidates every late completion.
-  let finish!: () => void;
-  const pending = new Promise<void>(resolve => { finish = resolve; });
-  const started = new Promise<void>(resolve => { arrived = resolve; });
-  await page.route(/\/fighters\/animated\.webp(?:\?.*)?$/, async route => {
-    arrived(); await pending; await route.continue().catch(() => {});
-  });
-  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
-  await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
-  await started;
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  expect(await released()).toBe(true);
-  finish(); await page.unroute(/\/fighters\/animated\.webp(?:\?.*)?$/);
-  await page.waitForTimeout(100);
-  await expect(page.locator('canvas')).toHaveCount(0);
-  expect(errors).toEqual([]);
 });

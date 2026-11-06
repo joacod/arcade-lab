@@ -3,7 +3,7 @@ import type { Fighter } from './game.ts';
 import type { AnimationSample } from './animation.ts';
 import { arena } from './content.ts';
 import { drawFoundryFighter } from './asset-presentation.ts';
-import { sanctumEffects } from './quality-art.ts';
+import { sanctumEffects } from './deluxe-art.ts';
 
 export type SanctumDrawing = ReturnType<typeof createSanctumDrawing>;
 export type SanctumDrawingFactory = typeof createSanctumDrawing;

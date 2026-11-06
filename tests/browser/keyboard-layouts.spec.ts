@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { useNormalBaseline } from './menu.ts';
 
 for (const [id, name, factory] of [
   ['obsidian-duel', 'Obsidian Duel', 'createMatch'],
@@ -12,7 +11,7 @@ for (const [id, name, factory] of [
       await route.fulfill({ response, body: `${await response.text()}
         const original = ${factory}; ${factory} = (...args) => { const run = original(...args); window.layoutRun = run; return run; };` });
     });
-    await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+    await page.clock.install(); await page.goto('/');
     await page.getByRole('button', { name: `Open game: ${name}`, exact: true }).click();
     const layout = page.getByRole('group', { name: 'Keyboard layout', exact: true });
     const arrows = layout.getByRole('radio', { name: /Arrows/ }), wasd = layout.getByRole('radio', { name: /WASD/ });

@@ -24,7 +24,7 @@ Prefer native controls and their keyboard behavior. For a radio group, Tab enter
 
 An immediate setting change should acknowledge the action in place. For asynchronous artwork, distinguish the current working theme from a requested replacement. Keep the working scene visible, mark the requested option as loading and announce progress through the existing status owner. Commit the selected marker only when the candidate is ready. Failure clears the pending state and leaves the working choice and run intact; a late result must not overwrite a newer request. Keep option positions and focus stable while labels/status change.
 
-Use only the common Normal / Assets / Quality names and follow the [mode contract](../../../../docs/architecture.md#mode-contract) for defaults, development exposure and availability. Descriptions should convey the mode intent rather than implementation technology. Missing choices remain visible and disabled with a readable explanation. State concisely that switching retains the run. Artwork readiness and recovery belong to the existing session owners, with retry and navigation reachable on failure.
+Use the [mode contract](../../../../docs/architecture.md#mode-contract): show Arcade / Deluxe directly when both exist; hide the selector for a single presentation. Prototype is temporary and never coexists with Arcade. Omit missing choices and environment-specific controls. Keep artistic names, pending versus active selection, retained-run switching, retry and navigation clear.
 
 For release-to-continue gameplay decisions, retain the chosen card and mark it while held, then return promptly to action. Avoid an extra confirmation step merely to display feedback.
 

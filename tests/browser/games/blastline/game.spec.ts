@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
@@ -17,7 +16,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const pending = new Set<number>(); (window as any).blastFrames = pending;
@@ -53,15 +52,15 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'arcade');
   await page.clock.runFor(50);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'arcade');
   expect(await skyPixel()).toEqual(beforeTheme);
   expect(await state()).toEqual(frozen);
   expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).blastProbe)).toBe(true);
 
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'arcade');
   expect((await state()).player.x).toBe(99); expect((await state()).destroyed).toBe(0); expect((await state()).grenades).toBe(4);
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused');
@@ -109,7 +108,7 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
     .toEqual({ frames: 0, audio: ['closed'] });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Open game: Blastline', exact: true }).click(); await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title'); await page.clock.runFor(50); expect((await state()).elapsed).toBe(0);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-appearance', 'arcade');
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
   expect((await state()).elapsed).toBeGreaterThan(0); await page.keyboard.press('Escape');

@@ -27,11 +27,7 @@
 .game-menu-layer .menu-theme-choice:has(input:checked) { border-color: var(--menu-accent, #b9efd4); background: #263e43; }
 .game-menu-layer .menu-theme-choice:has(input:checked)::after { content: ''; position: absolute; top: 15px; right: 13px; width: 5px; height: 9px; border: solid var(--menu-accent, #b9efd4); border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .game-menu-layer .menu-theme-choice:has(input:focus-visible) { outline: 2px solid var(--menu-accent, #b9efd4); outline-offset: 3px; }
-.game-menu-layer .menu-theme-choice:has(input:disabled) { opacity: .5; cursor: not-allowed; }
 .game-menu-layer .menu-theme-choice[data-pending] { border-style: dashed; }
 .game-menu-layer .menu-theme-loading { position: absolute; top: 14px; right: 12px; color: var(--menu-accent, #b9efd4); font-size: 11px; }
 .game-menu-layer .menu-theme-note { display: block; margin-top: 8px; font: 11px/1.5 system-ui, sans-serif; color: #a9bfb7; }
-.game-menu-layer .menu-theme-development { margin-top: 8px; }
-.game-menu-layer .menu-theme-development > summary { padding: 6px 0; color: #9db5ae; font-size: 11px; font-weight: 400; }
-.game-menu-layer .menu-theme-development .menu-theme-choice { margin-top: 4px; }
 @media (forced-colors: active) { .game-menu-layer .menu-theme-choice:has(input:checked) { border: 2px solid Highlight; } }

@@ -14,12 +14,12 @@ export interface FlightSprite {
 export interface FlightArt {
   readonly images: Readonly<Record<string, string>>;
   readonly actors: Readonly<Record<AircraftRole, FlightSprite>>;
-  readonly flagship?: FlightSprite;
-  readonly objects?: Readonly<Record<'power' | 'spread' | 'repair' | 'nacelle' | 'reactor' | 'cloud', FlightSprite>>;
+  readonly flagship: FlightSprite;
+  readonly objects: Readonly<Record<'power' | 'spread' | 'repair' | 'nacelle' | 'reactor' | 'cloud', FlightSprite>>;
 }
 export function validateFlightArt(art: FlightArt, dimensions: Readonly<Record<string, { width: number; height: number }>>) {
   const errors: string[] = [];
-  for (const [role, sprite] of Object.entries({ ...art.actors, ...(art.flagship ? { flagship: art.flagship } : {}), ...art.objects })) {
+  for (const [role, sprite] of Object.entries({ ...art.actors, flagship: art.flagship, ...art.objects })) {
     const image = dimensions[sprite.image], [x, y, w, h] = sprite.rect;
     const values = [...sprite.rect, sprite.frames, sprite.stride, sprite.seconds, ...sprite.footprint, sprite.rotation];
     if (values.some(value => !Number.isFinite(value)) || x < 0 || y < 0 || w <= 0 || h <= 0 ||

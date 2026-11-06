@@ -3,7 +3,7 @@ import { clearing } from './content.ts';
 import type { RunState } from './game-state.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 
-/** Quality's cached scenery and light stamps. All coordinates remain cosmetic world units. */
+/** Deluxe's cached scenery and light stamps. All coordinates remain cosmetic world units. */
 export function createEmberScene(images: ImageBundle, environment: NonNullable<ArtPack['environment']>) {
   const { width, height } = clearing.arena;
   const margin = 96;

@@ -1,4 +1,4 @@
-import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
+import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -40,7 +40,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     surface.setAttribute('aria-label', `Blastline playfield. ${move} move, ${jump} jump, ${fire} fire, ${aim} aim, ${grenade} grenade, ${swap} switch operator. P pauses or resumes.`);
   }
   reflectBindings();
-  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
+  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: defaultTheme(themes), onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),

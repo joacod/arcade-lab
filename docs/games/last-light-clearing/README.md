@@ -35,21 +35,21 @@ Visible entries keep their world-space warning rings. Offscreen pending entries 
 
 ## Theme modes
 
-**Normal**, the development baseline, uses complete hooded-Keeper and briar-creature sprites over the procedural forest clearing and spell effects. **Assets** uses bundled Ember Ruins in development and production. **Quality · Ember Ruins · Rekindled** builds on the Assets presentation, redrawing its knight, goblin and demon designs as a cohesive modern illustrated art set, with new full-body animation cels, ruin props, gems and spell objects.
+**Arcade** uses bundled Ember Ruins in development and production. **Deluxe · Ember Ruins · Rekindled** builds on the Arcade presentation, redrawing its knight, goblin and demon designs as a cohesive modern illustrated art set, with new full-body animation cels, ruin props, gems and spell objects.
 
-### Quality direction: Ember Ruins · Rekindled
+### Deluxe direction: Ember Ruins · Rekindled
 
 Rekindled reinterprets Ember Ruins as compact painted dark-fantasy miniatures for an overhead survival arena. Large heads, short planted legs, connected broad bodies and restrained equipment preserve detail at gameplay size. The Keeper has an ivory-steel helmet with a wide teal visor, brass trim, teal tabard, crimson plume and half-cape, and a warm belt lantern. Moss-green scavengers wear teal hoods; broader chargers wear burgundy armor and paired scarlet crests. The squat crimson elite has curved black horns, charcoal shoulder armor, broad brass rims and an ember chest stone. Authored breathing and grounded walking cels carry their motion; runtime rendering never assembles anatomy.
 
-Visible silhouettes stay close to the working Assets scale, with the gameplay center inside the lower body rather than below the feet. The sprite anchor and authored ground contact are distinct. A shared registration per sequence preserves head and pelvis placement across planted and passing poses; packing does not realign individual cels by their lowest opaque pixel. Walking phase follows observed world displacement. Collision geometry, weapon ranges and trajectories remain in gameplay content.
+Visible silhouettes stay close to the working Arcade scale, with the gameplay center inside the lower body rather than below the feet. The sprite anchor and authored ground contact are distinct. A shared registration per sequence preserves head and pelvis placement across planted and passing poses; packing does not realign individual cels by their lowest opaque pixel. Walking phase follows observed world displacement. Collision geometry, weapon ranges and trajectories remain in gameplay content.
 
-Small muted slate cobbles and worn moss seams keep the courtyard quiet beneath combat. Matching ivory-limestone pillars, broken stumps and squat brass braziers frame the traversable area. Quality loads none of the Assets pixel atlas. Emerald crystals, compact gold Halo motes and short violet Shards share the cast's broad painted forms. Halo's orbit track stays on the floor, with rear motes behind the Keeper and front motes above. Red attack commitments retain their physical locations and sizes.
+Small muted slate cobbles and worn moss seams keep the courtyard quiet beneath combat. Matching ivory-limestone pillars, broken stumps and squat brass braziers frame the traversable area. Deluxe loads none of the Arcade pixel atlas. Emerald crystals, compact gold Halo motes and short violet Shards share the cast's broad painted forms. Halo's orbit track stays on the floor, with rear motes behind the Keeper and front motes above. Red attack commitments retain their physical locations and sizes.
 
 Protection outlines enclose the whole Keeper, including the helmet. Hit feedback follows the illustrated body, contact shadows meet the registered soles, and health bars and damage/attack labels sit above the silhouettes. Brass accents, stone surfaces and a serif title carry the same treatment into the interface. Restrained lantern and spell light supports the artwork. The shared dawn wash and victory ring close the round.
 
-Quality uses Canvas 2D and its own [art bundle, sources, prompts and registration layout](../../../src/games/last-light-clearing/art/rekindled/README.md). Cosmetic observations freeze on pause. Reduced motion holds the first cel and steady brazier light, suppresses drifting embers and defeat fragments, and retains physical movement, attack warnings and state cues. Ground, props and light stamps are cached per presentation; the ember field has a fixed small budget.
+Deluxe uses Canvas 2D and its own [art bundle, sources, prompts and registration layout](../../../src/games/last-light-clearing/art/rekindled/README.md). Cosmetic observations freeze on pause. Reduced motion holds the first cel and steady brazier light, suppresses drifting embers and defeat fragments, and retains physical movement, attack warnings and state cues. Ground, props and light stamps are cached per presentation; the ember field has a fixed small budget.
 
-![Ember Ruins · Rekindled: compact painted knight, hooded goblins and horned demon on a quiet cobbled courtyard](quality.webp)
+![Ember Ruins · Rekindled: compact painted knight, hooded goblins and horned demon on a quiet cobbled courtyard](preview.webp)
 
 ## Sound identity
 
@@ -74,7 +74,7 @@ Paths below are relative to `src/games/last-light-clearing/`.
 
 ## Renderer composition
 
-`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Normal starts synchronously on Canvas. Assets and Quality use the same Canvas sprite renderer, observations and clip helpers. Quality's local `ember-scene.ts` owns its cached painted floor, new perimeter props, light stamps and fixed ember field. `rekindledArt` in `themes.ts` maps the new actor cels and gem/Halo/Shard images independently of Assets. The preparation transaction validates and loads the Quality ground only when selected. Replacement releases cached canvases and the outgoing image bundle.
+`world-presentation.ts` defines canvas, resize, observe, reset, consume, draw and dispose. Arcade and Deluxe use the same Canvas sprite renderer, observations and clip helpers. Deluxe's local `ember-scene.ts` owns its cached painted floor, new perimeter props, light stamps and fixed ember field. `rekindledArt` in `themes.ts` maps the new actor cels and gem/Halo/Shard images independently of Arcade. The preparation transaction validates and loads the Deluxe ground only when selected. Replacement releases cached canvases and the outgoing image bundle.
 
 The persistent overlay owns attack commitments, starter-gem guidance, protection cues and the dawn finish. Palettes live in `themes.ts`; effect budgets stay with their presentation owner.
 
@@ -82,4 +82,4 @@ The renderer/resource transaction follows the [shared replacement and recovery c
 
 ## Renderer verification
 
-The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Normal prepares a small local sprite bundle. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).
+The [presentation invariants](../../../tests/unit/games/last-light-clearing/presentation.test.mjs) and [browser checks](../../../tests/browser/games/last-light-clearing/) cover atlas and ground validation, retained-run replacement, Canvas failure recovery, pause and reduced motion. Gameplay checks in [the unit-test directory](../../../tests/unit/games/last-light-clearing/) cover weapons, evolution, upgrades and encounter limits. Use the [shared verification commands](../../architecture.md#local-verification).

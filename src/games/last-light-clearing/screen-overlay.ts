@@ -52,7 +52,7 @@ export function createScreenOverlay(surface: HTMLElement) {
         if (enemy.entryDelay > 0) continue;
         const attack = enemy.attack;
         if (enemy.kind === 'charger' && theme.presentation !== 'ember') {
-          // Quality's authored red double crest carries this identity in the sprite itself.
+          // Deluxe's authored red double crest carries this identity in the sprite itself.
           // A forked crest identifies the lane attacker even when its sprite is at rest.
           const angle = attack && attack.phase !== 'approach' ? Math.atan2(attack.direction.y, attack.direction.x)
             : Math.atan2(run.player.y - enemy.y, run.player.x - enemy.x);

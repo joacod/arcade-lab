@@ -32,7 +32,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
         <span class="arcade-card-copy"><span class="arcade-number" aria-hidden="true">0${index + 1}</span><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-launch-label">Open game</span><span>→</span></span></span>
         <span id="${game.id}-description" class="arcade-game-description">${game.description} ${game.controls}.</span>
       </button>`).join('')}</div>
-    <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span>Previews show Quality themes <span aria-hidden="true">·</span> Choose your theme in game</span></footer>
+    <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span>Explore each game’s artwork <span aria-hidden="true">·</span> Choose your theme in game</span></footer>
     <p class="arcade-display-status" role="status" hidden></p>
     <div class="arcade-loading" ${message ? '' : 'hidden'}><p class="arcade-selection-status" role="status"></p><button type="button" class="arcade-cancel" hidden>Cancel loading</button></div>
     </div>`;

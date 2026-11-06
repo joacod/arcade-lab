@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
@@ -14,7 +13,7 @@ test('Skybreak keeps shared menu typography and separates hull from lives in a c
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
   const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  for (const mode of ['assets', 'quality'] as const) {
+  for (const mode of ['arcade', 'deluxe'] as const) {
     await chooseTheme(theme, mode);
     await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', mode);
     const menuButtons = await page.locator('.game-menu button:visible').evaluateAll(buttons => buttons.map(button => {
@@ -27,7 +26,7 @@ test('Skybreak keeps shared menu typography and separates hull from lives in a c
       expect(style.shadow).toBe('none');
     }
     await page.screenshot({ path: info.outputPath(`skybreak-${mode}-menu.png`) });
-    await page.getByRole('button', { name: mode === 'assets' ? 'Play' : 'Resume', exact: true }).click();
+    await page.getByRole('button', { name: mode === 'arcade' ? 'Play' : 'Resume', exact: true }).click();
     const surface = page.locator('.play-surface');
     await expect(surface).toBeFocused();
     expect(await surface.evaluate(element => getComputedStyle(element).outlineStyle)).toBe('none');
@@ -69,7 +68,7 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.screenshot({ path: info.outputPath('selection-desktop.png') });
   await page.evaluate(() => {
@@ -110,13 +109,13 @@ test('Skybreak sortie controls, suspension, outcomes, and switching release each
   await page.keyboard.up('Space'); await page.keyboard.press('Escape');
   const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
   await openMenu(page);
-  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'arcade');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'arcade');
   await page.clock.runFor(30); expect(await state()).toEqual(frozen);
   await page.getByRole('button', { name: 'Resume' }).click(); await page.clock.runFor(100);
   await page.keyboard.press('Escape');
-  await openMenu(page); await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'normal');
+  await openMenu(page); await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'arcade');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'arcade');
   const afterTheme = await state();
   await page.evaluate(() => {
     document.querySelector<HTMLElement>('#app')!.requestFullscreen = () => Promise.reject(new Error('Fullscreen denied'));

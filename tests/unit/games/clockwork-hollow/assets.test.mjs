@@ -12,10 +12,10 @@ test('Bellgarden committed sheets cover every validated frame without external r
     return [name, { width: Number(root[1]), height: Number(root[2]) }];
   }));
   assert.deepEqual(validateBellgardenArt(dimensions), []);
-  for (const mode of ['normal', 'quality']) {
+  for (const mode of ['deluxe']) {
     const sprites = Object.fromEntries(['keeper', 'beetle', 'objects'].map(name => {
-      const raster = mode === 'quality' && name !== 'objects';
-      const file = raster ? `lumen/${name}.png` : `bellgarden/${name}-${mode}.svg`;
+      const raster = mode === 'deluxe' && name !== 'objects';
+      const file = raster ? `lumen/${name}.png` : `bellgarden/${name}-quality.svg`;
       const bytes = readFileSync(new URL(`../../../../src/games/clockwork-hollow/art/${file}`, import.meta.url));
       if (raster) {
         assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
@@ -28,9 +28,9 @@ test('Bellgarden committed sheets cover every validated frame without external r
       assert.doesNotMatch(svg, /(?:href|src)="(?:https?:|\/\/)/);
       return [name, { width: Number(root[1]), height: Number(root[2]) }];
     }));
-    assert.deepEqual(validateHollowSprites(mode, sprites), [], mode);
+    assert.deepEqual(validateHollowSprites(sprites), [], mode);
     for (const name of ['keeper', 'beetle', 'objects']) {
-      assert.equal(validateHollowSprites(mode, { ...sprites, [name]: { width: 1, height: 1 } }).length, 1);
+      assert.equal(validateHollowSprites({ ...sprites, [name]: { width: 1, height: 1 } }).length, 1);
     }
   }
   for (const [role, [x, y, w, h]] of Object.entries(objectFrames)) {

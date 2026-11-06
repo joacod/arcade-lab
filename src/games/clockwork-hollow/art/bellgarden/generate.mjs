@@ -1,4 +1,4 @@
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 // Original, editable SVG artwork. Runtime uses the committed outputs.
 const ink = '#233d55', cream = '#fff0cf', coral = '#ec7968', teal = '#59b8b2', gold = '#e4b767';
@@ -41,7 +41,7 @@ const keeperContours = [
  'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L50 40L57 43Q62 46 59 50Q56 54 51 50L43 48L43 61L47 68Q54 69 53 76L40 76L35 64L30 64L28 76L15 76Q13 71 20 69L23 61L23 49L14 51Q8 55 5 51Q2 47 7 44L17 40Z',
  'M21 37C12 35 12 29 13 23C12 13 20 9 32 9C46 9 53 14 52 24C54 31 49 36 44 38L47 44L51 51Q54 56 50 59Q46 61 43 55L42 57L43 65L48 70Q54 71 53 76L38 76L34 68L30 68L27 76L12 76Q10 71 18 70L23 64L24 57L20 59Q15 63 11 59Q8 55 13 50L18 43Z',
 ];
-const materials = mode => mode === 'quality' ? `<defs>
+const materials = mode => mode === 'deluxe' ? `<defs>
  <linearGradient id="shell" x1=".1" y1="0" x2=".8" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#fff9dc"/><stop offset=".3" stop-color="#e3d5af"/><stop offset=".65" stop-color="#a6b4a5"/><stop offset="1" stop-color="#405f64"/></linearGradient>
  <linearGradient id="metal" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#fff1bc"/><stop offset=".24" stop-color="#d9ac68"/><stop offset=".6" stop-color="#94744e"/><stop offset="1" stop-color="#3d5355"/></linearGradient>
  <radialGradient id="glass" cx=".35" cy=".25" r=".85"><stop stop-color="#529c99"/><stop offset=".35" stop-color="#224b54"/><stop offset="1" stop-color="#091e2b"/></radialGradient>
@@ -49,11 +49,10 @@ const materials = mode => mode === 'quality' ? `<defs>
  <linearGradient id="thorn-copper" x1="0" y1="0" x2="1" y2=".3"><stop stop-color="#713c38"/><stop offset=".25" stop-color="#f1b18a"/><stop offset=".46" stop-color="#cf705a"/><stop offset=".7" stop-color="#9a4d43"/><stop offset="1" stop-color="#493d40"/></linearGradient>
  <linearGradient id="thorn-socket" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f4d8a0"/><stop offset=".25" stop-color="#b28c5a"/><stop offset=".55" stop-color="#665b46"/><stop offset="1" stop-color="#253d40"/></linearGradient>
  </defs>` : '';
-for (const mode of ['normal', 'assets']) {
- const normal = mode === 'normal';
- const shell = normal ? '#e0bd7e' : cream;
+{
+ const shell = cream;
  const metal = gold, glass = ink;
- const edge = ink, ribbon = normal ? '#6cae96' : coral;
+ const edge = ink, ribbon = coral;
  const sheet = keeperContours.map((contour, frame) => {
    // Whole-cel scarf drawing is pose-authored too, not a separately animated rig.
    const tail = frame === 9 ? 'M24 39Q13 42 8 54L15 52L17 59Q21 49 29 44Z'
@@ -74,7 +73,7 @@ for (const mode of ['normal', 'assets']) {
     line(32,9,32,5,metal,1.8) + ellipse(32,4,2,2,teal)
    );
  }).join('');
- write(mode === 'assets' ? 'keeper' : `keeper-${mode}`,768,80,materials(mode)+sheet);
+ write('keeper',768,80,sheet);
  // Distinct connected shell contours include alternate feet and a genuinely spent crown.
  const beetles = [
   'M8 31Q8 11 28 10Q46 7 51 25Q58 22 60 29L58 35L51 37L48 43L42 43L43 36L34 36L31 43L25 43L27 36L19 36L16 43L10 43L13 35Z',
@@ -84,11 +83,11 @@ for (const mode of ['normal', 'assets']) {
  ];
  const body = beetles.map((d,i)=>group(i*64,0,path(d,i===3?'#5b7178':shell,edge,1.5)+
   (i===3 ? path('M14 35L23 32L28 37L36 32L46 37','none',gold,1) :
-  path(`M12 ${28+i%2}Q13 ${13+i%2} 29 ${13+i%2}Q44 ${11+i%2} 48 ${28+i%2}Z`,normal?'#cd966a':coral,edge,1)+
+  path(`M12 ${28+i%2}Q13 ${13+i%2} 29 ${13+i%2}Q44 ${11+i%2} 48 ${28+i%2}Z`,coral,edge,1)+
   path(`M15 ${24+i%2}Q25 ${13+i%2} 40 ${18+i%2}M30 ${14+i%2}L31 29`,'none',cream,1.4)+
   path('M12 32Q28 35 49 31','none',cream,2)+
   ellipse(54,29+i%2,2,2,cream)))).join('');
- write(mode==='assets'?'beetle':`beetle-${mode}`,256,48,materials(mode)+body);
+ write('beetle',256,48,body);
 }
 
 const lantern = lit => line(64, 152, 64, 30, ink, 6) + path('M43 36L64 20 85 36Z', cream, ink, 3) +
@@ -109,9 +108,7 @@ const vent = rect(12, 124, 104, 31, cream, 5, ink) + rect(20, 129, 88, 10, ink, 
 write('objects', 1024, 160, [lantern(false), lantern(true), bell, gate, mote, thorn, vent, foliage(64, 158, 115) + flower(66, 55, 15, coral)]
   .map((body, i) => `<svg x="${i * 128}" width="128" height="160" viewBox="0 0 128 160">${body}</svg>`).join(''));
 
-const objectSource = new URL('objects.svg', import.meta.url);
-writeFileSync(new URL('objects-normal.svg', import.meta.url), readFileSync(objectSource, 'utf8').replaceAll(cream,'#ddbc78').replaceAll(coral,'#ce8c66'));
-// Quality objects are newly illustrated volumes, preserving the flower, glass
+// Deluxe objects are newly illustrated volumes, preserving the flower, glass
 // heart, bell profile and pointed danger language of the porcelain originals.
 const qLantern = lit =>
  path('M56 148L58 85L69 85L72 148Z','url(#metal)',ink,2) +
@@ -156,7 +153,7 @@ const qVent =
  Array.from({length:8},(_,i)=>line(26+i*10,131,31+i*9,141,'#d5b782',3)).join('') +
  line(19,128,109,128,'#fff0c3',2) + ellipse(24,150,3,3,'#233e47') + ellipse(103,150,3,3,'#233e47') +
  ellipse(24,149,1,1,'#f4deaa') + ellipse(103,149,1,1,'#f4deaa');
-write('objects-quality',1024,160, materials('quality') +
+write('objects-quality',1024,160, materials('deluxe') +
  [qLantern(false),qLantern(true),qBell,qGate,qMote,qThorns,qVent,foliage(64,158,115,'#639e89') + flower(66,55,15,coral)]
  .map((body,i)=>`<svg x="${i*128}" width="128" height="160" viewBox="0 0 128 160">${body}</svg>`).join(''));
 

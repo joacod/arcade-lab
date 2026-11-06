@@ -6,19 +6,17 @@ export const fighterCels = {
   idle: 0, contactLeft: 1, passingLeft: 2, contactRight: 3, passingRight: 4,
   anticipation: 5, punch: 6, kick: 7, rise: 8, fall: 9, hurt: 10, down: 11,
 } as const;
-export const fighterCelCount = 12;
 /** Extra in-betweens keep the original combat columns independent of the walk clip. */
 export const walkingCels = [1, 12, 2, 13, 3, 14, 4, 15] as const;
 interface Track { x: number; lane: number; phase: number; weight: number; walking: boolean }
 export type WalkStrides = Readonly<Record<Actor['kind'], number>>;
-const normalStrides: WalkStrides = { player: 96, striker: 96, bruiser: 115.2, warden: 142.08 };
 function recoveryWeight(a: Actor) {
   if (!a.attack) return 1;
   const d = attacks[a.attack.kind];
   return Math.max(0, Math.min(1, (a.attack.time - d.startup - d.active) / d.recovery));
 }
 /** Strides match the artwork's near-boot sweep, independently of gameplay movement speed. */
-export function createGait(strides: WalkStrides = normalStrides) {
+export function createGait(strides: WalkStrides) {
   const tracks = new Map<number, Track>();
   let elapsed = 0;
   return {
@@ -49,7 +47,7 @@ export function createGait(strides: WalkStrides = normalStrides) {
   };
 }
 /** Combat owns attack cels. An ordinary jump never implies a kick or a hit. */
-export function fighterFrame(a: Actor, gait: { phase: number; weight: number; walking?: boolean }, walk: readonly number[] = [1, 2, 3, 4]) {
+export function fighterFrame(a: Actor, gait: { phase: number; weight: number; walking?: boolean }, walk: readonly number[] = walkingCels) {
   const c = fighterCels;
   if (a.health <= 0) return c.down;
   if (a.stun > 0) return c.hurt;

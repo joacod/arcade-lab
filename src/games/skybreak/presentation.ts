@@ -1,5 +1,3 @@
-import { createImageResource } from '../../engine/browser/images.ts';
-import { flightImages, validateFlightImages } from './assets.ts';
 import { coastalTiles } from './scenery.ts';
 import { flight, fortress, waves, type Pattern } from './content.ts';
 import { bossLanes, enemyCharge, type Boss, type Enemy, type FlightEvent, type Point, type Run } from './game.ts';
@@ -20,8 +18,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable.');
   const c = ctx;
-  const baseline = theme.art && !Object.keys(images).length ? createImageResource(flightImages(theme), d => validateFlightImages(theme, d)) : undefined;
-  const objects = !theme.art?.objects ? createImageResource({ objects: new URL('./art/objects.svg', import.meta.url).href }, d => d.objects?.width === 320 && d.objects.height === 64 ? [] : ['Invalid flight objects']) : undefined;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   surface.append(canvas);
   let visualTime = 0;
@@ -29,20 +25,14 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   let lastRecharge = 0, rollReadyAt = -Infinity;
   const flashes = new Map<number | 'boss', number>();
   function sprite(art: FlightSprite) {
-    const image = images[art.image] ?? baseline?.images[art.image];
+    const image = images[art.image];
     if (!image) return;
     const [, y, w, h] = art.rect, [width, height] = art.footprint;
     c.save(); c.rotate(art.rotation); c.imageSmoothingEnabled = theme.finish === 'painted'; c.imageSmoothingQuality = 'high';
     c.drawImage(image, flightFrame(art, visualTime, motion.matches), y, w, h, -width / 2, -height / 2, width, height);
     c.restore();
   }
-  function polygon(points: number[], fill: string, stroke = '#092f47') {
-    c.beginPath(); c.moveTo(points[0]!, points[1]!);
-    for (let i = 2; i < points.length; i += 2) c.lineTo(points[i]!, points[i + 1]!);
-    c.closePath(); c.fillStyle = fill; c.fill(); c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke();
-  }
   function plane(x: number, y: number, kind: Pattern | 'player', bank = 0, roll = 0, shadow = false, flash = false) {
-    if (shadow && !theme.finish) return;
     c.save(); c.translate(x, y);
     if (kind !== 'player') c.rotate(Math.PI);
     if (!motion.matches) {
@@ -50,7 +40,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       c.rotate(bank * 0.12);
     }
     if (shadow) { c.globalAlpha = theme.finish === 'painted' ? 0.22 : 0.16; c.filter = 'brightness(0)'; }
-    const art = theme.art?.actors[kind];
+    const art = theme.art.actors[kind];
     if (art) {
       // A compact halo signals damage without replacing the aircraft silhouette.
       if (flash) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
@@ -60,8 +50,8 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   }
   let coastalTile: HTMLCanvasElement | undefined;
   function ocean(time: number) {
-    const backdrop = images.backdrop ?? baseline?.images.backdrop;
-    if (theme.scenery && backdrop) {
+    const backdrop = images.backdrop;
+    if (backdrop) {
       const tileHeight = 480 * theme.scenery.height / theme.scenery.width;
       if (!coastalTile) {
         // Fade only the incoming edge: the preceding tile supplies opaque water underneath.
@@ -82,41 +72,13 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
         c.drawImage(coastalTile, 0, theme.finish === 'pixel' ? Math.round(y) : y, 480, tileHeight);
       }
       // Clouds pass faster than the coast, confined to the margins beneath combat cues.
-      if (theme.art?.objects) for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 4; i++) {
         c.save();
         c.translate(i % 2 ? 474 : 6, (i * 311 + time * 156) % 1250 - 200);
         c.scale(2.5, 1.6); c.globalAlpha = theme.finish === 'painted' ? 0.16 : 0.12;
         sprite(theme.art.objects.cloud); c.restore();
       }
       return;
-    }
-    const gradient = c.createLinearGradient(0, 0, 480, 800);
-    gradient.addColorStop(0, theme.palette.sea[0]); gradient.addColorStop(0.5, theme.palette.sea[1]); gradient.addColorStop(1, theme.palette.sea[2]);
-    c.fillStyle = gradient; c.fillRect(0, 0, 480, 800);
-    // Long currents and short glints move at distinct depths. Pure cosmetic coordinates.
-    for (let i = 0; i < 95; i++) {
-      const x = noise(i + 5) * 480, y = (noise(i + 120) * 920 + time * (22 + noise(i) * 24)) % 920 - 60;
-      c.strokeStyle = i % 3 ? '#81d4db18' : '#a4f0e839'; c.lineWidth = i % 3 ? 1 : 2;
-      c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 12, y + 3, x + 18 + noise(i + 7) * 27, y); c.stroke();
-    }
-    for (let i = 0; i < 5; i++) {
-      const x = [44, 425, 110, 385, 40][i]!, y = ((i * 273 + time * 45) % 1400) - 260;
-      c.save(); c.translate(x, y); c.rotate(i * 1.7);
-      c.fillStyle = '#3ba8ad40'; c.beginPath(); c.ellipse(0, 0, 66, 103, 0, 0, Math.PI * 2); c.fill();
-      polygon([-40, -44, -18, -85, 12, -78, 37, -30, 32, 24, 5, 76, -26, 58, -47, 12], '#c1ba83', '#8fe0d14d');
-      polygon([-30, -40, -12, -69, 10, -61, 26, -23, 20, 22, 2, 62, -24, 38, -34, 5], '#357e6d', '#27685e');
-      for (let tree = 0; tree < 6; tree++) {
-        c.fillStyle = tree % 2 ? '#4d9680' : '#256757'; c.beginPath();
-        c.arc(noise(i * 9 + tree) * 40 - 20, noise(tree + i * 7) * 90 - 45, 8, 0, Math.PI * 2); c.fill();
-      }
-      if (i === 1) { c.fillStyle = '#9ab9b0'; c.fillRect(12, 0, 54, 9); c.fillStyle = '#345864'; c.fillRect(36, -2, 12, 13); }
-      c.restore();
-    }
-    // Sparse translucent cloud banks drift above the water.
-    for (let i = 0; i < 4; i++) {
-      const x = noise(i + 40) * 530 - 25, y = (i * 330 + time * 68) % 1300 - 220;
-      c.fillStyle = '#d1edf00b';
-      for (let j = 0; j < 4; j++) { c.beginPath(); c.ellipse(x + j * 25, y + Math.sin(j) * 12, 45, 25, -0.3, 0, Math.PI * 2); c.fill(); }
     }
   }
   function drawEnemyCharge(enemy: Enemy, player: Point) {
@@ -181,7 +143,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     // Appearance owns the hull; the same animated weak points and warnings stay readable above it.
     {
       c.fillStyle = '#00152335'; c.beginPath(); c.ellipse(12, 30, 168, 70, 0, 0, Math.PI * 2); c.fill();
-      if (theme.art?.flagship) {
+      {
         c.save(); c.rotate(Math.PI);
         if (flashes.has('boss')) { c.shadowColor = '#ffffff'; c.shadowBlur = 12; }
         sprite(theme.art.flagship); c.restore();
@@ -190,9 +152,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     for (const side of [-1, 1]) {
       const x = side * 88, y = 16 + Math.sin(b.age * 2) * 8;
       c.save(); c.translate(x, y);
-      const objectImage = objects?.images.objects;
-      if (theme.art?.objects) sprite(theme.art.objects.nacelle);
-      else if (objectImage) c.drawImage(objectImage, 192, 0, 64, 64, -32, -42, 64, 84);
+      sprite(theme.art.objects.nacelle);
       c.fillStyle = dead ? '#ffbb75' : '#7aeadd'; c.shadowColor = c.fillStyle; c.shadowBlur = 14;
       if (theme.finish === 'painted') {
         const reactor = c.createRadialGradient(-5, -6, 1, 0, 0, 19);
@@ -201,7 +161,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
         c.fillStyle = reactor;
       }
       c.save();
-      if (theme.art?.objects) c.globalAlpha *= 0.16;
+      c.globalAlpha *= 0.16;
       c.beginPath(); c.arc(0, 0, 17, 0, Math.PI * 2); c.fill(); c.restore(); c.shadowBlur = 0;
       c.strokeStyle = '#15334d'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 23, b.age * side * 3, b.age * side * 3 + 4.5); c.stroke();
       c.fillStyle = '#ffb576'; c.fillRect(-7, 40, 14, motion.matches ? 10 : 10 + Math.sin(b.age * 29) * 5); c.restore();
@@ -209,9 +169,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
     }
     c.fillStyle = dead || b.phase === 2 ? '#ffae85' : '#b2fff2'; c.shadowColor = c.fillStyle; c.shadowBlur = 18;
     c.beginPath(); c.arc(0, 10, 28, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
-    const reactorImage = objects?.images.objects;
-    if (theme.art?.objects) { c.save(); c.translate(0, 10); sprite(theme.art.objects.reactor); c.restore(); }
-    else if (reactorImage) c.drawImage(reactorImage,256,0,64,64,-32,-22,64,64);
+    { c.save(); c.translate(0, 10); sprite(theme.art.objects.reactor); c.restore(); }
     if (dead && !motion.matches) for (let i = 0; i < 9; i++) {
       const age = (b.defeated + i * 0.19) % 0.7, x = noise(i + Math.floor(b.defeated * 4)) * 260 - 130, y = noise(i + 30) * 90 - 40;
       c.globalAlpha = (1 - age / 0.7) * Math.max(0, 1 - b.defeated / fortress.defeatDuration);
@@ -221,7 +179,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
   }
   return {
     element: canvas,
-    prepare: () => Promise.all([baseline?.prepare(), objects?.prepare()]).then(() => {}),
+    prepare: () => Promise.resolve(),
     reset() { particles = []; lastTime = 0; damageFlash = 0; lastRecharge = 0; rollReadyAt = -Infinity; flashes.clear(); },
     consume(events: readonly FlightEvent[]) {
       for (const event of events) {
@@ -264,10 +222,7 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       for (const item of run.pickups) {
         const color = item.kind === 'power' ? '#ffcf70' : item.kind === 'spread' ? '#d6aaff' : '#a9f3b5';
         c.save(); c.translate(item.x, item.y); if (!motion.matches) c.rotate(Math.sin(item.age * 3) * 0.1);
-        const objectImage = objects?.images.objects;
-        const frame = item.kind === 'power' ? 0 : item.kind === 'spread' ? 1 : 2;
-        if (theme.art?.objects) sprite(theme.art.objects[item.kind]);
-        else if (objectImage) c.drawImage(objectImage, frame * 64, 0, 64, 64, -22, -22, 44, 44);
+        sprite(theme.art.objects[item.kind]);
         c.fillStyle = color; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillText(item.kind.toUpperCase(), 0, 32); c.restore();
       }
       drawRollReadiness(run);
@@ -316,6 +271,6 @@ export function createPresentation(surface: HTMLElement, theme: FlightTheme,
       c.restore();
       c.strokeStyle = '#73c7c233'; c.lineWidth = 1; c.strokeRect(0, 0, 480, 800);
     },
-    dispose() { if (coastalTile) { coastalTile.width = coastalTile.height = 1; coastalTile = undefined; } baseline?.dispose(); objects?.dispose(); particles = []; flashes.clear(); images = {}; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (coastalTile) { coastalTile.width = coastalTile.height = 1; coastalTile = undefined; } particles = []; flashes.clear(); images = {}; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

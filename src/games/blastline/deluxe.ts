@@ -14,7 +14,7 @@ export const reforgedSheets = {
   backdrop: [2048, 1024], novaRun: [1152, 960], boltRun: [1152, 960],
 } as const;
 export function validateReforgedArt(dimensions: ImageDimensions) {
-  return [...validateImageDimensions(dimensions, reforgedSheets), ...validateBlastLayout(blastLayouts.quality, dimensions)];
+  return [...validateImageDimensions(dimensions, reforgedSheets), ...validateBlastLayout(blastLayouts.deluxe, dimensions)];
 }
 export function prepareEmberReforged(signal: AbortSignal) {
   return prepareImages(reforgedImages, signal, validateReforgedArt);

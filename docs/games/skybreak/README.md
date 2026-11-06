@@ -2,11 +2,11 @@
 
 [Source](../../../src/games/skybreak/) | [Controls](../../../CATALOG.md#skybreak) | [Shared contracts](../../architecture.md)
 
-A vertical arcade shooter with three image-based Canvas 2D appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) links the baseline assets and the detailed [coastal sortie brief](../../../src/games/skybreak/art/coastal-sortie/README.md).
+A vertical arcade shooter with two image-based Canvas 2D appearances. The [artwork guide](../../../src/games/skybreak/art/README.md) links the detailed [coastal sortie brief](../../../src/games/skybreak/art/coastal-sortie/README.md).
 
 ## Theme modes
 
-**Normal · Pacific Run** uses simple aircraft sprites and a procedural ocean. **Assets · Aurora Fleet** gives the coastal sortie a detailed arcade fleet, distinct aircraft silhouettes, pixel reefs, scrolling sea currents and matching supply capsules. **Quality · Tempest Coast** reinterprets that fleet with newly painted metal aircraft, illustrated supplies and reactor housings, a separate detailed fortress hull, and a continuously scrolling coastal sea. The same ivory fighter and colored hostile roles carry through both directed modes.
+**Arcade · Aurora Fleet** gives the coastal sortie a detailed arcade fleet, distinct aircraft silhouettes, pixel reefs, scrolling sea currents and matching supply capsules. **Deluxe · Tempest Coast** reinterprets that fleet with newly painted metal aircraft, illustrated supplies and reactor housings, a separate detailed fortress hull, and a continuously scrolling coastal sea. The same ivory fighter and colored hostile roles carry through both directed modes.
 
 ## Functional presentation
 
@@ -16,7 +16,7 @@ Banking and evasive rolls transform complete aircraft images. Distinct wings and
 
 World scenery uses active run time, so pause freezes travel and a theme replacement resumes at the current sortie time. Reduced motion freezes scenery, clouds, propeller/exhaust animation and banking while retaining physical movement, immunity, recharge and attack cues. Both directed themes prepare and validate their complete image bundle before activation. Drawing failure pauses the retained sortie and restores Pacific Run. The renderer remains Canvas 2D.
 
-![Tempest Coast: painted aircraft and coastal scenery in active flight](quality.webp)
+![Tempest Coast: painted aircraft and coastal scenery in active flight](preview.webp)
 
 ## Operation Iron Tempest
 
@@ -52,7 +52,7 @@ Destroying it awards 5,000 points and clears hostile objects. A 2.8-second destr
 
 The HUD separates three spaced hull segments from the remaining lives count, with a warm warning at critical hull and a numeric hull readout for assistive technology. Sortie time uses minutes and seconds against the time limit. On narrow screens the brand and score stack beside hull, lives and Pause. The portrait field stays centered; relative drag displacement uses CSS pixels. Holding a movement pointer fires, and a second touch can roll.
 
-Normal draws procedural ocean scenery; Assets and Quality use their own committed coastal images and cloud sprites. Aircraft, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
+Aircraft, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
 Dry gun transients leave room for metal impacts, enemy blasts, hull fractures and slipstream rolls. Armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. The sound adapter coalesces each cue per frame, caps voices at 12 and uses restrained world-space stereo placement.
 
