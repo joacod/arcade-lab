@@ -10,13 +10,13 @@ Keep the same cast, astronomical citadel, unarmed moves and teal/copper role sep
 
 ### Eclipse Foundry · Arcade
 
-Retain the established painted fighter cels and their expressive coordinated anatomy. Their outlined contours, broad value blocks and soft shading suit an old-school hand-painted arcade presentation. Frame them with a ruined astronomical foundry: enormous weathered basalt columns, copper eclipse and orbital bands overhead, teal banners, aqueducts, distant mountains and warm forge openings. Architectural density stays high and at the sides. The central head/body band stays subdued, and the level fight lane has no apparent pits, steps or blocking scenery.
+The outlined contours, broad value blocks and soft shading suit an old-school hand-painted arcade presentation. Movement and combat drawings share a guarded neutral stance, connected anatomy and costume proportions. Frame them with a ruined astronomical foundry: enormous weathered basalt columns, copper eclipse and orbital bands overhead, teal banners, aqueducts, distant mountains and warm forge openings. Architectural density stays high and at the sides. The central head/body band stays subdued, and the level fight lane has no apparent pits, steps or blocking scenery.
 
 The new arena is in `eclipse-foundry/sources/stage.png`. The existing fighter inputs, exact crops and pivots remain in `eclipse-foundry/painted/`. Eight editable SVG effect cels cover Stormglass, strike contact, guard, ground seal, Crescent heel, punch pressure, low sweep and aerial slash. Their graphic shapes suit the arcade fighters and distinguish attacks without implying extra damage.
 
 ### Moonfall Sanctum · Deluxe
 
-Reinterpret those same costumes as detailed modern painted sprites with embroidered hems, cloth volume, stitched leather, scuffed boots, bronze trim, dimensional faces and connected anatomy. The new 36-drawing fighter sheets in `moonfall-sanctum/fighters/` replace the Foundry pixels while retaining their identities and attack vocabulary. Assess the character drawings themselves at gameplay size before adding atmosphere.
+Reinterpret those same costumes as detailed modern painted sprites with embroidered hems, cloth volume, stitched leather, scuffed boots, bronze trim, dimensional faces and connected anatomy. Independent movement and combat sheets in `moonfall-sanctum/fighters/` retain those identities and action vocabulary. The original 36-drawing sheets continue to supply jumps, injury, knockdown and wake-up. Assess the character drawings themselves at gameplay size before adding atmosphere.
 
 The retained illustrated observatory provides carved basalt, weathered bronze, jade ornament, a fractured lunar instrument, distant aqueducts and waterfalls. Quiet mist separates the cast from the backdrop. A wet uninterrupted terrace grounds the characters. Edge pillars and lanterns remain scenery behind the lane. Sparse motes, low mist and faint reflections support the detailed artwork.
 
@@ -26,11 +26,16 @@ The new transparent jade-and-gold atlas coordinates projectile, contact, protect
 
 All runtime fighter atlases are **2560 × 2240 RGBA PNGs**, packed eight 320 × 224 cells per row. Every cell has a cosmetic ground pivot at **(144, 208)** and a 320 × 224 world-unit draw footprint including transparent padding. The shared layout is a drawing contract, not shared artwork or physical geometry. Arcade and Deluxe each load their own Nera and Kael PNGs. Smooth Canvas sampling preserves contours.
 
-`animation.ts` observes the simulation and supplies 16 semantic clips. `asset-art.ts` computes rectangles. Authored holds fill the 74 timed slots: idle, walking, jump, crouch, standing/crouching guard, light, heavy, sweep, aerial, special, hurt, block recoil, down, rise and landing. Contact drawings enter only at the active boundary; recovery retracts the attack. Guard hands stay in front, crouches reduce silhouette height, and sweeping feet stay near the floor. Walking follows signed distance instead of a wall-clock loop.
+`animation.ts` observes the simulation and supplies 16 semantic clips. `asset-art.ts` computes rectangles. Authored holds fill the 74 timed slots: idle, walking, jump, crouch, standing/crouching guard, light, heavy, sweep, aerial, special, hurt, block recoil, down, rise and landing. Attack slots 0–2 anticipate, 3–4 contact and 5–7 retract/settle, selected inside the actual simulation windows. Walking follows signed distance instead of a wall-clock loop and preserves phase through stops. Contact pause freezes the animation clock with the fight.
 
-The new Deluxe source sheets each contain six rows of six full-body drawings: stance/travel, air/guard, light/heavy, sweep/aerial, special/reaction, and down/rise/settle. `art/pack-fighters.mjs` records the inspected row boundaries and maps drawings to timed holds. It selects complete connected silhouettes, removes disconnected export noise, preserves antialiased edges, applies uniform sheet scale and normalizes support pivots. Contact drawings apply a bounded translation of the whole cel to align the hand or heel with authored move reach while preserving body proportions and support. Air cels keep a virtual ground reference. The resulting `layout.json` files record source rectangles, dimensions, pivots, scale and clip mappings. Packing rejects clipped or empty cels and never assembles body parts.
+Each fighter in each theme has a `*-motion.png` source with four columns and four rows: four restrained breathing drawings with planted feet, eight guarded shuffle cels, then standing guard, crouching guard, crouch and standing block recoil. High guard must raise both forearms above the ordinary fighting stance. Keep shuffle steps low with steady hips and raised hands; distinguish lead-foot advance from the rear foot catching up. The Nera gait cleanup prompts record lowering excessive knee lift.
 
-Foundry retains its separate `painted/layout.json` mapping and packer, including the original selected drawings and contact offsets. Its source sheets can have uneven spacing; maintain explicit inspected crops rather than assuming a new grid.
+The `*-combat.png` sources contain four columns across five inspected rows: light, heavy, sweep, aerial and special. Each row supplies anticipation, contact, retraction and settling. Nera uses palm/heel/low-kick/descending-kick/two-palm actions; Kael uses short punch/long punch/low kick/descending fist/lunging punch. Grounded support boots stay registered through the action, including Nera's one-leg heel strike. Standing endpoints use the exact neutral drawing from the motion sheet. Air cels keep a virtual ground reference; no limb is stretched to meet collision reach.
+
+`pack-motion.mjs` mechanically registers these complete drawings over the base atlas. It finds four complete connected silhouettes in each inspected row, preserving wide attacks that cross nominal column boundaries, removes isolated export specks, keeps transparency, applies uniform sheet scale and records support pivots. Travel uses the source hip column so moving feet cannot pull the torso sideways. The `*-motion-layout.json` and `*-combat-layout.json` outputs record rectangles, pivots, scale and slot selections; these are the final overrides to the base mappings. Export rejects missing figures and clipped runtime cels.
+
+`art/pack-fighters.mjs` supplies the retained Deluxe jump and reaction drawings from six-row sheets. Its `layout.json` records those base sources. Foundry retains its `painted/layout.json` and base packer for the corresponding original jump/reaction cels. Both exporters apply `pack-motion.mjs` last. Keep uneven source row boundaries explicit rather than imposing a grid on the illustrations.
+
 
 ## Arena and effect images
 
@@ -48,9 +53,9 @@ Source stage/effect PNGs and prompts remain in each family's `sources/` folder. 
 From the repository root, using Node and the installed Playwright Chromium:
 
 ```sh
-# New Deluxe whole-character sheets and inspected layout metadata
+# Deluxe base cels plus registered motion/combat replacements and metadata
 node src/games/obsidian-duel/art/pack-fighters.mjs
-# Retained Arcade fighter drawings
+# Arcade base cels plus registered motion/combat replacements and metadata
 node src/games/obsidian-duel/art/eclipse-foundry/painted/pack.mjs
 # Arcade arena and editable effect artwork
 node src/games/obsidian-duel/art/eclipse-foundry/pack.mjs
@@ -67,4 +72,5 @@ These are technique references, not artwork inputs:
 
 - [Akiman's Capcom interview](https://game.capcom.com/cfn/sfv/column-112429): deliberate action drawings and sprite budgets.
 - [Mariel Cartwright's animation talk](https://www.gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful): clear keys, anticipation, contact and recovery under combat timing constraints.
+- [Cartwright's GDC slides](https://media.gdcvault.com/GDC2014/Presentations/Cartwright_Muriel_Animation_Bootcamp_Fluid.pdf): key silhouettes, deliberate holds, follow-through, contact pause and returning to a moving idle stance.
 - [Sifu combat VFX](https://clamz.artstation.com/projects/0lKKZV): contact shapes that communicate combat information.

@@ -8,7 +8,7 @@ test('both renderers enter contact cels at the active boundary and recover on au
   for (const kind of ['nera', 'kael']) for (const [move, d] of Object.entries(fighters[kind].attacks)) {
     const f = createMatch(kind).fighters[0], animation = createDuelAnimation();
     f.attack = { id: 1, kind: move, time: 0, hits: [], sounded: false };
-    for (const time of [0, d.startup * .8, d.startup - .00001, d.startup, d.startup + d.active * .8, d.startup + d.active + d.recovery * .9]) {
+    for (const time of [0, d.startup * .8, d.startup - .00001, d.startup, d.startup + d.active * .8, d.startup + d.active, d.startup + d.active + .00001, d.startup + d.active + d.recovery * .9]) {
       f.attack.time = time;
       const snapshot = JSON.stringify(f), sample = animation.sample(f, time, false);
       assert.equal(JSON.stringify(f), snapshot);
@@ -30,8 +30,38 @@ test('walk stance feet remain planted in world space; gait follows signed travel
   assert.equal(moved.frame, 2); assert.deepEqual(animation.sample(f, .1, false), moved);
   assert.deepEqual(animation.sample(f, .9, false), moved, 'wall pressure cannot march in place');
   f.x -= 10; assert.ok(Math.abs(animation.sample(f, 1, false).frame - 1.2) < 1e-6);
+  f.state = 'idle'; animation.sample(f, 1.1, false);
+  f.state = 'move'; f.x += 5;
+  assert.ok(Math.abs(animation.sample(f, 1.2, false).frame - 1.6) < 1e-6, 'resuming keeps the interrupted step');
   animation.reset(); assert.equal(animation.sample(f, 1, false).frame, 0);
 
+});
+
+test('guards stay defensive through blockstun and ordinary landings yield immediately to actions', () => {
+  const f = createMatch().fighters[0], animation = createDuelAnimation();
+  f.guarding = true; f.state = 'block';
+  assert.equal(animation.sample(f, 0, false).clip, 'guard');
+  f.crouched = true;
+  assert.equal(animation.sample(f, .1, true).clip, 'crouchGuard');
+  f.state = 'blockstun'; f.stateTime = .16;
+  assert.equal(animation.sample(f, .2, false).clip, 'crouchGuard');
+  f.crouched = false; f.state = 'block'; animation.sample(f, .3, false);
+  f.state = 'blockstun';
+  assert.deepEqual(animation.sample(f, .4, false), { clip: 'block', frame: 0 });
+  assert.deepEqual(animation.sample(f, .49, false), { clip: 'block', frame: 1 });
+  f.guarding = false; f.state = 'hitstun'; f.stateTime = .28;
+  animation.sample(f, .49, false);
+  assert.ok(animation.sample(f, .75, false).frame < 2, 'injury cannot show neutral while control is still locked');
+  animation.reset();
+  f.guarding = false; f.state = 'jump'; f.z = 8; f.vz = -200;
+  animation.sample(f, .5, false);
+  f.z = 0; f.state = 'idle';
+  assert.equal(animation.sample(f, .55, false).clip, 'land');
+  assert.equal(animation.sample(f, .55, true).clip, 'land', 'reduced motion preserves landing information');
+  f.guarding = true;
+  assert.equal(animation.sample(f, .56, false).clip, 'guard', 'landing never delays a guard');
+  f.attack = { id: 1, kind: 'light', time: 0, hits: [], sounded: false };
+  assert.equal(animation.sample(f, .57, false).clip, 'light', 'landing never delays an attack');
 });
 
 test('knockdown settles on the floor, wake-up returns to stance and a new round resets observations', () => {

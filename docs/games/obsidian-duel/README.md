@@ -10,6 +10,8 @@ Crouching Light sweeps; airborne Light or Heavy attacks overhead. Touch movement
 
 Standing guard stops ordinary strikes and overheads. Crouching guard stops ordinary strikes and lows, but loses to overheads. Guard prevents damage and briefly locks movement in blockstun. You cannot guard in the air. A sweep catches standing opponents but passes below a jump. Attacks are commitments: wait for a heavy to miss, then approach during recovery. A short press buffer helps time your next action near the end of recovery.
 
+Contact briefly freezes both fighters and projectiles, with a shorter pause for blocks and a stronger pause for heavy hits. Combat and animation time freeze together, including the round timer and stun durations. Presses during contact pause enter the ordinary command buffer without aging until the fight advances. Misses have no contact pause.
+
 Hold a direction at takeoff to commit to a forward or backward jump, or jump vertically without one. Attacking preserves that trajectory; taking a hit interrupts horizontal drift. Jump over an opponent to change sides. Fighters automatically face one another when free to act; a committed attack keeps its facing until it ends. Delay an aerial strike until after crossing to attack back toward the opponent. Jump plus light/heavy can be pressed together near the end of recovery to buffer a jumping overhead. Commands expire quickly, and pauses and round transitions discard them. A heavy buffered before landing remains a heavy once landing recovery ends.
 
 Labels above the opponent distinguish low sweeps, overheads, heavy strikes and bolts during their actual startup and active windows. **RECOVERING** marks the committed recovery of a heavy, sweep or Riftbreaker, including a miss. Close distance to punish an opening; the label does not change attack reach or guarantee a hit.
@@ -31,7 +33,9 @@ The two presentations express the same astronomical citadel, fighters and combat
 
 ## Combat presentation
 
-Every mode communicates standing and crouching guard, jump ascent/apex/descent, anticipation, active attack, recovery, landing, injury, knockdown and wake-up. Travel drives walking; holding against a boundary does not march in place. Complete drawings supply the anatomy and clothing, with no runtime body assembly. Grounded cels use support pivots, while jumping cels retain a virtual ground pivot above the simulation's elevation.
+Every mode communicates standing and crouching guard, jump ascent/apex/descent, anticipation, active attack, recovery, landing, injury, knockdown and wake-up. Quiet breathing keeps a stable stance; eight travel cels keep the hands raised through a low fighting shuffle. Signed travel drives footwork and retains its phase across brief stops and reversals; holding against a boundary does not march in place. High guard shields the face with both forearms, low guard compresses that defense into a crouch, and block recoil settles back into guard. Injury remains visible until hitstun releases control. Ordinary jumps have a brief cosmetic landing that yields immediately to guard or attack.
+
+Complete drawings supply the anatomy and clothing, with no runtime body assembly. Grounded action cels register the support boot, while jumping cels retain a virtual ground pivot above the simulation's elevation. Anticipation, contact and retraction occupy the corresponding simulation windows; recovery never retains the contact drawing. Standing attacks return to the same neutral cel used by idle. Kael's aerial overhead uses a descending fist, while Nera's uses a descending kick.
 
 Move trails appear only during the actual active window, including a miss. Nera's Crescent heel has a tall jade crescent, sweeps stay near the ground, aerial attacks descend diagonally, and Kael's punches and Riftbreaker produce horizontal copper pressure. Stormglass artwork tracks the actual projectile and mirrors with its own facing. Trail extents are cosmetic and do not determine reach or collision. Contact bursts require a hit or block event; charge, release, knockdown and misses cannot manufacture hit confirmation. Guard seals differ in shape and color from damage bursts. The existing opponent labels remain above artwork and explain guard height and recovery.
 
@@ -50,7 +54,7 @@ Paths below are relative to `src/games/obsidian-duel/`.
 | `cpu.ts` | Seeded decisions using delayed visible observations and ordinary action commands |
 | `input.ts` | Shared captured-button snapshots translated into fighting actions |
 | `themes.ts` | Theme names, stage palettes and cue colors |
-| `animation.ts` | Cosmetic action observations, travel-driven walking and semantic whole-cel timing |
+| `animation.ts` | Cosmetic action observations, retained footwork phase, defensive reactions, landing and semantic whole-cel timing |
 | `presentation.ts` | Uniform arena transform, mode-specific cels, move trails and bounded contact effects |
 | `asset-art.ts`, `assets.ts` | Whole-body cel layout, validation and Foundry image preparation |
 | `deluxe-assets.ts`, `deluxe-art.ts`, `deluxe-presentation.ts` | Independent detailed sprite preparation, eight effect anchors, lunar scene, mist and reflections |
@@ -63,7 +67,7 @@ Simulation records horizontal position, elevation, velocity and facing. Startup,
 
 The CPU samples visible spacing, telegraphs and incoming bolts, then receives those observations after a reaction delay. Decisions have their own cadence and seeded mistakes. The CPU cannot read player inputs or buffered commands and uses the same movement, guard, cooldown and combat restrictions as the player.
 
-All modes use complete image sprites through Canvas; the selection cover remains an editable SVG. Nera's ivory tunic, turquoise sash and fast kicks distinguish her from Kael's charcoal wrap, copper sash and committed punches. Each atlas covers the same 16 semantic clips. The [artwork guide](../../../src/games/obsidian-duel/art/README.md#cel-layout-and-timing) owns source sheets, frame selection, pivot packing and pose requirements.
+All modes use complete image sprites through Canvas; the selection cover remains an editable SVG. Nera's ivory tunic, turquoise sash and fast kicks distinguish her from Kael's charcoal wrap, copper sash and committed punches. Each atlas covers the same 16 semantic clips. Each fighter and theme owns separate movement/defense and combat sheets. The [artwork guide](../../../src/games/obsidian-duel/art/README.md#cel-layout-and-timing) owns source sheets, frame selection, pivot packing and pose requirements.
 
 ## Architecture decisions
 

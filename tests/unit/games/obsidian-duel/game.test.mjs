@@ -21,7 +21,8 @@ test('authored windows and attack ownership gate hits; buffered presses wait for
   assert.equal(p.state, 'startup'); assert.equal(target.health, 100);
   advance(m, 4); assert.equal(target.health, 100);
   advance(m, 1); assert.equal(p.state, 'active'); assert.equal(target.health, 93);
-  assert.deepEqual(p.attack.hits, [1]); advance(m, 4); assert.equal(target.health, 93);
+  assert.deepEqual(p.attack.hits, [1]); advance(m, Math.ceil(m.impactPause / dt));
+  advance(m, 4); assert.equal(target.health, 93);
   assert.equal(attackPhase(p.attack, fighters.nera.attacks.light), 'recovery');
   advance(m, 6); stepMatch(m, { ...idle, heavy: true }, dt, idle);
   const id = p.attack.id; assert.equal(p.buffer.kind, 'heavy');
@@ -46,6 +47,30 @@ test('blocking is high/low/overhead aware, prevents damage and owns blockstun', 
   assert.equal(guards(target, fighters.nera.attacks.light), false);
 });
 
+test('contact pause freezes the entire fight and captures presses without aging their buffer', () => {
+  for (const blocked of [false, true]) {
+    const m = arenaMatch(), [p, target] = m.fighters;
+    attack(m, 'heavy', 0, fighters.nera.attacks.heavy.startup - dt);
+    stepMatch(m, idle, dt, { ...idle, block: blocked });
+    assert.ok(m.impactPause > 0);
+    m.projectiles.push({ id: 900, owner: 0, x: 100, z: 76, facing: 1, life: 1 });
+    const snapshot = () => ({ elapsed: m.elapsed, timer: m.timer, attackTime: p.attack.time,
+      stun: target.stateTime, x: target.x, z: target.z, health: target.health, projectile: { ...m.projectiles[0] } });
+    const before = snapshot();
+    stepMatch(m, { ...idle, jump: true, light: true }, .005, idle);
+    assert.equal(p.buffer.kind, 'light'); assert.equal(p.buffer.jump, true);
+    const ttl = p.buffer.ttl;
+    for (let i = 0; i < 20 && m.impactPause > 0; i++) stepMatch(m, idle, Math.min(.005, m.impactPause), idle);
+    assert.equal(m.impactPause, 0);
+    assert.deepEqual(snapshot(), before, 'fighters, projectile, combat clock and animation clock freeze together');
+    assert.equal(p.buffer.ttl, ttl);
+    stepMatch(m, idle, dt, idle);
+    assert.ok(m.elapsed > before.elapsed); assert.ok(m.projectiles[0].x > before.projectile.x);
+    assert.ok(p.buffer.ttl < ttl);
+    assert.equal(target.health, before.health, 'the frozen contact cannot hit twice');
+  }
+});
+
 test('hitstun interrupts attacks; knockdown and wake-up release with protected control', () => {
   const m = arenaMatch(), p = m.fighters[0], target = m.fighters[1];
   attack(m, 'heavy', 1); attack(m, 'light', 0, fighters.nera.attacks.light.startup - dt);
@@ -55,6 +80,7 @@ test('hitstun interrupts attacks; knockdown and wake-up release with protected c
   p.attack = null; p.state = 'idle'; target.x = p.x + 80; target.vx = 0;
   attack(m, 'sweep', 0, fighters.nera.attacks.sweep.startup - dt); advance(m, 1);
   assert.equal(target.state, 'knockdown');
+  advance(m, Math.ceil(m.impactPause / dt));
   advance(m, 39, idle, { ...idle, light: true }); assert.equal(target.state, 'wakeup'); assert.ok(target.immune > .4);
   p.attack = null; p.state = 'idle'; advance(m, 19);
   assert.equal(target.state, 'idle'); assert.ok(target.immune > .1);
@@ -120,7 +146,7 @@ test('an in-flight bolt keeps its travel and knockback direction after its owner
 });
 
 test('jump attack is overhead and keeps its takeoff motion; sweep misses airborne opponents', () => {
-  const m = arenaMatch(), p = m.fighters[0];
+  const m = arenaMatch('nera', 200), p = m.fighters[0];
   stepMatch(m, { ...idle, jump: true, light: true, x: 1 }, dt, idle);
   assert.equal(p.attack.kind, 'air'); assert.ok(p.z > 0); const x = p.x;
   advance(m, 8, { ...idle, x: -1 }); assert.ok(p.x > x + 30);

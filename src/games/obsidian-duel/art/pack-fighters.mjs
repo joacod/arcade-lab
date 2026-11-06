@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { duelClips } from '../animation.ts';
 import { fighters } from '../content.ts';
 import { foundryCell, foundryFrame } from '../asset-art.ts';
+import { packMotion } from './pack-motion.mjs';
 
 // Whole drawings only: crop transparent gutters, normalize scale/support pivots, pack timed holds.
 // Source sheets contain 36 inspected drawings in six rows of six. No body reconstruction.
@@ -92,7 +93,7 @@ try {
         }
         return { png: canvas.toDataURL('image/png').split(',')[1], size: [image.width, image.height], scale, rows, frames };
       }, { source, slots, clips, cell: foundryCell, kind, reach: Object.fromEntries(Object.entries(fighters[kind].attacks).map(([key, value]) => [key, value.reach])), rows: [0, 209, 418, 627, 836, 1045, 1254] });
-      writeFileSync(new URL(`${folder}/${kind}.png`, import.meta.url), Buffer.from(result.png, 'base64'));
+      writeFileSync(new URL(`${folder}/${kind}.png`, import.meta.url), await packMotion(`${folder}/${sourceFolder}`, kind, Buffer.from(result.png, 'base64')));
       layout.fighters[kind] = { size: result.size, scale: result.scale, rows: result.rows, frames: result.frames };
       console.log(`${folder}/${kind}: 36 complete drawings, ${Object.values(slots).flat().length} timed cels`);
     }

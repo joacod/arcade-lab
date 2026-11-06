@@ -1,4 +1,4 @@
-import { arena, fighters, type FighterId, type AttackKind, type AttackDefinition } from './content.ts';
+import { arena, fighters, impactPauses, type FighterId, type AttackKind, type AttackDefinition } from './content.ts';
 import { createBrain, cpuAction, type Brain } from './cpu.ts';
 export interface Action { x: number; crouch: boolean; block: boolean; jump: boolean; light: boolean; heavy: boolean; special: boolean }
 export const idle: Readonly<Action> = { x: 0, crouch: false, block: false, jump: false, light: false, heavy: false, special: false };
@@ -14,7 +14,7 @@ export interface DuelEvent { type: EventType; x: number; z: number; fighter: num
 export interface Projectile { id: number; owner: number; x: number; z: number; facing: 1 | -1; life: number }
 export interface Match {
   fighters: [Fighter, Fighter]; wins: [number, number]; phase: 'intro' | 'fight' | 'roundEnd' | 'complete';
-  phaseTime: number; timer: number; round: number; elapsed: number; winner: number | null; reason: 'ko' | 'timeout' | 'draw';
+  phaseTime: number; timer: number; round: number; elapsed: number; impactPause: number; winner: number | null; reason: 'ko' | 'timeout' | 'draw';
   status: 'active' | 'paused' | 'victory' | 'defeat'; nextAttack: number; projectiles: Projectile[]; events: DuelEvent[]; brain: Brain;
 }
 function fighter(kind: FighterId, side: number): Fighter {
@@ -23,7 +23,7 @@ function fighter(kind: FighterId, side: number): Fighter {
 }
 export function createMatch(selected: FighterId = 'nera', seed = 803): Match {
   return { fighters: [fighter(selected, 0), fighter(selected === 'nera' ? 'kael' : 'nera', 1)], wins: [0, 0],
-    phase: 'intro', phaseTime: 3, timer: arena.roundTime, round: 1, elapsed: 0, winner: null, reason: 'ko',
+    phase: 'intro', phaseTime: 3, timer: arena.roundTime, round: 1, elapsed: 0, impactPause: 0, winner: null, reason: 'ko',
     status: 'active', nextAttack: 1, projectiles: [], events: [], brain: createBrain(seed) };
 }
 export function takeEvents(m: Match) { return m.events.splice(0); }
@@ -70,11 +70,14 @@ function tick(f: Fighter, dt: number) {
     }
   }
 }
-function command(m: Match, index: number, a: Action, dt: number) {
-  const f = m.fighters[index]!, other = m.fighters[1 - index]!;
+function bufferCommand(f: Fighter, a: Action) {
   if (a.special) f.buffer = { kind: 'special', jump: false, ttl: .15 };
   else if (a.heavy || a.light) f.buffer = { kind: a.crouch && a.light ? 'sweep' : a.heavy ? 'heavy' : 'light', jump: a.jump, ttl: .15 };
   else if (a.jump) f.buffer = { kind: 'jump', jump: true, ttl: .13 };
+}
+function command(m: Match, index: number, a: Action, dt: number) {
+  const f = m.fighters[index]!, other = m.fighters[1 - index]!;
+  bufferCommand(f, a);
   if (f.attack || ['blockstun', 'hitstun', 'knockdown', 'wakeup', 'ko'].includes(f.state) || f.stateTime > 0) return;
   f.facing = other.x >= f.x ? 1 : -1;
   f.crouched = a.crouch && f.z === 0; f.guarding = a.block && f.z === 0;
@@ -107,6 +110,7 @@ function separate(m: Match) {
 interface Contact { source: number; target: number; attack: AttackDefinition; blocked: boolean; direction: 1 | -1 }
 function contact(m: Match, c: Contact) {
   const target = m.fighters[c.target]!, d = c.attack;
+  m.impactPause = Math.max(m.impactPause, c.blocked ? impactPauses.block : d.damage >= 15 ? impactPauses.heavy : impactPauses.light);
   target.attack = null; target.buffer = null; target.airSpeed = 0; target.vx = c.direction * d.push * (c.blocked ? .6 : 1);
   if (c.blocked) { target.state = 'blockstun'; target.stateTime = .16; emit(m, 'block', c.target, .65, d.height === 'low' ? 22 : 92); return; }
   target.guarding = false; target.health = Math.max(0, target.health - d.damage);
@@ -121,7 +125,7 @@ function finishRound(m: Match, reason: 'ko' | 'timeout') {
   const [a, b] = m.fighters; m.winner = a.health === b.health ? null : a.health > b.health ? 0 : 1;
   m.reason = m.winner === null ? 'draw' : reason;
   if (m.winner !== null) m.wins[m.winner] = m.wins[m.winner]! + 1;
-  m.phase = 'roundEnd'; m.phaseTime = 2.5; m.projectiles = [];
+  m.phase = 'roundEnd'; m.phaseTime = 2.5; m.projectiles = []; m.impactPause = 0;
   for (const f of m.fighters) {
     f.attack = null; f.buffer = null; f.airSpeed = 0; f.guarding = false; f.crouched = false; f.stateTime = 0;
     f.state = f.health <= 0 ? 'ko' : 'idle';
@@ -130,7 +134,17 @@ function finishRound(m: Match, reason: 'ko' | 'timeout') {
 }
 export function stepMatch(m: Match, action: Action, elapsed: number, cpuOverride?: Action) {
   if (m.status !== 'active' || !Number.isFinite(elapsed) || elapsed <= 0) return;
-  const dt = Math.min(elapsed, 1 / 30); m.elapsed += dt;
+  let dt = Math.min(elapsed, 1 / 30);
+  if (m.impactPause > 0) {
+    // Simulation owns contact freeze, including projectiles, timer and animation
+    // time. Capture pressed actions now so the pause cannot swallow a command.
+    bufferCommand(m.fighters[0], action);
+    if (cpuOverride) bufferCommand(m.fighters[1], cpuOverride);
+    const frozen = Math.min(dt, m.impactPause);
+    m.impactPause -= frozen; dt -= frozen;
+    if (dt <= 0) return;
+  }
+  m.elapsed += dt;
   if (m.phase === 'intro') {
     if (m.phaseTime === 3) emit(m, 'count', 0);
     const before = Math.ceil(m.phaseTime); m.phaseTime = Math.max(0, m.phaseTime - dt);
