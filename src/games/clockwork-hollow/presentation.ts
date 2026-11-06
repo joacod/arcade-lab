@@ -3,7 +3,7 @@ import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
 import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
 import type { Screen } from './ui.ts';
-import { createKeeperAnimation, type KeeperPose } from './animation.ts';
+import { createKeeperAnimation } from './animation.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { createBellgardenDrawing } from './asset-presentation.ts';
 import type { LumenDrawing, LumenDrawingFactory } from './deluxe-presentation.ts';
@@ -43,23 +43,6 @@ export function createPresentation(surface: HTMLElement) {
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, r); gradient.addColorStop(0, color); gradient.addColorStop(1, '#8fe6d000');
     circle(x, y, r, gradient);
   }
-  function gear(x: number, y: number, r: number, angle: number, color: string) {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color; ctx.beginPath();
-    for (let i = 0; i < 64; i++) {
-      const a = i / 64 * Math.PI * 2, radius = r * (i % 4 < 2 ? 1 : 0.89);
-      const px = Math.cos(a) * radius, py = Math.sin(a) * radius;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#0b282b'; ctx.lineWidth = r * 0.14;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.63, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 6; i++) { ctx.rotate(Math.PI / 3); line(r * 0.18, 0, r * 0.6, 0, color, r * 0.14); }
-    circle(0, 0, r * 0.14, '#0b282b'); ctx.restore();
-  }
-  function leaf(x: number, y: number, length: number, angle: number, color: string) {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color; ctx.beginPath();
-    ctx.moveTo(0, 0); ctx.quadraticCurveTo(length * 0.8, -length * 0.55, length, 0); ctx.quadraticCurveTo(length * 0.55, length * 0.4, 0, 0); ctx.fill(); ctx.restore();
-  }
   function scenery(view: HollowView, time: number, level: Level) {
     if (deluxe) { deluxe.scenery(view, level.environment, time, motion.matches); return; }
     if (art && theme === themes.arcade) { art.scenery(view, level.environment, theme); return; }
@@ -68,11 +51,6 @@ export function createPresentation(surface: HTMLElement) {
     if (deluxe) { deluxe.stone(s, level.environment, index, view); return; }
     if (art && theme === themes.arcade) { art.stone(s, level.environment, index, view); return; }
   }
-  function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, _time: number, defeated: boolean, pose: KeeperPose = { phase: 0, lean: 0 }) {
-    const drawing = sprites();
-    if (drawing) drawing.keeper(p, pose, defeated, motion.matches, landing);
-  }
-
   function sign(x: number, groundY: number, title: string, detail: string) {
     const top = groundY - 96;
     // A narrow, grounded post and recessed plaque read as scenery, not a ledge.
@@ -212,20 +190,13 @@ export function createPresentation(surface: HTMLElement) {
       if (ground) {
         ctx.fillStyle = '#061e2577'; ctx.beginPath(); ctx.ellipse(p.x + m.width / 2, ground.y - 1, Math.max(6, 18 - (ground.y - p.y - m.height) * 0.05), 4, 0, 0, Math.PI * 2); ctx.fill();
       }
-      glow(p.x + m.width / 2, p.y + 20, 50, '#b4edce12'); keeper(p, cosmeticTime, run.status === 'defeat', pose);
+      glow(p.x + m.width / 2, p.y + 20, 50, '#b4edce12'); sprites()?.keeper(p, pose, run.status === 'defeat', motion.matches, landing);
       for (const particle of particles) {
         particle.life -= dt; particle.x += particle.vx * dt; particle.y += particle.vy * dt; particle.vy += 240 * dt;
         ctx.globalAlpha = Math.max(0, particle.life / particle.max); circle(particle.x, particle.y, 2.5, particle.color);
       }
       ctx.globalAlpha = 1; particles = particles.filter(particle => particle.life > 0); landing = Math.max(0, landing - dt * 5);
       ctx.restore();
-      // The title enlarges the active keeper artwork without another asset owner.
-      if (screen === 'title' && size.width > 850) {
-        ctx.save(); ctx.translate(view.width * 0.77, view.height * 0.62); ctx.scale(2.6, 2.6);
-        gear(0, -25, 65, -0.2, '#8eae7a35'); glow(0, -25, 100, '#c7e6ad22');
-        keeper({ x: -m.width / 2, y: -m.height, vx: 0, vy: 0, facing: 1, grounded: true }, 0, false);
-        leaf(-50, 15, 45, -0.6, '#729666'); leaf(48, 18, 38, -2.4, '#4f8060'); ctx.restore();
-      }
     },
     dispose() { if (disposed) return; disposed = true; particles = []; art = undefined; deluxe?.dispose(); deluxe = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
   };

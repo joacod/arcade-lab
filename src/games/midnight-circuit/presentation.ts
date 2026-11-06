@@ -167,11 +167,6 @@ export function createPresentation(surface: HTMLElement, artwork: CircuitArtwork
         text('GRID ONLINE', view.width / 2, view.ground - 205, 28, '#bcffe5', 'center');
         text('THE CITY REMEMBERS THE LIGHT.', view.width / 2, view.ground - 174, 10, '#f8ddb5', 'center');
       }
-      if (screen === 'title' && size.width > 850) {
-        ctx.save(); ctx.translate(view.width * .77, view.ground + 85); ctx.scale(2.55, 2.55);
-        glow(0, -65, 120, '#5dedd62b'); body({ ...run.player, x: 0, lane: 0, facing: -1 }, 0); ctx.restore();
-        text('ROOK / STREET CIRCUIT', view.width * .77, view.ground + 125, 11, '#9de5da', 'center');
-      }
       // A subtle border treatment gives the rain-soaked scene a printed arcade-poster finish.
       const shade = ctx.createLinearGradient(0, 0, 0, view.height); shade.addColorStop(0, '#060d1b55'); shade.addColorStop(.3, '#060d1b00'); shade.addColorStop(1, '#060d1b55'); rect(0, 0, view.width, view.height, shade);
     },

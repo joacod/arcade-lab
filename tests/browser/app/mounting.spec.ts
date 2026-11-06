@@ -62,6 +62,7 @@ test('collection restores navigation and ignores a cancelled lazy load that fini
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await expect(page.locator('.arcade-game:focus')).toHaveCount(0);
   const selected = page.getByRole('button', { name: 'Open game: Blastline', exact: true });
   await selected.scrollIntoViewIfNeeded();
   const scrollTop = await page.locator('.arcade-selection').evaluate(root => root.scrollTop);

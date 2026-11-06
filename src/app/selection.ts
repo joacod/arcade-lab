@@ -77,6 +77,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     select(id);
   }, { signal: lifetime.signal });
   root.scrollTop = state.scrollTop;
-  (buttons.find(button => button.dataset.game === state.selected) ?? buttons[0])?.focus({ preventScroll: true });
+  // Restore a deliberate selection, but leave a fresh landing free of automatic focus.
+  buttons.find(button => button.dataset.game === state.selected)?.focus({ preventScroll: true });
   return { dispose() { lifetime.abort(); root.remove(); } };
 }

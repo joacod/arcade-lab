@@ -53,7 +53,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   let configuration: ConfigurationId = 'clearing';
   const roundDescription = () => `Survive ${configurations[configuration].round.duration} seconds. Collect gems and upgrade automatic weapons.`;
   const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="menu-setup"></div><div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
+  gameContent.innerHTML = `<div class="upgrade-panel" hidden><output class="choice-context" aria-live="off"></output><div class="upgrade-choices" role="group" aria-label="Choose one upgrade"></div><p class="choice-hint">Choose one · click / tap or arrows + Enter</p></div><div class="run-details" hidden><output class="loadout"></output><output class="modifiers"></output><output class="kills"></output></div>`;
   const rounds = document.createElement('fieldset'); rounds.className = 'menu-choice-group';
   rounds.innerHTML = '<legend>Choose your round</legend><div class="menu-choice-grid"></div>';
   for (const [id, config] of Object.entries(configurations)) {
@@ -70,21 +70,20 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       menu.description.textContent = roundDescription(); onConfiguration(configuration);
     }, { signal });
   }
-  gameContent.querySelector('.menu-setup')!.append(rounds);
   const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: defaultTheme(themes), onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
     onAction: action => action === 'exit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
-    game: gameContent,
-    theme: appearance.element, cycleTheme: appearance.cycle,
+    game: gameContent, setup: rounds,
+    theme: appearance.element,
     controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       { id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
+      { id: 'title', requiresReady: false, label: 'Change round · new run', screens: ['paused', 'victory', 'defeat'] },
       { id: 'exit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'choosing'] },
     ],
   });
@@ -202,7 +201,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       }
     },
     show(screen: Screen, focus = true) {
-      $<HTMLElement>('.menu-setup').hidden = screen !== 'title';
       $<HTMLElement>('.run-details').hidden = screen === 'title' || screen === 'choosing';
       $<HTMLElement>('.upgrade-panel').hidden = screen !== 'choosing';
       heading.textContent = screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat'

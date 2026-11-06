@@ -22,12 +22,9 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const results = createMenuReadout('Run results');
   let layout: Layout = initialLayout;
   const help = document.createElement('div');
-  const setup = document.createElement('div');
   const keyboard = createKeyboardChoices({ id: 'circuit', choices: layouts, value: layout, signal, onChange(value) {
     layout = value; onLayout(layout); reflectBindings();
   } });
-  keyboard.classList.add('circuit-keyboard');
-  setup.append(keyboard, results.element);
   function reflectBindings() {
     const { movement, bindings } = layouts[layout];
     const light = bindingLabel(bindings.light), heavy = bindingLabel(bindings.heavy), jump = bindingLabel(bindings.jump);
@@ -42,8 +39,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: setup, theme: style.element, cycleTheme: style.cycle,
-    controls: help,
+    game: results.element, theme: style.element,
+    preferences: keyboard, controls: help,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
@@ -61,7 +58,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;
-      keyboard.hidden = screen !== 'title' && screen !== 'paused';
       menu.heading.textContent = screen === 'title' ? 'Midnight Circuit' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'title' ? "Fight through the backstreets and defeat the Circuit Warden at the power station." : screen === 'paused' ? '' : screen === 'interlude' ? 'The backstreets are behind you. The Warden is waiting at the heart of the grid. Health restored for the final push.' : screen === 'victory' ? 'Circuit Warden defeated.' : 'No lives remaining.';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(screen);

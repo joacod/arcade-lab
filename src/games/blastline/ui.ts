@@ -27,8 +27,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const keyboard = createKeyboardChoices({ id: 'blast', choices: layouts, value: layout, signal, onChange(value) {
     layout = value; onLayout(layout); reflectBindings();
   } });
-  const gameContent = document.createElement('div');
-  gameContent.append(keyboard, results.element);
   function reflectBindings() {
     const { bindings } = layouts[layout];
     const move = `${bindingLabel(bindings.left)} / ${bindingLabel(bindings.right)}`;
@@ -45,8 +43,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
-    controls: help,
+    game: results.element, theme: theme.element,
+    preferences: keyboard, controls: help,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
@@ -71,7 +69,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     },
     show(next: Screen, focus = true) {
       screen = next;
-      keyboard.hidden = next !== 'title' && next !== 'paused';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
       menu.heading.textContent = next === 'title' ? 'Blastline' : next === 'paused' ? 'Paused' : next === 'victory' ? 'Victory' : next === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = next === 'title' ? 'Rescue Bolt, cut the power and reach extraction. Supply posts save progress and refill your resources.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';

@@ -25,9 +25,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const keyboard = createKeyboardChoices({ id: 'duel', choices: layouts, value: layout, signal, onChange(value) {
     layout = value; onLayout(layout); reflectBindings();
   } });
-  const gameContent = document.createElement('div');
-  gameContent.innerHTML = `<div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
-  gameContent.append(keyboard, results.element);
+  const rosterChoices = document.createElement('fieldset'); rosterChoices.className = 'menu-choice-group';
+  rosterChoices.innerHTML = `<legend>Choose your fighter</legend><div class="duel-roster" role="group" aria-label="Choose your fighter"><button data-fighter="nera" aria-pressed="true"><b>Nera</b><small>Fast palms · Energy bolt</small></button><button data-fighter="kael" aria-pressed="false"><b>Kael</b><small>Heavy blows · Advancing strike</small></button></div>`;
   function reflectBindings() {
     const { bindings } = layouts[layout];
     const move = `${bindingLabel(bindings.left)} / ${bindingLabel(bindings.right)}`;
@@ -45,12 +44,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
-    controls: help,
+    game: results.element, setup: rosterChoices, theme: theme.element,
+    preferences: keyboard, controls: help,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-      { id: 'title', requiresReady: false, label: 'Game setup', screens: ['paused', 'victory', 'defeat'] },
+      { id: 'title', requiresReady: false, label: 'Change fighter · new match', screens: ['paused', 'victory', 'defeat'] },
       { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'] }],
   });
 
@@ -74,8 +73,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;
-      keyboard.hidden = screen !== 'title' && screen !== 'paused';
-      $<HTMLElement>('.duel-roster').hidden = screen !== 'title';
       results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
       menu.heading.textContent = screen === 'title' ? 'Obsidian Duel' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = screen === 'title' ? 'Win two rounds against the CPU. Choose your fighter.' : '';

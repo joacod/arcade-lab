@@ -30,7 +30,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'hollow', title: 'Clockwork Hollow', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: theme.element, cycleTheme: theme.cycle,
+    game: results.element, theme: theme.element,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Vents: cross on CLEAR. The bar drains toward the next phase.<br>Touch: arrows + jump`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },

@@ -23,8 +23,11 @@ interface MenuOptions<Action extends string, Screen extends string> {
   gameplayUI: Iterable<HTMLElement>;
   /** Composed game content. Only supply sections the game actually needs. */
   game?: HTMLElement;
+  /** New-run choices, shown on the title screen beside appearance when space allows. */
+  setup?: HTMLElement;
   theme: HTMLElement;
-  cycleTheme?(): void;
+  /** Secondary preferences, separate from game setup and retained-run results. */
+  preferences?: HTMLElement;
   controls: string | HTMLElement;
 }
 
@@ -41,14 +44,17 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   layer.innerHTML = `<section class="game-menu" aria-labelledby="${config.id}-heading">
     <header class="game-menu-header"><p class="game-menu-eyebrow">ARCADE LAB <span aria-hidden="true">/</span> <span class="game-menu-name">${config.title}</span></p><h1 id="${config.id}-heading">${config.title}</h1></header>
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
-      <p class="game-menu-description"></p>
-      <div class="game-menu-settings"><div class="game-menu-theme"></div></div>
-      <div class="game-menu-content"></div>
-      <div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
-      <details class="game-menu-controls"><summary>How to play</summary><div><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details>
+      <div class="game-menu-main">
+        <p class="game-menu-description"></p>
+        <div class="game-menu-settings"><div class="game-menu-theme"></div></div>
+        <div class="game-menu-setup" hidden></div>
+        <div class="game-menu-content"></div>
+        <div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
+      </div>
+      <div class="game-menu-preferences" hidden><div class="game-menu-preference-fields"></div><section class="game-menu-controls" aria-labelledby="${config.id}-help"><h2 id="${config.id}-help">How to play</h2><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound<br>Escape goes back, pauses play, or exits fullscreen.</p></section></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
-    <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
+    <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}<button type="button" class="game-menu-open-settings" hidden>Settings</button><button type="button" class="game-menu-back" hidden><span aria-hidden="true">← </span><span class="game-menu-back-label"></span></button></footer>
   </section>`;
   // HUD/footer wrapping must not constrain menu space or move its actions.
   // The stage retains its geometry while the menu uses the whole game viewport.
@@ -62,18 +68,45 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const notices = layer.querySelector<HTMLElement>('.game-menu-notices')!;
   const actionBar = layer.querySelector<HTMLElement>('.game-menu-actions')!;
   const heading = layer.querySelector('h1')!;
+  heading.tabIndex = -1;
   const description = layer.querySelector<HTMLElement>('.game-menu-description')!;
   const body = layer.querySelector<HTMLElement>('.game-menu-body')!;
   const content = layer.querySelector<HTMLElement>('.game-menu-content')!;
   const settings = layer.querySelector<HTMLElement>('.game-menu-settings')!;
+  const setup = layer.querySelector<HTMLElement>('.game-menu-setup')!;
+  if (config.setup) setup.append(config.setup);
   const utilities = layer.querySelector<HTMLElement>('.game-menu-utilities')!;
-  const controls = layer.querySelector<HTMLDetailsElement>('.game-menu-controls')!;
+  const main = layer.querySelector<HTMLElement>('.game-menu-main')!;
+  const preferences = layer.querySelector<HTMLElement>('.game-menu-preferences')!;
+  if (config.preferences) layer.querySelector('.game-menu-preference-fields')!.append(config.preferences);
   const instructions = layer.querySelector<HTMLElement>('.game-menu-instructions')!;
   if (typeof config.controls === 'string') instructions.innerHTML = config.controls;
   else instructions.append(config.controls);
   if (config.game) content.append(config.game);
   layer.querySelector('.game-menu-theme')!.append(config.theme);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];
+  const openSettings = layer.querySelector<HTMLButtonElement>('.game-menu-open-settings')!;
+  const back = layer.querySelector<HTMLButtonElement>('.game-menu-back')!;
+  const backLabel = layer.querySelector<HTMLElement>('.game-menu-back-label')!;
+  // Keep Settings beside collection navigation without changing game action order.
+  const exit = actions.find(button => ['quit', 'exit'].includes(button.dataset.menuAction!));
+  if (exit) exit.before(openSettings);
+  let settingsOpen = false, screenHeading = '', mainScroll = 0;
+  function showSettings(open: boolean) {
+    if (open) { screenHeading = heading.textContent!; mainScroll = body.scrollTop; }
+    settingsOpen = open;
+    heading.textContent = open ? 'Settings' : screenHeading;
+    name.hidden = !open && screen === 'title';
+    main.hidden = open; preferences.hidden = !open;
+    openSettings.hidden = open || screen !== 'title' && screen !== 'paused';
+    back.hidden = !open;
+    backLabel.textContent = screen === 'paused' ? 'Back to pause menu' : 'Back to main menu';
+    actions.forEach((button, i) => { button.hidden = open || !config.actions[i]!.screens.includes(screen as Screen); });
+    body.scrollTop = open ? 0 : mainScroll;
+    (open ? heading : openSettings).focus({ preventScroll: true });
+  }
+  openSettings.addEventListener('click', () => showSettings(true), { signal: config.signal });
+  back.addEventListener('click', () => showSettings(false), { signal: config.signal });
   const retryArt = layer.querySelector<HTMLButtonElement>('.game-menu-retry-art')!;
   let retryArtwork: (() => void) | undefined;
   let returnFromRetry = false;
@@ -92,7 +125,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   let muted = false, screen = '';
   root.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey
-      || !['KeyP', 'KeyF', 'KeyS', 'KeyT', 'Escape'].includes(event.code)) return;
+      || !['KeyP', 'KeyF', 'KeyS', 'Escape'].includes(event.code)) return;
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable
       || target.closest('input:not([type="radio"]):not([type="checkbox"]), textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
@@ -100,15 +133,17 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       if (!fullscreen.hidden && !fullscreen.disabled) { event.preventDefault(); fullscreen.click(); }
       return;
     }
-    if (event.code === 'KeyS' || event.code === 'KeyT') {
+    if (event.code === 'Escape' && settingsOpen && !document.fullscreenElement) {
+      event.preventDefault(); showSettings(false); return;
+    }
+    if (event.code === 'KeyS') {
       if (screen !== 'title' && screen !== 'paused') return;
-      if (event.code === 'KeyS') { event.preventDefault(); mute.click(); }
-      else if (config.cycleTheme) { event.preventDefault(); config.cycleTheme(); }
+      event.preventDefault(); mute.click();
       return;
     }
     const button = screen === 'playing' ? config.pause : screen === 'paused' && event.code === 'KeyP'
       ? actions.find(button => button.dataset.menuAction === 'resume') : undefined;
-    if (!button || button.disabled || button.hidden) return;
+    if (!button || button.disabled || button.hidden && !settingsOpen) return;
     // Fullscreen Escape belongs to the browser, even when it also reaches us.
     if (event.code !== 'Escape' || !document.fullscreenElement) event.preventDefault();
     button.click();
@@ -132,7 +167,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       actions.forEach((button, i) => { if (config.actions[i]!.requiresReady !== false) button.disabled = state !== 'ready'; });
       if (state !== 'loading' && returnFromRetry) {
         if (document.activeElement === body && !document.hidden && document.hasFocus()) {
-          (state === 'failed' ? retryArt : actions.find(button => !button.hidden && !button.disabled))?.focus({ preventScroll: true });
+          (state === 'failed' ? retryArt : settingsOpen ? back : actions.find(button => !button.hidden && !button.disabled))?.focus({ preventScroll: true });
         }
         returnFromRetry = false;
       }
@@ -145,12 +180,18 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       // Browser blur and focus leaving the game must never pull focus back into it.
       const moveFocus = focus || (next !== 'playing' && screen === 'playing'
         && !document.hidden && document.hasFocus() && root.contains(document.activeElement));
+      if (settingsOpen && next === screen) screenHeading = heading.textContent!;
       if (next !== screen) {
-        controls.open = false; layer.querySelector('.game-menu-body')!.scrollTop = 0; }
+        settingsOpen = false; body.scrollTop = 0;
+      }
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
-      name.hidden = next === 'title';
+      main.hidden = settingsOpen; preferences.hidden = !settingsOpen; back.hidden = !settingsOpen;
+      openSettings.hidden = settingsOpen || next !== 'title' && next !== 'paused';
+      if (settingsOpen) heading.textContent = 'Settings';
+      name.hidden = !settingsOpen && next === 'title';
       description.hidden = !description.textContent;
       const setupScreen = next === 'title' || next === 'paused';
+      setup.hidden = next !== 'title' || !config.setup;
       settings.hidden = !setupScreen || config.theme.hidden;
       utilities.hidden = !setupScreen;
       if (next === 'playing') stage.append(notices);
@@ -161,11 +202,12 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       const primary = visible.find(action => action.primary) ?? visible.find(action => action.requiresReady !== false);
       actions.forEach((button, i) => {
         const action = config.actions[i]!;
-        button.hidden = !action.screens.includes(next);
+        button.hidden = settingsOpen || !action.screens.includes(next);
         button.classList.toggle('game-menu-primary', action === primary);
       });
       if (moveFocus) {
         if (next === 'playing') surface.focus({ preventScroll: true });
+        else if (settingsOpen) heading.focus({ preventScroll: true });
         else if (next === 'choosing') content.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
         else (actions.find(button => !button.hidden && !button.disabled) ?? layer.querySelector<HTMLElement>('.game-menu-body'))?.focus({ preventScroll: true });
       }

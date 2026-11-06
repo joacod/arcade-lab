@@ -26,7 +26,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     id: 'skybreak', title: 'Skybreak', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: appearance.element, cycleTheme: appearance.cycle,
+    game: results.element, theme: appearance.element,
     controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
