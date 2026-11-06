@@ -33,11 +33,11 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.locator('[data-fighter="kael"]').click(); expect((await state()).fighters[0].kind).toBe('kael');
   await page.locator('[data-fighter="nera"]').click();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.keyboard.press('j'); await page.clock.runFor(3100);
+  await page.keyboard.press('z'); await page.clock.runFor(3100);
   expect((await state()).phase).toBe('fight'); expect((await state()).fighters[0].attack).toBe(null);
-  await page.keyboard.down('d'); await page.clock.runFor(250); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(250); await page.keyboard.up('ArrowRight');
   expect((await state()).fighters[0].x).toBeGreaterThan(390);
-  await page.keyboard.down('j'); await page.clock.runFor(450); await page.keyboard.up('j');
+  await page.keyboard.down('z'); await page.clock.runFor(450); await page.keyboard.up('z');
   const swing = (await state()).fighters[0].attack;
   await page.clock.runFor(100); expect(swing).toBe(null); expect((await state()).fighters[0].attack).toBe(null);
   await page.screenshot({ path: info.outputPath('obsidian-duel.png') });
@@ -47,12 +47,12 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
     Object.assign(p, { x: 350, z: 0, vz: 0, vx: 0, airSpeed: 0, attack: null, buffer: null, state: 'idle', stateTime: 0 });
     Object.assign(e, { x: 900, attack: null, state: 'hitstun', stateTime: 10 });
   });
-  await page.keyboard.press('k'); await page.clock.runFor(600);
+  await page.keyboard.press('x'); await page.clock.runFor(600);
   expect((await state()).fighters[0].state).toBe('recovery');
-  await page.keyboard.down('d'); await page.keyboard.down('w'); await page.keyboard.down('j');
-  await page.clock.runFor(17); await page.keyboard.up('w'); await page.keyboard.up('j');
+  await page.keyboard.down('ArrowRight'); await page.keyboard.down('ArrowUp'); await page.keyboard.down('z');
+  await page.clock.runFor(17); await page.keyboard.up('ArrowUp'); await page.keyboard.up('z');
   expect((await state()).fighters[0].z).toBe(0);
-  await page.clock.runFor(140); await page.keyboard.up('d');
+  await page.clock.runFor(140); await page.keyboard.up('ArrowRight');
   const jumping = (await state()).fighters[0];
   expect(jumping.z).toBeGreaterThan(0); expect(jumping.attack.kind).toBe('air');
   await page.clock.runFor(100);
@@ -65,8 +65,8 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
     m.brain.wait = 10;
     m.brain.held = { x: 0, crouch: false, block: false, jump: false, light: false, heavy: false, special: false };
   });
-  await page.keyboard.down('d'); await page.keyboard.down('w'); await page.clock.runFor(17);
-  await page.keyboard.up('w'); await page.keyboard.up('d'); await page.clock.runFor(1000);
+  await page.keyboard.down('ArrowRight'); await page.keyboard.down('ArrowUp'); await page.clock.runFor(17);
+  await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowRight'); await page.clock.runFor(1000);
   const crossed = (await state()).fighters;
   expect(crossed[0].x).toBeGreaterThan(crossed[1].x + 53);
   expect(crossed[0].z).toBe(0); expect(crossed[0].facing).toBe(-1); expect(crossed[1].facing).toBe(1);
@@ -87,7 +87,7 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).duelProbe)).toBe(true);
 
   await page.getByRole('button', { name: 'Resume', exact: false }).click();
-  await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.keyboard.up('ArrowRight');
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: false }).click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
@@ -129,11 +129,11 @@ test('Obsidian Duel owns fighter selection, controls, rounds, interruptions and 
   await page.clock.runFor(17);
   await page.screenshot({ path: info.outputPath('obsidian-phone-telegraph.png') });
   // Held inputs cannot survive a timeout, a fresh round, or the match-result menu.
-  await page.keyboard.down('d');
+  await page.keyboard.down('ArrowRight');
   await page.evaluate(() => { const m = (window as any).duelProbe; m.timer = .01; m.fighters[1].health = 50; });
   await page.clock.runFor(100); expect((await state()).phase).toBe('roundEnd'); expect(await page.locator('[data-held]').count()).toBe(0);
   await page.clock.runFor(5800); expect((await state()).round).toBe(2); expect((await state()).fighters[0].x).toBe(340);
-  await page.keyboard.up('d');
+  await page.keyboard.up('ArrowRight');
   await page.evaluate(() => { const m = (window as any).duelProbe; m.timer = .01; m.fighters[1].health = 50; });
   await page.clock.runFor(2700); await expect(page.getByRole('heading', { name: 'Victory' })).toBeVisible();
   await expect(page.getByLabel('Match results', { exact: true })).toContainText('2 : 0');

@@ -20,7 +20,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
   const preparation = createPreparationScope();
   let activeAppearance: Appearance = 'normal', activeArt: PreparedImages | undefined;
   const host = createHost(container, { fullscreen, className: 'blast-app', label: 'Blastline',
-    surfaceLabel: 'Blastline playfield. A D move, Space jump, J fire, W S aim, K grenade, Q switch operator. P pauses or resumes.',
+    surfaceLabel: 'Blastline playfield.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
   let sound: ReturnType<typeof createSound> | undefined;
@@ -97,7 +97,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), id => {
       if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
-    });
+    }, layout => input?.setLayout(layout));
     presentation = createPresentation(host.surface);
     readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
     host.root.dataset.appearance = 'normal';

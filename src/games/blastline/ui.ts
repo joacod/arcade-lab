@@ -6,27 +6,47 @@ import { createGameMenu } from '../../common/ui/menu.ts';
 import { operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
 import type { Run, BlastEvent } from './state.ts';
-import type { Control } from './input.ts';
+import { initialLayout, layouts, type Layout, type Control } from './input.ts';
+import { bindingLabel } from '../../engine/bindings.ts';
+import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'continue' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void, onLayout: (value: Layout) => void) {
   root.innerHTML = `<header class="blast-hud"><div class="blast-identity"><span class="blast-emblem" aria-hidden="true">↗</span><div><b class="blast-operator">NOVA</b><small class="blast-weapon">ASSAULT / AUTO RIFLE</small><span class="blast-health" aria-label="Health">▰ ▰ ▰ ▰ ▰</span></div></div><div class="blast-orders"><small class="blast-mission">01 / BORDER STATION</small><output class="blast-objective" aria-label="Mission objective"></output></div><div class="blast-resources"><span><b class="blast-lives">5</b> LIVES</span><span><b class="blast-grenades">4</b> GRENADES</span></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="blast-stage"><div class="blast-topline"><span>ROGUE MACHINE TERRITORY</span><span class="blast-sector">SECTOR 01 / BORDER STATION</span></div><div class="blast-banner" role="status" hidden><b></b><span></span></div>
   </main>
   <div class="blast-route" aria-label="Mission route"><div class="blast-progress"></div><span class="blast-route-label">INSERTION</span><span>EXTRACTION →</span></div>
-  <footer class="blast-footer"><div class="blast-hint">A D <span>MOVE</span>　SPACE <span>JUMP</span>　J <span>FIRE</span>　W S <span>AIM</span>　K <span>GRENADE</span>　Q <span>SWITCH</span>　P <span>PAUSE / RESUME</span></div><div class="blast-touch"><div class="blast-directions"><button data-control="up" aria-label="Aim up">↑</button><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Aim down">↓</button></div><button class="blast-swap" data-control="switch" aria-label="Switch operator">Q<small>SWITCH</small></button><div class="blast-triggers"><button data-control="grenade" aria-label="Throw grenade">K<small>GRENADE</small></button><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="fire" aria-label="Fire">J<small>FIRE</small></button></div></div></footer>`;
+  <footer class="blast-footer"><div class="blast-hint"></div><div class="blast-touch"><div class="blast-directions"><button data-control="up" aria-label="Aim up">↑</button><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Aim down">↓</button></div><button class="blast-swap" data-control="switch" aria-label="Switch operator"><span data-key="switch"></span><small>SWITCH</small></button><div class="blast-triggers"><button data-control="grenade" aria-label="Throw grenade"><span data-key="grenade"></span><small>GRENADE</small></button><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="fire" aria-label="Fire"><span data-key="fire"></span><small>FIRE</small></button></div></div></footer>`;
   const $ = createElementLookup(root);
   $('.blast-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Operation results');
+  let layout: Layout = initialLayout;
+  const help = document.createElement('div');
+  const keyboard = createKeyboardChoices({ id: 'blast', choices: layouts, value: layout, signal, onChange(value) {
+    layout = value; onLayout(layout); reflectBindings();
+  } });
+  const gameContent = document.createElement('div');
+  gameContent.append(keyboard, results.element);
+  function reflectBindings() {
+    const { bindings } = layouts[layout];
+    const move = `${bindingLabel(bindings.left)} / ${bindingLabel(bindings.right)}`;
+    const aim = `${bindingLabel(bindings.up)} / ${bindingLabel(bindings.down)}`;
+    const jump = bindingLabel(bindings.jump), fire = bindingLabel(bindings.fire), grenade = bindingLabel(bindings.grenade), swap = bindingLabel(bindings.switch);
+    $('.blast-hint').innerHTML = `${move} <span>MOVE</span>　${jump.toUpperCase()} <span>JUMP</span>　${fire} <span>FIRE</span>　${aim} <span>AIM</span>　${grenade} <span>GRENADE</span>　${swap} <span>SWITCH</span>　P <span>PAUSE / RESUME</span>`;
+    for (const action of ['fire', 'grenade', 'switch'] as const) write(`[data-key="${action}"]`, bindingLabel(bindings[action]));
+    help.innerHTML = `<b>${move}</b> MOVE　 <b>${jump}</b> JUMP　 <b>${fire}</b> HOLD TO FIRE<br><b>${aim}</b> AIM　 <b>${grenade}</b> GRENADE　 <b>${swap}</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p>Touch: use the on-screen controls.</p>`;
+    surface.setAttribute('aria-label', `Blastline playfield. ${move} move, ${jump} jump, ${fire} fire, ${aim} aim, ${grenade} grenade, ${swap} switch operator. P pauses or resumes.`);
+  }
+  reflectBindings();
   const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.blast-stage'), {
     id: 'blast', title: 'Blastline', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer, :scope > .blast-route'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: theme.element, cycleTheme: theme.cycle,
-    controls: `<b>A D / ← →</b> MOVE　 <b>SPACE</b> JUMP　 <b>J</b> HOLD TO FIRE<br><b>W S / ↑ ↓</b> AIM　 <b>K</b> GRENADE　 <b>Q</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p>Touch: use the on-screen controls.</p>`,
+    game: gameContent, theme: theme.element, cycleTheme: theme.cycle,
+    controls: help,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
@@ -46,11 +66,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     consume(events: readonly BlastEvent[], run: Run) {
       const event = events.find(e => ['rescue', 'alarm', 'death', 'checkpoint', 'switch'].includes(e.type));
       if (!event) return;
-      [notice, detail] = event.type === 'rescue' ? ['BOLT IS BACK.', 'DEMOLITION ONLINE / Q TO SWITCH / SUPPLIES REFILLED'] : event.type === 'alarm' ? ['TIME TO LEAVE.', 'POWER OFFLINE / 70 SECONDS TO EXTRACT →'] : event.type === 'death' ? ['KEEP THE LINE.', `${run.lives} LIVES / REDEPLOYING AT LAST SUPPLY POST`] : event.type === 'checkpoint' ? ['LOCKED & LOADED.', 'CHECKPOINT SAVED / HEALTH + GRENADES REFILLED'] : [operators[run.player.operator].name.toUpperCase(), `${operators[run.player.operator].role} ONLINE`];
+      [notice, detail] = event.type === 'rescue' ? ['BOLT IS BACK.', 'DEMOLITION ONLINE / SWITCH OPERATORS / SUPPLIES REFILLED'] : event.type === 'alarm' ? ['TIME TO LEAVE.', 'POWER OFFLINE / 70 SECONDS TO EXTRACT →'] : event.type === 'death' ? ['KEEP THE LINE.', `${run.lives} LIVES / REDEPLOYING AT LAST SUPPLY POST`] : event.type === 'checkpoint' ? ['LOCKED & LOADED.', 'CHECKPOINT SAVED / HEALTH + GRENADES REFILLED'] : [operators[run.player.operator].name.toUpperCase(), `${operators[run.player.operator].role} ONLINE`];
       noticeUntil = run.elapsed + (event.type === 'rescue' ? 5 : 2.8);
     },
     show(next: Screen, focus = true) {
       screen = next;
+      keyboard.hidden = next !== 'title' && next !== 'paused';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
       menu.heading.textContent = next === 'title' ? 'Blastline' : next === 'paused' ? 'Paused' : next === 'victory' ? 'Victory' : next === 'defeat' ? 'Defeat' : 'Stage complete';
       menu.description.textContent = next === 'title' ? 'Rescue Bolt, cut the power and reach extraction. Supply posts save progress and refill your resources.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';

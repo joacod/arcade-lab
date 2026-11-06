@@ -31,8 +31,8 @@ async function openBlastline(page: Page, controlled?: Mode) {
   await expect.poll(() => page.evaluate(() => (window as any).blastImages.length === 3 && (window as any).blastImages.every((i: HTMLImageElement) => i.complete && i.naturalWidth))).toBeTruthy();
   await page.evaluate(() => { (window as any).blastBaseline = (window as any).blastImages.splice(0); });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
-  await page.keyboard.down('d'); await page.keyboard.down('j'); await page.clock.runFor(300);
-  await page.keyboard.press('Escape'); await page.keyboard.up('d'); await page.keyboard.up('j');
+  await page.keyboard.down('ArrowRight'); await page.keyboard.down('z'); await page.clock.runFor(300);
+  await page.keyboard.press('Escape'); await page.keyboard.up('ArrowRight'); await page.keyboard.up('z');
   await page.evaluate(() => { (window as any).retainedBlast = (window as any).blastProbe; });
 }
 const state = (page: Page) => page.evaluate(() => JSON.stringify((window as any).blastProbe));
@@ -78,7 +78,7 @@ test(`${name} retains the live operation, presents both missions and releases it
   }
   await page.evaluate(() => { (window as any).blastRunFrames.length = 0; (window as any).blastProbe.player.immune = 0; });
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  await page.keyboard.down('d'); await page.clock.runFor(650); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(650); await page.keyboard.up('ArrowRight');
   expect(await page.evaluate(() => [...new Set((window as any).blastRunFrames)].sort())).toEqual([0, 1, 2, 3, 4, 5]);
   expect(await state(page)).not.toBe(frozen);
   await page.keyboard.press('Escape');
@@ -96,8 +96,8 @@ test(`${name} retains the live operation, presents both missions and releases it
   await page.evaluate(() => { const r = (window as any).blastProbe; Object.assign(r.player, { operator: 'bolt', x: 10160, y: 590, vx: 0, vy: 0, immune: 10 }); });
   await page.clock.runFor(500); await page.screenshot({ path: info.outputPath(`${mode}-foundry.png`) });
   if (mode === 'quality') {
-    await page.keyboard.down('j'); await page.keyboard.press('k'); await page.clock.runFor(525);
-    await page.screenshot({ path: info.outputPath('quality-combat.png') }); await page.keyboard.up('j');
+    await page.keyboard.down('z'); await page.keyboard.press('x'); await page.clock.runFor(525);
+    await page.screenshot({ path: info.outputPath('quality-combat.png') }); await page.keyboard.up('z');
     await page.keyboard.press('Escape'); const fullscreenState = await state(page);
     await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);

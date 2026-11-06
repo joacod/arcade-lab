@@ -33,9 +33,9 @@ async function openDuel(page: Page, controlled: 'assets' | 'quality' | false = f
   await page.evaluate(() => { (window as any).duelBaselineImages = (window as any).duelImages.splice(0); });
   await page.clock.runFor(50);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(3100);
-  await page.keyboard.down('d'); await page.keyboard.down('w'); await page.keyboard.down('j');
+  await page.keyboard.down('ArrowRight'); await page.keyboard.down('ArrowUp'); await page.keyboard.down('z');
   await page.clock.runFor(120); await page.keyboard.press('Escape');
-  await page.keyboard.up('d'); await page.keyboard.up('w'); await page.keyboard.up('j');
+  await page.keyboard.up('ArrowRight'); await page.keyboard.up('ArrowUp'); await page.keyboard.up('z');
   await page.evaluate(() => { (window as any).retainedDuel = (window as any).duelProbe; });
 }
 const state = (page: Page) => page.evaluate(() => JSON.stringify((window as any).duelProbe));

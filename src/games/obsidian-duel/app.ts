@@ -30,7 +30,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
   const host = createHost(container, { fullscreen,
     className: 'duel-app',
     label: 'Obsidian Duel',
-    surfaceLabel: 'Obsidian Duel playfield. A D move, W jump, S crouch, J light, K heavy, L special, Shift guard. P pauses or resumes.',
+    surfaceLabel: 'Obsidian Duel playfield.',
     onDisplayChange: suspend,
     onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen)
   });
@@ -185,7 +185,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
       }
     }, value => sound?.setMuted(value), id => {
       if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
-    });
+    }, layout => input?.setLayout(layout));
     presentation = createPresentation(host.surface);
     readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
     host.root.dataset.appearance = 'normal';
