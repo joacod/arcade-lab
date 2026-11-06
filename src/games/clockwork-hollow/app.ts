@@ -105,7 +105,11 @@ export function mountHollow(container: HTMLElement, onExit: () => void, fullscre
     if (intent === 'fullscreen') {
       void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
     }
-    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
+    if (document.hidden || !document.hasFocus()) return;
+    if (intent === 'title' && screen !== 'playing') {
+      sound?.reset(); run = createRun(); presentation?.reset(); transition('title'); return;
+    }
+    if (!readiness.ready) return;
     if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); transition('playing');
     } else if ((intent === 'retry' && screen === 'defeat') || (intent === 'continue' && screen === 'interlude')) {

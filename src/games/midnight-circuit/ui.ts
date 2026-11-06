@@ -2,14 +2,14 @@ import { createElementLookup, setText, setProperty } from '../../common/ui/dom.t
 import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 import { bindingLabel } from '../../engine/bindings.ts';
 import { attacks } from './content.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
 import { initialLayout, layouts, type Layout, type Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
-export type Intent = 'start' | 'resume' | 'restart' | 'continue' | 'pause' | 'quit' | 'fullscreen';
+export type Intent = CommonMenuIntent | 'continue';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void, appearance: (value: Appearance) => void, onLayout: (value: Layout) => void) {
   root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
@@ -41,11 +41,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: style.element,
     preferences: keyboard, controls: help,
-    actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
+    actions: [menuActions.start,
+      menuActions.resume,
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: true },
-      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { ...menuActions.restart, screens: [...menuActions.restart.screens, 'interlude'] },
+      { ...menuActions.title, screens: [...menuActions.title.screens, 'interlude'] },
+      { ...menuActions.quit, screens: [...menuActions.quit.screens, 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, $<HTMLButtonElement>(`[data-control="${key}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -58,7 +59,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;
-      menu.heading.textContent = screen === 'title' ? 'Midnight Circuit' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'title' ? "Fight through the backstreets and defeat the Circuit Warden at the power station." : screen === 'paused' ? '' : screen === 'interlude' ? 'The backstreets are behind you. The Warden is waiting at the heart of the grid. Health restored for the final push.' : screen === 'victory' ? 'Circuit Warden defeated.' : 'No lives remaining.';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(screen);
 

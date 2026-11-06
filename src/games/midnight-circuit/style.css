@@ -1,10 +1,10 @@
 .circuit-app { --menu-accent: #a2f3dd; box-sizing: border-box; width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #0b101d; color: #f6eedb; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
 .circuit-app * { box-sizing: border-box; }
 .circuit-app [hidden] { display: none !important; }
-.circuit-app button { font: inherit; color: inherit; background: #172333; border: 1px solid #6c8b9c55; border-radius: 3px; cursor: pointer; min-height: 38px; padding: 8px 14px; }
-.circuit-app button:hover { background: #253448; border-color: #6cf4db; }
-.circuit-app button:focus-visible { outline: 2px solid #68f5dc; outline-offset: 3px; }
-.circuit-app button:disabled { cursor: default; opacity: .35; }
+.circuit-app button:where(:not(.game-menu-layer *)) { font: inherit; color: inherit; background: #172333; border: 1px solid #6c8b9c55; border-radius: 3px; cursor: pointer; min-height: 38px; padding: 8px 14px; }
+.circuit-app button:where(:not(.game-menu-layer *)):hover { background: #253448; border-color: #6cf4db; }
+.circuit-app button:where(:not(.game-menu-layer *)):focus-visible { outline: 2px solid #68f5dc; outline-offset: 3px; }
+.circuit-app button:where(:not(.game-menu-layer *)):disabled { cursor: default; opacity: .35; }
 .circuit-app .circuit-hud { min-height: 0; flex: 0 0 68px; padding: 12px clamp(14px, 3vw, 38px); display: flex; gap: 28px; align-items: center; background: #0b101df2; border-bottom: 1px solid #68849d33; z-index: 2; }
 .circuit-app .circuit-wordmark { font-size: 25px; font-weight: 950; font-style: italic; color: #77f8d8; letter-spacing: -.1em; display: flex; align-items: center; gap: 14px; }
 .circuit-app .circuit-wordmark span { font: 9px monospace; letter-spacing: .12em; max-width: 65px; color: #c3d0d8; }
@@ -44,7 +44,7 @@
 .circuit-app .circuit-attack-buttons small { display: block; font: 7px monospace; margin-top: 2px; letter-spacing: .06em; }
 .circuit-app [data-control="light"] { border-color: #78f5d5; color: #84ffdc; width: 66px; height: 66px; }
 .circuit-app [data-control="heavy"] { border-color: #c480a6; color: #f4a3c3; }
-.circuit-app button[data-held] { background: #3d596b; border-color: #b3ffe8; }
+.circuit-app button:where(:not(.game-menu-layer *))[data-held] { background: #3d596b; border-color: #b3ffe8; }
 @media (pointer: coarse), (max-width: 850px) {
   .circuit-app .circuit-touch { display: flex; }
   .circuit-app .circuit-hint { display: none; }

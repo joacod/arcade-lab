@@ -94,7 +94,11 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
     if (intent === 'quit') { onExit(); return; }
     if (intent === 'pause') { suspend(); return; }
     if (intent === 'fullscreen') { void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return; }
-    if (document.hidden || !document.hasFocus() || !readiness.ready) return;
+    if (document.hidden || !document.hasFocus()) return;
+    if (intent === 'title' && screen !== 'playing') {
+      sound?.reset(); run = createRun(); presentation?.reset(); ui.reset(); transition('title'); return;
+    }
+    if (!readiness.ready) return;
     if (intent === 'start' && screen === 'title' || intent === 'restart' && screen !== 'playing') {
       sound?.reset(); sound?.activate(); run = createRun(); presentation?.reset(); ui.reset(); transition('playing');
     } else if (intent === 'continue' && screen === 'interlude') {

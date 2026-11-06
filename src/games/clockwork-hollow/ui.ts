@@ -2,12 +2,12 @@ import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
-import { createGameMenu } from '../../common/ui/menu.ts';
+import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { results as summarize, ventCycle, type Failure, type Run } from './game.ts';
 import { movement } from './content.ts';
 import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat' | 'interlude';
-export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen' | 'retry' | 'continue';
+export type Intent = CommonMenuIntent | 'continue' | 'retry';
 const failureAdvice: Record<Failure, string> = {
   fall: 'Missed the landing. Hold jump for height; release for a shorter hop.',
   thorns: 'Caught on copper thorns. Jump over the full thorn bed.',
@@ -32,12 +32,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: theme.element,
     controls: `<b>A D / ← →</b> move <span>·</span> <b>Space / W / ↑ / Z</b> jump<br>Hold for a higher jump. Release for a little hop.<br>Vents: cross on CLEAR. The bar drains toward the next phase.<br>Touch: arrows + jump`,
-    actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
-      { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
+    actions: [menuActions.start,
+      menuActions.resume,
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { id: 'retry', label: 'Retry checkpoint', screens: ['defeat'], primary: true },
-      { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat', 'interlude'], primary: false },
-      { id: 'quit', requiresReady: false, label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat', 'interlude'] }],
+      { ...menuActions.restart, screens: [...menuActions.restart.screens, 'interlude'] },
+      { ...menuActions.title, screens: [...menuActions.title.screens, 'interlude'] },
+      { ...menuActions.quit, screens: [...menuActions.quit.screens, 'interlude'] }],
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
@@ -51,7 +52,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
-      menu.heading.textContent = screen === 'title' ? 'Clockwork Hollow' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'paused' ? '' : screen === 'victory' ? 'All three bells reached.' : screen === 'interlude' ? 'Continue to the next district.' : screen === 'defeat' ? 'Retry from the latest checkpoint. Collected motes are retained.' : 'Cross three districts and reach each bell. Lanterns save your return point. Motes are optional.';
       results.element.hidden = !['paused', 'victory', 'defeat', 'interlude'].includes(screen);
 

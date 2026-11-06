@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Theme changes retain the paused run. Restart creates a fresh run while keeping the selected theme for this visit. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
+Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices. **Main menu** ends the current run and returns to that game’s title, where its round, fighter or other new-run choices can be changed. Both retain the theme and keyboard layout for this visit. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
 The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
 
@@ -101,7 +101,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 
 **Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to fighter selection. Touch directions + Light / Heavy / Special / Guard support independent held controls and attack presses.
 
-Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. **Change fighter · new match** ends the current match and returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
+Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
 
 ## Blastline
 

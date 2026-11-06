@@ -9,6 +9,16 @@ export interface MenuAction<Action extends string, Screen extends string> {
   /** Navigation remains available when required artwork fails. */
   requiresReady?: boolean;
 }
+/** Shared vocabulary, availability and hierarchy for every game. */
+export const menuActions = {
+  start: { id: 'start', label: 'Play', screens: ['title'], primary: true },
+  resume: { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
+  restart: { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
+  title: { id: 'title', label: 'Main menu', screens: ['paused', 'victory', 'defeat'], requiresReady: false },
+  quit: { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'], requiresReady: false },
+} as const;
+export type CommonMenuIntent = keyof typeof menuActions | 'pause' | 'fullscreen';
+const screenHeadings: Readonly<Record<string, string>> = { paused: 'Paused', victory: 'Victory', defeat: 'Defeat', interlude: 'Stage complete' };
 interface MenuOptions<Action extends string, Screen extends string> {
   title: string;
   /** Stable, session-local ID for the menu heading. */
@@ -88,9 +98,13 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const openSettings = layer.querySelector<HTMLButtonElement>('.game-menu-open-settings')!;
   const back = layer.querySelector<HTMLButtonElement>('.game-menu-back')!;
   const backLabel = layer.querySelector<HTMLElement>('.game-menu-back-label')!;
-  // Keep Settings beside collection navigation without changing game action order.
-  const exit = actions.find(button => ['quit', 'exit'].includes(button.dataset.menuAction!));
-  if (exit) exit.before(openSettings);
+  // Pause menus wrap run actions and navigation as coherent groups.
+  const isNavigation = (button: HTMLButtonElement) => button.dataset.menuAction === 'title' || button.dataset.menuAction === 'quit';
+  const runActions = document.createElement('div'); runActions.className = 'game-menu-run-actions';
+  const navigation = document.createElement('div'); navigation.className = 'game-menu-navigation';
+  runActions.append(...actions.filter(button => !isNavigation(button)));
+  navigation.append(openSettings, ...actions.filter(isNavigation));
+  actionBar.prepend(runActions, navigation);
   let settingsOpen = false, screenHeading = '', mainScroll = 0;
   function showSettings(open: boolean) {
     if (open) { screenHeading = heading.textContent!; mainScroll = body.scrollTop; }
@@ -180,14 +194,15 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
       // Browser blur and focus leaving the game must never pull focus back into it.
       const moveFocus = focus || (next !== 'playing' && screen === 'playing'
         && !document.hidden && document.hasFocus() && root.contains(document.activeElement));
-      if (settingsOpen && next === screen) screenHeading = heading.textContent!;
+      const nextHeading = next === 'title' ? config.title : screenHeadings[next] ?? heading.textContent!;
+      if (settingsOpen && next === screen) screenHeading = nextHeading;
       if (next !== screen) {
         settingsOpen = false; body.scrollTop = 0;
       }
       screen = next; root.dataset.screen = next; layer.hidden = next === 'playing';
       main.hidden = settingsOpen; preferences.hidden = !settingsOpen; back.hidden = !settingsOpen;
       openSettings.hidden = settingsOpen || next !== 'title' && next !== 'paused';
-      if (settingsOpen) heading.textContent = 'Settings';
+      heading.textContent = settingsOpen ? 'Settings' : nextHeading;
       name.hidden = !settingsOpen && next === 'title';
       description.hidden = !description.textContent;
       const setupScreen = next === 'title' || next === 'paused';

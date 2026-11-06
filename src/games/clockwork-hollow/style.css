@@ -1,9 +1,9 @@
 .hollow-app { --menu-accent: #edc07d; --ink: #e4e9d5; --dim: #95b1a5; --gold: #edc07d; height: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--ink); background: #0c2428; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
 .hollow-app * { box-sizing: border-box; }
 .hollow-app [hidden] { display: none !important; }
-.hollow-app button { font: inherit; color: inherit; border: 1px solid #9cbaaa40; background: #133135; border-radius: 5px; min-height: 42px; padding: 10px 17px; cursor: pointer; }
-.hollow-app button:hover { border-color: var(--gold); background: #244344; }
-.hollow-app button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.hollow-app button:where(:not(.game-menu-layer *)) { font: inherit; color: inherit; border: 1px solid #9cbaaa40; background: #133135; border-radius: 5px; min-height: 42px; padding: 10px 17px; cursor: pointer; }
+.hollow-app button:where(:not(.game-menu-layer *)):hover { border-color: var(--gold); background: #244344; }
+.hollow-app button:where(:not(.game-menu-layer *)):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .hollow-app .hollow-hud { min-height: 76px; padding: 14px clamp(18px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #a8c7ad1f; background: #10292d; z-index: 1; }
 .hollow-app .hollow-brand { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 750; letter-spacing: .14em; }
 .hollow-app .hollow-mark { font-size: 36px; font-weight: 400; line-height: 1; color: var(--gold); }
@@ -53,8 +53,8 @@
 .hollow-app[data-screen="playing"] .hollow-announcement.is-visible { opacity: 1; transform: translate(-50%, 0); }
 .hollow-app[data-appearance="arcade"] { --menu-accent: #ec9a83; --ink: #fff0cf; --dim: #b6ccc9; --gold: #f1c998; background: #1d304c; }
 .hollow-app[data-appearance="arcade"] :is(.hollow-hud, .hollow-footer) { background: #23394f; border-color: #e4b76755; }
-.hollow-app[data-appearance="arcade"] button { background: #2c455c; border-color: #b6ccc94d; }
-.hollow-app[data-appearance="arcade"] button:hover { background: #3d5369; border-color: #ec9a83; }
+.hollow-app[data-appearance="arcade"] button:where(:not(.game-menu-layer *)) { background: #2c455c; border-color: #b6ccc94d; }
+.hollow-app[data-appearance="arcade"] button:where(:not(.game-menu-layer *)):hover { background: #3d5369; border-color: #ec9a83; }
 .hollow-app[data-appearance="arcade"] .hollow-mark { color: #ec9a83; }
 .hollow-app[data-appearance="arcade"] .hollow-location { color: #fff0cf; }
 .hollow-app[data-appearance="arcade"] .hollow-location > div { background: #23394fd9; padding: 6px 12px; border-left: 2px solid #ec9a83; border-radius: 0 5px 5px 0; }
@@ -65,8 +65,8 @@
 .hollow-app[data-appearance="deluxe"] { --menu-accent: #d9bd87; --ink: #e8ead6; --dim: #b4c7c0; --gold: #e0c38d; background: #091c28; }
 .hollow-app[data-appearance="deluxe"] :is(.hollow-hud, .hollow-footer) { background: linear-gradient(110deg, #102b33, #091c29); border-color: #d9bd8740; }
 .hollow-app[data-appearance="deluxe"] .hollow-hud { box-shadow: 0 3px 18px #020e1b66; }
-.hollow-app[data-appearance="deluxe"] button { background: #17323c; border-color: #d9bd874d; border-radius: 3px; }
-.hollow-app[data-appearance="deluxe"] button:hover { background: #2a4649; border-color: #e0c38d; }
+.hollow-app[data-appearance="deluxe"] button:where(:not(.game-menu-layer *)) { background: #17323c; border-color: #d9bd874d; border-radius: 3px; }
+.hollow-app[data-appearance="deluxe"] button:where(:not(.game-menu-layer *)):hover { background: #2a4649; border-color: #e0c38d; }
 .hollow-app[data-appearance="deluxe"] .hollow-location > div { padding: 7px 13px; background: #0b202bd9; border-left: 2px solid #d9bd87; }
 .hollow-app[data-appearance="deluxe"] .hollow-location > span { border-color: #d9bd8766; background: #0b202baa; }
 .hollow-app[data-appearance="deluxe"] .hollow-announcement { color: #e4efd6; background: #102d35f2; border-color: #d9bd87; box-shadow: 0 8px 30px #020e1b88, inset 0 0 20px #a2d9bf0a; }
