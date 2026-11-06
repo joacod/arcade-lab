@@ -28,8 +28,8 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     </section>
     <div class="arcade-games" aria-labelledby="selection-heading">${games.map((game, index) => `
       <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
-        <span class="arcade-cover" aria-hidden="true">${state.selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${game.cover}" alt="" width="1440" height="1000" decoding="async"><span class="arcade-cover-shade"></span><span class="arcade-genre">${game.genre.replaceAll('&', '&amp;')}</span><span class="arcade-play">↗</span></span>
-        <span class="arcade-card-copy"><span class="arcade-number" aria-hidden="true">0${index + 1}</span><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-launch-label">Open game</span><span>→</span></span></span>
+        <span class="arcade-cover" aria-hidden="true">${state.selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${game.cover}" alt="" width="1440" height="1000" decoding="async"><span class="arcade-cover-shade"></span><span class="arcade-genre">${game.genre.replaceAll('&', '&amp;')}</span></span>
+        <span class="arcade-card-copy"><span class="arcade-number" aria-hidden="true">0${index + 1}</span><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-card-action-label">Play</span><svg class="arcade-play-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 1.7 10.4 6 3.2 10.3Z"/></svg></span></span>
         <span id="${game.id}-description" class="arcade-game-description">${game.description} ${game.controls}.</span>
       </button>`).join('')}</div>
     <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span>Explore each game’s artwork <span aria-hidden="true">·</span> Choose your theme in game</span></footer>
@@ -70,7 +70,6 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     state.selected = id; state.scrollTop = root.scrollTop;
     for (const item of buttons) item.disabled = true;
     button.dataset.loading = '';
-    button.querySelector('.arcade-launch-label')!.textContent = 'Loading…';
     root.querySelector('.arcade-games')!.setAttribute('aria-busy', 'true');
     loading.hidden = false; cancelButton.hidden = false;
     status.textContent = `Loading ${games.find(game => game.id === id)!.title}…`;
