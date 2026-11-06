@@ -1,8 +1,5 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
-import type { Fighter } from './game.ts';
-import type { AnimationSample } from './animation.ts';
 import { arena } from './content.ts';
-import { drawFoundryFighter } from './asset-presentation.ts';
 import { sanctumEffects } from './deluxe-art.ts';
 
 export type SanctumDrawing = ReturnType<typeof createSanctumDrawing>;
@@ -34,12 +31,6 @@ export function createSanctumDrawing(ctx: CanvasRenderingContext2D, art: ImageBu
         ctx.fillStyle = i % 3 ? '#b5e7dd40' : '#e6c38d66';
         ctx.fillRect(x, y, i % 3 ? .7 : 1.2, .7);
       }
-    },
-    reflection(f: Fighter, sample: AnimationSample) {
-      ctx.save(); ctx.beginPath(); ctx.rect(0, arena.floor + 3, arena.width, arena.height - arena.floor); ctx.clip();
-      ctx.globalAlpha = .10 * (1 - Math.min(.55, f.z / 400));
-      ctx.translate(f.x, arena.floor + 5 + f.z * .35); ctx.scale(f.facing, -.35);
-      drawFoundryFighter(ctx, art, f.kind, sample); ctx.restore();
     },
     effect(cell: number, x: number, y: number, width: number, height = width) {
       const frame = sanctumEffects[cell]!;

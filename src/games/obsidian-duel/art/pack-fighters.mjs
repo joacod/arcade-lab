@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { duelClips } from '../animation.ts';
 import { fighters } from '../content.ts';
-import { foundryCell, foundryFrame } from '../asset-art.ts';
+import { foundryCell, foundryFrame, foundrySheets } from '../asset-art.ts';
 import { packMotion } from './pack-motion.mjs';
 
 // Whole drawings only: crop transparent gutters, normalize scale/support pivots, pack timed holds.
@@ -27,9 +27,9 @@ try {
     const layout = { columns: 6, rows: 6, clips, fighters: {} };
     for (const kind of ['nera', 'kael']) {
       const source = readFileSync(new URL(`${folder}/${sourceFolder}/${kind}.png`, import.meta.url)).toString('base64');
-      const result = await page.evaluate(async ({ source, slots, clips, cell, kind, rows, reach }) => {
+      const result = await page.evaluate(async ({ source, slots, clips, cell, kind, rows, reach, size }) => {
         const image = new Image(); image.src = `data:image/png;base64,${source}`; await image.decode();
-        const canvas = document.createElement('canvas'); canvas.width = 2560; canvas.height = 2240;
+        const canvas = document.createElement('canvas'); [canvas.width, canvas.height] = size;
         const ctx = canvas.getContext('2d'); ctx.imageSmoothingQuality = 'high';
         const frames = [], drawings = [];
         for (let index = 0; index < 36; index++) {
@@ -82,6 +82,7 @@ try {
         }
         const scale = (kind === 'nera' ? 160 : 170) / frames[0].rect[3];
         for (const [clip, cells] of Object.entries(slots)) for (let frame = 0; frame < cells.length; frame++) {
+          if (clip === 'idle' || clip === 'walk') continue;
           const index = clips[clip][frame], d = drawings[index];
           const [x, y, w, h] = cells[frame];
           const airborne = [6, 7, 8, 21, 22, 23].includes(index);
@@ -92,7 +93,7 @@ try {
           ctx.drawImage(d.image, d.left, d.top, d.right - d.left + 1, d.bottom - d.top + 1, x + dx, y + dy, width, height);
         }
         return { png: canvas.toDataURL('image/png').split(',')[1], size: [image.width, image.height], scale, rows, frames };
-      }, { source, slots, clips, cell: foundryCell, kind, reach: Object.fromEntries(Object.entries(fighters[kind].attacks).map(([key, value]) => [key, value.reach])), rows: [0, 209, 418, 627, 836, 1045, 1254] });
+      }, { source, slots, clips, cell: foundryCell, kind, size: foundrySheets[kind], reach: Object.fromEntries(Object.entries(fighters[kind].attacks).map(([key, value]) => [key, value.reach])), rows: [0, 209, 418, 627, 836, 1045, 1254] });
       writeFileSync(new URL(`${folder}/${kind}.png`, import.meta.url), await packMotion(`${folder}/${sourceFolder}`, kind, Buffer.from(result.png, 'base64')));
       layout.fighters[kind] = { size: result.size, scale: result.scale, rows: result.rows, frames: result.frames };
       console.log(`${folder}/${kind}: 36 complete drawings, ${Object.values(slots).flat().length} timed cels`);

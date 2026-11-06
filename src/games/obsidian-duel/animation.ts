@@ -2,11 +2,13 @@ import { fighters } from './content.ts';
 import type { Fighter } from './game.ts';
 
 export const duelClips = {
-  idle: 4, walk: 8, jump: 3, crouch: 1, guard: 1, crouchGuard: 1,
+  idle: 12, walk: 8, jump: 3, crouch: 1, guard: 1, crouchGuard: 1,
   light: 8, heavy: 8, sweep: 8, air: 8, special: 8,
   hurt: 3, block: 2, down: 4, rise: 4, land: 3,
 } as const;
 export type DuelClip = keyof typeof duelClips;
+/** Complete strides, tuned to the planted boot sweep in the authored walk cels. */
+export const duelMotion = { idleFps: 10, stride: { nera: 200, kael: 224 } } as const;
 export interface AnimationSample { clip: DuelClip; frame: number }
 const clamp = (x: number, low = 0, high = 1) => Math.max(low, Math.min(high, x));
 
@@ -48,8 +50,8 @@ export function createDuelAnimation() {
       if (f.crouched) return { clip: 'crouch', frame: 0 };
       // Ordinary jumps have a cosmetic landing too, interruptible by any action.
       if (time - landedAt < .10) return { clip: 'land', frame: 1 + clamp((time - landedAt) / .10) };
-      if (f.state === 'move') return { clip: 'walk', frame: ((distance / 100 % 1 + 1) % 1) * 8 };
-      return { clip: 'idle', frame: reduced ? 0 : (age * 2.4) % 4 };
+      if (f.state === 'move') return { clip: 'walk', frame: ((distance / duelMotion.stride[f.kind] % 1 + 1) % 1) * duelClips.walk };
+      return { clip: 'idle', frame: reduced ? 0 : (age * duelMotion.idleFps) % duelClips.idle };
     },
   };
 }

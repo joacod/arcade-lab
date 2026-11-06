@@ -70,6 +70,7 @@ try {
         extracted.set(key, value); return value;
       }
       for (const [clip, slots] of Object.entries(cells)) {
+        if (clip === 'idle' || clip === 'walk') continue; // Dedicated motion sources own locomotion.
         if (clips[clip]?.length !== slots.length) throw new Error(`Wrong ${kind} ${clip} slot count`);
         for (let frame = 0; frame < slots.length; frame++) {
           const [sheet, index, offsetX = 0, offsetY = 0] = clips[clip][frame], sprite = extract(`${kind}-${sheet}`, index);

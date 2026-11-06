@@ -121,7 +121,7 @@ export function createPresentation(surface: HTMLElement) {
       return;
     }
   }
-  function drawFighter(f: Fighter, time: number, reduced: boolean, sample: AnimationSample) {
+  function drawFighter(f: Fighter, reduced: boolean, sample: AnimationSample) {
     const nera = f.kind === 'nera',
       down = f.state === 'knockdown' || f.state === 'ko';
     const base = arena.floor;
@@ -130,20 +130,14 @@ export function createPresentation(surface: HTMLElement) {
       wind = f.state === 'startup';
     ctx.save();
     oval(f.x, base + 4, down ? 69 : 48, 8, '#080d1e88');
-    if (art && !down) {
-      ctx.save();
-      ctx.globalAlpha = deluxe ? .18 : .24;
-      if (deluxe) deluxe.effect(3, f.x, base + 4, 145, 22);else drawFoundryEffect(ctx, art, 3, f.x, base + 4, 112, 20);
-      ctx.restore();
+    if (f.immune > 0 && !down) {
+      // Protection is a small floor cue, never a translucent or duplicated body.
+      rect(f.x - 12, base + 6, 24, 2, '#b4d8ff');
     }
-    glow(f.x, base + 10, 76, nera ? '#7debdc0d' : '#ffc08d0b');
     ctx.translate(f.x, base - f.z);
     ctx.scale(f.facing, 1);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    if (f.immune > 0 && !down) {
-      ctx.globalAlpha = reduced ? .9 : .83 + .17 * Math.sin(time * 35);
-    }
     const {
       trim
     } = theme.fighters[f.kind];
@@ -262,6 +256,12 @@ export function createPresentation(surface: HTMLElement) {
       }
       const v = duelView(width, height);
       ctx.save();
+      // Every frame starts opaque on a cleared backing buffer. Effect state must
+      // never blend an old actor pose into the next one.
+      ctx.resetTransform();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       rect(0, 0, width, height, '#10121e');
       // This single uniform transform owns arena, fighter positions, projectiles and all contact effects.
@@ -275,9 +275,8 @@ export function createPresentation(surface: HTMLElement) {
       const samples = m.fighters.map((f, i) => animations[i]!.sample(f, t, reduced));
       if (deluxe) {
         deluxe.scenery(t, reduced);
-        for (let i = 0; i < 2; i++) deluxe.reflection(m.fighters[i]!, samples[i]!);
       } else scenery(reduced ? 0 : t, reduced);
-      for (let i = 0; i < 2; i++) drawFighter(m.fighters[i]!, t, reduced, samples[i]!);
+      for (let i = 0; i < 2; i++) drawFighter(m.fighters[i]!, reduced, samples[i]!);
       const enemy = m.fighters[1],
         cue = screen === 'playing' && m.phase === 'fight' ? duelCue(enemy) : null;
       if (cue) {

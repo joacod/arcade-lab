@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDuelAnimation } from '../../../../src/games/obsidian-duel/animation.ts';
+import { createDuelAnimation, duelMotion } from '../../../../src/games/obsidian-duel/animation.ts';
 import { foundryFrame } from '../../../../src/games/obsidian-duel/asset-art.ts';
 import { createMatch } from '../../../../src/games/obsidian-duel/game.ts';
 import { fighters } from '../../../../src/games/obsidian-duel/content.ts';
@@ -23,15 +23,16 @@ test('both renderers enter contact cels at the active boundary and recover on au
   }
 });
 
-test('walk stance feet remain planted in world space; gait follows signed travel and freezes on pause', () => {
+test('gait follows a complete authored stride, retains signed phase and freezes on pause', () => {
   const f = createMatch().fighters[0], animation = createDuelAnimation(); f.state = 'move';
-  animation.sample(f, 0, false); f.x += 25;
+  const stride = duelMotion.stride[f.kind];
+  animation.sample(f, 0, false); f.x += stride / 4;
   const moved = animation.sample(f, .1, false);
   assert.equal(moved.frame, 2); assert.deepEqual(animation.sample(f, .1, false), moved);
   assert.deepEqual(animation.sample(f, .9, false), moved, 'wall pressure cannot march in place');
-  f.x -= 10; assert.ok(Math.abs(animation.sample(f, 1, false).frame - 1.2) < 1e-6);
+  f.x -= stride / 10; assert.ok(Math.abs(animation.sample(f, 1, false).frame - 1.2) < 1e-6);
   f.state = 'idle'; animation.sample(f, 1.1, false);
-  f.state = 'move'; f.x += 5;
+  f.state = 'move'; f.x += stride / 20;
   assert.ok(Math.abs(animation.sample(f, 1.2, false).frame - 1.6) < 1e-6, 'resuming keeps the interrupted step');
   animation.reset(); assert.equal(animation.sample(f, 1, false).frame, 0);
 
