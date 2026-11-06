@@ -26,7 +26,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
   const ctx = context; surface.append(canvas);
   const baseline = images ? undefined : createImageResource(normalSprites, validateCircuitSprites);
   const sprites = () => images ?? baseline!.images;
-  const gait = createGait();
+  const gait = createGait(artwork?.fighterAtlas?.strides);
   canvas.dataset.renderer = artwork?.mode ?? 'canvas';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false, camera: number | undefined, last: number | undefined, shake = 0;

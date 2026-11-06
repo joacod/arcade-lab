@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateAfterglowArt, afterglowPlates, afterglowSkyline } from '../../../../src/games/midnight-circuit/quality-art.ts';
-import { validateCircuitSprites } from '../../../../src/games/midnight-circuit/sprite-art.ts';
+import { arcadeFighterAtlas, qualityFighterAtlas, validateCircuitSprites } from '../../../../src/games/midnight-circuit/sprite-art.ts';
 import { signalRain, validateCircuitArt } from '../../../../src/games/midnight-circuit/asset-art.ts';
 
 function webpSize(image) {
@@ -77,4 +77,21 @@ test('Quality owns new complete artwork with inspected, unclipped cell footprint
   const modern = readFileSync(new URL('../../../../src/games/midnight-circuit/art/afterglow/fighters/fighters.webp', import.meta.url));
   const arcade = readFileSync(new URL('../../../../src/games/midnight-circuit/art/fighters/animated.webp', import.meta.url));
   assert.equal(modern.equals(arcade), false);
+});
+
+// Playback distance is derived from the accepted art, rather than an unrelated speed constant.
+test('painted strides match the registered near boot from the forward contact to the opposite contact', () => {
+  const layout=JSON.parse(readFileSync(new URL('../../../../src/games/midnight-circuit/art/fighters/walking/layout.json',import.meta.url),'utf8'));
+  const roles=['player','striker','bruiser','warden'];
+  for(const [row,role] of layout.entries())for(const [mode,atlas] of [arcadeFighterAtlas,qualityFighterAtlas].entries()){
+    const clip=role.modes[mode],size=row===3?1.48:row===2?1.2:1;
+    const sweep=clip.nearBootContacts[0]-clip.nearBootContacts[1];
+    assert.ok(sweep>0);
+    assert.ok(Math.abs(atlas.strides[roles[row]]-2*sweep*clip.scale*atlas.drawSize/atlas.cell*size)<.001);
+    assert.deepEqual(clip.rects.map(cel=>cel.support),['near','near','near','near','far','far','far','far']);
+    for(const cel of clip.rects){
+      const [x,y,w,h]=cel.destination;
+      assert.ok(x>=0&&y>=0&&x+w<=atlas.cell&&y+h<=atlas.cell);
+    }
+  }
 });

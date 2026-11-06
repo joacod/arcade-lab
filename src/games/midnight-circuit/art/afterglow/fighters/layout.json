@@ -22,63 +22,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          79,
-          640,
-          206,
-          285
+          91,
+          10,
+          268,
+          420
         ],
         "destination": [
-          116.95102263220525,
-          64.91188075405523,
-          300.5558965366068,
-          415.817623849189
+          126.80285035629456,
+          63.752969121140154,
+          264.8171021377672,
+          415.01187648456056
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          682,
-          640,
-          171,
-          286
+          994,
+          10,
+          199,
+          420
         ],
         "destination": [
-          115.39056582327015,
-          64.91188075405523,
-          249.4905743095134,
-          417.27663305567734
+          142.6128266033254,
+          63.752969121140154,
+          196.63657957244655,
+          415.01187648456056
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          76,
-          953,
-          204,
-          285
+          80,
+          454,
+          278,
+          422
         ],
         "destination": [
-          112.1899503870832,
-          64.18237615081102,
-          297.63787812363,
-          415.817623849189
+          115.93349168646083,
+          64.24703087885985,
+          274.6983372921615,
+          416.98812351543944
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          693,
-          951,
-          162,
-          285
+          994,
+          454,
+          199,
+          423
         ],
         "destination": [
-          125.53156745918704,
-          61.264357737834246,
-          236.35949145111795,
-          415.817623849189
+          142.6128266033254,
+          64.24703087885985,
+          196.63657957244655,
+          417.9762470308788
         ]
       },
       {
@@ -180,63 +180,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          386,
-          640,
-          165,
-          284
+          551,
+          10,
+          208,
+          418
         ],
         "destination": [
-          122.13065486307164,
-          64.91188075405523,
-          240.73651907058309,
-          414.3586146427006
+          143.10688836104515,
+          63.752969121140154,
+          205.52969121140143,
+          413.0356294536817
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          991,
-          640,
+          1438,
+          10,
+          198,
+          420
+        ],
+        "destination": [
+          143.10688836104515,
+          63.752969121140154,
+          195.6484560570071,
+          415.01187648456056
+        ]
+      },
+      {
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
+        "source": [
+          551,
+          454,
           199,
-          285
+          419
         ],
         "destination": [
-          122.63607678779718,
-          64.91188075405523,
-          290.3428320911881,
-          415.817623849189
+          143.10688836104515,
+          64.24703087885985,
+          196.63657957244655,
+          414.0237529691211
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
+        "sourceSheet": "../../fighters/walking/quality/rook-source.png",
         "source": [
-          396,
-          952,
-          161,
-          285
+          1438,
+          455,
+          198,
+          421
         ],
         "destination": [
-          128.1498958043793,
-          62.72336694432266,
-          234.90048224462956,
-          415.817623849189
-        ]
-      },
-      {
-        "sourceSheet": "../../fighters/walking/rook-source.png",
-        "source": [
-          991,
-          952,
-          203,
-          286
-        ],
-        "destination": [
-          115.51839459478242,
-          62.72336694432266,
-          296.17886891714164,
-          417.27663305567734
+          143.10688836104515,
+          65.23515439429929,
+          195.6484560570071,
+          416
         ]
       }
     ]
@@ -264,63 +264,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          80,
-          632,
-          211,
-          300
+          84,
+          12,
+          272,
+          418
         ],
         "destination": [
-          111.83122967417754,
-          61.38364779874212,
-          294.4268343815514,
-          418.6163522012579
+          118.58033573141486,
+          62.25419664268583,
+          271.347721822542,
+          416.99760191846525
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          724,
-          631,
-          134,
-          301
+          1053,
+          19,
+          151,
+          412
         ],
         "destination": [
-          165.97512595271562,
-          59.988259958071296,
-          186.98197064989517,
-          420.0117400419287
+          200.38369304556355,
+          69.23741007194246,
+          150.6378896882494,
+          411.01199040767386
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          70,
-          949,
-          216,
-          296
+          100,
+          459,
+          266,
+          416
         ],
         "destination": [
-          102.06354498484134,
-          66.26750524109013,
-          301.40377358490565,
-          413.0348008385744
+          134.5419664268585,
+          65.74580335731412,
+          265.3621103117506,
+          415.0023980815348
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          721,
-          949,
-          138,
-          297
+          1052,
+          459,
+          151,
+          415
         ],
         "destination": [
-          153.62016837254617,
-          66.26750524109013,
-          192.5635220125786,
-          414.4301886792453
+          199.38609112709833,
+          65.74580335731412,
+          150.6378896882494,
+          414.00479616306956
         ]
       },
       {
@@ -422,63 +422,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          383,
-          632,
-          180,
-          299
+          564,
+          15,
+          196,
+          416
         ],
         "destination": [
-          105.81955389976946,
-          61.38364779874212,
-          251.16981132075472,
-          417.220964360587
+          154.9928057553957,
+          65.24700239808152,
+          195.52997601918466,
+          415.0023980815348
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          998,
-          631,
-          204,
-          301
+          1475,
+          19,
+          191,
+          411
         ],
         "destination": [
-          124.32097868972204,
-          59.988259958071296,
-          284.65911949685534,
-          420.0117400419287
+          178.93525179856115,
+          69.23741007194246,
+          190.54196642685852,
+          410.0143884892086
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          400,
-          949,
-          155,
-          296
+          566,
+          460,
+          196,
+          414
         ],
         "destination": [
-          133.61608955994097,
-          66.26750524109013,
-          216.28511530398322,
-          413.0348008385744
+          156.98800959232614,
+          66.74340527577937,
+          195.52997601918466,
+          413.0071942446043
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/striker-source.png",
+        "sourceSheet": "../../fighters/walking/quality/striker-source.png",
         "source": [
-          992,
-          949,
-          211,
-          295
+          1476,
+          459,
+          179,
+          414
         ],
         "destination": [
-          104.48457220563719,
-          66.26750524109013,
-          294.4268343815514,
-          411.63941299790355
+          179.93285371702638,
+          65.74580335731412,
+          178.57074340527578,
+          413.0071942446043
         ]
       }
     ]
@@ -506,63 +506,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          54,
-          639,
-          236,
-          289
+          65,
+          16,
+          306,
+          407
         ],
         "destination": [
-          76.57784245902866,
-          64,
-          341.4817391304348,
-          418.1704347826087
+          95.78378378378378,
+          63.74447174447175,
+          312.7665847665848,
+          416
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          730,
-          640,
-          154,
-          286
+          1018,
+          16,
+          204,
+          408
         ],
         "destination": [
-          146.27141548952295,
-          65.44695652173914,
-          222.8313043478261,
-          413.8295652173913
+          163.24324324324323,
+          63.74447174447175,
+          208.51105651105652,
+          417.02211302211305
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          68,
-          953,
+          59,
+          460,
+          315,
+          407
+        ],
+        "destination": [
+          89.65110565110564,
+          64.25552825552825,
+          321.965601965602,
+          416
+        ]
+      },
+      {
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
+        "source": [
+          1018,
+          462,
           203,
-          288
+          405
         ],
         "destination": [
-          98.08526163306132,
-          64.72347826086957,
-          293.7321739130435,
-          416.72347826086957
-        ]
-      },
-      {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
-        "source": [
-          730,
-          953,
-          154,
-          287
-        ],
-        "destination": [
-          147.65362874523268,
-          64.72347826086957,
-          222.8313043478261,
-          415.27652173913043
+          163.24324324324323,
+          66.29975429975428,
+          207.4889434889435,
+          413.95577395577396
         ]
       },
       {
@@ -664,63 +664,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          385,
-          640,
-          187,
-          288
+          535,
+          16,
+          243,
+          408
         ],
         "destination": [
-          100.4645765561026,
-          65.44695652173914,
-          270.5808695652174,
-          416.72347826086957
+          122.86977886977886,
+          63.74447174447175,
+          248.37346437346437,
+          417.02211302211305
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          1010,
-          639,
-          220,
-          287
+          1459,
+          16,
+          235,
+          408
         ],
         "destination": [
-          97.41931161417926,
-          64,
-          318.3304347826087,
-          415.27652173913043
+          160.6879606879607,
+          63.74447174447175,
+          240.1965601965602,
+          417.02211302211305
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          388,
-          952,
-          183,
-          288
+          546,
+          461,
+          231,
+          406
         ],
         "destination": [
-          105.93773117416202,
-          63.27652173913043,
-          264.79304347826087,
-          416.72347826086957
+          134.1130221130221,
+          65.2776412776413,
+          236.1081081081081,
+          414.977886977887
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/bruiser-source.png",
+        "sourceSheet": "../../fighters/walking/quality/bruiser-source.png",
         "source": [
-          1006,
-          953,
-          224,
-          287
+          1452,
+          463,
+          259,
+          404
         ],
         "destination": [
-          92.22229789817229,
-          64.72347826086957,
-          324.11826086956523,
-          415.27652173913043
+          153.53316953316954,
+          67.32186732186733,
+          264.72727272727275,
+          412.9336609336609
         ]
       }
     ]
@@ -748,63 +748,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          57,
-          645,
-          228,
-          284
+          68,
+          9,
+          296,
+          393
         ],
         "destination": [
-          93.48712711425819,
-          75.16345723242273,
-          326.7353336318854,
-          406.9861173309449
+          99.710292249047,
+          78.22109275730622,
+          300.8894536213469,
+          399.4917407878018
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          724,
-          648,
-          152,
-          279
+          1015,
+          9,
+          203,
+          394
         ],
         "destination": [
-          148.0680383285371,
-          79.46260635915809,
-          217.82355575459025,
-          399.82086878638603
+          160.70139771283354,
+          78.22109275730622,
+          206.35324015247778,
+          400.50825921219825
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          66,
-          963,
+          75,
+          456,
+          294,
+          394
+        ],
+        "destination": [
+          106.8259212198221,
+          81.77890724269378,
+          298.85641677255404,
+          400.50825921219825
+        ]
+      },
+      {
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
+        "source": [
+          1015,
+          454,
           204,
-          276
+          393
         ],
         "destination": [
-          103.44838216342725,
-          81.61218092252574,
-          292.3421406180027,
-          395.5217196596507
-        ]
-      },
-      {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
-        "source": [
-          726,
-          962,
-          150,
-          277
-        ],
-        "destination": [
-          151.32012966318695,
-          80.17913121361397,
-          214.95745633676668,
-          396.9547693685625
+          160.70139771283354,
+          79.74587039390087,
+          207.3697585768742,
+          399.4917407878018
         ]
       },
       {
@@ -906,63 +906,63 @@
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          398,
-          647,
-          166,
-          281
+          540,
+          9,
+          234,
+          394
         ],
         "destination": [
-          129.22310633120492,
-          78.02955665024626,
-          237.88625167935515,
-          402.6869682042096
+          128.6810673443456,
+          78.22109275730622,
+          237.86531130876747,
+          400.50825921219825
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          1018,
-          648,
-          194,
-          280
+          1459,
+          9,
+          203,
+          394
         ],
         "destination": [
-          118.50464863603548,
-          79.46260635915809,
-          278.0116435288849,
-          401.25391849529785
+          161.20965692503177,
+          78.22109275730622,
+          206.35324015247778,
+          400.50825921219825
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          411,
-          963,
-          152,
-          278
+          544,
+          454,
+          231,
+          394
         ],
         "destination": [
-          146.52579299904707,
-          81.61218092252574,
-          217.82355575459025,
-          398.38781907747426
+          132.74714104193137,
+          79.74587039390087,
+          234.81575603557815,
+          400.50825921219825
         ]
       },
       {
-        "sourceSheet": "../../fighters/walking/warden-source.png",
+        "sourceSheet": "../../fighters/walking/quality/warden-source.png",
         "source": [
-          1012,
-          963,
-          214,
-          278
+          1443,
+          454,
+          230,
+          394
         ],
         "destination": [
-          107.76936228133428,
-          81.61218092252574,
-          306.6726377071205,
-          398.38781907747426
+          144.94536213468868,
+          79.74587039390087,
+          233.79923761118172,
+          400.50825921219825
         ]
       }
     ]

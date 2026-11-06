@@ -10,13 +10,15 @@ export const fighterCelCount = 12;
 /** Extra in-betweens keep the original combat columns independent of the walk clip. */
 export const walkingCels = [1, 12, 2, 13, 3, 14, 4, 15] as const;
 interface Track { x: number; lane: number; phase: number; weight: number; walking: boolean }
+export type WalkStrides = Readonly<Record<Actor['kind'], number>>;
+const normalStrides: WalkStrides = { player: 96, striker: 96, bruiser: 115.2, warden: 142.08 };
 function recoveryWeight(a: Actor) {
   if (!a.attack) return 1;
   const d = attacks[a.attack.kind];
   return Math.max(0, Math.min(1, (a.attack.time - d.startup - d.active) / d.recovery));
 }
-/** A relaxed full stride spans 152 world units. Observation never advances simulation. */
-export function createGait() {
+/** Strides match the artwork's near-boot sweep, independently of gameplay movement speed. */
+export function createGait(strides: WalkStrides = normalStrides) {
   const tracks = new Map<number, Track>();
   let elapsed = 0;
   return {
@@ -31,7 +33,7 @@ export function createGait() {
         const walking = a.moving && recoveryWeight(a) > 0 && a.elevation === 0 && a.stun === 0 && a.health > 0 && distance > .01 && distance < 70;
         if (walking) {
           const direction = (a.x - old.x) * a.facing < -.01 ? -1 : 1;
-          const stride = 152 * (a.kind === 'warden' ? 1.48 : a.kind === 'bruiser' ? 1.2 : 1);
+          const stride = strides[a.kind];
           old.phase = (old.phase + direction * distance / stride * Math.PI * 2) % (Math.PI * 2);
           if (old.phase < 0) old.phase += Math.PI * 2;
         }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createGait, fighterFrame, fighterCels as c, walkingCels } from '../../../../src/games/midnight-circuit/animation.ts';
 import { createRun, stepRun, idle } from '../../../../src/games/midnight-circuit/game.ts';
 import { attacks } from '../../../../src/games/midnight-circuit/content.ts';
+import { arcadeFighterAtlas, qualityFighterAtlas } from '../../../../src/games/midnight-circuit/sprite-art.ts';
 
 test('gait follows displacement, plants feet, freezes on pause and ignores knockback or teleports', () => {
   const run = createRun(), gait = createGait(); gait.observe(run);
@@ -35,23 +36,27 @@ test('gait distance is independent of sampling rate and never mutates gameplay',
   assert.ok(Math.abs(sample(30)-sample(144)) < 1e-10);
 });
 
-test('painted locomotion completes eight distinct steps per relaxed stride and retains combat priority', () => {
-  const run = createRun(), gait = createGait(), poses = []; gait.observe(run);
-  run.player.moving = true;
-  for (let frame = 0; frame < 8; frame++) {
-    run.elapsed += .05; run.player.x += 19; gait.observe(run);
-    poses.push(fighterFrame(run.player, gait.get(0), walkingCels));
+test('each painted character exchanges support after its measured half-stride and completes all eight cels', () => {
+  for (const atlas of [arcadeFighterAtlas, qualityFighterAtlas]) for (const kind of ['player','striker','bruiser','warden']) {
+    const run = createRun(), a = run.player, gait = createGait(atlas.strides), poses = new Set();
+    a.kind = kind; gait.observe(run); a.moving = true;
+    for (let frame = 0; frame < 320; frame++) {
+      run.elapsed += 1/60; a.x += atlas.strides[kind]/320; gait.observe(run);
+      poses.add(fighterFrame(a,gait.get(0),atlas.walk));
+      if(frame===159)assert.ok(Math.abs(gait.get(0).phase-Math.PI)<1e-10, `${kind}: opposite support at half-stride`);
+    }
+    assert.equal(poses.size, 8,kind);
+    const phase=gait.get(0).phase;
+    assert.ok(Math.min(phase,Math.PI*2-phase)<1e-10,kind);
+    a.attack = { id: 1, kind: 'jab', time: attacks.jab.startup, hits: [], sounded: true };
+    assert.equal(fighterFrame(a,gait.get(0),atlas.walk), c.punch);
   }
-  assert.equal(new Set(poses).size, 8);
-  assert.ok(gait.get(0).phase < 1e-10);
-  run.player.attack = { id: 1, kind: 'jab', time: attacks.jab.startup, hits: [], sounded: true };
-  assert.equal(fighterFrame(run.player, gait.get(0), walkingCels), c.punch);
 });
 
 test('retreating in guard reverses the walk without negative atlas columns', () => {
   const run = createRun(), gait = createGait(); gait.observe(run);
   run.player.moving = true; run.player.facing = 1;
-  run.player.x -= 19; run.elapsed += .05; gait.observe(run);
+  run.player.x -= 12; run.elapsed += .05; gait.observe(run);
   assert.ok(Math.abs(gait.get(0).phase - Math.PI * 1.75) < 1e-10);
   assert.equal(fighterFrame(run.player, gait.get(0), walkingCels), walkingCels[7]);
 });
