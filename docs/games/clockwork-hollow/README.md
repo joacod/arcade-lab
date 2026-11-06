@@ -2,7 +2,7 @@
 
 [Source](../../../src/games/clockwork-hollow/) | [Controls](../../../CATALOG.md#clockwork-hollow) | [Shared contracts](../../architecture.md)
 
-A complete platform adventure with three Canvas 2D presentations through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
+A complete platform adventure with two Canvas 2D presentations through three mechanical ruins reclaimed by nature. A small brass keeper wakes three bells, climbing from the aqueduct through a pressure-powered foundry to the starlit belfry. The intended first-play pace is approximately 3–6 minutes, with no time limit.
 
 ## Playing
 
@@ -24,13 +24,13 @@ Every bell ends its district and freezes simulation. An explicit **Continue to�
 
 ## Theme modes
 
-**Normal · Verdant clockwork** is the simple brass-and-moss baseline. **Assets · Porcelain Bellgarden** is an illustrated retro sanctuary with a porcelain keeper, coral scarf, tall ink-blue arches and glazed botanical machinery. **Quality · Lumen Conservatory** develops the same cast and setting into sculpted ceramic miniatures, reflective brass, luminous glass and layered cathedral gardens. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md#creative-direction) owns the briefs, functional visual rules and sheet layouts.
+**Arcade · Porcelain Bellgarden** is an illustrated retro sanctuary with a porcelain keeper, coral scarf, tall ink-blue arches and glazed botanical machinery. **Deluxe · Lumen Conservatory** develops the same cast and setting into sculpted ceramic miniatures, reflective brass, luminous glass and layered cathedral gardens. The [artwork guide](../../../src/games/clockwork-hollow/art/README.md#creative-direction) owns the briefs, functional visual rules and sheet layouts.
 
-Every mode uses complete keeper and beetle drawings. Quality’s AI-generated actor cels add spherical forms, painted botanical detail, inset glass and soft material shading. Eight stride cels follow ground travel in sequence; dedicated ascent and descent silhouettes communicate jumping. Foot anchors stay on the ground, velocity adds a small lean, and landing briefly compresses around the sole. Beetle steps follow patrol travel and stomped shells use their own spent drawing.
+Every mode uses complete keeper and beetle drawings. Deluxe’s AI-generated actor cels add spherical forms, painted botanical detail, inset glass and soft material shading. Eight stride cels follow ground travel in sequence; dedicated ascent and descent silhouettes communicate jumping. Foot anchors stay on the ground, velocity adds a small lean, and landing briefly compresses around the sole. Beetle steps follow patrol travel and stomped shells use their own spent drawing.
 
-Quality uses Canvas 2D with shaded image assets, bevelled platform materials and cached architectural layers. A monumental waterwheel, foundry vessels and a belfry rose window distinguish the districts. Distant scenery stays quieter than landing lips, objectives and hazards. The interface uses dark mineral surfaces and brass rules.
+Deluxe uses Canvas 2D with shaded image assets, bevelled platform materials and cached architectural layers. A monumental waterwheel, foundry vessels and a belfry rose window distinguish the districts. Distant scenery stays quieter than landing lips, objectives and hazards. The interface uses dark mineral surfaces and brass rules.
 
-Signs stand on authored platform surfaces, in clear spaces away from lanterns, vents and jump blocks. Their posts and plaques sit behind the solid route. Lantern soles meet the landing edge, and bell chains attach to their arch crowns. Quality’s curved copper thorns repeat individually with shaded brass sockets, fitting each hazard patch without flattening a fixed strip or extending its danger bounds.
+Signs stand on authored platform surfaces, in clear spaces away from lanterns, vents and jump blocks. Their posts and plaques sit behind the solid route. Lantern soles meet the landing edge, and bell chains attach to their arch crowns. Deluxe’s curved copper thorns repeat individually with shaded brass sockets, fitting each hazard patch without flattening a fixed strip or extending its danger bounds.
 
 ## Source ownership and customization
 
@@ -44,15 +44,15 @@ Paths below are relative to `src/games/clockwork-hollow/`.
 | Character drawing, animation, environment artwork, camera and effects | `presentation.ts`, `asset-presentation.ts` and the game-local sprite roles |
 | Distance-driven keeper gait and smoothed movement response | `animation.ts`; observes player displacement without changing simulation |
 | District palettes, scenery style, foliage and costume colors | `themes.ts`, keyed by `Level.id`; `presentation.ts` consumes the selected theme |
-| Complete actor/object cels for all modes, frame layouts, validation and image drawing | `asset-art.ts`, `assets.ts`, `sprite-art.ts` and `asset-presentation.ts`; SVG sources in `art/bellgarden/`, Quality actor sources, packed atlases and preparation in `art/lumen/` |
-| Quality architecture, bevelled scenery materials and cached background layers | `quality-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
+| Complete actor/object cels for all modes, frame layouts, validation and image drawing | `asset-art.ts`, `assets.ts`, `sprite-art.ts` and `asset-presentation.ts`; SVG sources in `art/bellgarden/`, Deluxe actor sources, packed atlases and preparation in `art/lumen/` |
+| Deluxe architecture, bevelled scenery materials and cached background layers | `deluxe-presentation.ts`, lazily imported on selection; district palettes in `themes.ts` |
 | District captions and signs | `name`, `subtitle` and `signs` in `content.ts` |
 | Menu narrative, HUD, result copy and accessible controls | `ui.ts` and scoped `style.css` |
 | Procedural sound design and cue policy | `sound-recipes.ts` and `sound.ts` |
 | Keyboard edges, holds and captured touch buttons | `input.ts` |
 | Browser composition and transitions | `app.ts` |
 
-`asset-art.ts` supplies decoded-dimension validation and frame selection. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. `Level.id` identifies authored content independently of `Level.environment`, which selects a reusable district palette and scenery. Add or reorder levels without renaming a district or adding renderer branches. Quality caches only the current environment’s background layers; changing district, replacing Quality or disposing the session releases them. Normal owns a modest brass sprite bundle. Quality prepares its raster actor atlases and shaded object bundle before replacing the current presentation.
+`asset-art.ts` supplies decoded-dimension validation and frame selection. The local replacement transaction retains the previous drawing and its caches until a candidate succeeds. Retry checkpoint and Continue cancel pending theme work. `Level.id` identifies authored content independently of `Level.environment`, which selects a reusable district palette and scenery. Add or reorder levels without renaming a district or adding renderer branches. Deluxe caches only the current environment’s background layers; changing district, replacing Deluxe or disposing the session releases them. Deluxe prepares its raster actor atlases and shaded object bundle before replacing the current presentation.
 
 Simulation uses top-left player positions and authored rectangles. Swept edge crossings resolve the nearest solid contact. Coyote time tolerates a late takeoff, a short press buffer catches landing, and release cuts ascent once. Stronger ground braking keeps small platforms controllable.
 
@@ -60,7 +60,7 @@ The camera provides minimum horizontal visibility on narrow displays, bounded ve
 
 Continuous landing lips remain visible above moss; broad beetle crowns contrast with pointed copper thorns. Pressure columns draw above scenery. Landing dust, shell impacts, lantern sparks and bell celebrations have capped, viewport-admitted particles. Reduced motion removes camera follow interpolation, particles, mote bobbing, flywheel rotation, pressure motion, keeper lean, landing compression and bell swinging. All modes use a still grounded keeper pose, while vent countdowns and physical movement stay visible.
 
-![Lumen Conservatory: the sculpted porcelain keeper, copper thorns and a grounded lantern sign beneath layered aqueduct ribs and a monumental waterwheel](quality.webp)
+![Lumen Conservatory: the sculpted porcelain keeper, copper thorns and a grounded lantern sign beneath layered aqueduct ribs and a monumental waterwheel](preview.webp)
 
 Sound uses a spring lift, soft stone/metal landing, descending unwinding damage, glass-like motes, shell clicks, filtered steam, rising lantern tones, district bells and a fuller final bell. Landing strength changes gain; only nearby vents are audible.
 

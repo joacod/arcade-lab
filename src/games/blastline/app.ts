@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-choices.ts';
+import { defaultTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createPreparationScope, createReadiness, trialReplacement } from '../../engine/browser/preparation.ts';
@@ -18,7 +18,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
   let disposed = false, run = createRun(), screen: Screen = 'title';
   const clock = createClock();
   const preparation = createPreparationScope();
-  let activeAppearance: Appearance = 'normal', activeArt: PreparedImages | undefined;
+  let activeAppearance: Appearance = 'arcade', activeArt: PreparedImages | undefined;
   const host = createHost(container, { fullscreen, className: 'blast-app', label: 'Blastline',
     surfaceLabel: 'Blastline playfield.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
@@ -43,32 +43,40 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
     input?.clear(); clock.reset(); sound?.pause();
     if (screen === 'playing') { pauseRun(run, true); transition('paused', false); }
   }
+  function recoverGraphics() {
+    if (disposed) return;
+    const failed = activeAppearance;
+    suspend(); preparation.cancel();
+    activeArt?.dispose(); activeArt = undefined;
+    // Release corrupted Canvas state and mode-owned effects before preparing Arcade.
+    presentation!.dispose(); presentation = createPresentation(host.surface);
+    delete host.root.dataset.appearance;
+    let reportFailure = failed === 'arcade';
+    ui.displayStatus(`${appearanceNames[failed]} graphics interrupted. Your run is preserved. ${reportFailure ? 'Retry artwork to continue.' : 'Recovering Arcade; resume when ready.'}`);
+    readiness.watch(() => {
+      if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+      return appearance('arcade');
+    });
+  }
   async function appearance(id: Appearance) {
-    if (disposed || screen === 'playing') return false;
+    if (disposed || screen === 'playing' || !Object.hasOwn(themes, id)) return false;
     const request = preparation.begin();
-    if (id === activeAppearance) {
-      if (id === 'normal' && !readiness.ready) {
-        try { await presentation!.prepare(); } catch { return false; }
-        if (!request.current()) return false;
-      }
-      ui.appearanceStatus(id, ''); return true;
-    }
+    if (id === activeAppearance && activeArt) { ui.appearanceStatus(id, ''); return true; }
     ui.appearanceStatus(id, `Preparing ${appearanceNames[id]}…`, true);
     let candidate: PreparedImages | undefined;
     try {
-      if (id === 'assets') {
+      if (id === 'arcade') {
         const { prepareEmberCoast } = await import('./assets.ts');
         if (!request.current()) return false;
         candidate = await prepareEmberCoast(request.signal);
         if (!request.current()) return false;
-      } else if (id === 'quality') {
-        const { prepareEmberReforged } = await import('./quality.ts');
+      } else if (id === 'deluxe') {
+        const { prepareEmberReforged } = await import('./deluxe.ts');
         if (!request.current()) return false;
         candidate = await prepareEmberReforged(request.signal);
         if (!request.current()) return false;
       }
-      if (id === 'normal') { await presentation!.prepare(); if (!request.current()) return false; }
-      const rollback = presentation!.replaceTheme(themes[id], candidate?.images);
+      const rollback = presentation!.replaceTheme(themes[id], candidate!.images);
       trialReplacement({ rollback }, () => presentation!.draw(run, host, false, performance.now() / 1000));
       const previous = activeArt; activeArt = candidate; candidate = undefined;
       activeAppearance = id; host.root.dataset.appearance = id;
@@ -77,7 +85,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
       return true;
     } catch {
       if (request.current()) ui.appearanceStatus(activeAppearance,
-        `Could not load ${appearanceNames[id]}. Keeping ${appearanceNames[activeAppearance]}. Your operation is preserved.`);
+        `Could not load ${appearanceNames[id]}. ${activeArt ? `Keeping ${appearanceNames[activeAppearance]}.` : 'Retry artwork or return to game selection.'} Your operation is preserved.`);
     } finally { candidate?.dispose(); }
     return false;
   }
@@ -99,8 +107,8 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
       if (readiness.ready) void appearance(id); else readiness.watch(() => appearance(id));
     }, layout => input?.setLayout(layout));
     presentation = createPresentation(host.surface);
-    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : appearance(initialTheme));
-    host.root.dataset.appearance = 'normal';
+    readiness.watch(() => appearance(defaultTheme(themes)));
+
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
@@ -115,16 +123,7 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
         if (run.status === 'defeat' || run.status === 'victory' || run.status === 'interlude') transition(run.status);
       }
       try { presentation!.draw(run, host, screen === 'playing', now / 1000); }
-      catch (error) {
-        if (activeAppearance === 'normal') throw error;
-        const failed = appearanceNames[activeAppearance];
-        suspend(); preparation.cancel(); presentation!.replaceTheme(themes.normal);
-        activeArt?.dispose(); activeArt = undefined; activeAppearance = 'normal';
-        readiness.watch(() => presentation!.prepare());
-        host.root.dataset.appearance = 'normal';
-        ui.appearanceStatus('normal', `${failed} could not draw. Restored Iron coast. Your operation is preserved.`);
-        presentation!.draw(run, host, false, now / 1000);
-      }
+      catch { recoverGraphics(); }
       ui.update(run);
     });
     return { dispose };

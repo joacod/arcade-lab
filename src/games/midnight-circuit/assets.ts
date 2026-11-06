@@ -12,7 +12,7 @@ import repair from './art/signal-rain/repair.svg';
 
 function createArtwork(images: ImageBundle): CircuitArtwork {
   return {
-    mode: 'assets',
+    mode: 'arcade',
     fighterAtlas: arcadeFighterAtlas,
     scenery(ctx, view, run, time, reducedMotion) {
       const { width, height, ground, x: camera } = view;
@@ -45,7 +45,7 @@ function createArtwork(images: ImageBundle): CircuitArtwork {
     },
   };
 }
-export async function createAssets(surface: HTMLElement, signal: AbortSignal) {
+export async function createArcade(surface: HTMLElement, signal: AbortSignal) {
   const prepared = await prepareImages({ fighters, skyline, backstreets, station, pavement, repair }, signal, validateCircuitArt);
   try {
     if (signal.aborted) throw new Error('Preparation cancelled');

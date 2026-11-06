@@ -7,7 +7,7 @@ import type { KeeperPose } from './animation.ts';
 import type { HollowView } from './presentation.ts';
 import type { HollowTheme } from './themes.ts';
 
-/** Image footprints are cosmetic and share the Normal renderer's world transform. */
+/** Image footprints are cosmetic and share the game renderer’s world transform. */
 export function createBellgardenDrawing(ctx: CanvasRenderingContext2D, images: ImageBundle, layout: HollowSpriteLayout = illustratedSpriteLayout) {
   function image(sheet: BellgardenSheet, rect: readonly [number, number, number, number], x: number, y: number, w: number, h: number) {
     ctx.drawImage(images[sheet]!, ...rect, x, y, w, h);

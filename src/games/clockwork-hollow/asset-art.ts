@@ -45,7 +45,7 @@ export function keeperFrame(player: Pick<Player, 'grounded' | 'vx' | 'vy'>, pose
   return 1 + Math.floor(pose.phase / (Math.PI * 2) * 8) % 8;
 }
 
-export function validateHollowSprites(mode: 'normal' | 'quality', dimensions: ImageDimensions): readonly string[] {
-  const { keeper, beetle, objects } = mode === 'quality' ? lumenSpriteSheets : bellgardenSheets;
+export function validateHollowSprites(dimensions: ImageDimensions): readonly string[] {
+  const { keeper, beetle, objects } = lumenSpriteSheets;
   return validateImageDimensions(dimensions, { keeper, beetle, objects });
 }

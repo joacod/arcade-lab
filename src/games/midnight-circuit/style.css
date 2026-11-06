@@ -68,28 +68,28 @@
 }
 
 /* Signal / Rain carries the ink-and-paper palette into the shared menu and instruments. */
-.circuit-app:has(canvas[data-renderer="assets"]) { --menu-accent: #e8c28a; background: #10282e; color: #f5e3b9; }
-.circuit-app:has(canvas[data-renderer="assets"]) .circuit-hud,
-.circuit-app:has(canvas[data-renderer="assets"]) .circuit-footer { background: #10282e; border-color: #a1a48b66; }
-.circuit-app:has(canvas[data-renderer="assets"]) .circuit-wordmark { color: #f5e3b9; }
-.circuit-app:has(canvas[data-renderer="assets"]) .circuit-coach { background: #10282eeb; color: #f5e3b9; border-color: #d3ad6a80; }
-.circuit-app:has(canvas[data-renderer="assets"]) .circuit-boss small { color: #ffd3a5; }
+.circuit-app:has(canvas[data-renderer="arcade"]) { --menu-accent: #e8c28a; background: #10282e; color: #f5e3b9; }
+.circuit-app:has(canvas[data-renderer="arcade"]) .circuit-hud,
+.circuit-app:has(canvas[data-renderer="arcade"]) .circuit-footer { background: #10282e; border-color: #a1a48b66; }
+.circuit-app:has(canvas[data-renderer="arcade"]) .circuit-wordmark { color: #f5e3b9; }
+.circuit-app:has(canvas[data-renderer="arcade"]) .circuit-coach { background: #10282eeb; color: #f5e3b9; border-color: #d3ad6a80; }
+.circuit-app:has(canvas[data-renderer="arcade"]) .circuit-boss small { color: #ffd3a5; }
 
 /* Afterglow: ivory instruments and warm signal accents over the graphite streets. */
-.circuit-app:has(canvas[data-renderer="quality"]) { --menu-accent: #e3bf8c; background: #101f25; color: #e9e3cf; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-hud { background: #101f25; border-bottom: 1px solid #c6b7934d; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-footer { background: #101f25; border-color: #c6b79333; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-wordmark { color: #e6d7b5; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-wordmark span { color: #afbaae; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-score { color: #efe0bd; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-vitals meter::-webkit-meter-optimum-value { background: #a9c9b1; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-location { color: #f2d7ab; text-shadow: 0 2px 8px #071b21; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-location small { color: #c6d0bc; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-coach { background: #14292cec; color: #e4d9bb; border-color: #bfa87b66; box-shadow: 0 4px 20px #091d2455; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-combo { color: #ffe0a0; text-shadow: 2px 3px #6f4233; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-boss small { color: #f1c297; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-boss meter::-webkit-meter-optimum-value { background: #df946b; }
-.circuit-app:has(canvas[data-renderer="quality"]) .circuit-attack-buttons button { color: #e4ceb0; border-color: #b99c70; }
-.circuit-app:has(canvas[data-renderer="quality"]) [data-control="light"] { color: #cbe3cc; border-color: #9ac1a5; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) { --menu-accent: #e3bf8c; background: #101f25; color: #e9e3cf; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-hud { background: #101f25; border-bottom: 1px solid #c6b7934d; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-footer { background: #101f25; border-color: #c6b79333; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-wordmark { color: #e6d7b5; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-wordmark span { color: #afbaae; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-score { color: #efe0bd; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-vitals meter::-webkit-meter-optimum-value { background: #a9c9b1; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-location { color: #f2d7ab; text-shadow: 0 2px 8px #071b21; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-location small { color: #c6d0bc; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-coach { background: #14292cec; color: #e4d9bb; border-color: #bfa87b66; box-shadow: 0 4px 20px #091d2455; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-combo { color: #ffe0a0; text-shadow: 2px 3px #6f4233; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-boss small { color: #f1c297; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-boss meter::-webkit-meter-optimum-value { background: #df946b; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) .circuit-attack-buttons button { color: #e4ceb0; border-color: #b99c70; }
+.circuit-app:has(canvas[data-renderer="deluxe"]) [data-control="light"] { color: #cbe3cc; border-color: #9ac1a5; }
 
 .circuit-app .circuit-keyboard { margin-bottom: 16px; }

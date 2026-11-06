@@ -1,4 +1,4 @@
-import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
+import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -40,7 +40,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     surface.setAttribute('aria-label', `Obsidian Duel playfield. ${move} move, ${jump} jump, ${crouch} crouch, ${light} light, ${heavy} heavy, ${special} special, ${guard} guard. P pauses or resumes.`);
   }
   reflectBindings();
-  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: initialTheme, onChange: appearance });
+  const theme = createThemeChoices({ names: appearanceNames, signal, modes: themes, value: defaultTheme(themes), onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.duel-stage'), {
     id: 'duel', title: 'Obsidian Duel', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
@@ -59,7 +59,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   for (const button of roster) button.addEventListener('click', () => {
     for (const b of roster) b.setAttribute('aria-pressed', String(b === button)); select(button.dataset.fighter as FighterId);
   }, { signal });
-  let current: Screen = 'title', activeAppearance: Appearance = 'normal';
+  let current: Screen = 'title', activeAppearance: Appearance = 'arcade';
   return { controls,
     appearanceStatus(id: Appearance, message: string, preparing = false) {
       if (preparing) theme.prepare(id); else theme.setValue(id);menu.displayStatus(message);

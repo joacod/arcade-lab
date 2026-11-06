@@ -14,11 +14,3 @@ export function foundryFrame(sample: AnimationSample): readonly [number, number,
 export function validateFoundryArt(dimensions: ImageDimensions): string[] {
   return validateImageDimensions(dimensions, foundrySheets);
 }
-
-export const fighterImages = {
-  nera: new URL('./art/tempest-citadel/nera.png',import.meta.url).href,
-  kael: new URL('./art/tempest-citadel/kael.png',import.meta.url).href,
-};
-export function validateDuelSprites(dimensions: ImageDimensions): string[] {
-  return validateImageDimensions(dimensions, { nera: foundrySheets.nera, kael: foundrySheets.kael });
-}

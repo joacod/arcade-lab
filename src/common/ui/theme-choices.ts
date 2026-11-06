@@ -1,13 +1,22 @@
 import './menu-components.css';
 
 /** Collection-wide modes; definitions and preparation belong to the owning game. */
-export type ThemeMode = 'normal' | 'assets' | 'quality';
+export type ThemeMode = 'prototype' | 'arcade' | 'deluxe';
 export type ThemeModes<Definition> = Readonly<Partial<Record<ThemeMode, Definition>>>;
-export const initialTheme: ThemeMode = 'assets';
-const labels: Record<ThemeMode, string> = { normal: 'Normal', assets: 'Assets', quality: 'Quality' };
+/** A completed Arcade replaces its prototype; Deluxe extends an existing Arcade. */
+export function availableThemes<Mode extends ThemeMode>(definitions: Readonly<Partial<Record<Mode, unknown>>>): Mode[] {
+  const has = (mode: ThemeMode) => Object.hasOwn(definitions, mode) && definitions[mode as Mode] != null;
+  if (has('arcade')) return (has('deluxe') ? ['arcade', 'deluxe'] : ['arcade']) as Mode[];
+  if (has('prototype')) return ['prototype'] as Mode[];
+  throw new Error('A game needs Arcade or Prototype before it can be mounted.');
+}
+export function defaultTheme<Mode extends ThemeMode>(definitions: Readonly<Partial<Record<Mode, unknown>>>): Mode {
+  return availableThemes(definitions)[0]!;
+}
+const labels: Record<ThemeMode, string> = { prototype: 'Prototype', arcade: 'Arcade', deluxe: 'Deluxe' };
 let groupId = 0;
 
-/** Direct player choices, with the development baseline kept out of the two-option switch. */
+/** Direct choices from implemented presentations, identical in every build. */
 export function createThemeChoices<Mode extends ThemeMode>(config: {
   modes: Readonly<Partial<Record<Mode, unknown>>>;
   value: NoInfer<Mode>;
@@ -15,10 +24,10 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
   signal: AbortSignal;
   onChange(mode: Mode): void;
 }) {
-  const playerModes: ThemeMode[] = ['assets', 'quality'];
-  const modes: ThemeMode[] = import.meta.env.DEV ? [...playerModes, 'normal'] : playerModes;
-  const available = (mode: ThemeMode) => Object.hasOwn(config.modes, mode) && config.modes[mode as Mode] != null;
+  const modes = availableThemes(config.modes);
+  const available = (mode: ThemeMode) => modes.includes(mode as Mode);
   const element = document.createElement('fieldset'); element.className = 'menu-field menu-theme';
+  element.hidden = modes.length < 2;
   element.setAttribute('aria-label', 'Theme');
   const legend = document.createElement('legend'); legend.textContent = 'Theme';
   const shortcut = document.createElement('span'); shortcut.className = 'menu-theme-shortcut'; shortcut.textContent = 'T to switch';
@@ -27,25 +36,21 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
   const note = document.createElement('small'); note.className = 'menu-theme-note'; note.id = `theme-note-${++groupId}`;
   element.setAttribute('aria-describedby', note.id);
   const name = `theme-${groupId}`;
-  let current: ThemeMode = config.value, pending: ThemeMode | undefined, committed = false;
-  const development = document.createElement('details'); development.className = 'menu-theme-development';
-  const summary = document.createElement('summary'); summary.textContent = 'Development'; development.append(summary);
+  let current: ThemeMode = available(config.value) ? config.value : modes[0]!, pending: ThemeMode | undefined, committed = false;
   const choices = modes.map(mode => {
     const label = document.createElement('label'); label.className = 'menu-theme-choice'; label.dataset.value = mode;
     const input = document.createElement('input'); input.type = 'radio'; input.name = name; input.value = mode;
-    input.disabled = !available(mode);
-    const title = document.createElement('strong'); title.textContent = mode === 'normal' ? 'Normal baseline' : labels[mode];
-    const detail = document.createElement('small'); detail.textContent = config.names?.[mode as Mode] ?? (mode === 'normal' ? 'Gameplay development' : mode === 'assets' ? 'Retro artwork' : 'Modern artwork');
+    const title = document.createElement('strong'); title.textContent = labels[mode];
+    const detail = document.createElement('small'); detail.textContent = config.names?.[mode as Mode] ?? (mode === 'prototype' ? 'Gameplay development' : mode === 'arcade' ? 'Finished artwork' : 'Enhanced artwork');
     input.setAttribute('aria-label', `${labels[mode]}${config.names?.[mode as Mode] ? ` · ${config.names[mode as Mode]}` : ''}`);
     const loading = document.createElement('span'); loading.className = 'menu-theme-loading'; loading.textContent = 'Loading…'; loading.hidden = true; loading.setAttribute('aria-hidden', 'true');
     label.append(input, title, detail, loading);
-    (mode === 'normal' ? development : group).append(label);
+    group.append(label);
     input.addEventListener('change', () => select(mode), { signal: config.signal });
     input.addEventListener('click', () => select(mode), { signal: config.signal });
     return { mode, input, label, loading };
   });
   element.append(legend, group, note);
-  if (import.meta.env.DEV) element.append(development);
   function render() {
     element.setAttribute('aria-busy', String(pending !== undefined));
     for (const choice of choices) {
@@ -53,23 +58,21 @@ export function createThemeChoices<Mode extends ThemeMode>(config: {
       choice.loading.hidden = pending !== choice.mode;
       choice.label.toggleAttribute('data-pending', pending === choice.mode);
     }
-    const unavailable = playerModes.filter(mode => !available(mode));
     note.textContent = pending ? `Preparing ${labels[pending]}…${committed ? ` ${labels[current]} stays active.` : ''}`
-      : current === 'normal' ? import.meta.env.DEV ? 'Normal baseline active · development only.' : 'Artwork unavailable. Choose Assets or Quality.'
-      : `Visuals only · keeps your run.${unavailable.length ? ` Unavailable: ${unavailable.map(mode => labels[mode]).join(', ')}.` : ''}`;
-    summary.textContent = current === 'normal' && committed ? 'Development · Normal active' : 'Development';
+      : 'Visuals only · keeps your run.';
   }
-  function prepare(mode: Mode) { pending = mode; render(); }
-  function setValue(mode: Mode) { current = mode; committed = true; pending = undefined; render(); }
+  function prepare(mode: Mode) { if (!available(mode)) return; pending = mode; render(); }
+  function setValue(mode: Mode) { if (!available(mode)) return; current = mode; committed = true; pending = undefined; render(); }
+
   function select(mode: ThemeMode) {
     if (config.signal.aborted || !available(mode)) return;
     if (mode === pending || mode === current && pending === undefined) { render(); return; }
     prepare(mode as Mode); config.onChange(mode as Mode);
   }
   function cycle() {
-    const enabled = playerModes.filter(available);
-    const next = enabled[(enabled.indexOf(pending ?? current) + 1) % enabled.length];
-    if (next) select(next);
+    const enabled = modes;
+    const next = enabled[(enabled.indexOf((pending ?? current) as Mode) + 1) % enabled.length];
+    if (enabled.length > 1 && next) select(next);
   }
   render();
   return { element, input: choices[0]!.input, setValue, prepare, cycle };

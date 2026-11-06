@@ -1,13 +1,13 @@
-import { initialTheme, createThemeChoices, type ThemeMode } from '../../common/ui/theme-choices.ts';
+import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
-import { themes } from './themes.ts';
+import { themes, type Appearance } from './themes.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
 export type Intent = 'start' | 'pause' | 'resume' | 'restart' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: ThemeMode) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: Appearance) => void) {
   root.innerHTML = `<header class="skybreak-hud">
     <div class="skybreak-brand">SKYBREAK</div>
     <div class="skybreak-score"><span>SCORE</span><output aria-label="Score">000000</output></div>
@@ -20,7 +20,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Flight results');
-  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
+  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: defaultTheme(themes), onChange: onTheme });
   const assetStatus = document.createElement('p'); assetStatus.className = 'skybreak-asset-status'; assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.skybreak-stage'), {
     id: 'skybreak', title: 'Skybreak', signal, pause,
@@ -43,8 +43,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const formatTime = (time: number) => `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
   return { evade,
-    appearance(id: ThemeMode) { appearance.setValue(id); },
-    appearancePending(id: ThemeMode) { appearance.prepare(id); },
+    appearance(id: Appearance) { appearance.setValue(id); },
+    appearancePending(id: Appearance) { appearance.prepare(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,

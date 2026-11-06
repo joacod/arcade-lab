@@ -3,12 +3,12 @@ import { validateFlightArt } from './art-pack.ts';
 import type { FlightTheme } from './themes.ts';
 
 export function flightImages(theme: FlightTheme) {
-  return { ...theme.art?.images, ...(theme.scenery ? { backdrop: theme.scenery.url } : {}) };
+  return { ...theme.art.images, backdrop: theme.scenery.url };
 }
 export function validateFlightImages(theme: FlightTheme, dimensions: ImageDimensions) {
   return [
-    ...(theme.art ? validateFlightArt(theme.art, dimensions) : []),
-    ...(theme.scenery && (dimensions.backdrop?.width !== theme.scenery.width || dimensions.backdrop.height !== theme.scenery.height)
+    ...validateFlightArt(theme.art, dimensions),
+    ...((dimensions.backdrop?.width !== theme.scenery.width || dimensions.backdrop.height !== theme.scenery.height)
       ? ['Invalid coastal scenery dimensions.'] : []),
   ];
 }

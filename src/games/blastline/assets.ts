@@ -11,7 +11,7 @@ export const emberImages = {
 };
 export const emberSheets = { operators: [640, 1024], enemies: [384, 384], objects: [512, 512], backdrop: [1536, 1024], novaRun: [768, 640], boltRun: [768, 640] } as const;
 export function validateEmberArt(dimensions: ImageDimensions) {
-  return [...validateImageDimensions(dimensions, emberSheets), ...validateBlastLayout(blastLayouts.assets, dimensions)];
+  return [...validateImageDimensions(dimensions, emberSheets), ...validateBlastLayout(blastLayouts.arcade, dimensions)];
 }
 export function prepareEmberCoast(signal: AbortSignal) {
   return prepareImages(emberImages, signal, validateEmberArt);

@@ -2,12 +2,12 @@ import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 // Mechanical packing of complete connected drawings. No anatomical edits or part assembly.
-const root = new URL('./', import.meta.url), quality = new URL('../afterglow/fighters/', import.meta.url);
+const root = new URL('./', import.meta.url), deluxe = new URL('../afterglow/fighters/', import.meta.url);
 const source = path => 'data:image/png;base64,' + readFileSync(path).toString('base64');
 const inputs = {
   original: source(new URL('fighters.png', root)),
   movement: source(new URL('movement/source.png', root)),
-  quality: ['rook','striker','bruiser','warden'].map(role => source(new URL(`${role}-source.png`, quality))),
+  deluxe: ['rook','striker','bruiser','warden'].map(role => source(new URL(`${role}-source.png`, deluxe))),
   walking: ['assets','quality'].map(mode => ['rook','striker','bruiser','warden'].map(role => source(new URL(`walking/${mode}/${role}-source.png`, root)))),
 };
 const browser = await chromium.launch();
@@ -71,9 +71,9 @@ try {
         a.drawImage(movement.cut(figure),dest*256+dx,row*256+dy,w*scale,h*scale);
       }
     }
-    const modern=document.createElement('canvas');modern.width=8192;modern.height=2048;const q=modern.getContext('2d'),qualityLayout=[];
+    const modern=document.createElement('canvas');modern.width=8192;modern.height=2048;const q=modern.getContext('2d'),deluxeLayout=[];
     for(let row=0;row<4;row++){
-      const sheet=inspect(await load(inputs.quality[row]),4,3), cw=sheet.width/4,ch=sheet.height/3;
+      const sheet=inspect(await load(inputs.deluxe[row]),4,3), cw=sheet.width/4,ch=sheet.height/3;
       const standingHeight=sheet.figures[0].rect[3],scale=(row===3?400:416)/standingHeight;
       const baselines=sheet.figures.slice(0,8).map((f,i)=>f.rect[1]+f.rect[3]-Math.floor(i/4)*ch).sort((x,y)=>x-y);
       const baseline=baselines[4],rects=[];
@@ -81,13 +81,13 @@ try {
         const figure=sheet.figures[frame],[x,y,w,h]=figure.rect;
         let factor=scale,dx=256+(x-(frame%4*cw+cw/2))*factor,dy=480+(y-(Math.floor(frame/4)*ch+baseline))*factor;
         if(frame===11){factor=Math.min(scale,480/w);dx=256-w*factor/2;dy=480-h*factor;}
-        if(dx<0||dy<0||dx+w*factor>512||dy+h*factor>512)throw new Error(`Clipped Quality cel ${row}/${frame}: ${[dx,dy,w*factor,h*factor]}`);
+        if(dx<0||dy<0||dx+w*factor>512||dy+h*factor>512)throw new Error(`Clipped Deluxe cel ${row}/${frame}: ${[dx,dy,w*factor,h*factor]}`);
         q.drawImage(sheet.cut(figure),frame*512+dx,row*512+dy,w*factor,h*factor);
         rects.push({source:figure.rect,destination:[dx,dy,w*factor,h*factor]});
       }
-      qualityLayout.push({source:[sheet.width,sheet.height],baseline,scale,rects});
+      deluxeLayout.push({source:[sheet.width,sheet.height],baseline,scale,rects});
     }
-    const walkingLayout=[],walkingStrides={assets:{},quality:{}};
+    const walkingLayout=[],walkingStrides={arcade:{},deluxe:{}};
     for(let row=0;row<4;row++){
       const modes=[];
       for(let mode=0;mode<2;mode++){
@@ -114,7 +114,7 @@ try {
         }
         const first=boots(figures[0]),opposite=boots(figures[4]);
         const sweep=first[1]-opposite[0];
-        const role=['player','striker','bruiser','warden'][row],name=mode?'quality':'assets';
+        const role=['player','striker','bruiser','warden'][row],name=mode?'deluxe':'arcade';
         const stride=2*sweep*scale*(mode?168/512:160/256)*(row===3?1.48:row===2?1.2:1);
         if(stride<40||stride>230)throw new Error(`Implausible walking stride ${name}/${role}: ${stride}`);
         walkingStrides[name][role]=Number(stride.toFixed(3));
@@ -128,19 +128,19 @@ try {
           ctx.clearRect(dest*cell,row*cell,cell,cell);
           ctx.drawImage(drawing,dest*cell+dx,row*cell+dy,w*scale,h*scale);
           rects.push({source:[x,y,w,h],destination:[dx,dy,w*scale,h*scale],column:dest,support:frame<4?'near':'far'});
-          if(mode)qualityLayout[row].rects[dest]={sourceSheet:`../../fighters/walking/quality/${['rook','striker','bruiser','warden'][row]}-source.png`,source:[x,y,w,h],destination:[dx,dy,w*scale,h*scale]};
+          if(mode)deluxeLayout[row].rects[dest]={sourceSheet:`../../fighters/walking/quality/${['rook','striker','bruiser','warden'][row]}-source.png`,source:[x,y,w,h],destination:[dx,dy,w*scale,h*scale]};
         }
         modes.push({source:[sheet.width,sheet.height],scale,baseline,nearBootContacts:[first[1],opposite[0]],stride,rects});
       }
       walkingLayout.push({modes});
     }
-    return {arcade:arcade.toDataURL('image/webp',.96).split(',')[1],modern:modern.toDataURL('image/webp',.96).split(',')[1],movementLayout,qualityLayout,walkingLayout,walkingStrides};
+    return {arcade:arcade.toDataURL('image/webp',.96).split(',')[1],modern:modern.toDataURL('image/webp',.96).split(',')[1],movementLayout,deluxeLayout,walkingLayout,walkingStrides};
   },inputs);
   writeFileSync(new URL('animated.webp',root),Buffer.from(result.arcade,'base64'));
-  writeFileSync(new URL('fighters.webp',quality),Buffer.from(result.modern,'base64'));
+  writeFileSync(new URL('fighters.webp',deluxe),Buffer.from(result.modern,'base64'));
   writeFileSync(new URL('movement/layout.json',root),JSON.stringify(result.movementLayout,null,2)+'\n');
-  writeFileSync(new URL('layout.json',quality),JSON.stringify(result.qualityLayout,null,2)+'\n');
+  writeFileSync(new URL('layout.json',deluxe),JSON.stringify(result.deluxeLayout,null,2)+'\n');
   writeFileSync(new URL('walking/layout.json',root),JSON.stringify(result.walkingLayout,null,2)+'\n');
   writeFileSync(new URL('walking/strides.ts',root),'// Generated by pack-animation.mjs from the two opposite near-boot contacts.\nexport const walkingStrides = '+JSON.stringify(result.walkingStrides,null,2)+' as const;\n');
-  process.stdout.write('Packed 64 arcade cels and 64 separate Quality cels with registered eight-frame walks.\n');
+  process.stdout.write('Packed 64 arcade cels and 64 separate Deluxe cels with registered eight-frame walks.\n');
 } finally {await browser.close();}

@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-choices.ts';
+import { defaultTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -53,8 +53,8 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
       onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     const clock = createClock();
     const viewMode = 'close';
-    presentation = createPresentation(themes.normal);
-    let appearance: ThemeId = 'normal';
+    presentation = createPresentation(themes.arcade);
+    let appearance: ThemeId = 'arcade';
     let configuration: ConfigurationId = 'clearing';
     const newRun = () => createRun(undefined, configurations[configuration].round);
     let run = newRun(), screen: Screen = 'title', suspendedChoice = false;
@@ -76,25 +76,25 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
       },
     });
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
-    readiness.watch(() => initialTheme === 'normal' ? presentation.prepare() : selectTheme(initialTheme));
+    readiness.watch(() => selectTheme(defaultTheme(themes)));
     host.surface.prepend(presentation.canvas);
     overlay = createScreenOverlay(host.surface);
     ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     async function selectTheme(id: ThemeId) {
-      if (disposed || screen === 'playing' || screen === 'choosing') return false;
+      if (disposed || screen === 'playing' || screen === 'choosing' && readiness.ready) return false;
       const theme = themes[id];
       if (!theme) return false;
       const request = preparation.begin();
       ui.appearancePending(id); ui.assetStatus(`Preparing ${theme.name}…`);
       let next: WorldPresentation | undefined, bundle: PreparedImages | undefined;
       try {
-        if (theme.art) bundle = await prepareAssets(theme.art, request.signal);
+        bundle = await prepareAssets(theme.art, request.signal);
         if (!request.current()) return false;
         if (theme.presentation === 'ember') {
           const { createEmberScene } = await import('./ember-scene.ts');
           if (!request.current()) return false;
-          next = createPresentation(theme, bundle!.images, createEmberScene);
-        } else next = createPresentation(theme, bundle?.images);
+          next = createPresentation(theme, bundle.images, createEmberScene);
+        } else next = createPresentation(theme, bundle.images);
         if (!request.current()) return false;
         await next.prepare();
         if (!request.current()) return false;
@@ -103,7 +103,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
         next.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
         const old = presentation, oldAssets = activeAssets;
         presentation = next; activeAssets = bundle;
-        old.canvas.replaceWith(next.canvas);
+        host.surface.prepend(next.canvas);
         appearance = id; host.root.dataset.theme = id; applyInterface();
         readiness.watch(() => presentation.prepare());
         ui.appearance(id); ui.assetStatus('');
@@ -111,7 +111,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
         return true;
       } catch (error) {
         if (request.current()) {
-          ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'presentation initialization failed'}). Keeping current appearance and run.`);
+          ui.assetStatus(`Appearance unavailable (${error instanceof Error ? error.message : 'presentation initialization failed'}). ${activeAssets ? 'Keeping current appearance and run.' : 'Your run is preserved. Retry artwork or return to game selection.'}`);
           ui.appearance(appearance);
         }
       } finally {
@@ -122,17 +122,16 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
     }
     function graphicsFailure() {
       if (disposed) return;
+      const failed = appearance;
       suspend(); preparation.cancel();
-      // A fresh canvas restores drawing state after an active presentation fails.
-      const fallback = createPresentation(themes.normal);
-      fallback.reset(run); fallback.resize(host);
-      fallback.draw(run, createViewport(clearing.arena, host, run.player, viewMode));
-      const old = presentation;
-      old.canvas.replaceWith(fallback.canvas); presentation = fallback;
-      readiness.watch(() => presentation.prepare());
-      old.dispose(); activeAssets?.dispose(); activeAssets = undefined;
-      appearance = 'normal'; host.root.dataset.theme = appearance; applyInterface(); ui.appearance(appearance);
-      ui.assetStatus('Graphics unavailable. Restored Normal. Your run is safe; use Resume when ready.');
+      presentation.dispose(); activeAssets?.dispose(); activeAssets = undefined;
+      delete host.root.dataset.theme;
+      let reportFailure = failed === 'arcade';
+      ui.assetStatus(`Graphics interrupted. Your run is preserved. ${reportFailure ? 'Retry artwork to continue.' : 'Recovering Arcade; resume when ready.'}`);
+      readiness.watch(() => {
+        if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+        return selectTheme('arcade');
+      });
     }
     function applyInterface() {
       host.root.dataset.skin = themes[appearance].interface;
@@ -151,7 +150,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
       if (next !== screen) transition(next, focus);
     }
     function choose(id: string) {
-      if (disposed || screen !== 'choosing' || document.hidden || !document.hasFocus()) return;
+      if (disposed || !readiness.ready || screen !== 'choosing' || document.hidden || !document.hasFocus()) return;
       if (selectUpgrade(run, id)) { sound.activate(); input.clear(); clock.reset(); ui.update(run); }
     }
     function act(action: MenuAction) {

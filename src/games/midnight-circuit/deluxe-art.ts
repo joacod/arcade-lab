@@ -1,4 +1,4 @@
-import { qualityFighterAtlas } from './sprite-art.ts';
+import { deluxeFighterAtlas } from './sprite-art.ts';
 import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
 /** Inspected rear-curb anchors in the painted source plates, independent of combat geometry. */
 export const afterglowPlates = {
@@ -7,7 +7,7 @@ export const afterglowPlates = {
 } as const;
 export const afterglowSkyline = { width: 1774, height: 887 } as const;
 export function validateAfterglowArt(dimensions: ImageDimensions): readonly string[] {
-  return validateImageDimensions(dimensions, { fighters: qualityFighterAtlas, repair: { width: 64, height: 64 }, skyline: afterglowSkyline, ...afterglowPlates });
+  return validateImageDimensions(dimensions, { fighters: deluxeFighterAtlas, repair: { width: 64, height: 64 }, skyline: afterglowSkyline, ...afterglowPlates });
 }
 
 /** Painted control-panel lamps; restoration overlays follow the same tile transform. */

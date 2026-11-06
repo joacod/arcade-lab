@@ -2,16 +2,15 @@ import { still, row, frame, type ActorArt, type ArtPack, type Decoration } from 
 /** Named visual presets combine art/environment, effects and a default interface. */
 export interface Theme {
   readonly name: string;
-  readonly motif: 'grove' | 'ruins';
-  readonly interface: 'classic' | 'rune' | 'ember';
+  readonly interface: 'rune' | 'ember';
   readonly palette: {
     readonly background: string; readonly floor: string; readonly boundary: string;
-    readonly light: string; readonly ground: string; readonly canopy: string;
+    readonly light: string; readonly ground: string;
     readonly enemy: string; readonly elite: string; readonly halo: string; readonly hit: string; readonly damage: string;
     readonly spark: string; readonly shard: string; readonly pulse: string; readonly gem: string;
   };
   readonly presentation?: 'ember';
-  readonly art?: ArtPack;
+  readonly art: ArtPack;
 }
 function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: number, footprint: readonly [number, number]): ActorArt {
   return { clips: { idle: row('dungeon', idleX, y, w, h, 4, 0.18), move: row('dungeon', moveX, y, w, h, 4, 0.1) },
@@ -19,7 +18,7 @@ function dungeonActor(idleX: number, moveX: number, y: number, w: number, h: num
 }
 const stone = (x: number, y: number): Decoration => ({ clip: still('dungeon', [x, y, 16, 16]), footprint: [32, 32], anchor: [0, 0] });
 export const emberRuins: Theme = {
-  name: 'Ember Ruins', motif: 'ruins', interface: 'rune',
+  name: 'Ember Ruins', interface: 'rune',
   art: {
     images: { dungeon: new URL('./art/ember-ruins/dungeon.png', import.meta.url).href }, sampling: 'nearest',
     actors: {
@@ -40,16 +39,8 @@ export const emberRuins: Theme = {
     },
   },
   palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#19151b', floor: '#302a2b', boundary: '#92775c', light: '#ffdc8e',
-    ground: '#88674740', canopy: '#3a3033', spark: '#ffe5a1', shard: '#bfc8ff', pulse: '#ff9b66', gem: '#87ffb6' },
+    ground: '#88674740', spark: '#ffe5a1', shard: '#bfc8ff', pulse: '#ff9b66', gem: '#87ffb6' },
 };
-function groveArt(): ArtPack {
-  const actor = (y: number, size: number): ActorArt => ({
-    clips: { idle: still('grove', [0,y,64,64]), move: row('grove',0,y,64,64,4,.12) },
-    anchor: [.5,.5], footprint: [size,size], orientation: 'rotate',
-  });
-  return { images: { grove: new URL('./art/grove/actors.svg', import.meta.url).href },
-    sampling: 'smooth', actors: { keeper: actor(0,40), crawler: actor(64,38), elite: actor(128,72) } };
-}
 /** Compact painted miniatures register their bodies around the existing gameplay center. */
 const paintedActor = (image: string, size: number, stride: number,
   bounds: readonly [number, number, number, number]): ActorArt => ({
@@ -86,20 +77,15 @@ export const rekindledArt: ArtPack = {
   },
 };
 export const themes: Readonly<Record<ThemeId, Theme>> = {
-  normal: {
-    name: 'Normal', motif: 'grove', interface: 'classic', art: groveArt(),
-    palette: { enemy: '#ae676e', elite: '#b75466', halo: '#efdb8b', hit: '#fff4d9', damage: '#ff8a82', background: '#0b171a', floor: '#172e29', boundary: '#708a6c', light: '#f5d58b',
-      ground: '#7a9b7440', canopy: '#203d34', spark: '#b7edff', shard: '#d4b7ff', pulse: '#88e0d0', gem: '#9cecaa' },
-  },
-  assets: emberRuins,
-  quality: {
+  arcade: emberRuins,
+  deluxe: {
     ...emberRuins, name: 'Ember Ruins · Rekindled', presentation: 'ember', interface: 'ember',
     art: rekindledArt,
     palette: { ...emberRuins.palette, background: '#10191d', floor: '#202a2d', boundary: '#9c9275',
-      light: '#ffd494', ground: '#879580', canopy: '#273a3d', enemy: '#cc887e', elite: '#f1aa87',
+      light: '#ffd494', ground: '#879580', enemy: '#cc887e', elite: '#f1aa87',
       spark: '#ffe3a6', halo: '#ffe6ae', shard: '#c7c3ff', pulse: '#ffa578', gem: '#90edbd' },
   },
 };
-export type ThemeId = 'normal' | 'assets' | 'quality';
+export type ThemeId = 'arcade' | 'deluxe';
 export const visualTiming = { hit: 0.16, defeat: 0.4, shot: 0.1, pulse: 0.3, pickup: 0.3 };
 export const MAX_EFFECTS = 128;

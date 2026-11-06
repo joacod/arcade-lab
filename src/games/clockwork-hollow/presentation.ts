@@ -1,6 +1,4 @@
-import { createImageResource } from '../../engine/browser/images.ts';
-import { hollowSpriteImages } from './sprite-art.ts';
-import { validateHollowSprites, illustratedSpriteLayout, lumenSpriteLayout } from './asset-art.ts';
+import { illustratedSpriteLayout, lumenSpriteLayout } from './asset-art.ts';
 import { themes, type HollowTheme } from './themes.ts';
 import { movement as m, type Level, type Rect } from './content.ts';
 import { ventCycle, type Run, type HollowEvent, type Player } from './game.ts';
@@ -8,7 +6,7 @@ import type { Screen } from './ui.ts';
 import { createKeeperAnimation, type KeeperPose } from './animation.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { createBellgardenDrawing } from './asset-presentation.ts';
-import type { LumenDrawing, LumenDrawingFactory } from './quality-presentation.ts';
+import type { LumenDrawing, LumenDrawingFactory } from './deluxe-presentation.ts';
 
 export interface HollowView { scale: number; width: number; height: number; x: number; y: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -28,13 +26,10 @@ export function createPresentation(surface: HTMLElement) {
   const ctx = context;
   surface.prepend(canvas);
   let particles: Particle[] = [], lastFrame: number | undefined, landing = 0, camera: HollowView | undefined, disposed = false;
-  const baseline = createImageResource(hollowSpriteImages('normal'), dimensions => validateHollowSprites('normal', dimensions));
-  let baselineDrawing: ReturnType<typeof createBellgardenDrawing> | undefined;
-  const sprites = () => art ?? (baselineDrawing ??= baseline.images.keeper ? createBellgardenDrawing(ctx, baseline.images) : undefined);
-  let theme = themes.normal;
+  const sprites = () => art;
+  let theme = themes.arcade;
   let art: ReturnType<typeof createBellgardenDrawing> | undefined;
-  let quality: LumenDrawing | undefined, qualityFactory: LumenDrawingFactory | undefined;
-  let palette = theme.districts.aqueduct;
+  let deluxe: LumenDrawing | undefined, deluxeFactory: LumenDrawingFactory | undefined;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const animation = createKeeperAnimation();
   let cosmeticTime = 0;
@@ -65,111 +60,17 @@ export function createPresentation(surface: HTMLElement) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color; ctx.beginPath();
     ctx.moveTo(0, 0); ctx.quadraticCurveTo(length * 0.8, -length * 0.55, length, 0); ctx.quadraticCurveTo(length * 0.55, length * 0.4, 0, 0); ctx.fill(); ctx.restore();
   }
-  function vine(x: number, y: number, length: number, seed: number) {
-    ctx.strokeStyle = theme.foliage[1]; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.bezierCurveTo(x + 25, y + length * 0.3, x - 28, y + length * 0.7, x + 4, y + length); ctx.stroke();
-    for (let i = 10; i < length; i += 22) {
-      const px = x + Math.sin(i / length * Math.PI * 2) * 8;
-      leaf(px, y + i, 15 + seed % 8, i % 44 === 10 ? -0.6 : -2.8, theme.foliage[i % 44 === 10 ? 0 : 1]);
-    }
-  }
   function scenery(view: HollowView, time: number, level: Level) {
-    if (quality) { quality.scenery(view, level.environment, time, motion.matches); return; }
-    if (art && theme === themes.assets) { art.scenery(view, level.environment, theme); return; }
-    const { width: w, height: h } = view;
-    const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, palette.sky); sky.addColorStop(0.48, palette.middle); sky.addColorStop(1, palette.deep);
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
-    // Distant light and aqueducts drift more slowly than physical geometry.
-    glow(w * 0.74 - view.x * 0.03, h * 0.18, 340, `${palette.light}36`);
-    if (palette.environment === 'belfry') {
-      for (let i = 0; i < 65; i++) {
-        const x = ((i * 137.7 - view.x * 0.08) % w + w) % w, y = (i * 73.3) % (h * 0.65);
-        circle(x, y, i % 4 === 0 ? 2 : 1, '#e1dfff99');
-      }
-      circle(w * 0.8 - view.x * 0.015, h * 0.18, 42, '#e6e2c0');
-    }
-    if (palette.environment === 'foundry') {
-      for (let i = 0; i < 8; i++) {
-        const x = ((i * 260 - view.x * 0.27) % (w + 260) + w + 260) % (w + 260);
-        line(x, 0, x, h, '#916b5c55', 16); line(x - 5, 0, x - 5, h, '#d1a27822', 3);
-        gear(x, h * 0.35, 46, motion.matches ? 0 : time * 0.1, '#bd8b5e33');
-        glow(x, h * 0.76, 150, '#ff94532b');
-      }
-    }
-    ctx.fillStyle = '#c8d6a309';
-    ctx.beginPath(); ctx.moveTo(w * 0.65, 0); ctx.lineTo(w * 0.95, 0); ctx.lineTo(w * 0.5, h); ctx.lineTo(w * 0.2, h); ctx.fill();
-    for (let layer = 0; layer < 2; layer++) {
-      const factor = layer === 0 ? 0.18 : 0.4, spacing = layer === 0 ? 330 : 470;
-      const baseY = 810 - view.y * factor;
-      ctx.fillStyle = layer === 0 ? `${palette.stone}77` : `${palette.deep}bb`;
-      for (let i = -1; i < Math.ceil((w + level.width * factor) / spacing) + 1; i++) {
-        const x = i * spacing - view.x * factor, top = baseY - (layer === 0 ? 600 : 490);
-        if (x > w + spacing || x < -spacing) continue;
-        // The open arch is a path, leaving the distant layers visible through it.
-        ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x, top); ctx.lineTo(x + spacing - 38, top); ctx.lineTo(x + spacing - 38, h);
-        ctx.lineTo(x + spacing - 95, h); ctx.lineTo(x + spacing - 95, top + 180);
-        ctx.bezierCurveTo(x + spacing - 95, top + 65, x + 58, top + 65, x + 58, top + 180);
-        ctx.lineTo(x + 58, h); ctx.closePath(); ctx.fill();
-        line(x, top + 25, x + spacing - 38, top + 25, '#48715b35', 7);
-        if (layer === 1) { if (palette.environment === 'garden') vine(x + 35, top, 160 + i % 3 * 35, i); gear(x + 190, top + 115, 55, motion.matches ? 0 : time * 0.025, '#42675a'); }
-      }
-    }
-    // Low fog and hanging canopy give depth without obscuring landing edges.
-    for (let i = 0; i < 35; i++) {
-      const x = ((i * 137.7 - view.x * 0.66) % (w + 150) + w + 150) % (w + 150) - 50;
-      const y = theme.atmosphere === 'snow' ? (i * 97 + (motion.matches ? 0 : time * 16)) % h
-        : h * 0.65 + Math.sin(i * 37) * 130 + Math.sin(time * 0.6 + i) * (motion.matches ? 0 : 10);
-      circle(x, y, i % 3 === 0 ? 2 : 1, theme.atmosphere === 'snow' ? '#e5f5ff99' : i % 3 === 0 ? '#c7e5aa65' : '#94c6a044');
-    }
-    ctx.save(); ctx.translate(-view.x * 0.7, -view.y * 0.6);
-    for (let i = Math.floor(view.x * 0.7 / 360); i < Math.ceil((view.x * 0.7 + w) / 360) + 1; i++) {
-      const x = i * 360;
-      ctx.fillStyle = '#0b292ddd'; ctx.beginPath(); ctx.moveTo(x - 80, -70); ctx.quadraticCurveTo(x + 70, 100, x + 270, -20); ctx.lineTo(x + 300, -100); ctx.fill();
-      for (let j = 0; j < 5; j++) leaf(x + j * 53, 12 + Math.sin(j) * 15, 45, j % 2 ? 0.2 : 2.8, theme.foliage[1]);
-    }
-    ctx.restore();
+    if (deluxe) { deluxe.scenery(view, level.environment, time, motion.matches); return; }
+    if (art && theme === themes.arcade) { art.scenery(view, level.environment, theme); return; }
   }
   function stone(s: Rect, index: number, level: Level, view: HollowView) {
-    if (quality) { quality.stone(s, level.environment, index, view); return; }
-    if (art && theme === themes.assets) { art.stone(s, level.environment, index, view); return; }
-    const fill = ctx.createLinearGradient(s.x, s.y, s.x, s.y + Math.min(s.h, 250));
-    fill.addColorStop(0, palette.stone); fill.addColorStop(1, palette.deep); ctx.fillStyle = fill; ctx.fillRect(s.x, s.y, s.w, s.h);
-    ctx.fillStyle = palette.edge; ctx.fillRect(s.x, s.y, s.w, 5);
-    ctx.fillStyle = palette.edge; ctx.fillRect(s.x + 4, s.y, s.w - 8, 2);
-    ctx.fillStyle = '#0b252b88'; ctx.fillRect(s.x, s.y + 12, s.w, 3);
-    for (let row = 0; row < Math.min(s.h / 38, 9); row++) {
-      const y = s.y + 23 + row * 38;
-      line(s.x + 2, y, s.x + s.w - 2, y, '#132d2e99', 2);
-      for (let col = 0; col < s.w / 74; col++) {
-        const x = s.x + col * 74 + (row % 2 ? 36 : 0);
-        if (x < s.x + s.w) line(x, y - 35, x, y, '#152f3088', 2);
-      }
-    }
-    // Brass joining plates distinguish the thin mechanical stepping ledges.
-    if (s.h <= 30) {
-      ctx.fillStyle = '#9a7854'; ctx.fillRect(s.x + 7, s.y + 7, s.w - 14, 4);
-      for (const x of [s.x + 13, s.x + s.w - 13]) circle(x, s.y + 20, 3, '#a99b6d');
-      line(s.x + s.w / 2, s.y + s.h, s.x + s.w / 2, s.y + s.h + 70, '#47746a55', 3);
-      gear(s.x + s.w / 2, s.y + s.h + 78, 16, 0, '#5b7660');
-    }
-    for (let i = 0; i < s.w / 23; i++) {
-      const x = s.x + i * 23 + 5;
-      leaf(x, s.y + 2, 12 + i % 4 * 4, -0.5, theme.foliage[i % 3 ? 1 : 0]);
-      leaf(x, s.y + 1, 10, -2.3, theme.foliage[1]);
-    }
-    // Keep the physical landing edge continuous above the decorative moss.
-    line(s.x, s.y + 3, s.x + s.w, s.y + 3, palette.edge, 2);
-    for (const x of [s.x + 1, s.x + s.w - 1]) line(x, s.y + 3, x, s.y + Math.min(15, s.h), palette.edge, 2);
-    if (index % 3 === 0) vine(s.x + s.w - 12, s.y + 5, Math.min(110, s.h + 60), index);
-    if (s.h > 80) {
-      const x = s.x + Math.min(s.w * 0.6, 230), y = s.y + 90;
-      gear(x, y, 31, index, '#5c6650'); circle(x, y, 7, '#d6bb7d'); glow(x, y, 40, '#f3cb7930');
-    }
+    if (deluxe) { deluxe.stone(s, level.environment, index, view); return; }
+    if (art && theme === themes.arcade) { art.stone(s, level.environment, index, view); return; }
   }
   function keeper(p: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'facing' | 'grounded'>, _time: number, defeated: boolean, pose: KeeperPose = { phase: 0, lean: 0 }) {
     const drawing = sprites();
     if (drawing) drawing.keeper(p, pose, defeated, motion.matches, landing);
-    else circle(p.x + m.width/2, p.y + m.height/2, 16, theme.brass);
   }
 
   function sign(x: number, groundY: number, title: string, detail: string) {
@@ -178,20 +79,19 @@ export function createPresentation(surface: HTMLElement) {
     line(x, top + 40, x, groundY, '#344a46', 7);
     line(x - 1, top + 40, x - 1, groundY, '#a39267', 3);
     ctx.fillStyle = '#344a46'; ctx.fillRect(x - 6, groundY - 5, 12, 5);
-    const fill = theme === themes.assets ? '#fff0cf' : '#1d3b3bf0';
+    const fill = theme === themes.arcade ? '#fff0cf' : '#1d3b3bf0';
     ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(x - 14, top, 182, 52, 4); ctx.fill();
     line(x - 9, top + 2, x + 163, top + 2, '#a6ad7d', 1);
     for (const pin of [x - 8, x + 162]) circle(pin, top + 26, 1.5, '#a39267');
-    ctx.font = '10px monospace'; ctx.fillStyle = theme === themes.assets ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 1, top + 22);
-    ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.assets ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 1, top + 39);
+    ctx.font = '10px monospace'; ctx.fillStyle = theme === themes.arcade ? '#233d55' : '#e6cd93'; ctx.fillText(title, x + 1, top + 22);
+    ctx.font = '8px monospace'; ctx.fillStyle = theme === themes.arcade ? '#79535b' : '#a7c6ab'; ctx.fillText(detail, x + 1, top + 39);
   }
   return {
-    prepare: baseline.prepare,
     replaceTheme(next: HollowTheme, images?: ImageBundle, factory?: LumenDrawingFactory) {
-      const previous = { theme, art, quality, qualityFactory };
-      const replacement = factory === qualityFactory ? quality : factory?.(ctx);
-      const nextArt = images ? createBellgardenDrawing(ctx, images, next === themes.quality ? lumenSpriteLayout : illustratedSpriteLayout) : undefined;
-      theme = next; art = nextArt; quality = replacement; qualityFactory = factory;
+      const previous = { theme, art, deluxe, deluxeFactory };
+      const replacement = factory === deluxeFactory ? deluxe : factory?.(ctx);
+      const nextArt = images ? createBellgardenDrawing(ctx, images, next === themes.deluxe ? lumenSpriteLayout : illustratedSpriteLayout) : undefined;
+      theme = next; art = nextArt; deluxe = replacement; deluxeFactory = factory;
       // A failed candidate may have interrupted a saved drawing scope. Keep the
       // camera/cosmetics, but start the replacement with a clean Canvas state.
       ctx.reset();
@@ -199,12 +99,12 @@ export function createPresentation(surface: HTMLElement) {
       return {
         commit() {
           if (finished) return; finished = true;
-          if (previous.quality !== replacement) previous.quality?.dispose();
+          if (previous.deluxe !== replacement) previous.deluxe?.dispose();
         },
         rollback() {
           if (finished) return; finished = true;
-          if (previous.quality !== replacement) replacement?.dispose();
-          ({ theme, art, quality, qualityFactory } = previous); ctx.reset();
+          if (previous.deluxe !== replacement) replacement?.dispose();
+          ({ theme, art, deluxe, deluxeFactory } = previous); ctx.reset();
         },
       };
     },
@@ -222,10 +122,9 @@ export function createPresentation(surface: HTMLElement) {
       }
     },
     draw(run: Run, size: { width: number; height: number; ratio: number }, screen: Screen, now: number) {
-      if (disposed) return;
+      if (disposed || !art) return;
       const w = Math.max(1, Math.round(size.width * size.ratio)), h = Math.max(1, Math.round(size.height * size.ratio));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; camera = undefined; }
-      palette = theme.districts[run.level.environment];
       const target = hollowView(size.width, size.height, run.level, run.player);
       // Cosmetic tails keep moving after an outcome; pause and hidden-page gaps never advance them.
       const dt = screen === 'paused' || screen === 'title' || lastFrame === undefined ? 0 : clamp(now - lastFrame, 0, 0.05);
@@ -239,13 +138,6 @@ export function createPresentation(surface: HTMLElement) {
       ctx.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, 0, 0);
       scenery(view, run.elapsed, run.level);
       ctx.save(); ctx.translate(-view.x, -view.y);
-      // Abandoned flywheels are scenery only, safely behind physical platforms.
-      for (let i = Math.max(0, Math.floor((view.x - 760) / 610)); !art && !quality && i < Math.ceil((view.x + view.width) / 610); i++) {
-        const x = 560 + i * 610, y = 560 + i % 2 * 150;
-        if (x < view.x - 200 || x > view.x + view.width + 200) continue;
-        gear(x, y, 110, motion.matches ? 0 : run.elapsed * 0.06 * (i % 2 ? -1 : 1), '#4a665166');
-        circle(x, y, 12, '#b7dca188'); glow(x, y, 130, '#a2ddb315');
-      }
       for (const item of run.level.signs) if (item.x > view.x - 180 && item.x < view.x + view.width + 14) sign(item.x, item.groundY, item.title, item.detail);
       run.level.solids.forEach((s, i) => { if (s.x + s.w >= view.x - 20 && s.x <= view.x + view.width + 20) stone(s, i, run.level, view); });
       run.level.checkpoints.forEach((point, i) => {
@@ -335,6 +227,6 @@ export function createPresentation(surface: HTMLElement) {
         leaf(-50, 15, 45, -0.6, '#729666'); leaf(48, 18, 38, -2.4, '#4f8060'); ctx.restore();
       }
     },
-    dispose() { if (disposed) return; disposed = true; baseline.dispose(); particles = []; art = undefined; quality?.dispose(); quality = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; particles = []; art = undefined; deluxe?.dispose(); deluxe = undefined; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

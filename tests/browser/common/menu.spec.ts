@@ -1,7 +1,7 @@
 import { chooseTheme } from '../menu.ts';
 import { test, expect } from '@playwright/test';
 
-test('shared menus expose the two themes directly, start in Assets and keep compact actions reachable', async ({ page }) => {
+test('shared menus expose the two themes directly, start in Arcade and keep compact actions reachable', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -14,11 +14,11 @@ test('shared menus expose the two themes directly, start in Assets and keep comp
     await expect(page.getByRole('combobox')).toHaveCount(0);
     const theme = page.getByRole('group', { name: 'Theme', exact: true });
     await expect(theme.getByRole('radio')).toHaveCount(2);
-    await expect(theme.getByRole('radio', { name: /^Assets/ })).toBeChecked();
-    await expect(theme.getByRole('radio', { name: /^Quality/ })).toBeEnabled();
-    await expect(page.locator('.menu-theme-development')).not.toHaveAttribute('open');
+    await expect(theme.getByRole('radio', { name: /^Arcade/ })).toBeChecked();
+    await expect(theme.getByRole('radio', { name: /^Deluxe/ })).toBeEnabled();
+    await expect(page.locator('.menu-theme-development')).toHaveCount(0);
     await theme.scrollIntoViewIfNeeded();
-    await expect(theme.getByRole('radio', { name: /^Quality/ }).locator('..')).toBeInViewport({ ratio: 1 });
+    await expect(theme.getByRole('radio', { name: /^Deluxe/ }).locator('..')).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole('button', { name: 'Mute sound', exact: true })).toBeVisible();
     await expect(page.locator('.game-menu-controls summary')).toHaveText('How to play');
     await expect(play).toBeInViewport({ ratio: 1 });
@@ -40,8 +40,8 @@ test('shared menus expose the two themes directly, start in Assets and keep comp
     expect(contrast, title).toBeGreaterThanOrEqual(4.5);
     if (title === 'Last Light Clearing') {
       await page.setViewportSize({ width: 844, height: 390 });
-      await theme.getByRole('radio', { name: /^Assets/ }).focus();
-      await expect(theme.getByRole('radio', { name: /^Assets/ }).locator('..')).toBeInViewport({ ratio: 1 });
+      await theme.getByRole('radio', { name: /^Arcade/ }).focus();
+      await expect(theme.getByRole('radio', { name: /^Arcade/ }).locator('..')).toBeInViewport({ ratio: 1 });
       await expect(play).toBeInViewport({ ratio: 1 });
       await page.setViewportSize({ width: 390, height: 844 });
     }
@@ -68,7 +68,7 @@ test('shared menus expose the two themes directly, start in Assets and keep comp
   expect(errors).toEqual([]);
 });
 
-test('native theme fields retain selection semantics, disabled choices and session-owned listeners', async ({ page }) => {
+test('native theme fields retain selection semantics, stale IDs and session-owned listeners', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
     const path = '/src/common/ui/theme-choices.ts';
@@ -77,7 +77,7 @@ test('native theme fields retain selection semantics, disabled choices and sessi
     const { createMenuReadout } = await import(componentPath);
     const menuPath = '/src/common/ui/menu.ts'; const { createGameMenu } = await import(menuPath);
     const lifetime = new AbortController(), events: string[] = [];
-    const theme = createThemeChoices({ modes: { assets: {}, quality: {} }, value: 'quality', signal: lifetime.signal,
+    const theme = createThemeChoices({ modes: { arcade: {}, deluxe: {} }, value: 'deluxe', signal: lifetime.signal,
       onChange(value: string) { events.push(value); theme.setValue(value); } });
     const readout = createMenuReadout('Test results'); readout.update('100 POINTS\n2 lives'); readout.element.hidden = false;
     const root = document.createElement('div'), stage = document.createElement('div'), surface = document.createElement('div'), pause = document.createElement('button');
@@ -86,21 +86,22 @@ test('native theme fields retain selection semantics, disabled choices and sessi
     menu.show('title', false); (window as any).menuProbe = { lifetime, events, theme, readout };
   });
   const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  await expect(theme.getByRole('radio', { name: 'Quality', exact: true })).toBeChecked();
-  await chooseTheme(theme, 'assets');
-  await expect(theme.getByRole('radio', { name: 'Assets', exact: true })).toBeChecked();
+  await expect(theme.getByRole('radio', { name: 'Deluxe', exact: true })).toBeChecked();
+  await chooseTheme(theme, 'arcade');
+  await expect(theme.getByRole('radio', { name: 'Arcade', exact: true })).toBeChecked();
   const result = await page.evaluate(() => {
     const { lifetime, events, theme, readout } = (window as any).menuProbe;
-    theme.setValue('quality');
-    const normal = theme.element.querySelector('input[value="normal"]'); normal.click();
+    theme.setValue('deluxe');
+    theme.setValue('normal'); theme.prepare('quality'); // Retired IDs are ignored.
     const observer = new MutationObserver(() => {}); observer.observe(readout.element, { childList: true, subtree: true, characterData: true });
     readout.update('100 POINTS\n2 lives'); const unchanged = observer.takeRecords().length; observer.disconnect();
-    lifetime.abort(); theme.input.click(); return { events, unchanged, normalDisabled: normal.disabled };
+    const selected = theme.element.querySelector('input:checked').value;
+    lifetime.abort(); theme.input.click(); return { events, unchanged, selected };
   });
-  expect(result).toEqual({ events: ['assets'], unchanged: 0, normalDisabled: true });
+  expect(result).toEqual({ events: ['arcade'], unchanged: 0, selected: 'deluxe' });
 });
 
-test('theme navigation exposes pending versus active choice, supports cancellation, arrows, Tab and development Normal', async ({ page }) => {
+test('theme navigation exposes pending versus active choice, supports cancellation, arrows and Tab', async ({ page }) => {
   let release!: () => void, requested = false;
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/art/lumen/keeper.png', async route => { requested = true; await gate; await route.continue(); });
@@ -108,27 +109,24 @@ test('theme navigation exposes pending versus active choice, supports cancellati
   await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  const assets = theme.getByRole('radio', { name: /^Assets/ }), quality = theme.getByRole('radio', { name: /^Quality/ });
-  await assets.focus(); await page.keyboard.press('ArrowRight');
+  const arcade = theme.getByRole('radio', { name: /^Arcade/ }), deluxe = theme.getByRole('radio', { name: /^Deluxe/ });
+  await arcade.focus(); await page.keyboard.press('ArrowRight');
   await expect.poll(() => requested).toBe(true);
   await expect(theme).toHaveAttribute('aria-busy', 'true');
-  await expect(assets).toBeChecked(); await expect(quality).not.toBeChecked();
-  await expect(theme.locator('[data-value="quality"] .menu-theme-loading')).toBeVisible();
+  await expect(arcade).toBeChecked(); await expect(deluxe).not.toBeChecked();
+  await expect(theme.locator('[data-value="deluxe"] .menu-theme-loading')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
-  await assets.click(); // Selecting the working choice also cancels a pending replacement.
+  await arcade.click(); // Selecting the working choice also cancels a pending replacement.
   await expect(theme).toHaveAttribute('aria-busy', 'false');
   release();
-  await expect(assets).toBeChecked();
-  await quality.click(); await expect(quality).toBeChecked();
-  await expect(quality).toBeFocused();
-  await page.keyboard.press('ArrowLeft'); await expect(assets).toBeChecked();
-  await page.keyboard.press('Tab'); await expect(assets).toBeChecked();
-  await chooseTheme(theme, 'normal');
-  await expect(theme.getByRole('radio', { name: /^Normal/ })).toBeChecked();
-  await expect(page.locator('.menu-theme-note')).toContainText('Normal baseline active');
+  await expect(arcade).toBeChecked();
+  await deluxe.click(); await expect(deluxe).toBeChecked();
+  await expect(deluxe).toBeFocused();
+  await page.keyboard.press('ArrowLeft'); await expect(arcade).toBeChecked();
+  await page.keyboard.press('Tab'); await expect(arcade).toBeChecked();
   await page.getByRole('button', { name: 'Play', exact: true }).focus(); await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
-  await assets.click(); await expect(assets).toBeChecked();
+  await arcade.click(); await expect(arcade).toBeChecked();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.keyboard.press('f');
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
@@ -216,9 +214,9 @@ test('menu sound and theme shortcuts retain the paused run and leave gameplay ke
   await page.keyboard.press('s');
   await expect(mute).toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('t');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'quality');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'deluxe');
   await page.keyboard.press('t');
-  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'assets');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-theme', 'arcade');
   await page.clock.runFor(100);
   expect(await state()).toBe(frozen);
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeFocused();
@@ -232,19 +230,23 @@ test('menu sound and theme shortcuts retain the paused run and leave gameplay ke
 });
 
 
-test('production uses the same visible Assets / Quality choices with no development controls', async ({ page }) => {
-  await page.route(/\/src\/common\/ui\/theme-choices\.ts(?:\?.*)?$/, async route => {
-    const response = await route.fetch();
-    await route.fulfill({ response, body: (await response.text()).replaceAll('import.meta.env.DEV', 'false') });
-  });
+test('availability hides single choices, retires Prototype and derives the fresh-launch default', async ({ page }) => {
   await page.goto('/');
-  for (const title of ['Last Light Clearing', 'Skybreak', 'Clockwork Hollow', 'Midnight Circuit', 'Obsidian Duel', 'Blastline']) {
-    await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
-    const theme = page.getByRole('group', { name: 'Theme', exact: true });
-    await expect(theme.getByRole('radio')).toHaveCount(2);
-    await expect(theme.getByRole('radio', { name: /^Assets/ })).toBeChecked();
-    await expect(theme.locator('.menu-theme-development')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  }
+  const result = await page.evaluate(async () => {
+    const path = '/src/common/ui/theme-choices.ts';
+    const { createThemeChoices, defaultTheme } = await import(path);
+    return [{ prototype: {} }, { arcade: {} }, { arcade: {}, deluxe: {} }, { prototype: {}, arcade: {}, deluxe: {} }].map(modes => {
+      const events: string[] = [], lifetime = new AbortController();
+      const field = createThemeChoices({ modes, value: 'normal', signal: lifetime.signal, onChange: (mode: string) => events.push(mode) });
+      field.cycle();
+      return { modes: [...field.element.querySelectorAll('input')].map((input: HTMLInputElement) => input.value),
+        hidden: field.element.hidden, initial: defaultTheme(modes), events };
+    });
+  });
+  expect(result).toEqual([
+    { modes: ['prototype'], hidden: true, initial: 'prototype', events: [] },
+    { modes: ['arcade'], hidden: true, initial: 'arcade', events: [] },
+    { modes: ['arcade', 'deluxe'], hidden: false, initial: 'arcade', events: ['deluxe'] },
+    { modes: ['arcade', 'deluxe'], hidden: false, initial: 'arcade', events: ['deluxe'] },
+  ]);
 });

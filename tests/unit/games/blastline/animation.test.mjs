@@ -1,7 +1,8 @@
+import { emberSheets } from '../../../../src/games/blastline/assets.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGroundGait } from '../../../../src/games/blastline/animation.ts';
-import { operatorCel, operatorFrame, blastLayouts, blastSheets, validateBlastLayout } from '../../../../src/games/blastline/sprite-art.ts';
+import { operatorCel, operatorFrame, blastLayouts, validateBlastLayout } from '../../../../src/games/blastline/sprite-art.ts';
 
 const body = (x, extra = {}) => ({ x, y: 618, vx: 210, grounded: true, ...extra });
 
@@ -38,7 +39,7 @@ test('pause freezes the stride; stops, jumps, landings, redeployment and reset s
 
 test('moving clips cover the full stride without inserting idle, while aim, air and reduced motion keep priority', () => {
   const phases = [0, .18, .35, .51, .68, .85];
-  assert.deepEqual(phases.map(p => operatorFrame(blastLayouts.assets, 'nova', false, true, p, false, 1, 0, false).rect[0] / 128), [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual(phases.map(p => operatorFrame(blastLayouts.arcade, 'nova', false, true, p, false, 1, 0, false).rect[0] / 128), [0, 1, 2, 3, 4, 5]);
   assert.deepEqual(phases.map(p => operatorCel(false, true, p, false, 1, 0).state), [1, 1, 1, 2, 2, 2]);
   assert.equal(operatorCel(false, false, .75, false, 1, 0).state, 0);
   assert.equal(operatorCel(false, true, .75, true, 1, 0).state, 0);
@@ -49,11 +50,11 @@ test('moving clips cover the full stride without inserting idle, while aim, air 
 
 test('operator layouts keep each actor recoil, jump and run roles independent of sheet resolution', () => {
   for (const [actor, row] of [['nova', 1], ['bolt', 4]]) {
-    assert.deepEqual(operatorFrame(blastLayouts.quality, actor, false, false, 0, false, 1, 0, true),
+    assert.deepEqual(operatorFrame(blastLayouts.deluxe, actor, false, false, 0, false, 1, 0, true),
       { image: 'operators', rect: [384, row * 192, 192, 192] });
   }
-  const custom = { ...blastLayouts.assets, operators: { ...blastLayouts.assets.operators, cell: 32,
-    rows: { ...blastLayouts.assets.operators.rows, nova: { idle: 8, stepA: 9, stepB: 10, airborne: 11 } },
+  const custom = { ...blastLayouts.arcade, operators: { ...blastLayouts.arcade.operators, cell: 32,
+    rows: { ...blastLayouts.arcade.operators.rows, nova: { idle: 8, stepA: 9, stepB: 10, airborne: 11 } },
     run: { images: { nova: 'newNova', bolt: 'newBolt' }, frames: 4 } } };
   assert.deepEqual(operatorFrame(custom, 'nova', true, true, .75, false, 0, -1, false),
     { image: 'operators', rect: [0, 352, 32, 32] });
@@ -63,10 +64,10 @@ test('operator layouts keep each actor recoil, jump and run roles independent of
 
 
 test('atlas validation rejects missing role images and mappings outside the decoded sheet', () => {
-  const dimensions = Object.fromEntries(Object.entries(blastSheets).map(([name, [width, height]]) => [name, { width, height }]));
-  assert.deepEqual(validateBlastLayout(blastLayouts.normal, dimensions), []);
-  const shifted = { ...blastLayouts.normal, objects: { ...blastLayouts.normal.objects, relay: [500, 0, 64, 64] } };
+  const dimensions = Object.fromEntries(Object.entries(emberSheets).map(([name, [width, height]]) => [name, { width, height }]));
+  assert.deepEqual(validateBlastLayout(blastLayouts.arcade, dimensions), []);
+  const shifted = { ...blastLayouts.arcade, objects: { ...blastLayouts.arcade.objects, relay: [500, 0, 128, 128] } };
   assert.ok(validateBlastLayout(shifted, dimensions).includes('Invalid objects frame'));
   delete dimensions.operators;
-  assert.ok(validateBlastLayout(blastLayouts.normal, dimensions).includes('Invalid operators frame'));
+  assert.ok(validateBlastLayout(blastLayouts.arcade, dimensions).includes('Invalid operators frame'));
 });

@@ -1,12 +1,10 @@
-import { createImageResource } from '../../engine/browser/images.ts';
-import { fighterImages, validateDuelSprites } from './asset-art.ts';
 import { themes, type DuelTheme } from './themes.ts';
 import { arena, fighters } from './content.ts';
 import type { DuelEvent, Fighter, Match } from './game.ts';
 import type { Screen } from './ui.ts';
 import type { ImageBundle } from '../../engine/browser/images.ts';
 import { drawFoundryFighter, drawFoundryEffect } from './asset-presentation.ts';
-import type { SanctumDrawing, SanctumDrawingFactory } from './quality-presentation.ts';
+import type { SanctumDrawing, SanctumDrawingFactory } from './deluxe-presentation.ts';
 import { createDuelAnimation, type AnimationSample } from './animation.ts';
 export function duelView(width: number, height: number) {
   const scale = Math.min(width / arena.width, height / arena.height);
@@ -71,10 +69,9 @@ export function createPresentation(surface: HTMLElement) {
   if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context;
   surface.append(canvas);
-  const baseline = createImageResource(fighterImages, validateDuelSprites);
-  let theme = themes.normal;
+  let theme = themes.arcade;
   let art: ImageBundle | undefined;
-  let quality: SanctumDrawing | undefined;
+  let deluxe: SanctumDrawing | undefined;
   const animations = [createDuelAnimation(), createDuelAnimation()];
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let sparks: Spark[] = [],
@@ -123,22 +120,6 @@ export function createPresentation(surface: HTMLElement) {
       }
       return;
     }
-    // Normal deliberately leaves the lane quiet: simple sky, distant citadel and a flat terrace.
-    const sky = ctx.createLinearGradient(0, 0, 0, 440);
-    sky.addColorStop(0, theme.sky[0]);
-    sky.addColorStop(1, theme.sky[1]);
-    rect(0, 0, 1000, 560, sky);
-    oval(570, 135, 43, 43, '#b7bacd');
-    path([0, 330, 110, 275, 240, 326, 360, 243, 500, 318, 650, 261, 780, 323, 900, 271, 1000, 320, 1000, 440, 0, 440], theme.mountain, 1, true);
-    rect(0, 383, 1000, 57, '#252b3b');
-    rect(0, 383, 1000, 6, '#626477');
-    for (const x of [32, 932]) {
-      rect(x, 225, 36, 215, '#262b3c');
-      rect(x - 7, 219, 50, 10, '#666479');
-    }
-    rect(0, 420, 1000, 140, theme.floor);
-    path([0, 440, 1000, 440], '#a6a4b1', 2);
-    path([0, 494, 1000, 494], '#272938', 1);
   }
   function drawFighter(f: Fighter, time: number, reduced: boolean, sample: AnimationSample) {
     const nera = f.kind === 'nera',
@@ -151,8 +132,8 @@ export function createPresentation(surface: HTMLElement) {
     oval(f.x, base + 4, down ? 69 : 48, 8, '#080d1e88');
     if (art && !down) {
       ctx.save();
-      ctx.globalAlpha = quality ? .18 : .24;
-      if (quality) quality.effect(3, f.x, base + 4, 145, 22);else drawFoundryEffect(ctx, art, 3, f.x, base + 4, 112, 20);
+      ctx.globalAlpha = deluxe ? .18 : .24;
+      if (deluxe) deluxe.effect(3, f.x, base + 4, 145, 22);else drawFoundryEffect(ctx, art, 3, f.x, base + 4, 112, 20);
       ctx.restore();
     }
     glow(f.x, base + 10, 76, nera ? '#7debdc0d' : '#ffc08d0b');
@@ -166,8 +147,8 @@ export function createPresentation(surface: HTMLElement) {
     const {
       trim
     } = theme.fighters[f.kind];
-    const sprites = art ?? baseline.images;
-    if (sprites[f.kind]) drawFoundryFighter(ctx, sprites, f.kind, sample);else oval(0, -65, 25, 65, theme.fighters[f.kind].cloth);
+    const sprites = art!;
+    drawFoundryFighter(ctx, sprites, f.kind, sample);
     if (active && s) {
       const move = fighters[f.kind].attacks[s.kind];
       if (art && !(nera && s.kind === 'special')) {
@@ -177,14 +158,7 @@ export function createPresentation(surface: HTMLElement) {
         const y = cell === 6 ? -14 : cell === 4 ? -111 : -91;
         const width = cell === 5 ? move.reach * 1.1 : move.reach;
         ctx.globalAlpha = reduced ? .32 : .58;
-        if (quality) quality.effect(cell, x, y, width, cell === 6 ? 34 : cell === 5 ? 65 : 116);else drawFoundryEffect(ctx, art, cell, cell === 5 ? x - width / 2 : x, y, width, cell === 6 ? 28 : 80);
-      } else if (!art && s.kind !== 'special') {
-        ctx.globalAlpha = .45;
-        ctx.strokeStyle = trim;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.ellipse(move.reach * .5, s.kind === 'sweep' ? -12 : -87, move.reach * .45, s.kind === 'sweep' ? 12 : 24, 0, -.9, .8);
-        ctx.stroke();
+        if (deluxe) deluxe.effect(cell, x, y, width, cell === 6 ? 34 : cell === 5 ? 65 : 116);else drawFoundryEffect(ctx, art, cell, cell === 5 ? x - width / 2 : x, y, width, cell === 6 ? 28 : 80);
       }
     }
     if (wind && s && (s.kind === 'heavy' || s.kind === 'special')) {
@@ -194,21 +168,20 @@ export function createPresentation(surface: HTMLElement) {
     ctx.restore();
   }
   return {
-    prepare: baseline.prepare,
     replaceTheme(next: DuelTheme, images?: ImageBundle, factory?: SanctumDrawingFactory) {
       const previousTheme = theme,
         previousArt = art,
-        previousQuality = quality;
+        previousDeluxe = deluxe;
       const drawing = factory && images ? factory(ctx, images) : undefined;
       theme = next;
       art = images;
-      quality = drawing;
+      deluxe = drawing;
       ctx.reset();
       return {
         rollback() {
           theme = previousTheme;
           art = previousArt;
-          quality = previousQuality;
+          deluxe = previousDeluxe;
           ctx.reset();
         }
       };
@@ -238,7 +211,7 @@ export function createPresentation(surface: HTMLElement) {
           blocked,
           color
         });
-        const count = motion.matches ? 2 : quality ? 6 : art ? 10 : 4;
+        const count = motion.matches ? 2 : deluxe ? 6 : 10;
         for (let i = 0; i < count && sparks.length < 120; i++) {
           const a = i * 2.399 + e.x,
             speed = 55 + i % 5 * 32;
@@ -259,7 +232,7 @@ export function createPresentation(surface: HTMLElement) {
       height: number;
       ratio: number;
     }, screen: Screen, now: number) {
-      if (disposed) return;
+      if (disposed || !art) return;
       const {
           width,
           height,
@@ -297,12 +270,12 @@ export function createPresentation(surface: HTMLElement) {
       ctx.beginPath();
       ctx.rect(0, 0, 1000, 560);
       ctx.clip();
-      if (!quality && !reduced && animate) ctx.translate(Math.sin(now * 83) * shake, Math.cos(now * 71) * shake * .35);
+      if (!deluxe && !reduced && animate) ctx.translate(Math.sin(now * 83) * shake, Math.cos(now * 71) * shake * .35);
       const t = screen === 'title' ? now : m.elapsed;
       const samples = m.fighters.map((f, i) => animations[i]!.sample(f, t, reduced));
-      if (quality) {
-        quality.scenery(t, reduced);
-        for (let i = 0; i < 2; i++) quality.reflection(m.fighters[i]!, samples[i]!);
+      if (deluxe) {
+        deluxe.scenery(t, reduced);
+        for (let i = 0; i < 2; i++) deluxe.reflection(m.fighters[i]!, samples[i]!);
       } else scenery(reduced ? 0 : t, reduced);
       for (let i = 0; i < 2; i++) drawFighter(m.fighters[i]!, t, reduced, samples[i]!);
       const enemy = m.fighters[1],
@@ -326,12 +299,12 @@ export function createPresentation(surface: HTMLElement) {
         ctx.restore();
       }
       for (const p of m.projectiles) {
-        if (quality) {
+        if (deluxe) {
           glow(p.x, arena.floor - p.z, 36, '#6df5d52a');
           ctx.save();
           ctx.translate(p.x, arena.floor - p.z);
           ctx.scale(p.facing, 1);
-          quality.effect(0, 0, 0, 110, 62);
+          deluxe.effect(0, 0, 0, 110, 62);
           ctx.restore();
           continue;
         }
@@ -343,10 +316,6 @@ export function createPresentation(surface: HTMLElement) {
           ctx.restore();
           continue;
         }
-        glow(p.x, arena.floor - p.z, 44, '#8cffe45a');
-        path([p.x - p.facing * 44, arena.floor - p.z, p.x, arena.floor - p.z], '#87f5d87a', 8);
-        oval(p.x, arena.floor - p.z, 17, 10, '#7cead8');
-        oval(p.x + p.facing * 4, arena.floor - p.z, 9, 6, '#efffea');
       }
       ctx.lineCap = 'round';
       for (const p of sparks) {
@@ -354,26 +323,17 @@ export function createPresentation(surface: HTMLElement) {
         if (reduced) oval(p.x, p.y, 1, 1, p.color);else path([p.x, p.y, p.x - p.vx * .025, p.y - p.vy * .025], p.color, 2);
       }
       for (const r of impacts) {
-        if (quality) {
+        if (deluxe) {
           const life = Math.max(0, r.life / .25),
             size = reduced ? 108 : 85 + (1 - life) * 55;
           ctx.globalAlpha = life;
-          quality.effect(r.blocked ? 2 : 1, r.x, r.y, size, r.blocked ? size : size * .85);
+          deluxe.effect(r.blocked ? 2 : 1, r.x, r.y, size, r.blocked ? size : size * .85);
           continue;
         }
         ctx.globalAlpha = Math.max(0, r.life / .25);
         if (art) {
           drawFoundryEffect(ctx, art, r.blocked ? 2 : 1, r.x, r.y, reduced ? 64 : 38 + (1 - r.life / .25) * 44);
           continue;
-        }
-        ctx.strokeStyle = r.color;
-        ctx.lineWidth = r.blocked ? 4 : 2;
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, reduced ? 22 : 8 + (1 - r.life / .25) * 30, r.blocked ? -.9 : 0, r.blocked ? 2.2 : Math.PI * 2);
-        ctx.stroke();
-        if (!r.blocked) {
-          path([r.x - 21, r.y, r.x + 21, r.y], r.color, 2);
-          path([r.x, r.y - 21, r.x, r.y + 21], r.color, 2);
         }
       }
       ctx.globalAlpha = 1;
@@ -382,9 +342,8 @@ export function createPresentation(surface: HTMLElement) {
     dispose() {
       if (disposed) return;
       disposed = true;
-      baseline.dispose();
       art = undefined;
-      quality = undefined;
+      deluxe = undefined;
       sparks = [];
       impacts = [];
       canvas.remove();

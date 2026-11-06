@@ -22,7 +22,7 @@ const slots = Object.fromEntries(Object.entries(duelClips).map(([clip, count]) =
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
-  for (const [folder, sourceFolder] of [['tempest-citadel', 'sources'], ['moonfall-sanctum', 'fighters']]) {
+  for (const [folder, sourceFolder] of [['moonfall-sanctum', 'fighters']]) {
     const layout = { columns: 6, rows: 6, clips, fighters: {} };
     for (const kind of ['nera', 'kael']) {
       const source = readFileSync(new URL(`${folder}/${sourceFolder}/${kind}.png`, import.meta.url)).toString('base64');
@@ -91,8 +91,7 @@ try {
           ctx.drawImage(d.image, d.left, d.top, d.right - d.left + 1, d.bottom - d.top + 1, x + dx, y + dy, width, height);
         }
         return { png: canvas.toDataURL('image/png').split(',')[1], size: [image.width, image.height], scale, rows, frames };
-      }, { source, slots, clips, cell: foundryCell, kind, reach: Object.fromEntries(Object.entries(fighters[kind].attacks).map(([key, value]) => [key, value.reach])), rows: folder === 'tempest-citadel' && kind === 'kael'
-        ? [0, 218, 450, 655, 864, 1064, 1254] : [0, 209, 418, 627, 836, 1045, 1254] });
+      }, { source, slots, clips, cell: foundryCell, kind, reach: Object.fromEntries(Object.entries(fighters[kind].attacks).map(([key, value]) => [key, value.reach])), rows: [0, 209, 418, 627, 836, 1045, 1254] });
       writeFileSync(new URL(`${folder}/${kind}.png`, import.meta.url), Buffer.from(result.png, 'base64'));
       layout.fighters[kind] = { size: result.size, scale: result.scale, rows: result.rows, frames: result.frames };
       console.log(`${folder}/${kind}: 36 complete drawings, ${Object.values(slots).flat().length} timed cels`);

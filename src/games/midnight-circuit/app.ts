@@ -1,4 +1,4 @@
-import { initialTheme } from '../../common/ui/theme-choices.ts';
+import { defaultTheme } from '../../common/ui/theme-choices.ts';
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createReadiness } from '../../engine/browser/preparation.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -9,6 +9,7 @@ import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session
 import { createRun, pauseRun, nextStage, stepRun, takeEvents } from './game.ts';
 import { bindInput } from './input.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
+import { appearances } from './graphics.ts';
 import { createAppearance } from './appearance.ts';
 import { createSound } from './sound.ts';
 import './style.css';
@@ -52,8 +53,16 @@ export function mountCircuit(container: HTMLElement, onExit: () => void, fullscr
       suspend();
       if (readiness.ready) void presentation!.select(value); else readiness.watch(() => presentation!.select(value));
     }, layout => input?.setLayout(layout));
-    presentation = createAppearance(host.surface, (value, message, preparing) => ui.appearanceStatus(value, message, preparing), suspend, () => readiness.watch(() => presentation!.prepare()));
-    readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : presentation!.select(initialTheme));
+    presentation = createAppearance(host.surface, (value, message, preparing) => ui.appearanceStatus(value, message, preparing), failed => {
+      suspend();
+      let reportFailure = failed === 'arcade';
+      readiness.watch(() => {
+        if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+        return presentation!.select('arcade');
+      });
+    });
+    presentation.draw(run, host, screen, performance.now() / 1000);
+    readiness.watch(() => presentation!.select(defaultTheme(appearances)));
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });

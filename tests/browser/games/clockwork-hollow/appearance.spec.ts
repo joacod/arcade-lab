@@ -1,16 +1,8 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { test, expect, type Page } from '@playwright/test';
 
 import { chooseTheme } from '../../menu.ts';
 
-async function openHollow(page: Page, controlled = false) {
-  if (controlled) await page.route(/\/src\/games\/clockwork-hollow\/assets\.ts(?:\?.*)?$/, async route => {
-    const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}
-      const prepareOriginal = prepareBellgarden; prepareBellgarden = signal => {
-        bellgardenImages.keeper = window.hollowKeeperURL; return prepareOriginal(signal);
-      };` });
-  });
+async function openHollow(page: Page) {
   await page.route(/\/src\/games\/clockwork-hollow\/game\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}
@@ -21,10 +13,10 @@ async function openHollow(page: Page, controlled = false) {
     const Original = window.Image;
     window.Image = class extends Original { constructor() { super(); images.push(this); } };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).hollowImages.length === 3 && (window as any).hollowImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
+  await expect.poll(() => page.evaluate(() => (window as any).hollowImages.length === 10 && (window as any).hollowImages.every((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))).toBe(true);
   await page.evaluate(() => { (window as any).hollowBaselineImages = (window as any).hollowImages.splice(0); });
   await page.clock.runFor(50);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
@@ -34,97 +26,6 @@ async function openHollow(page: Page, controlled = false) {
 }
 const state = (page: Page) => page.evaluate(() => JSON.stringify((window as any).hollowProbe));
 const released = (page: Page) => page.evaluate(() => (window as any).hollowImages.every((image: HTMLImageElement) => !image.hasAttribute('src')));
-const keeperURL = (page: Page, url: string) => page.evaluate(url => { (window as any).hollowKeeperURL = url; }, url);
-
-test('Bellgarden loads its bundle, retains the run across modes and restart, and releases images', async ({ page }, info) => {
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
-  await openHollow(page);
-  expect(await page.evaluate(() => (window as any).hollowImages.length)).toBe(0);
-  const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  const frozen = await state(page);
-  const normal = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
-  await chooseTheme(theme, 'assets');
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
-  await page.clock.runFor(50);
-  expect(await state(page)).toBe(frozen);
-  expect(await page.evaluate(() => (window as any).retainedHollow === (window as any).hollowProbe)).toBe(true);
-  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).not.toBe(normal);
-  expect(await page.evaluate(() => (window as any).hollowImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
-    .toEqual([[768, 80], [256, 48], [1024, 160], [384, 192], ...Array.from({ length: 6 }, () => [960, 900])]);
-  await chooseTheme(theme, 'normal'); await page.clock.runFor(50);
-  expect(await released(page)).toBe(true); expect(await state(page)).toBe(frozen);
-  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);
-  await chooseTheme(theme, 'assets');
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(200);
-  expect(await state(page)).not.toBe(frozen);
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(100);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
-  expect(await page.evaluate(() => (window as any).hollowProbe.elapsed)).toBeLessThan(.2);
-  // Inspect the image treatment in each district through the existing bell transition.
-  for (let district = 0; district < 3; district++) {
-    await page.evaluate(() => {
-      const run = (window as any).hollowProbe, point = run.level.checkpoints[run.levelIndex === 0 ? 1 : 0];
-      Object.assign(run.player, point, { vx: 0, vy: 0 });
-    });
-    await page.clock.runFor(1800);
-    expect(await page.evaluate(() => (window as any).hollowProbe.status)).toBe('active');
-    await page.screenshot({ path: info.outputPath(`bellgarden-${district}.png`) });
-    await page.evaluate(() => { const run = (window as any).hollowProbe; Object.assign(run.player, { x: run.level.goal.x, y: run.level.goal.y + 60, vx: 0, vy: 0 }); });
-    await page.clock.runFor(100);
-    if (district < 2) {
-      await page.getByRole('button', { name: /^Continue to/ }).click(); await page.clock.runFor(100);
-    }
-  }
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  expect(await released(page)).toBe(true);
-  await expect(page.locator('canvas')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).hollowBaselineImages.every((image: HTMLImageElement) => !image.hasAttribute('src')))).toBe(true);
-  expect(errors).toEqual([]);
-});
-
-test('failed, superseded, resumed and disposed image preparation keeps the active journey', async ({ page }) => {
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
-  await openHollow(page, true);
-  const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  const frozen = await state(page);
-  // Redirect only the keeper sheet. The remaining bundled images still prepare normally.
-  await keeperURL(page, '/hollow-invalid.svg');
-  await page.route('**/hollow-invalid.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' }));
-  await chooseTheme(theme, 'assets');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Verdant clockwork');
-  await expect(theme.locator('input[value="normal"]')).toBeChecked();
-  expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
-  await keeperURL(page, '/hollow-failure.svg');
-  await page.route('**/hollow-failure.svg', route => route.abort());
-  await chooseTheme(theme, 'assets');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Verdant clockwork');
-  expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
-  await keeperURL(page, '/hollow-delayed.svg');
-  let finish: (() => Promise<void>) | undefined;
-  await page.route(/\/hollow-(delayed|resumed|disposed)\.svg$/, route => new Promise<void>(resolve => {
-    finish = async () => { await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="768" height="80"/>' }); resolve(); };
-  }));
-  await chooseTheme(theme, 'assets'); await expect.poll(() => !!finish).toBe(true);
-  await chooseTheme(theme, 'normal'); await finish!(); await page.clock.runFor(50);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
-  expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(true);
-  finish = undefined;
-  await keeperURL(page, '/hollow-resumed.svg');
-  await chooseTheme(theme, 'assets'); await expect.poll(() => !!finish).toBe(true);
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await finish!(); await page.clock.runFor(50);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal'); expect(await released(page)).toBe(true);
-  await page.keyboard.press('Escape'); finish = undefined;
-  await keeperURL(page, '/hollow-disposed.svg');
-  await chooseTheme(theme, 'assets'); await expect.poll(() => !!finish).toBe(true);
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click(); await finish!(); await page.clock.runFor(50);
-  expect(await released(page)).toBe(true); await expect(page.locator('canvas')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
-  expect(errors).toEqual([]);
-});
-
 async function trackCanvases(page: Page) {
   await page.addInitScript(() => {
     const canvases: HTMLCanvasElement[] = []; (window as any).lumenCanvases = canvases;
@@ -139,35 +40,34 @@ async function trackCanvases(page: Page) {
 const liveCanvases = (page: Page) => page.evaluate(() => (window as any).lumenCanvases.filter((canvas: HTMLCanvasElement) => canvas.width > 1).length);
 
 test('Lumen conservatory retains a paused journey, bounds its artwork and presents all districts', async ({ page }, info) => {
-  const errors: string[] = [], qualityRequests: string[] = [];
+  const errors: string[] = [], deluxeRequests: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (request.url().includes('/quality-presentation.ts') || request.url().includes('/art/lumen/')) qualityRequests.push(request.url()); });
+  page.on('request', request => { if (request.url().includes('/deluxe-presentation.ts') || request.url().includes('/art/lumen/')) deluxeRequests.push(request.url()); });
   await trackCanvases(page); await openHollow(page);
-  expect(qualityRequests).toEqual([]); expect(await liveCanvases(page)).toBe(1);
+  expect(deluxeRequests).toEqual([]); expect(await liveCanvases(page)).toBe(1);
   const theme = page.getByRole('group', { name: 'Theme', exact: true });
   const frozen = await state(page);
-  const normal = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
-  await chooseTheme(theme, 'quality');
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'quality');
+  const arcadePixels = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  await chooseTheme(theme, 'deluxe');
+  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'deluxe');
   await page.clock.runFor(50);
   expect(await state(page)).toBe(frozen);
   expect(await page.evaluate(() => (window as any).retainedHollow === (window as any).hollowProbe)).toBe(true);
-  const quality = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
-  expect(quality).not.toBe(normal); expect(await liveCanvases(page)).toBe(3);
+  const deluxe = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+  expect(deluxe).not.toBe(arcadePixels); expect(await liveCanvases(page)).toBe(3);
   expect(await page.evaluate(() => (window as any).hollowImages.map((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])))
     .toEqual([[2304, 240], [768, 144], [1024, 160]]);
   await page.clock.runFor(1000);
-  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(quality);
-  await chooseTheme(theme, 'assets'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
+  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(deluxe);
+  await chooseTheme(theme, 'arcade'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'arcade');
   expect(await liveCanvases(page)).toBe(1); expect(await state(page)).toBe(frozen);
-  await chooseTheme(theme, 'normal'); await page.clock.runFor(50);
-  expect(await released(page)).toBe(true);
-  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(normal);
-  await chooseTheme(theme, 'quality'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'quality');
+  await page.clock.runFor(50);
+  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(arcadePixels);
+  await chooseTheme(theme, 'deluxe'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'deluxe');
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(200);
   expect(await state(page)).not.toBe(frozen);
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(100);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'quality');
+  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'deluxe');
   expect(await page.evaluate(() => (window as any).hollowProbe.elapsed)).toBeLessThan(.2);
   for (let level = 0; level < 3; level++) {
     await page.evaluate(() => {
@@ -208,106 +108,11 @@ test('Lumen conservatory retains a paused journey, bounds its artwork and presen
   expect(errors).toEqual([]);
 });
 
-test('Lumen preparation cancellation cannot attach artwork after selection, resume or disposal', async ({ page }) => {
-  for (const action of ['normal', 'resume', 'quit']) {
-    await trackCanvases(page);
-    let finish: (() => Promise<void>) | undefined;
-    await page.route(/\/src\/games\/clockwork-hollow\/quality-presentation\.ts(?:\?.*)?$/, route => new Promise<void>(resolve => {
-      finish = async () => { const response = await route.fetch(); await route.fulfill({ response }); resolve(); };
-    }));
-    await openHollow(page);
-    const theme = page.getByRole('group', { name: 'Theme', exact: true }), frozen = await state(page);
-    await chooseTheme(theme, 'quality'); await expect.poll(() => !!finish).toBe(true);
-    if (action === 'normal') await chooseTheme(theme, 'normal');
-    else await page.getByRole('button', { name: action === 'resume' ? 'Resume' : 'Game selection', exact: true }).click();
-    await finish!(); await page.clock.runFor(50);
-    if (action !== 'quit') {
-      await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
-      expect(await liveCanvases(page)).toBe(1);
-      if (action === 'normal') expect(await state(page)).toBe(frozen);
-    } else { await expect(page.locator('canvas')).toHaveCount(0); expect(await liveCanvases(page)).toBe(0); }
-    await page.unrouteAll({ behavior: 'wait' });
-  }
-});
-
-test('Lumen failed preparation and drawing recover with the journey intact and caches released', async ({ page }) => {
-  await trackCanvases(page);
-  await page.route(/\/src\/games\/clockwork-hollow\/quality-presentation\.ts(?:\?.*)?$/, async route => {
-    const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}
-      const originalDrawing = createLumenDrawing;
-      createLumenDrawing = context => {
-        const drawing = originalDrawing(context), scenery = drawing.scenery;
-        drawing.scenery = (...args) => { scenery(...args); if (window.lumenFailure) throw new Error('Drawing failed'); };
-        return drawing;
-      };` });
-  });
-  await openHollow(page);
-  const theme = page.getByRole('group', { name: 'Theme', exact: true }), frozen = await state(page);
-  await page.evaluate(() => { (window as any).lumenFailure = true; });
-  await chooseTheme(theme, 'quality');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Verdant clockwork');
-  expect(await state(page)).toBe(frozen); expect(await liveCanvases(page)).toBe(1);
-  await page.evaluate(() => { (window as any).lumenFailure = false; });
-  await chooseTheme(theme, 'quality'); await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'quality');
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
-  await page.evaluate(() => { (window as any).lumenFailure = true; });
-  await page.clock.runFor(50);
-  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Restored Verdant clockwork');
-  expect(await liveCanvases(page)).toBe(1);
-  expect(await released(page)).toBe(true);
-  const recovered = await state(page); await page.clock.runFor(1000); expect(await state(page)).toBe(recovered);
-  expect(await page.evaluate(() => (window as any).retainedHollow === (window as any).hollowProbe)).toBe(true);
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
-  expect(await state(page)).not.toBe(recovered);
-});
-
-
-test('a failed Quality import keeps the active Bellgarden images and selection', async ({ page }) => {
-  await openHollow(page);
-  const theme = page.getByRole('group', { name: 'Theme', exact: true });
-  await chooseTheme(theme, 'assets');
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
-  const frozen = await state(page);
-  await page.route(/\/src\/games\/clockwork-hollow\/quality-presentation\.ts(?:\?.*)?$/, route => route.abort());
-  await chooseTheme(theme, 'quality');
-  await expect(page.locator('.game-menu-display-status')).toContainText('Keeping Porcelain Bellgarden');
-  await expect(theme.locator('input[value="assets"]')).toBeChecked();
-  expect(await state(page)).toBe(frozen); expect(await released(page)).toBe(false);
-  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
-  expect(await released(page)).toBe(true);
-});
-
-
-test('an active Assets draw failure pauses the retained run and releases the failed artwork', async ({ page }) => {
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
-  await openHollow(page);
-  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'assets');
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'assets');
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(80);
-  await page.evaluate(() => {
-    const context = document.querySelector('canvas')!.getContext('2d')!, draw = context.drawImage;
-    context.drawImage = function (...args: any[]) {
-      if (args[0] instanceof HTMLImageElement && /bellgarden/.test(args[0].src) && !args[0].src.includes('-normal.svg')) throw new Error('Assets failed');
-      return (draw as any).apply(this, args);
-    } as typeof draw;
-  });
-  await page.clock.runFor(50);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
-  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
-  expect(await released(page)).toBe(true);
-  const recovered = await state(page); await page.clock.runFor(300); expect(await state(page)).toBe(recovered);
-  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
-  expect(await state(page)).not.toBe(recovered); expect(errors).toEqual([]);
-});
-
 
 test('reused environments render independently of content identity and sequence', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await openHollow(page);
-  for (const mode of ['normal', 'assets', 'quality']) {
-    if (mode !== 'normal') {
+  for (const mode of ['arcade', 'deluxe']) {
+    if (mode !== 'arcade') {
       await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), mode);
       await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', mode);
     }

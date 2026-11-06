@@ -1,5 +1,5 @@
-import { createImageResource, type ImageBundle } from '../../engine/browser/images.ts';
-import { normalSprites, validateCircuitSprites, drawCircuitFighter, type FighterAtlas } from './sprite-art.ts';
+import { type ImageBundle } from '../../engine/browser/images.ts';
+import { drawCircuitFighter, type FighterAtlas } from './sprite-art.ts';
 import { createGait, fighterFrame } from './animation.ts';
 import { attacks } from './content.ts';
 import { attackPhase, attackWarning, stageOf, type Actor, type BrawlerEvent, type Run } from './game.ts';
@@ -13,21 +13,20 @@ export function circuitView(width: number, height: number, run: Run) {
 }
 /** Local artwork replaces visual roles while sharing projection, gait, warnings and event effects. */
 export interface CircuitArtwork {
-  readonly mode: 'assets' | 'quality';
-  readonly fighterAtlas?: FighterAtlas;
+  readonly mode: 'arcade' | 'deluxe';
+  readonly fighterAtlas: FighterAtlas;
   scenery(ctx: CanvasRenderingContext2D, view: ReturnType<typeof circuitView>, run: Run, time: number, reducedMotion: boolean): void;
   pickup(ctx: CanvasRenderingContext2D, pickup: Run['pickups'][number], ground: number, time: number): void;
 }
 interface Particle { x: number; lane: number; z: number; vx: number; vy: number; vz: number; life: number; max: number; color: string }
 interface Ring { x: number; lane: number; life: number; strength: number; color: string }
-export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwork, images?: ImageBundle) {
+export function createPresentation(surface: HTMLElement, artwork: CircuitArtwork, images: ImageBundle) {
   const canvas = document.createElement('canvas'); canvas.className = 'circuit-canvas';
   const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context; surface.append(canvas);
-  const baseline = images ? undefined : createImageResource(normalSprites, validateCircuitSprites);
-  const sprites = () => images ?? baseline!.images;
-  const gait = createGait(artwork?.fighterAtlas?.strides);
-  canvas.dataset.renderer = artwork?.mode ?? 'canvas';
+  const sprites = () => images;
+  const gait = createGait(artwork.fighterAtlas.strides);
+  canvas.dataset.renderer = artwork.mode;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false, camera: number | undefined, last: number | undefined, shake = 0;
   let particles: Particle[] = [], rings: Ring[] = [];
@@ -54,33 +53,8 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     ctx.save(); ctx.shadowBlur = 12; ctx.shadowColor = color; text(value, x, y, size, color); ctx.restore();
   }
   function scenery(view: ReturnType<typeof circuitView>, run: Run, time: number) {
-    const { width: w, height: h, ground: g, x: cam } = view, station = stageOf(run).environment === 'station';
-    const online = run.finale > 0 || run.status === 'victory';
-    if (artwork) artwork.scenery(ctx, view, run, time, motion.matches);
-    else {
-      rect(0, 0, w, h, '#172936');
-      // A quiet, flat baseline: silhouette skyline, broad facades and an open road.
-      for (let i = Math.floor(cam * .2 / 180) - 1; i * 180 - cam * .2 < w; i++) {
-        const x = i * 180 - cam * .2, bh = 90 + ((i * 71) % 130 + 130) % 130;
-        rect(x, g - 170 - bh, 163, bh + 170, '#213b47');
-      }
-      for (let i = Math.floor(cam / 420) - 1; i * 420 - cam < w; i++) {
-        const x = i * 420 - cam;
-        rect(x + 5, g - 220, 410, 220, '#2c454b');
-        rect(x + 22, g - 198, 375, 30, '#19313c');
-        text(station ? 'CENTRAL GRID' : 'NIGHT DISTRICT', x + 40, g - 177, 13, '#9eac9f');
-        rect(x + 24, g - 150, 370, 138, '#213941');
-        if (station) for (let j = 0; j < 3; j++) {
-          rect(x + 49 + j * 112, g - 122, 74, 107, '#526963');
-          line([x + 49 + j * 112, g - 87, x + 123 + j * 112, g - 87], '#849282', 3);
-        } else for (let j = 0; j < 4; j++) {
-          rect(x + 40 + j * 87, g - 132, 65, 90, online ? '#b9bd96' : '#506f70');
-        }
-      }
-      rect(0, g, w, h - g, '#24383f');
-      rect(0, g - 3, w, 6, '#6a8079');
-      line([0, g + 181, w, g + 181], '#83908955', 2);
-    }
+    const { width: w, ground: g, x: cam } = view;
+    artwork.scenery(ctx, view, run, time, motion.matches);
     const encounter = stageOf(run).encounters[run.encounter];
     // Encounters hold the camera and movement limits, without fictional fences across the road.
     if (!run.gated && run.cleared > 0 && encounter && !run.finale) {
@@ -92,8 +66,8 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     }
   }
   function body(a: Actor, time: number, reflection = false) {
-    const frame = fighterFrame(a,gait.get(a.id),artwork?.fighterAtlas?.walk);
-    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches,artwork?.fighterAtlas);
+    const frame = fighterFrame(a,gait.get(a.id),artwork.fighterAtlas.walk);
+    drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches,artwork.fighterAtlas);
     if (a.attack && attackPhase(a.attack) === 'active') {
       ctx.save();ctx.translate(0,-a.elevation);ctx.scale(a.facing,1);
       ctx.strokeStyle=a.kind==='player'?'#b5f7db':'#ffb784';ctx.lineWidth=3;
@@ -104,7 +78,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
   function telegraph(a: Actor, ground: number) {
     const s = a.attack, area = attackWarning(a); if (!s || !area || a.kind === 'player') return;
     const phase = attackPhase(s), d = attacks[s.kind];
-    const active = phase === 'active', color = artwork ? active ? '#ffe7af' : '#ff9976' : active ? '#ffe7af' : '#f59a9f';
+    const active = phase === 'active', color = active ? '#ffe7af' : '#ff9976';
     const x = a.x, y = ground + a.lane;
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(active ? [] : [8, 5]);
     ctx.globalAlpha = active ? .9 : .6 + .35 * Math.min(1, s.time / d.startup);
@@ -125,7 +99,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     ctx.restore();
   }
   return {
-    prepare: () => baseline?.prepare() ?? Promise.resolve(),
+    prepare: () => Promise.resolve(),
     reset() { gait.reset(); particles = []; rings = []; camera = undefined; last = undefined; shake = 0; },
     consume(events: readonly BrawlerEvent[]) {
       for (const e of events) {
@@ -158,15 +132,14 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       for (const pickup of run.pickups) if (!pickup.collected) {
         const x = pickup.x, y = view.ground + pickup.lane;
         ellipse(x, y, 22, 6, '#071525aa'); glow(x, y - 12, 42, '#7bffd730');
-        if (artwork) artwork.pickup(ctx, pickup, view.ground, run.elapsed);
-        else if (sprites().repair) ctx.drawImage(sprites().repair!,x-21,y-38,42,42);
+        artwork.pickup(ctx, pickup, view.ground, run.elapsed);
         text(`+${pickup.health}`, x, y - 33, 10, '#adffdb', 'center');
       }
       const actors = [run.player, ...run.enemies].filter(a => a.health > 0 || a.death > 0).sort((a, b) => a.lane - b.lane || a.id - b.id);
       // Reflections and shadows stay on the ground, independently of jump elevation.
       ctx.save(); ctx.beginPath(); ctx.rect(view.x, view.ground, view.width, view.height); ctx.clip();
-      for (const a of artwork ? actors : []) {
-        ctx.save(); ctx.globalAlpha = artwork?.mode === 'quality' ? .14 : .07; ctx.translate(a.x, view.ground + a.lane + 4); ctx.scale(1, -.45); body(a, run.elapsed, true); ctx.restore();
+      for (const a of actors) {
+        ctx.save(); ctx.globalAlpha = artwork.mode === 'deluxe' ? .14 : .07; ctx.translate(a.x, view.ground + a.lane + 4); ctx.scale(1, -.45); body(a, run.elapsed, true); ctx.restore();
       }
       ctx.restore();
       for (const a of actors) {
@@ -202,6 +175,6 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       // A subtle border treatment gives the rain-soaked scene a printed arcade-poster finish.
       const shade = ctx.createLinearGradient(0, 0, 0, view.height); shade.addColorStop(0, '#060d1b55'); shade.addColorStop(.3, '#060d1b00'); shade.addColorStop(1, '#060d1b55'); rect(0, 0, view.width, view.height, shade);
     },
-    dispose() { baseline?.dispose(); if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
+    dispose() { if (disposed) return; disposed = true; particles = []; rings = []; canvas.remove(); canvas.width = canvas.height = 1; },
   };
 }

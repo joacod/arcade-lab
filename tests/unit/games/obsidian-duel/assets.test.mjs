@@ -51,7 +51,7 @@ test('Eclipse Foundry committed artwork covers every whole-body cel and rejects 
 });
 
 test('Moonfall Sanctum ships its own detailed fighter and eight-effect atlases', async () => {
-  const { sanctumSheets, sanctumEffects, validateSanctumArt } = await import('../../../../src/games/obsidian-duel/quality-art.ts');
+  const { sanctumSheets, sanctumEffects, validateSanctumArt } = await import('../../../../src/games/obsidian-duel/deluxe-art.ts');
   const stage = readFileSync(new URL('../../../../src/games/obsidian-duel/art/moonfall-sanctum/stage.webp', import.meta.url));
   const dimensions = { stage: webpSize(stage) };
   for (const name of ['nera', 'kael', 'effects']) {
@@ -73,15 +73,13 @@ test('Moonfall Sanctum ships its own detailed fighter and eight-effect atlases',
 });
 
 
-test('Normal, Assets and Quality own distinct complete artwork with valid semantic coverage', async () => {
-  const { fighterImages, validateDuelSprites } = await import('../../../../src/games/obsidian-duel/asset-art.ts');
+test('Arcade and Deluxe own distinct complete artwork with valid semantic coverage', async () => {
   for (const kind of ['nera', 'kael']) {
-    assert.ok(fighterImages[kind].includes('/tempest-citadel/'), 'Normal must never fall back to loading a polished fighter atlas');
-    const images = ['tempest-citadel', 'eclipse-foundry', 'moonfall-sanctum'].map(folder =>
+    const images = ['eclipse-foundry', 'moonfall-sanctum'].map(folder =>
       readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}.png`, import.meta.url)));
     for (let i = 0; i < images.length; i++) for (let j = i + 1; j < images.length; j++) assert.ok(!images[i].equals(images[j]), 'Each mode requires independent actor artwork');
   }
-  for (const folder of ['tempest-citadel', 'moonfall-sanctum']) {
+  for (const folder of ['moonfall-sanctum']) {
     const layout = JSON.parse(readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/layout.json`, import.meta.url)));
     const dimensions = {};
     for (const kind of ['nera', 'kael']) {
@@ -95,7 +93,6 @@ test('Normal, Assets and Quality own distinct complete artwork with valid semant
         assert.ok(px >= x && px <= x + w && py >= y && py <= y + h);
       }
     }
-    assert.deepEqual(validateDuelSprites(dimensions), []);
     for (const [clip, count] of Object.entries(duelClips)) {
       assert.equal(layout.clips[clip].length, count);
       for (const index of layout.clips[clip]) assert.ok(index >= 0 && index < 36);

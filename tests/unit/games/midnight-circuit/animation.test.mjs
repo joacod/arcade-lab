@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { createGait, fighterFrame, fighterCels as c, walkingCels } from '../../../../src/games/midnight-circuit/animation.ts';
 import { createRun, stepRun, idle } from '../../../../src/games/midnight-circuit/game.ts';
 import { attacks } from '../../../../src/games/midnight-circuit/content.ts';
-import { arcadeFighterAtlas, qualityFighterAtlas } from '../../../../src/games/midnight-circuit/sprite-art.ts';
+import { arcadeFighterAtlas, deluxeFighterAtlas } from '../../../../src/games/midnight-circuit/sprite-art.ts';
 
 test('gait follows displacement, plants feet, freezes on pause and ignores knockback or teleports', () => {
-  const run = createRun(), gait = createGait(); gait.observe(run);
+  const run = createRun(), gait = createGait(arcadeFighterAtlas.strides); gait.observe(run);
   run.player.moving = true;
   for (let i = 0; i < 30; i++) { run.elapsed += 1/60; run.player.x += 2; gait.observe(run); }
   const phase = gait.get(0).phase;
@@ -29,7 +29,7 @@ test('gait follows displacement, plants feet, freezes on pause and ignores knock
 
 test('gait distance is independent of sampling rate and never mutates gameplay', () => {
   const sample = frames => {
-    const run = createRun(), gait = createGait(); gait.observe(run); run.player.moving = true;
+    const run = createRun(), gait = createGait(arcadeFighterAtlas.strides); gait.observe(run); run.player.moving = true;
     for(let i=0;i<frames;i++) { run.player.x += 100/frames; run.elapsed += 1/frames; const before=structuredClone(run); gait.observe(run); fighterFrame(run.player,gait.get(0)); assert.deepEqual(run,before); }
     return gait.get(0).phase;
   };
@@ -37,7 +37,7 @@ test('gait distance is independent of sampling rate and never mutates gameplay',
 });
 
 test('each painted character exchanges support after its measured half-stride and completes all eight cels', () => {
-  for (const atlas of [arcadeFighterAtlas, qualityFighterAtlas]) for (const kind of ['player','striker','bruiser','warden']) {
+  for (const atlas of [arcadeFighterAtlas, deluxeFighterAtlas]) for (const kind of ['player','striker','bruiser','warden']) {
     const run = createRun(), a = run.player, gait = createGait(atlas.strides), poses = new Set();
     a.kind = kind; gait.observe(run); a.moving = true;
     for (let frame = 0; frame < 320; frame++) {
@@ -54,15 +54,15 @@ test('each painted character exchanges support after its measured half-stride an
 });
 
 test('retreating in guard reverses the walk without negative atlas columns', () => {
-  const run = createRun(), gait = createGait(); gait.observe(run);
+  const run = createRun(), gait = createGait(arcadeFighterAtlas.strides); gait.observe(run);
   run.player.moving = true; run.player.facing = 1;
-  run.player.x -= 12; run.elapsed += .05; gait.observe(run);
+  run.player.x -= arcadeFighterAtlas.strides.player / 8; run.elapsed += .05; gait.observe(run);
   assert.ok(Math.abs(gait.get(0).phase - Math.PI * 1.75) < 1e-10);
   assert.equal(fighterFrame(run.player, gait.get(0), walkingCels), walkingCels[7]);
 });
 
 test('recovery steps blend back into the walking pose while startup and contact keep planted feet', () => {
-  const run = createRun(), p = run.player, gait = createGait(); gait.observe(run);
+  const run = createRun(), p = run.player, gait = createGait(arcadeFighterAtlas.strides); gait.observe(run);
   p.moving = true;
   for (const kind of ['jab', 'heavy', 'finisher']) {
     gait.reset(); gait.observe(run);
@@ -80,8 +80,8 @@ test('recovery steps blend back into the walking pose while startup and contact 
   }
 });
 
-test('real grounded movement traverses all four walking cels, including repeated render observations', () => {
-  const run = createRun(), gait = createGait(), poses = new Set(); gait.observe(run);
+test('real grounded movement traverses all eight walking cels, including repeated render observations', () => {
+  const run = createRun(), gait = createGait(arcadeFighterAtlas.strides), poses = new Set(); gait.observe(run);
   for (let frame = 0; frame < 48; frame++) {
     stepRun(run, { ...idle, x: 1 }, 1 / 60); gait.observe(run);
     poses.add(fighterFrame(run.player, gait.get(0)));
@@ -89,11 +89,11 @@ test('real grounded movement traverses all four walking cels, including repeated
     for (let repeat = 0; repeat < 3; repeat++) gait.observe(run);
     assert.deepEqual(gait.get(0), sample);
   }
-  assert.deepEqual([...poses].sort(), [c.contactLeft,c.passingLeft,c.contactRight,c.passingRight]);
+  assert.deepEqual([...poses].sort(), [...walkingCels].sort());
 });
 
 test('a neutral jump rises and falls in guarded cels; only an actual aerial attack uses kick contact', () => {
-  const run = createRun(), gait = createGait(); gait.observe(run);
+  const run = createRun(), gait = createGait(arcadeFighterAtlas.strides); gait.observe(run);
   stepRun(run, { ...idle, jump: true }, 1 / 60); gait.observe(run);
   assert.equal(run.player.attack, null);
   assert.equal(fighterFrame(run.player, gait.get(0)), c.rise);

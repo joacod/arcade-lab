@@ -1,4 +1,4 @@
-import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
+import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
 import { clearing, configurations, evolution, upgrades, weapons, type ConfigurationId } from './content.ts';
@@ -71,7 +71,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     }, { signal });
   }
   gameContent.querySelector('.menu-setup')!.append(rounds);
-  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: initialTheme, onChange: onTheme });
+  const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: defaultTheme(themes), onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'exit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),

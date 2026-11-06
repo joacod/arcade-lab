@@ -1,18 +1,19 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 // Inspected source rectangles, including the wide complete fortress, not grid assumptions.
+const files = { arcade: 'assets', deluxe: 'quality' };
 const crops = {
- quality: [[0,0,363,360],[382,0,326,355],[720,0,365,356],[1086,0,362,356],[0,370,292,338],[292,382,570,284],[875,385,232,286],[1170,390,254,281],[36,746,288,302],[428,717,224,367],[752,728,300,331],[1090,712,358,374]],
- assets: [[0,0,363,355],[373,0,340,350],[717,0,370,350],[1090,0,358,351],[0,373,270,337],[270,390,558,277],[850,416,228,240],[1172,413,244,242],[62,777,242,252],[438,713,205,373],[748,733,304,315],[1088,760,360,288]],
+ deluxe: [[0,0,363,360],[382,0,326,355],[720,0,365,356],[1086,0,362,356],[0,370,292,338],[292,382,570,284],[875,385,232,286],[1170,390,254,281],[36,746,288,302],[428,717,224,367],[752,728,300,331],[1090,712,358,374]],
+ arcade: [[0,0,363,355],[373,0,340,350],[717,0,370,350],[1090,0,358,351],[0,373,270,337],[270,390,558,277],[850,416,228,240],[1172,413,244,242],[62,777,242,252],[438,713,205,373],[748,733,304,315],[1088,760,360,288]],
 };
 const browser = await chromium.launch();
 try {
  const page = await browser.newPage();
- for (const mode of ['assets','quality']) {
-  const source = 'data:image/png;base64,' + readFileSync(new URL(`${mode}-source.png`, import.meta.url)).toString('base64');
+ for (const mode of ['arcade','deluxe']) {
+  const source = 'data:image/png;base64,' + readFileSync(new URL(`${files[mode]}-source.png`, import.meta.url)).toString('base64');
   const data = await page.evaluate(async ({source,crops,mode}) => {
    const image = new Image(); image.src = source; await image.decode();
-   const cell = mode === 'quality' ? 256 : 96;
+   const cell = mode === 'deluxe' ? 256 : 96;
    const canvas = document.createElement('canvas'); canvas.width = cell * 4; canvas.height = cell * 3;
    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
    // Tight crop the transparent padding, then pack whole illustrations into stable center pivots.
@@ -31,19 +32,19 @@ try {
    }
    return canvas.toDataURL('image/png').split(',')[1];
   }, {source,crops:crops[mode],mode});
-  writeFileSync(new URL(`${mode}-fleet.png`,import.meta.url),Buffer.from(data,'base64'));
+  writeFileSync(new URL(`${files[mode]}-fleet.png`,import.meta.url),Buffer.from(data,'base64'));
  }
  const hullSource = 'data:image/png;base64,' + readFileSync(new URL('fortress-source.png',import.meta.url)).toString('base64');
- for (const mode of ['quality','assets']) {
+ for (const mode of ['deluxe','arcade']) {
   const result = await page.evaluate(async ({source,mode}) => {
    const image=new Image();image.src=source;await image.decode();
-   const c=document.createElement('canvas');c.width=mode==='quality'?768:288;c.height=c.width/3;
+   const c=document.createElement('canvas');c.width=mode==='deluxe'?768:288;c.height=c.width/3;
    const ctx=c.getContext('2d');ctx.imageSmoothingQuality='high';
-   ctx.drawImage(image,0,mode==='quality'?0:512,1536,512,0,0,c.width,c.height);
+   ctx.drawImage(image,0,mode==='deluxe'?0:512,1536,512,0,0,c.width,c.height);
    const d=ctx.getImageData(0,0,c.width,c.height).data;
    return {png:c.toDataURL('image/png').split(',')[1], alpha:[d[3],d[(Math.floor(c.height/2)*c.width)*4+3],d[((c.height-1)*c.width+c.width-1)*4+3]]};
   },{source:hullSource,mode});
   console.log(mode, 'hull margin alpha',result.alpha);
-  writeFileSync(new URL(`${mode}-fortress.png`,import.meta.url),Buffer.from(result.png,'base64'));
+  writeFileSync(new URL(`${files[mode]}-fortress.png`,import.meta.url),Buffer.from(result.png,'base64'));
  }
 } finally { await browser.close(); }

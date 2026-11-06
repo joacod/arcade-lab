@@ -1,6 +1,6 @@
 # Tempest Coast scenery
 
-[Coastal sortie direction and contracts](../coastal-sortie/README.md) | [Shared Quality workflow](../../../../../docs/quality-themes.md)
+[Coastal sortie direction and contracts](../coastal-sortie/README.md) | [Shared Deluxe workflow](../../../../../docs/deluxe.md)
 
 The AI-generated orthographic ocean tile supplies painted sea, rocky shoals and palms along the margins. The central corridor stays dark and uncluttered. Aircraft, clouds, pickups and combat cues are separate images or semantic overlays. The original PNG and [prompt](prompt.txt) are retained beside the optimized `backdrop.webp`.
 

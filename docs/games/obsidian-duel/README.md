@@ -22,13 +22,12 @@ The timer runs only during combat. A knockout ends the round immediately; time-o
 
 ## Theme modes
 
-The three modes express the same astronomical citadel, fighters and combat vocabulary at different levels of finish. Their artwork is independent; only semantic animation timing, cosmetic atlas layout and gameplay observations are shared. Follow the [shared mode contracts](../../architecture.md#mode-contract) when extending them. The [artwork guide](../../../src/games/obsidian-duel/art/README.md) owns the detailed briefs, sources and export specifications.
+The two presentations express the same astronomical citadel, fighters and combat vocabulary at different levels of finish. Their artwork is independent; only semantic animation timing, cosmetic atlas layout and gameplay observations are shared. Follow the [shared mode contracts](../../architecture.md#mode-contract) when extending them. The [artwork guide](../../../src/games/obsidian-duel/art/README.md) owns the detailed briefs, sources and export specifications.
 
-- **Normal · Tempest citadel:** flat-color whole-character cels, a sparse terrace, broad mountain silhouettes and compact geometric feedback. This is the simple gameplay baseline, with its own complete action set rather than the polished Assets fighters.
-- **Assets · Eclipse Foundry:** retain the expressive painted Nera and Kael in an old-school hand-painted arcade treatment. A layered foundry arena adds weathered columns, a copper eclipse orrery, distant aqueducts, forge-lit walls and banners. Separate illustrated ribbons distinguish heel, punch, sweep and aerial attacks.
-- **Quality · Moonfall Sanctum:** new detailed fighter drawings reinterpret the same costumes with embroidery, cloth volume, leather wear and bronze trim. The illustrated lunar observatory, carved perimeter, wet basalt and restrained reflections support a new jade-and-gold effects atlas. Quality upgrades actors and combat artwork as well as scenery.
+- **Arcade · Eclipse Foundry:** retain the expressive painted Nera and Kael in an old-school hand-painted arcade treatment. A layered foundry arena adds weathered columns, a copper eclipse orrery, distant aqueducts, forge-lit walls and banners. Separate illustrated ribbons distinguish heel, punch, sweep and aerial attacks.
+- **Deluxe · Moonfall Sanctum:** new detailed fighter drawings reinterpret the same costumes with embroidery, cloth volume, leather wear and bronze trim. The illustrated lunar observatory, carved perimeter, wet basalt and restrained reflections support a new jade-and-gold effects atlas. Deluxe upgrades actors and combat artwork as well as scenery.
 
-![Moonfall Sanctum: detailed Nera and Kael with a jade Crescent heel trail](quality.webp)
+![Moonfall Sanctum: detailed Nera and Kael with a jade Crescent heel trail](preview.webp)
 
 ## Combat presentation
 
@@ -36,9 +35,9 @@ Every mode communicates standing and crouching guard, jump ascent/apex/descent, 
 
 Move trails appear only during the actual active window, including a miss. Nera's Crescent heel has a tall jade crescent, sweeps stay near the ground, aerial attacks descend diagonally, and Kael's punches and Riftbreaker produce horizontal copper pressure. Stormglass artwork tracks the actual projectile and mirrors with its own facing. Trail extents are cosmetic and do not determine reach or collision. Contact bursts require a hit or block event; charge, release, knockdown and misses cannot manufacture hit confirmation. Guard seals differ in shape and color from damage bursts. The existing opponent labels remain above artwork and explain guard height and recovery.
 
-Keep important silhouettes, bolts and warnings distinct from the quiet central scenery. Edge props remain behind the fight lane, ground seals lie flat beneath feet, and effects stay bounded. The uniform camera and all physical geometry remain independent of illustration dimensions. A theme replacement preserves the current match and animation observations through the [shared replacement contract](../../architecture.md#replacement-and-recovery), with Normal as recovery presentation.
+Keep important silhouettes, bolts and warnings distinct from the quiet central scenery. Edge props remain behind the fight lane, ground seals lie flat beneath feet, and effects stay bounded. The uniform camera and all physical geometry remain independent of illustration dimensions. A theme replacement preserves the current match and animation observations through the [shared replacement contract](../../architecture.md#replacement-and-recovery), with Arcade as the recovery presentation.
 
-Reduced motion preserves physical movement, action cels, warnings and contact confirmation. It removes idle breathing, shake, drifting scenery and pulsing lights, reduces sparks, and keeps contact artwork at a steady size. Active run time owns animation; pause freezes it. Quality uses Canvas 2D with the same context as the other modes.
+Reduced motion preserves physical movement, action cels, warnings and contact confirmation. It removes idle breathing, shake, drifting scenery and pulsing lights, reduces sparks, and keeps contact artwork at a steady size. Active run time owns animation; pause freezes it. Deluxe uses Canvas 2D with the same context as the other modes.
 
 ## Source ownership
 
@@ -52,9 +51,9 @@ Paths below are relative to `src/games/obsidian-duel/`.
 | `input.ts` | Shared captured-button snapshots translated into fighting actions |
 | `themes.ts` | Theme names, stage palettes and cue colors |
 | `animation.ts` | Cosmetic action observations, travel-driven walking and semantic whole-cel timing |
-| `presentation.ts` | Uniform arena transform, Normal scenery, mode-specific cels, move trails and bounded contact effects |
-| `asset-art.ts`, `assets.ts` | Whole-body cel layout, Normal sprite resources, validation and Foundry image preparation |
-| `quality-assets.ts`, `quality-art.ts`, `quality-presentation.ts` | Independent detailed sprite preparation, eight effect anchors, lunar scene, mist and reflections |
+| `presentation.ts` | Uniform arena transform, mode-specific cels, move trails and bounded contact effects |
+| `asset-art.ts`, `assets.ts` | Whole-body cel layout, validation and Foundry image preparation |
+| `deluxe-assets.ts`, `deluxe-art.ts`, `deluxe-presentation.ts` | Independent detailed sprite preparation, eight effect anchors, lunar scene, mist and reflections |
 | `asset-presentation.ts` | Complete painted Eclipse Foundry action cels, bolts and contact artwork |
 | `ui.ts`, `style.css` | Selection, menus, health, timer, round wins, special readiness and touch controls |
 | `sound-recipes.ts`, `sound.ts` | Original AudioBits recipes, cue priorities and throttling |

@@ -1,9 +1,9 @@
 import { prepareImages, type ImageBundle } from '../../engine/browser/images.ts';
 import { stageOf } from './game.ts';
 import { createPresentation, type CircuitArtwork } from './presentation.ts';
-import { afterglowPlates, stationIndicators, validateAfterglowArt } from './quality-art.ts';
+import { afterglowPlates, stationIndicators, validateAfterglowArt } from './deluxe-art.ts';
 import fighters from './art/afterglow/fighters/fighters.webp';
-import { qualityFighterAtlas } from './sprite-art.ts';
+import { deluxeFighterAtlas } from './sprite-art.ts';
 import streets from './art/afterglow/streets.webp';
 import station from './art/afterglow/station.webp';
 import repair from './art/afterglow/repair.svg';
@@ -11,8 +11,8 @@ import skyline from './art/afterglow/skyline.webp';
 
 function createArtwork(images: ImageBundle): CircuitArtwork {
   return {
-    mode: 'quality',
-    fighterAtlas: qualityFighterAtlas,
+    mode: 'deluxe',
+    fighterAtlas: deluxeFighterAtlas,
     scenery(ctx, view, run, time, reducedMotion) {
       const stage = stageOf(run);
       const role = stage.environment === 'station' ? 'station' : 'streets';
@@ -68,7 +68,7 @@ function createArtwork(images: ImageBundle): CircuitArtwork {
   };
 }
 /** Lazy, atomic image preparation; all frame timing remains with the existing session. */
-export async function createQuality(surface: HTMLElement, signal: AbortSignal) {
+export async function createDeluxe(surface: HTMLElement, signal: AbortSignal) {
   const prepared = await prepareImages({ fighters, streets, station, skyline, repair }, signal, validateAfterglowArt);
   try {
     if (signal.aborted) throw new Error('Preparation cancelled');

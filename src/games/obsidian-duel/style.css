@@ -71,20 +71,20 @@
 }
 
 .duel-app .duel-roster button { position: relative; }
-.duel-app[data-theme='assets'] { --menu-accent: #b7e5cf; background: #101e2c; }
-.duel-app[data-theme='assets'] .duel-hud,.duel-app[data-theme='assets'] .duel-footer { background: #101c29; border-color: #c3a77755; }
-.duel-app[data-theme='assets'] .duel-arena-label { color: #dfcc9e; }
-.duel-app[data-theme='quality'] { --menu-accent: #b7e7d5; background: #091a22; color: #e7eee0; }
-.duel-app[data-theme='quality'] .duel-hud { background: linear-gradient(100deg,#122c32,#10222c 48%,#272e30); border-color: #ae956447; box-shadow: inset 0 2px #beab7040; }
-.duel-app[data-theme='quality'] .duel-footer { background: #10242b; border-color: #ae956447; }
-.duel-app[data-theme='quality'] .duel-clock output { color: #e8dcba; text-shadow: 0 0 16px #d0c38c30; }
-.duel-app[data-theme='quality'] meter { height: 11px; border-color: #aeab7660; border-radius: 2px; }
-.duel-app[data-theme='quality'] meter::-webkit-meter-optimum-value { background: linear-gradient(90deg,#347b79,#b9e6cd); }
-.duel-app[data-theme='quality'] .duel-enemy meter::-webkit-meter-optimum-value { background: linear-gradient(90deg,#97613e,#e8c489); }
-.duel-app[data-theme='quality'] .duel-arena-label { color: #b9c7bb; letter-spacing: .22em; }
-.duel-app[data-theme='quality'] .duel-announcement strong { color: #e8e4c9; text-shadow: 0 2px 2px #06131b,0 0 30px #9fcbbd40; }
-.duel-app[data-theme='quality'] button { border-color: #b2ae7650; background: #162d35; }
-.duel-app[data-theme='quality'] button:hover { background: #28463f; border-color: #dac79a; }
+.duel-app[data-theme='arcade'] { --menu-accent: #b7e5cf; background: #101e2c; }
+.duel-app[data-theme='arcade'] .duel-hud,.duel-app[data-theme='arcade'] .duel-footer { background: #101c29; border-color: #c3a77755; }
+.duel-app[data-theme='arcade'] .duel-arena-label { color: #dfcc9e; }
+.duel-app[data-theme='deluxe'] { --menu-accent: #b7e7d5; background: #091a22; color: #e7eee0; }
+.duel-app[data-theme='deluxe'] .duel-hud { background: linear-gradient(100deg,#122c32,#10222c 48%,#272e30); border-color: #ae956447; box-shadow: inset 0 2px #beab7040; }
+.duel-app[data-theme='deluxe'] .duel-footer { background: #10242b; border-color: #ae956447; }
+.duel-app[data-theme='deluxe'] .duel-clock output { color: #e8dcba; text-shadow: 0 0 16px #d0c38c30; }
+.duel-app[data-theme='deluxe'] meter { height: 11px; border-color: #aeab7660; border-radius: 2px; }
+.duel-app[data-theme='deluxe'] meter::-webkit-meter-optimum-value { background: linear-gradient(90deg,#347b79,#b9e6cd); }
+.duel-app[data-theme='deluxe'] .duel-enemy meter::-webkit-meter-optimum-value { background: linear-gradient(90deg,#97613e,#e8c489); }
+.duel-app[data-theme='deluxe'] .duel-arena-label { color: #b9c7bb; letter-spacing: .22em; }
+.duel-app[data-theme='deluxe'] .duel-announcement strong { color: #e8e4c9; text-shadow: 0 2px 2px #06131b,0 0 30px #9fcbbd40; }
+.duel-app[data-theme='deluxe'] button { border-color: #b2ae7650; background: #162d35; }
+.duel-app[data-theme='deluxe'] button:hover { background: #28463f; border-color: #dac79a; }
 .duel-app .duel-roster b { padding-right: 20px; }
 .duel-app .duel-roster button[aria-pressed='true']::after { content: '✓'; position: absolute; right: 12px; top: 14px; color: var(--menu-accent); }
 @media (max-width: 360px) { .duel-app .duel-roster { grid-template-columns: 1fr; } }

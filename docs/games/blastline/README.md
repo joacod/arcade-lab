@@ -18,11 +18,11 @@ Brick cover and armored cover can break. Riveted structural steel stays solid. D
 
 Artwork must distinguish breakable brick and armored cover from structural steel, with aim, warnings and extraction cues visible through debris. The industrial coast is the starting setting for future art direction.
 
-**Normal** keeps Iron coast, the original industrial skies, weather and operator colors, using complete pixel sprite cels for both operators, enemies and interactive objects. **Assets / Ember Coast** gives that same operation detailed arcade commandos, armored security, a tracked Bastion, weathered cover, supply equipment and illustrated harbor/foundry panoramas. Teal Nova and ochre Bolt keep their identities. The [artwork guide](../../../src/games/blastline/art/README.md#ember-coast--assets) owns its creative brief and atlas contracts.
+**Arcade / Ember Coast** gives that same operation detailed arcade commandos, armored security, a tracked Bastion, weathered cover, supply equipment and illustrated harbor/foundry panoramas. Teal Nova and ochre Bolt keep their identities. The [artwork guide](../../../src/games/blastline/art/README.md#ember-coast--arcade) owns its creative brief and atlas contracts.
 
-**Quality / Ember Reforged** reinterprets the same cast and coast as smooth, dimensional painted illustrations. Nova retains her teal field jacket, dark hair and red scarf; Bolt keeps his ochre helmet, goggles and broad launcher. Olive security, rust-armored heavies and the orange-eyed tracked Bastion retain their silhouettes. New whole-character aim, recoil, airborne and six-cel running illustrations accompany new relay, supply, rescue, extraction and cover artwork. Steel, chipped ochre brick and X-braced rust armor stay distinct. Harbor cranes and furnace halls sit behind the action in quiet atmospheric layers; warm rim light and cool metal give volume without obscuring contacts. Amber relay glass, green supplies, sharp weapon flares and the extraction aircraft provide the scene's focal moments. A brushed navy-and-brass interface completes the treatment. Canvas 2D renders the image bundle. The [Quality artwork contract](../../../src/games/blastline/art/README.md#ember-reforged--quality) owns its sources, atlas layouts and exports.
+**Deluxe / Ember Reforged** reinterprets the same cast and coast as smooth, dimensional painted illustrations. Nova retains her teal field jacket, dark hair and red scarf; Bolt keeps his ochre helmet, goggles and broad launcher. Olive security, rust-armored heavies and the orange-eyed tracked Bastion retain their silhouettes. New whole-character aim, recoil, airborne and six-cel running illustrations accompany new relay, supply, rescue, extraction and cover artwork. Steel, chipped ochre brick and X-braced rust armor stay distinct. Harbor cranes and furnace halls sit behind the action in quiet atmospheric layers; warm rim light and cool metal give volume without obscuring contacts. Amber relay glass, green supplies, sharp weapon flares and the extraction aircraft provide the scene's focal moments. A brushed navy-and-brass interface completes the treatment. Canvas 2D renders the image bundle. The [Deluxe artwork contract](../../../src/games/blastline/art/README.md#ember-reforged--quality) owns its sources, atlas layouts and exports.
 
-![Ember Reforged: painted commandos and a tracked Bastion against the coastal foundry](quality.webp)
+![Ember Reforged: painted commandos and a tracked Bastion against the coastal foundry](preview.webp)
 
 ## Source ownership
 
@@ -41,7 +41,7 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 | Mission skies, material palettes, weather and operator/machine colors | `themes.ts` |
 | Sprite roles, atlas layouts, draw footprints and operator frame selection | `sprite-art.ts` |
 | Ember Coast image URLs, preparation and decoded-dimension validation | `assets.ts` |
-| Ember Reforged image URLs, preparation and decoded-dimension validation | `quality.ts` |
+| Ember Reforged image URLs, preparation and decoded-dimension validation | `deluxe.ts` |
 | HUD, menus and announcements | `ui.ts`, `style.css` |
 | Original AudioBits recipes and local cue admission | `sound-recipes.ts`, `sound.ts` |
 | Browser composition, sound activation and disposal | `app.ts` |
@@ -50,7 +50,7 @@ Terrain copies authored materials and health into each run. Axis-separated leadi
 
 Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire.
 
-The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Normal scenery and the cover use editable geometry; Assets and Quality each supply their own authored scenery and effects.
+The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Arcade and Deluxe each supply their own authored scenery and effects.
 
 ## Architecture decisions
 
@@ -58,10 +58,10 @@ The [artwork guide](../../../src/games/blastline/art/README.md) owns the complet
 
 Mutable terrain and destructible cover belong to the simulation. The renderer reads the current grid, while movement and projectiles query it after every change. Strict rectangle overlap reuses `src/engine/collision.ts`; swept tile contact and explosion geometry stay in `terrain.ts` because they depend on the mutable grid.
 
-Appearance changes use `presentation.ts`’s reversible `replaceTheme` on the existing camera and effects. `app.ts` owns candidate preparation and the active image bundle through the [shared replacement contract](../../architecture.md#replacement-and-recovery). `themes.ts` maps scenery materials; `sprite-art.ts` owns all three modes’ typed atlas layouts, role mappings, draw footprints and Normal image validation, `assets.ts` owns Ember Coast's bundle, and `quality.ts` owns Ember Reforged's bundle. Character cels share aim/travel observations. Quality uses smooth image sampling, its own larger atlases and authored standing recoil cels, while pixel modes retain nearest-neighbor sampling and scanlines. Cosmetic animation freezes with the paused operation; reduced motion holds grounded idle poses and suppresses recoil, shake, muzzle flashes, hit glow and explosion motion.
+Appearance changes use `presentation.ts`’s reversible `replaceTheme` on the existing camera and effects. `app.ts` owns candidate preparation and the active image bundle through the [shared replacement contract](../../architecture.md#replacement-and-recovery). `themes.ts` maps scenery materials; `sprite-art.ts` owns both presentations’ typed atlas layouts, role mappings, draw footprints and image validation, `assets.ts` owns Ember Coast's bundle, and `deluxe.ts` owns Ember Reforged's bundle. Character cels share aim/travel observations. Deluxe uses smooth image sampling, its own larger atlases and authored standing recoil cels, while pixel modes retain nearest-neighbor sampling and scanlines. Cosmetic animation freezes with the paused operation; reduced motion holds grounded idle poses and suppresses recoil, shake, muzzle flashes, hit glow and explosion motion.
 
 The local state contract connects movement, combat and objectives. Fixed populations and visible tile traversal bound the work.
 
 ## Local verification
 
-The [game invariants](../../../tests/unit/games/blastline/game.test.mjs) exercise the complete operation, destructive geometry and population limits; [browser checks](../../../tests/browser/games/blastline/game.spec.ts) exercise the live operation and controls. [Appearance checks](../../../tests/browser/games/blastline/appearance.spec.ts) exercise both image bundles across both missions, retained state, all six running cels, pause, restart, compact layouts, invalid/failed images, supersession, resume cancellation and image release after disposal. They also cover replacement from Assets to Quality and candidate/active drawing failure recovery. Use the [shared verification commands](../../architecture.md#local-verification).
+The [game invariants](../../../tests/unit/games/blastline/game.test.mjs) exercise the complete operation, destructive geometry and population limits; [browser checks](../../../tests/browser/games/blastline/game.spec.ts) exercise the live operation and controls. [Appearance checks](../../../tests/browser/games/blastline/appearance.spec.ts) exercise both image bundles across both missions, retained state, all six running cels, pause, restart, compact layouts, invalid/failed images, supersession, resume cancellation and image release after disposal. They also cover replacement from Arcade to Deluxe and candidate/active drawing failure recovery. Use the [shared verification commands](../../architecture.md#local-verification).

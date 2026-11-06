@@ -1,4 +1,3 @@
-import { useNormalBaseline } from '../../menu.ts';
 import { openMenu, chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
@@ -17,7 +16,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     const Original = window.AudioContext;
     window.AudioContext = class extends Original { constructor(options?: AudioContextOptions) { super(options); contexts.push(this); } };
   });
-  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.clock.install(); await page.goto('/');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.evaluate(() => {
     const pending = new Set<number>(); (window as any).hollowFrames = pending;
@@ -50,9 +49,9 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
     [...canvas.getContext('2d')!.getImageData(Math.floor(canvas.width / 2), 8, 1, 1).data]);
   const beforeTheme = await skyPixel();
   await openMenu(page);
-  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'normal');
+  await chooseTheme(page.getByRole('group', { name: 'Theme', exact: true }), 'arcade');
   await page.clock.runFor(50);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'arcade');
   expect(await skyPixel()).toEqual(beforeTheme);
   expect(await state()).toEqual(frozen);
   expect(await page.evaluate(() => (window as any).appearanceRun === (window as any).hollowProbe)).toBe(true);
@@ -63,7 +62,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal');
+  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'arcade');
   expect((await state()).player.x).toBe(110); expect((await state()).collected.some(Boolean)).toBe(false);
   const touch = await page.context().newCDPSession(page);
   const right = (await page.getByRole('button', { name: 'Move right', exact: true }).boundingBox())!;
@@ -169,7 +168,7 @@ test('Clockwork Hollow movement, touch, outcomes and switching respect session l
   await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Clockwork Hollow' })).toBeVisible();
   expect((await state()).elapsed).toBe(0);
-  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'normal'); expect((await state()).player.x).toBe(110);
+  await expect(page.locator('.hollow-app')).toHaveAttribute('data-appearance', 'arcade'); expect((await state()).player.x).toBe(110);
   expect(await page.evaluate(() => (window as any).hollowFrames.size)).toBe(1);
   await page.evaluate(() => { window.AudioContext = class { constructor() { throw new Error('Unavailable'); } } as unknown as typeof AudioContext; });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(100);
