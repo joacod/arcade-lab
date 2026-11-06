@@ -66,7 +66,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       const misaligned = nearest && Math.abs(nearest.x - run.player.x) <= attacks.heavy.reach + nearest.radius
         && Math.abs(nearest.lane - run.player.lane) > attacks.jab.lane + nearest.radius * .2;
       const tip = run.respawn || run.finale || boss?.attack && attackPhase(boss.attack) !== 'recovery' ? ''
-        : run.gated && !alive ? encounter && run.wave + 1 < encounter.waves.length ? 'NEXT WAVE · GET READY' : 'AREA CLEAR · GATE OPENING'
+        : run.gated && !alive ? encounter && run.wave + 1 < encounter.waves.length ? 'NEXT WAVE · GET READY' : 'AREA CLEAR · MOVE RIGHT →'
         : misaligned ? `MOVE ${nearest.lane < run.player.lane ? 'UP ↑' : 'DOWN ↓'} · LINE UP YOUR FEET TO LAND STRIKES`
         : run.stageIndex === 0 && run.encounter === 0 && run.hits < 6 ? run.gated ? 'TAP J OR STRIKE AGAIN DURING EACH PUNCH TO CHAIN A FINISHER' : 'MOVE RIGHT → · LINE UP YOUR FEET WITH YOUR OPPONENT'
         : '';

@@ -1,7 +1,8 @@
 import { validateImageDimensions, type ImageDimensions } from '../../engine/browser/images.ts';
-/** Complete 256-square cels; four fighter rows and twelve semantic poses. */
+import { arcadeFighterAtlas } from './sprite-art.ts';
+/** Complete 256-square cels, including eight-frame walking clips. */
 export const signalRain = {
-  fighters: { width: 3072, height: 1024 },
+  fighters: arcadeFighterAtlas,
   skyline: { width: 1920, height: 480 },
   backstreets: { width: 1920, height: 600 },
   station: { width: 1920, height: 600 },

@@ -198,8 +198,20 @@ function enemyStep(run: Run, a: Actor, dt: number) {
   const p = run.player, dx = p.x - a.x, dl = p.lane - a.lane, boss = a.kind === 'warden';
   a.facing = dx >= 0 ? 1 : -1;
   const data = enemies[a.kind as EnemyKind];
-  // One attack token, followed by a breathing gap. Other actors continue positioning.
+  // One attack token, followed by a breathing gap. Waiting fighters leave a clear approach lane.
   const occupied = run.enemies.some(other => other.attack && attackPhase(other.attack) !== 'recovery');
+  const challenger = run.enemies.filter(other => other.health > 0 && other.stun <= 0 && !other.attack && other.cooldown <= 0)
+    .sort((first, second) => Math.hypot(first.x - p.x, first.lane - p.lane) - Math.hypot(second.x - p.x, second.lane - p.lane) || first.id - second.id)[0];
+  if (!boss && (occupied || challenger && challenger !== a)) {
+    const limit = bounds(run), stage = stageOf(run);
+    const side = a.x >= p.x ? 1 : -1;
+    const targetX = clamp(p.x + side * (135 + a.id % 2 * 35), limit.left, limit.right);
+    const targetLane = clamp(p.lane + (a.id % 2 ? -48 : 48), stage.laneMin, stage.laneMax);
+    const x = targetX - a.x, lane = targetLane - a.lane;
+    if (Math.abs(x) > 10) { a.x += Math.sign(x) * Math.min(Math.abs(x), data.speed * dt); a.moving = true; }
+    if (Math.abs(lane) > 8) { a.lane += Math.sign(lane) * Math.min(Math.abs(lane), data.laneSpeed * dt); a.moving = true; }
+    return;
+  }
   const desired = boss ? (a.pattern % 2 === 0 ? 255 : 115) : a.kind === 'bruiser' ? 65 : 46;
   if (Math.abs(dx) > desired + 5) { a.x += Math.sign(dx) * data.speed * dt; a.moving = true; }
   if (Math.abs(dl) > 8) { a.lane += Math.sign(dl) * data.laneSpeed * dt; a.moving = true; }

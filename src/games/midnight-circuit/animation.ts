@@ -7,14 +7,18 @@ export const fighterCels = {
   anticipation: 5, punch: 6, kick: 7, rise: 8, fall: 9, hurt: 10, down: 11,
 } as const;
 export const fighterCelCount = 12;
-interface Track { x: number; lane: number; phase: number; weight: number }
+/** Extra in-betweens keep the original combat columns independent of the walk clip. */
+export const walkingCels = [1, 12, 2, 13, 3, 14, 4, 15] as const;
+interface Track { x: number; lane: number; phase: number; weight: number; walking: boolean }
+export type WalkStrides = Readonly<Record<Actor['kind'], number>>;
+const normalStrides: WalkStrides = { player: 96, striker: 96, bruiser: 115.2, warden: 142.08 };
 function recoveryWeight(a: Actor) {
   if (!a.attack) return 1;
   const d = attacks[a.attack.kind];
   return Math.max(0, Math.min(1, (a.attack.time - d.startup - d.active) / d.recovery));
 }
-/** A full left/right stride spans 96 world units. Observation never advances simulation. */
-export function createGait() {
+/** Strides match the artwork's near-boot sweep, independently of gameplay movement speed. */
+export function createGait(strides: WalkStrides = normalStrides) {
   const tracks = new Map<number, Track>();
   let elapsed = 0;
   return {
@@ -24,20 +28,28 @@ export function createGait() {
       const ids = new Set<number>();
       for (const a of [run.player, ...run.enemies]) {
         ids.add(a.id);
-        const old = tracks.get(a.id) ?? { x: a.x, lane: a.lane, phase: 0, weight: 0 };
+        const old = tracks.get(a.id) ?? { x: a.x, lane: a.lane, phase: 0, weight: 0, walking: false };
         const distance = Math.hypot(a.x - old.x, a.lane - old.lane);
         const walking = a.moving && recoveryWeight(a) > 0 && a.elevation === 0 && a.stun === 0 && a.health > 0 && distance > .01 && distance < 70;
-        if (walking) old.phase = (old.phase + distance / (96 * (a.kind === 'warden' ? 1.48 : a.kind === 'bruiser' ? 1.2 : 1)) * Math.PI * 2) % (Math.PI * 2);
-        if (dt > 0) old.weight += ((walking ? 1 : 0) - old.weight) * (1 - Math.exp(-22 * dt));
+        if (walking) {
+          const direction = (a.x - old.x) * a.facing < -.01 ? -1 : 1;
+          const stride = strides[a.kind];
+          old.phase = (old.phase + direction * distance / stride * Math.PI * 2) % (Math.PI * 2);
+          if (old.phase < 0) old.phase += Math.PI * 2;
+        }
+        if (dt > 0) {
+          old.walking = walking;
+          old.weight += ((walking ? 1 : 0) - old.weight) * (1 - Math.exp(-22 * dt));
+        }
         old.x = a.x; old.lane = a.lane; tracks.set(a.id, old);
       }
       for (const id of tracks.keys()) if (!ids.has(id)) tracks.delete(id);
     },
-    get(id: number) { return tracks.get(id) ?? { phase: 0, weight: 0 }; },
+    get(id: number) { return tracks.get(id) ?? { phase: 0, weight: 0, walking: false }; },
   };
 }
 /** Combat owns attack cels. An ordinary jump never implies a kick or a hit. */
-export function fighterFrame(a: Actor, gait: { phase: number; weight: number }) {
+export function fighterFrame(a: Actor, gait: { phase: number; weight: number; walking?: boolean }, walk: readonly number[] = [1, 2, 3, 4]) {
   const c = fighterCels;
   if (a.health <= 0) return c.down;
   if (a.stun > 0) return c.hurt;
@@ -53,7 +65,7 @@ export function fighterFrame(a: Actor, gait: { phase: number; weight: number }) 
     if (recovery < .8) return anticipation;
   }
   if (a.elevation > 0 || a.vz > 0) return a.vz > 0 ? c.rise : c.fall;
-  if (!a.moving || gait.weight < .05) return c.idle;
+  if (!a.moving || gait.walking === false || gait.weight < .05) return c.idle;
   // Locomotion cels communicate actual travel even with reduced decorative motion.
-  return [c.contactLeft, c.passingLeft, c.contactRight, c.passingRight][Math.floor(gait.phase / (Math.PI / 2)) % 4]!;
+  return walk[Math.floor(gait.phase / (Math.PI * 2) * walk.length) % walk.length]!;
 }

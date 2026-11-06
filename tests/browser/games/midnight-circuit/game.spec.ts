@@ -19,6 +19,12 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   });
   await page.addInitScript(() => {
     (window as any).circuitPoses = new Set<number>();
+    (window as any).circuitLabels = new Set<string>();
+    const fillText = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (...args: Parameters<typeof fillText>) {
+      (window as any).circuitLabels.add(args[0]);
+      return fillText.apply(this, args);
+    };
     const original = CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
       const result = (original as any).apply(this, args);
@@ -45,6 +51,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await expect(page.getByLabel('Combat tip', { exact: true })).toContainText('MOVE RIGHT');
   await page.keyboard.down('d'); await page.clock.runFor(1150); await page.keyboard.up('d');
   expect((await state()).gated).toBe(true); expect((await state()).enemies.length).toBe(2);
+  expect(await page.evaluate(() => [...(window as any).circuitLabels])).not.toContain('LOCK');
   expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => frame >= 1 && frame <= 4).sort())).toEqual([1, 2, 3, 4]);
   await page.keyboard.down('j'); await page.clock.runFor(400); await page.keyboard.up('j');
   const firstSwing = (await state()).nextSwing; await page.clock.runFor(250); expect((await state()).nextSwing).toBe(firstSwing);
@@ -66,6 +73,9 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await chooseTheme(page.getByLabel('Theme', { exact: true }), 'assets');
   await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(250);
+  await page.evaluate(() => { (window as any).circuitPoses.clear(); (window as any).circuitProbe.player.immune = 10; });
+  await page.keyboard.down('d'); await page.clock.runFor(800); await page.keyboard.up('d');
+  expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => [1, 12, 2, 13, 3, 14, 4, 15].includes(frame)).sort((a: number, b: number) => a - b))).toEqual([1, 2, 3, 4, 12, 13, 14, 15]);
   await page.screenshot({ path: info.outputPath('midnight-street.png') });
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.runFor(50);
@@ -113,6 +123,12 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await expect(page.getByLabel('Run results', { exact: true })).toContainText('CITY GRID: ONLINE');
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
   expect((await state()).stageIndex).toBe(0); expect((await state()).hits).toBe(0);
+  await page.evaluate(() => {
+    const run = (window as any).circuitProbe;
+    run.encounter = 1; run.gated = false; run.cleared = 1; run.player.x = 1100; run.enemies = [];
+  });
+  await page.clock.runFor(50);
+  expect(await page.evaluate(() => [...(window as any).circuitLabels])).toContain('GO →');
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Game selection', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(await page.evaluate(() => ({ frames: (window as any).circuitFrames.size, audio: (window as any).circuitContexts.map((c: AudioContext) => c.state) }))).toEqual({ frames: 0, audio: ['closed'] });
@@ -137,6 +153,14 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
     await route.fulfill({ response, body: `${await response.text()}\nconst original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
   });
   await page.addInitScript(() => {
+    (window as any).circuitPoses = new Set<number>();
+    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      if (args.length === 9 && args[0] instanceof HTMLImageElement && args[0].src.includes('/afterglow/fighters/') && args[2] === 0) {
+        (window as any).circuitPoses.add(args[1] / args[3]);
+      }
+      return (drawImage as any).apply(this, args);
+    } as typeof drawImage;
     const Original = window.Image;
     (window as any).circuitImages = [];
     let sequence = 0;
@@ -153,8 +177,10 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   expect(qualityRequests).toEqual([]);
   await chooseTheme(page.getByLabel('Theme', { exact: true }), 'quality');
   await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.keyboard.down('d'); await page.clock.runFor(350); await page.keyboard.up('d');
+  await page.keyboard.down('d'); await page.clock.runFor(800); await page.keyboard.up('d');
+  expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => [1, 12, 2, 13, 3, 14, 4, 15].includes(frame)).sort((a: number, b: number) => a - b))).toEqual([1, 2, 3, 4, 12, 13, 14, 15]);
   await page.keyboard.press('Escape');
   const state = () => page.evaluate(() => JSON.stringify((window as any).circuitProbe));
   let paused = await state();

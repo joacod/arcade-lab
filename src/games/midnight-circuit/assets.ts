@@ -1,6 +1,7 @@
 import { prepareImages, type ImageBundle } from '../../engine/browser/images.ts';
 import { validateCircuitArt } from './asset-art.ts';
 import { stageOf } from './game.ts';
+import { arcadeFighterAtlas } from './sprite-art.ts';
 import { createPresentation, type CircuitArtwork } from './presentation.ts';
 import fighters from './art/fighters/animated.webp';
 import skyline from './art/signal-rain/skyline.svg';
@@ -12,6 +13,7 @@ import repair from './art/signal-rain/repair.svg';
 function createArtwork(images: ImageBundle): CircuitArtwork {
   return {
     mode: 'assets',
+    fighterAtlas: arcadeFighterAtlas,
     scenery(ctx, view, run, time, reducedMotion) {
       const { width, height, ground, x: camera } = view;
       ctx.fillStyle = '#203d43'; ctx.fillRect(0, 0, width, height);
