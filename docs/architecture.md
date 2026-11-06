@@ -50,6 +50,7 @@ Engine code supplies game-independent execution and resource mechanisms. `engine
 | Persistent arcade fullscreen target | `src/engine/browser/fullscreen.ts`, supplied by `src/app/application.ts` |
 | Measurement, display-change suspension, frame loop and lifetime signal | `src/engine/browser/host.ts` |
 | Page visibility, blur, page-exit and deferred focus binding | `src/engine/browser/session.ts` |
+| Action-to-key maps, binding conflicts and key labels | `src/engine/bindings.ts` |
 | Keyboard/button holds, press edges and independent touch capture | `src/engine/browser/buttons.ts` |
 | Configured game menus, actions, focus and common utilities | `src/common/ui/menu.ts`, `menu.css` |
 | Native theme choices, choice styling and multiline result readouts | `src/common/ui/menu-components.ts`, `menu-components.css` |
@@ -80,7 +81,7 @@ Hidden documents have no scheduled host frame. Becoming visible schedules exactl
 
 `bindPageLifetime` binds blur, hide, persisted page exit and final page exit with the host lifetime signal. Sessions supply suspension, timing reset and disposal; focus and gameplay transition rules stay local. All current game sessions use this binder. `bindSessionFocus` also shares clear-input and deferred focusout handling, ignoring callbacks after host abortion. Sessions supply their own focus predicate, so different play controls and menu rules stay local.
 
-`bindButtons` shares physical keyboard/button capture across button-based controls. It owns keyboard aliases, independent pointer captures, rising edges, release/cancellation and abort cleanup. Each simulation step consumes one held/pressed snapshot; game-local input adapters translate it into actions. Gesture-based movement remains local to its existing owners. Sessions clear input at display and gameplay transitions and through the focus/lifetime bindings.
+`bindButtons` shares physical keyboard/button capture across button-based controls. It accepts an action-first `KeyBindings<Action>` table, where each action lists its physical `KeyboardEvent.code` aliases; touch buttons use the same action IDs. It owns keyboard aliases, independent pointer captures, rising edges, release/cancellation and abort cleanup. `setBindings` validates conflicting key assignments before replacing a table, then clears all held/queued input and pointer captures so old presses cannot trigger newly assigned actions. Browser modifiers and composing input are ignored. Games own their binding tables, optional layout choices and action semantics; derive player-facing key hints from those tables with the shared label helpers. Each simulation step consumes one held/pressed snapshot; game-local input adapters translate it into actions. Gesture-based movement remains local to its existing owners. Sessions clear input at display and gameplay transitions and through the focus/lifetime bindings.
 
 The clock bounds fixed-step catch-up; transitions reset timing so suspended wall time cannot advance play. Composition steps simulation and delivers its semantic events to visuals and audio. Collision math returns contact information; game rules own eligibility and consequences.
 

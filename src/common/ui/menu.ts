@@ -25,7 +25,7 @@ interface MenuOptions<Action extends string, Screen extends string> {
   game?: HTMLElement;
   theme: HTMLElement;
   cycleTheme?(): void;
-  controls: string;
+  controls: string | HTMLElement;
 }
 
 /** Presentation only: games retain their transition rules, configuration and run state. */
@@ -43,7 +43,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
     <div class="game-menu-body" tabindex="0" role="region" aria-label="Game details">
       <p class="game-menu-description"></p><div class="game-menu-content"></div>
       <div class="game-menu-settings"><div class="game-menu-theme"></div><div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
-      <details class="game-menu-controls"><summary>How to play</summary><div>${config.controls}<p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details></div>
+      <details class="game-menu-controls"><summary>How to play</summary><div><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound · <b>T</b> Switch theme<br>Escape pauses, or exits fullscreen.</p></div></details></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}</footer>
@@ -65,6 +65,9 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const content = layer.querySelector<HTMLElement>('.game-menu-content')!;
   const settings = layer.querySelector<HTMLElement>('.game-menu-settings')!;
   const controls = layer.querySelector<HTMLDetailsElement>('.game-menu-controls')!;
+  const instructions = layer.querySelector<HTMLElement>('.game-menu-instructions')!;
+  if (typeof config.controls === 'string') instructions.innerHTML = config.controls;
+  else instructions.append(config.controls);
   if (config.game) content.append(config.game);
   layer.querySelector('.game-menu-theme')!.append(config.theme);
   const actions = [...layer.querySelectorAll<HTMLButtonElement>('[data-menu-action]')];

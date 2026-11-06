@@ -74,11 +74,13 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 
 | Control | Action |
 | --- | --- |
-| WASD / arrows | Move and align in depth |
-| J | Light combo; press again to chain |
-| K | Heavy strike |
-| Space, then J / K | Jump, then flying kick |
+| Arrows | Move and align in depth |
+| Z | Light combo; press again to chain |
+| X | Heavy strike |
+| Space, then Z / X | Jump, then flying kick |
 | Touch arrows + Strike / Heavy / Jump | Independent movement and action buttons |
+
+**Keyboard layout** on title and pause menus also offers WASD movement with J/K attacks and Space jump. The selection lasts for this visit, including restarts.
 
 Encounter gates keep enemies reachable, the camera frames the arena, and depth sorting follows feet rather than jump height. Results record score, hits, best chain, time and lives. See [gameplay and source ownership](docs/games/midnight-circuit/README.md) and the [artwork guide](src/games/midnight-circuit/art/README.md).
 

@@ -6,6 +6,8 @@ An original street brawler with three coordinated Canvas presentations and compl
 
 ## Play
 
+The default layout uses the right hand on arrows and the left hand on Z (combo), X (heavy) and Space (jump). The title and pause menus offer a WASD + J/K layout as well. Layout selection keeps the current run and lasts through restarts for this visit. `input.ts` owns the action-to-key tables; the UI derives hints and coaching from the selected table. Touch buttons keep the same semantic actions.
+
 Align your feet with an opponent's ground lane before attacking. Read the red attack telegraphs and step into another lane, move behind the attacker or jump. Aerial kicks work during the jump's useful height window. The light combo advances through jab, cross and a crowd-clearing kick. Jabs and crosses isolate the nearest eligible opponent; finishers, heavy strikes and flying kicks can hit a crowd. Heavy strikes add broad contact and strong stagger. Holding an attack button does not repeat it. Tap again during each light strike to queue one follow-up; a short gap after the strike also preserves the next combo move. Ground attacks commit through startup and contact, then allow slower movement during recovery, with heavier strikes retaining more commitment. Contextual prompts introduce alignment and chaining, point toward a nearby opponent's lane and announce the next wave.
 
 Three lives cover the whole run. Losing a life cancels enemy attacks, restores health after a short fall and grants safe recovery time. Green repair cells restore health and score once, including cells awarded after street encounters. They remain on the ground while health is full, so walking over one does not waste it. Entering the station restores health while preserving lives, elapsed time and scoring. Results show points, hits, best chain, time and remaining lives.
@@ -50,7 +52,7 @@ Paths below are relative to `src/games/midnight-circuit/`.
 | --- | --- |
 | `content.ts` | Typed stages, arena geometry, waves, pickups, fighter/enemy tuning and attack definitions |
 | `game.ts` | Explicit x/lane/elevation coordinates, combat timing, AI, gates, lives, score and outcomes |
-| `input.ts` | Translate shared button snapshots into movement and one-shot combat actions |
+| `input.ts` | Own typed keyboard layouts and translate shared button snapshots into movement and one-shot combat actions |
 | `presentation.ts` | Uniform projection, encounter-framed camera, depth sorting, sprite composition, parallax, weather and bounded effects |
 | `assets.ts`, `asset-art.ts`, `art/signal-rain/` | Inked Assets scenery, image preparation and layout validation |
 | `quality.ts`, `quality-art.ts`, `art/afterglow/` | Painted Quality scenery, inspected curb anchors, image preparation and validation |

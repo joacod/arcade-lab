@@ -91,3 +91,5 @@
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-boss meter::-webkit-meter-optimum-value { background: #df946b; }
 .circuit-app:has(canvas[data-renderer="quality"]) .circuit-attack-buttons button { color: #e4ceb0; border-color: #b99c70; }
 .circuit-app:has(canvas[data-renderer="quality"]) [data-control="light"] { color: #cbe3cc; border-color: #9ac1a5; }
+
+.circuit-app .circuit-keyboard { margin-bottom: 16px; }
