@@ -82,12 +82,12 @@ function author(foundry: boolean): Mission {
     columns, rows, terrain, start: at(4), checkpoints, enemies, barrels, relays, rescue, exit,
     signs: foundry ? [
       { x: 120, y: 560, text: '02 / FOUNDRY RUN', sub: '3 RELAYS + THE BASTION →' },
-      { x: 95 * TILE, y: 470, text: 'TAKE THE HIGH ROAD', sub: 'W + D + J / DIAGONAL FIRE' },
+      { x: 95 * TILE, y: 470, text: 'TAKE THE HIGH ROAD', sub: 'MOVE + AIM UP + FIRE / DIAGONAL FIRE' },
       { x: 411 * TILE, y: 490, text: 'THE BASTION', sub: 'WAIT FOR THE RED CHARGE. KEEP MOVING.' },
     ] : [
-      { x: 125, y: 540, text: 'MAKE AN ENTRANCE.', sub: 'A D MOVE / SPACE JUMP / HOLD J FIRE' },
-      { x: 29 * TILE, y: 485, text: 'COVER IS TEMPORARY.', sub: 'K THROWS A GRENADE / RED BARRELS CHAIN' },
-      { x: 178 * TILE, y: 535, text: 'ONE OF OURS.', sub: 'REACH BOLT / Q SWITCHES OPERATORS' },
+      { x: 125, y: 540, text: 'MAKE AN ENTRANCE.', sub: 'MOVE / JUMP / HOLD FIRE' },
+      { x: 29 * TILE, y: 485, text: 'COVER IS TEMPORARY.', sub: 'THROW GRENADES / RED BARRELS CHAIN' },
+      { x: 178 * TILE, y: 535, text: 'ONE OF OURS.', sub: 'REACH BOLT / SWITCH OPERATORS' },
     ] };
 }
 export const missions: readonly Mission[] = [author(false), author(true)];

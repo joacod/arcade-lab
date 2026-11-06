@@ -29,23 +29,23 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   const state = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).blastProbe)));
   await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'title');
   expect(await page.evaluate(() => (window as any).blastContexts.length)).toBe(0);
-  await page.keyboard.press('j'); await page.clock.runFor(100); expect((await state()).elapsed).toBe(0);
+  await page.keyboard.press('z'); await page.clock.runFor(100); expect((await state()).elapsed).toBe(0);
   await page.screenshot({ path: info.outputPath('blastline-title.png') });
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
   // A complete press/release between steps must survive the end of weapon recovery.
   await page.evaluate(() => { (window as any).blastProbe.player.cooldown = .08; });
-  await page.keyboard.press('j'); await page.clock.runFor(20);
+  await page.keyboard.press('z'); await page.clock.runFor(20);
   expect((await state()).player.fireBuffer).toBeGreaterThan(0);
   expect((await state()).projectiles.length).toBe(0);
   await page.clock.runFor(100);
   expect((await state()).projectiles.length).toBe(1);
   expect((await state()).player.fireBuffer).toBe(0);
-  await page.keyboard.down('d'); await page.keyboard.down('j'); await page.clock.runFor(1200);
-  await page.keyboard.up('d'); await page.keyboard.up('j'); await page.clock.runFor(100);
+  await page.keyboard.down('ArrowRight'); await page.keyboard.down('z'); await page.clock.runFor(1200);
+  await page.keyboard.up('ArrowRight'); await page.keyboard.up('z'); await page.clock.runFor(100);
   expect((await state()).player.x).toBeGreaterThan(300); expect((await state()).projectiles.length).toBeGreaterThan(0);
   await page.keyboard.down('Space'); await page.clock.runFor(100); expect((await state()).player.vy).toBeLessThan(-200);
   await page.keyboard.up('Space'); await page.clock.runFor(100); expect((await state()).player.vy).toBeGreaterThan(-180);
-  await page.keyboard.press('k'); await page.clock.runFor(50); expect((await state()).grenades).toBe(3);
+  await page.keyboard.press('x'); await page.clock.runFor(50); expect((await state()).grenades).toBe(3);
   await page.keyboard.press('Escape'); const frozen = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(frozen);
   // Replacing presentation must retain the live simulation, including mid-action state.
   await page.evaluate(() => { (window as any).appearanceRun = (window as any).blastProbe; });
@@ -84,14 +84,14 @@ test('Blastline mounts lazily, owns simultaneous controls, interrupts safely and
   expect((await state()).player.fireBuffer).toBe(0);
   await page.screenshot({ path: info.outputPath('blastline-touch.png') });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000);
-  await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused'); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000);
+  await expect(page.locator('.blast-app')).toHaveAttribute('data-screen', 'paused'); await page.keyboard.up('ArrowRight');
   const blurred = await state(); await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(100);
   expect((await state()).player.x).toBe(blurred.player.x);
   // Outcome fixtures exercise session composition. The invariant suite traverses authored routes with real actions.
   await page.evaluate(() => { const r = (window as any).blastProbe; Object.assign(r.player, r.mission.rescue, { vx: 0, vy: 0 }); });
   await page.clock.runFor(50); expect((await state()).rescued).toBe(true); expect((await state()).player.operator).toBe('bolt');
-  await page.keyboard.press('q'); await page.clock.runFor(50); expect((await state()).player.operator).toBe('nova');
+  await page.keyboard.press('c'); await page.clock.runFor(50); expect((await state()).player.operator).toBe('nova');
   for (let mission = 0; mission < 2; mission++) {
     await page.evaluate(() => { const r = (window as any).blastProbe; r.relays.forEach((p: any) => p.health = 0); r.enemies.forEach((e: any) => e.health = 0); Object.assign(r.player, { x: r.mission.exit.x + 20, y: 618, vx: 0, vy: 0 }); });
     await page.clock.runFor(3200);

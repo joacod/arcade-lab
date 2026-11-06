@@ -3,6 +3,7 @@ import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
+import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 import { bindingLabel } from '../../engine/bindings.ts';
 import { attacks } from './content.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
@@ -22,14 +23,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   let layout: Layout = initialLayout;
   const help = document.createElement('div');
   const setup = document.createElement('div');
-  const keyboard = document.createElement('fieldset'); keyboard.className = 'menu-choice-group circuit-keyboard';
-  keyboard.innerHTML = `<legend>Keyboard layout</legend><div class="menu-choice-grid">${(Object.keys(layouts) as Layout[]).map(id =>
-    `<label class="menu-choice"><input type="radio" name="circuit-keyboard" value="${id}" ${id === layout ? 'checked' : ''}><strong>${layouts[id].name}</strong><small>${id === 'arrows' ? 'Right hand moves · left hand attacks' : 'Left hand moves · right hand attacks'}</small></label>`).join('')}</div>`;
-  keyboard.addEventListener('change', event => {
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement) || !target.checked || !(target.value in layouts)) return;
-    layout = target.value as Layout; onLayout(layout); reflectBindings();
-  }, { signal });
+  const keyboard = createKeyboardChoices({ id: 'circuit', choices: layouts, value: layout, signal, onChange(value) {
+    layout = value; onLayout(layout); reflectBindings();
+  } });
+  keyboard.classList.add('circuit-keyboard');
   setup.append(keyboard, results.element);
   function reflectBindings() {
     const { movement, bindings } = layouts[layout];

@@ -90,15 +90,16 @@ Encounter gates keep enemies reachable, the camera frames the arena, and depth s
 
 Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a Stormglass energy bolt, or powerful **Kael**, with crushing blows and an advancing Riftbreaker. Read the CPU's telegraphs, guard high or low, jump over sweeps or over your opponent to switch sides, and punish missed heavy strikes. Win two rounds to claim the citadel. A visible timer, round countdowns, KO and time-out decisions keep matches quick and replayable.
 
-| Control | Action |
-| --- | --- |
-| A/D / left and right arrows | Move; face the opponent automatically |
-| W / Up / Space | Jump |
-| S / Down | Crouch |
-| J / K / L | Light / heavy / special |
-| Crouch + J / airborne J or K | Low sweep / overhead jump attack |
-| Shift | Guard; hold crouch as well to stop sweeps |
-| Touch directions + Light / Heavy / Special / Guard | Independent held controls and attack presses |
+| Action | Arrows layout (default) | WASD layout |
+| --- | --- | --- |
+| Move; face the opponent automatically | Left / right arrows | A / D |
+| Jump | Up / Space | W / Space |
+| Crouch | Down | S |
+| Light / heavy / special | Z / X / C | J / K / L |
+| Low sweep / overhead jump attack | Crouch + Z / airborne Z or X | Crouch + J / airborne J or K |
+| Guard; crouch as well to stop sweeps | Shift | Shift |
+
+**Keyboard layout** on title and pause menus chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to Game setup. Touch directions + Light / Heavy / Special / Guard support independent held controls and attack presses.
 
 Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. **Game setup** returns to fighter selection. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
 
@@ -108,15 +109,16 @@ Action-specific poses and feedback distinguish misses, contact and guard. The fi
 
 Make an entrance. Catch the last ride out. Run, jump and blast through **Border Station** and **Foundry Run**, breaking cover, dropping elevated defenses and setting off explosive barrel chains. Start with **Nova** and her automatic rifle, rescue **Bolt** to unlock a slower rocket launcher, then swap between both weapon styles. Disable power relays, break the fortified **Bastion** and extract before each facility collapses. The intended first-play pace is 3–5 minutes.
 
-| Control | Action |
-| --- | --- |
-| A/D / left and right arrows | Run |
-| Space | Jump; release for a short hop |
-| J | Hold to fire |
-| W/S / up and down arrows | Aim vertically; combine with movement for diagonals |
-| K | Throw a fused grenade |
-| Q | Switch operator after rescuing Bolt |
-| Touch directions + Jump / Fire / Grenade / Switch | Independent simultaneous controls |
+| Action | Arrows layout (default) | WASD layout |
+| --- | --- | --- |
+| Run | Left / right arrows | A / D |
+| Jump; release for a short hop | Space | Space |
+| Hold to fire | Z | J |
+| Aim vertically; combine with movement for diagonals | Up / down arrows | W / S |
+| Throw a fused grenade | X | K |
+| Switch operator after rescuing Bolt | C | L |
+
+**Keyboard layout** on title and pause menus chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch directions + Jump / Fire / Grenade / Switch support independent simultaneous controls.
 
 Five lives and green supply checkpoints support the operation. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete sprites, bounded debris and procedural AudioBits sounds power the action. Quality adds painted commandos, machines, equipment and coastal scenery. See [gameplay and source ownership](docs/games/blastline/README.md).
 
