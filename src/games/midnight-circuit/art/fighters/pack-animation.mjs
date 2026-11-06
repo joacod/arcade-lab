@@ -8,6 +8,7 @@ const inputs = {
   original: source(new URL('fighters.png', root)),
   movement: source(new URL('movement/source.png', root)),
   quality: ['rook','striker','bruiser','warden'].map(role => source(new URL(`${role}-source.png`, quality))),
+  walking: ['rook','striker','bruiser','warden'].map(role => source(new URL(`walking/${role}-source.png`, root))),
 };
 const browser = await chromium.launch();
 try {
@@ -53,7 +54,7 @@ try {
       return {image,figures,cut,width:canvas.width,height:canvas.height};
     }
     const original=await load(inputs.original), movement=inspect(await load(inputs.movement),6,4);
-    const arcade=document.createElement('canvas');arcade.width=3072;arcade.height=1024;const a=arcade.getContext('2d');
+    const arcade=document.createElement('canvas');arcade.width=4096;arcade.height=1024;const a=arcade.getContext('2d');
     const movementLayout=[];
     for(let row=0;row<4;row++){
       const mapping=[[0,0],[5,3],[6,4],[7,5],[10,6],[11,7]];
@@ -70,7 +71,7 @@ try {
         a.drawImage(movement.cut(figure),dest*256+dx,row*256+dy,w*scale,h*scale);
       }
     }
-    const modern=document.createElement('canvas');modern.width=6144;modern.height=2048;const q=modern.getContext('2d'),qualityLayout=[];
+    const modern=document.createElement('canvas');modern.width=8192;modern.height=2048;const q=modern.getContext('2d'),qualityLayout=[];
     for(let row=0;row<4;row++){
       const sheet=inspect(await load(inputs.quality[row]),4,3), cw=sheet.width/4,ch=sheet.height/3;
       const standingHeight=sheet.figures[0].rect[3],scale=(row===3?400:416)/standingHeight;
@@ -86,11 +87,43 @@ try {
       }
       qualityLayout.push({source:[sheet.width,sheet.height],baseline,scale,rects});
     }
-    return {arcade:arcade.toDataURL('image/webp',.96).split(',')[1],modern:modern.toDataURL('image/webp',.96).split(',')[1],movementLayout,qualityLayout};
+    const walkingLayout=[];
+    for(let row=0;row<4;row++){
+      const sheet=inspect(await load(inputs.walking[row]),4,4),cw=sheet.width/4,ch=sheet.height/4;
+      const modes=[];
+      for(let mode=0;mode<2;mode++){
+        const ctx=mode?q:a,cell=mode?512:256,pivot=cell*15/16,figures=sheet.figures.slice(mode*8,mode*8+8);
+        const scale=(mode?(row===3?400:416):216)/(figures.reduce((sum,f)=>sum+f.rect[3],0)/8);
+        const baseline=figures.map((f,i)=>f.rect[1]+f.rect[3]-(mode*2+Math.floor(i/4))*ch).sort((x,y)=>x-y)[4];
+        const rects=[];
+        for(let frame=0;frame<8;frame++){
+          const figure=figures[frame],drawing=sheet.cut(figure),[x,y,w,h]=figure.rect;
+          // Register the upper torso as a whole. Source-cell centering varies between drawings;
+          // foot bounding boxes vary intentionally as the free leg passes the planted one.
+          const data=drawing.getContext('2d').getImageData(0,0,w,h).data;
+          let sum=0,weight=0;
+          for(let yy=Math.floor(h*.22);yy<Math.floor(h*.5);yy++)for(let xx=0;xx<w;xx++){
+            const alpha=data[(yy*w+xx)*4+3];if(alpha<16)continue;sum+=xx*alpha;weight+=alpha;
+          }
+          const center=sum/weight;
+          const dx=cell/2-center*scale,dy=pivot+(y-(mode*2+Math.floor(frame/4))*ch-baseline)*scale;
+          if(dx<0||dy<0||dx+w*scale>cell||dy+h*scale>cell)throw new Error(`Clipped walking cel ${row}/${mode}/${frame}`);
+          const dest=[1,12,2,13,3,14,4,15][frame];
+          ctx.clearRect(dest*cell,row*cell,cell,cell);
+          ctx.drawImage(drawing,dest*cell+dx,row*cell+dy,w*scale,h*scale);
+          rects.push({source:[x,y,w,h],destination:[dx,dy,w*scale,h*scale],column:dest});
+          if(mode)qualityLayout[row].rects[dest]={sourceSheet:`../../fighters/walking/${['rook','striker','bruiser','warden'][row]}-source.png`,source:[x,y,w,h],destination:[dx,dy,w*scale,h*scale]};
+        }
+        modes.push({scale,baseline,rects});
+      }
+      walkingLayout.push({source:[sheet.width,sheet.height],modes});
+    }
+    return {arcade:arcade.toDataURL('image/webp',.96).split(',')[1],modern:modern.toDataURL('image/webp',.96).split(',')[1],movementLayout,qualityLayout,walkingLayout};
   },inputs);
   writeFileSync(new URL('animated.webp',root),Buffer.from(result.arcade,'base64'));
   writeFileSync(new URL('fighters.webp',quality),Buffer.from(result.modern,'base64'));
   writeFileSync(new URL('movement/layout.json',root),JSON.stringify(result.movementLayout,null,2)+'\n');
   writeFileSync(new URL('layout.json',quality),JSON.stringify(result.qualityLayout,null,2)+'\n');
-  process.stdout.write('Packed 48 arcade cels and 48 separate Quality cels with stable pivots.\n');
+  writeFileSync(new URL('walking/layout.json',root),JSON.stringify(result.walkingLayout,null,2)+'\n');
+  process.stdout.write('Packed 64 arcade cels and 64 separate Quality cels with registered eight-frame walks.\n');
 } finally {await browser.close();}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGait, fighterFrame, fighterCels as c } from '../../../../src/games/midnight-circuit/animation.ts';
+import { createGait, fighterFrame, fighterCels as c, walkingCels } from '../../../../src/games/midnight-circuit/animation.ts';
 import { createRun, stepRun, idle } from '../../../../src/games/midnight-circuit/game.ts';
 import { attacks } from '../../../../src/games/midnight-circuit/content.ts';
 
@@ -14,6 +14,7 @@ test('gait follows displacement, plants feet, freezes on pause and ignores knock
   for (let i = 0; i < 50; i++) gait.observe(run);
   assert.deepEqual(fighterFrame(run.player, gait.get(0)), pose);
   run.elapsed += 1; gait.observe(run); assert.equal(gait.get(0).phase, phase); // blocked input
+  assert.equal(fighterFrame(run.player, gait.get(0)), c.idle);
   run.player.x += 12; run.player.stun = .2; run.elapsed += 1/60; gait.observe(run);
   assert.equal(gait.get(0).phase, phase);
   run.player.stun = 0; run.player.x += 500; run.elapsed += 1/60; gait.observe(run);
@@ -32,6 +33,27 @@ test('gait distance is independent of sampling rate and never mutates gameplay',
     return gait.get(0).phase;
   };
   assert.ok(Math.abs(sample(30)-sample(144)) < 1e-10);
+});
+
+test('painted locomotion completes eight distinct steps per relaxed stride and retains combat priority', () => {
+  const run = createRun(), gait = createGait(), poses = []; gait.observe(run);
+  run.player.moving = true;
+  for (let frame = 0; frame < 8; frame++) {
+    run.elapsed += .05; run.player.x += 19; gait.observe(run);
+    poses.push(fighterFrame(run.player, gait.get(0), walkingCels));
+  }
+  assert.equal(new Set(poses).size, 8);
+  assert.ok(gait.get(0).phase < 1e-10);
+  run.player.attack = { id: 1, kind: 'jab', time: attacks.jab.startup, hits: [], sounded: true };
+  assert.equal(fighterFrame(run.player, gait.get(0), walkingCels), c.punch);
+});
+
+test('retreating in guard reverses the walk without negative atlas columns', () => {
+  const run = createRun(), gait = createGait(); gait.observe(run);
+  run.player.moving = true; run.player.facing = 1;
+  run.player.x -= 19; run.elapsed += .05; gait.observe(run);
+  assert.ok(Math.abs(gait.get(0).phase - Math.PI * 1.75) < 1e-10);
+  assert.equal(fighterFrame(run.player, gait.get(0), walkingCels), walkingCels[7]);
 });
 
 test('recovery steps blend back into the walking pose while startup and contact keep planted feet', () => {

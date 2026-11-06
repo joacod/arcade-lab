@@ -17,6 +17,27 @@ function arena(kinds = ['striker'], waves) {
 }
 function swing(run, a, kind, time = 0) { a.attack = { id: run.nextSwing++, kind, time, hits: [], sounded: false }; }
 
+test('waiting enemies make room for the attacker and keep their flank positions inside the encounter', () => {
+  const run = arena(['striker', 'striker', 'bruiser']);
+  const [attacker, upper, lower] = run.enemies;
+  run.player.x = 400; run.player.lane = 90;
+  attacker.x = 450; attacker.lane = 90;
+  upper.x = lower.x = 460; upper.lane = lower.lane = 90;
+  swing(run, attacker, 'strike');
+  const before = { upper: upper.lane, lower: lower.lane };
+  advance(run, 12);
+  assert.ok(upper.lane > before.upper);
+  assert.ok(lower.lane < before.lower);
+  assert.ok(upper.x > 460 && lower.x > 460);
+  assert.equal(upper.attack, null); assert.equal(lower.attack, null);
+  run.player.x = 876; run.player.lane = 0;
+  advance(run, 120);
+  for (const enemy of run.enemies) {
+    assert.ok(enemy.x >= 24 && enemy.x <= 876);
+    assert.ok(enemy.lane >= 0 && enemy.lane <= 180);
+  }
+});
+
 test('brawler attack phases own contact timing, each swing hits once, and a buffered combo advances', () => {
   const run = arena(), e = run.enemies[0]; e.health = e.maxHealth = 500;
   stepRun(run, { ...idle, light: true }, dt);

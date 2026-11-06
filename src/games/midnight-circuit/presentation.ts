@@ -82,16 +82,9 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
       line([0, g + 181, w, g + 181], '#83908955', 2);
     }
     const encounter = stageOf(run).encounters[run.encounter];
-    if (run.gated && encounter) for (const boundary of [encounter.left, encounter.right]) {
-      const x = boundary - cam, quality = artwork?.mode === 'quality';
-      const edge = quality ? '#d6b582a6' : '#ed8aa390';
-      glow(x, g + 80, 60, quality ? '#edc49013' : '#ee77991e');
-      line([x, g - 8, x, g + 185], edge, quality ? 1.5 : 3);
-      if (quality) {
-        for (const y of [g, g + 180]) line([x - 10, y, x + 10, y], '#e8ca9b99', 2);
-        for (const y of [g + 65, g + 105]) line([x - 4, y - 5, x, y, x - 4, y + 5], '#e8ca9b66', 1);
-      } else for (let y = 0; y < 180; y += 24) line([x - 8, g + y + 12, x + 8, g + y], '#ffb1b178', 2);
-      text('LOCK', x, g + 208, 8, quality ? '#dfc9a4' : '#e4a4b1', 'center');
+    // Encounters hold the camera and movement limits, without fictional fences across the road.
+    if (!run.gated && run.cleared > 0 && encounter && !run.finale) {
+      text('GO →', w - 88, g + 82, 23, '#bcf4da', 'center');
     }
     if (!encounter && !run.finale && run.status !== 'victory') {
       const x = stageOf(run).width - 140 - cam; glow(x, g + 40, 160, '#78f8db33');
@@ -99,7 +92,7 @@ export function createPresentation(surface: HTMLElement, artwork?: CircuitArtwor
     }
   }
   function body(a: Actor, time: number, reflection = false) {
-    const frame = fighterFrame(a,gait.get(a.id));
+    const frame = fighterFrame(a,gait.get(a.id),artwork?.fighterAtlas?.walk);
     drawCircuitFighter(ctx,sprites(),a,frame,time,reflection,motion.matches,artwork?.fighterAtlas);
     if (a.attack && attackPhase(a.attack) === 'active') {
       ctx.save();ctx.translate(0,-a.elevation);ctx.scale(a.facing,1);
