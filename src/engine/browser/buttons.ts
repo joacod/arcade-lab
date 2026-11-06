@@ -1,16 +1,19 @@
+import { createKeyMap, type KeyBindings } from '../bindings.ts';
+
 interface ButtonInput<Action extends string> {
   surface: HTMLElement;
   controls: Readonly<Record<Action, HTMLButtonElement>>;
-  keys: Readonly<Record<string, Action>>;
+  bindings: KeyBindings<Action>;
   active(): boolean;
   signal: AbortSignal;
 }
 /** Captured button holds and rising edges. Games translate each step's snapshot into actions. */
-export function bindButtons<Action extends string>({ surface, controls, keys, active, signal }: ButtonInput<Action>) {
+export function bindButtons<Action extends string>({ surface, controls, bindings, active, signal }: ButtonInput<Action>) {
+  let keys = createKeyMap(bindings);
   const heldKeys = new Set<string>(), pressed = new Set<Action>();
   const pointers = new Map<number, { action: Action; button: HTMLButtonElement }>();
   const entries = Object.entries(controls) as [Action, HTMLButtonElement][];
-  const down = (action: Action) => [...heldKeys].some(code => keys[code] === action) || [...pointers.values()].some(p => p.action === action);
+  const down = (action: Action) => [...heldKeys].some(code => keys.get(code) === action) || [...pointers.values()].some(p => p.action === action);
   function reflect() { for (const [action, button] of entries) button.toggleAttribute('data-held', down(action)); }
   function release(id: number) {
     const p = pointers.get(id); pointers.delete(id);
@@ -19,7 +22,8 @@ export function bindButtons<Action extends string>({ surface, controls, keys, ac
   }
   function clear() { heldKeys.clear(); pressed.clear(); for (const id of pointers.keys()) release(id); reflect(); }
   surface.addEventListener('keydown', event => {
-    const action = keys[event.code]; if (!active() || !action) return;
+    const action = keys.get(event.code);
+    if (!active() || action === undefined || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault(); if (event.repeat || heldKeys.has(event.code)) return;
     if (!down(action)) pressed.add(action);
     heldKeys.add(event.code); reflect();
@@ -41,7 +45,13 @@ export function bindButtons<Action extends string>({ surface, controls, keys, ac
   }
   surface.addEventListener('pointerdown', () => { if (active()) surface.focus({ preventScroll: true }); }, { signal });
   signal.addEventListener('abort', clear, { once: true });
-  return { clear, read(): { held: ReadonlySet<Action>; pressed: ReadonlySet<Action> } {
+  return { clear,
+    setBindings(next: KeyBindings<Action>) {
+      if (signal.aborted) return;
+      const replacement = createKeyMap(next);
+      clear(); keys = replacement;
+    },
+    read(): { held: ReadonlySet<Action>; pressed: ReadonlySet<Action> } {
     const snapshot = { held: new Set(entries.filter(([action]) => down(action)).map(([action]) => action)), pressed: new Set(pressed) };
     pressed.clear(); return snapshot;
   } };

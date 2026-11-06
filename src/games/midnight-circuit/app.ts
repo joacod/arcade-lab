@@ -18,7 +18,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void, fullscr
   let ui: ReturnType<typeof createUI>;
   let input: ReturnType<typeof bindInput> | undefined, presentation: ReturnType<typeof createAppearance> | undefined, sound: ReturnType<typeof createSound> | undefined;
   const host = createHost(container, { fullscreen, className: 'circuit-app', label: 'Midnight Circuit',
-    surfaceLabel: 'Midnight Circuit playfield. WASD or arrows move and align. J light combo, K heavy, Space jump, J in air flying kick. P pauses or resumes.',
+    surfaceLabel: 'Midnight Circuit playfield.',
     onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
   const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
   function dispose() { if (disposed) return; disposed = true; disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host.dispose()); }
@@ -51,7 +51,7 @@ export function mountCircuit(container: HTMLElement, onExit: () => void, fullscr
     ui = createUI(host.root, host.surface, host.signal, act, value => sound?.setMuted(value), value => {
       suspend();
       if (readiness.ready) void presentation!.select(value); else readiness.watch(() => presentation!.select(value));
-    });
+    }, layout => input?.setLayout(layout));
     presentation = createAppearance(host.surface, (value, message, preparing) => ui.appearanceStatus(value, message, preparing), suspend, () => readiness.watch(() => presentation!.prepare()));
     readiness.watch(() => initialTheme === 'normal' ? presentation!.prepare() : presentation!.select(initialTheme));
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);

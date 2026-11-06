@@ -2,6 +2,53 @@ import { useNormalBaseline } from '../../menu.ts';
 import { chooseTheme } from '../../menu.ts';
 import { test, expect } from '@playwright/test';
 
+test('keyboard layouts update hints, retain the paused run and survive restart', async ({ page }) => {
+  await page.route(/\/src\/games\/midnight-circuit\/game\.ts(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      const original = createRun; createRun = (...args) => { const run = original(...args); window.circuitProbe = run; return run; };` });
+  });
+  await page.clock.install(); await useNormalBaseline(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
+  const layout = page.getByRole('group', { name: 'Keyboard layout', exact: true });
+  const arrows = layout.getByRole('radio', { name: /Arrows/ }), wasd = layout.getByRole('radio', { name: /WASD/ });
+  await expect(arrows).toBeChecked();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.clock.runFor(50);
+  await page.keyboard.down('x'); await page.clock.runFor(50); await page.keyboard.up('x');
+  expect(await page.evaluate(() => (window as any).circuitProbe.player.attack.kind)).toBe('heavy');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(100); await page.keyboard.press('Escape');
+  const frozen = await page.evaluate(() => { (window as any).retainedCircuitRun = (window as any).circuitProbe; return JSON.stringify((window as any).circuitProbe); });
+  await arrows.focus(); await page.keyboard.press('ArrowRight');
+  await expect(wasd).toBeChecked();
+  await page.locator('.game-menu-controls summary').click();
+  await expect(page.locator('.game-menu-instructions')).toContainText('J / K IN AIR');
+  await expect(page.locator('.circuit-hint')).toContainText('WASD');
+  await expect(page.locator('.play-surface')).toHaveAttribute('aria-label', /J light combo, K heavy/);
+  expect(await page.evaluate(() => JSON.stringify((window as any).circuitProbe))).toBe(frozen);
+  expect(await page.evaluate(() => (window as any).retainedCircuitRun === (window as any).circuitProbe)).toBe(true);
+  await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(100);
+  expect(await page.evaluate(() => (window as any).circuitProbe.player.x)).toBe(JSON.parse(frozen).player.x);
+  await page.keyboard.up('ArrowRight'); await page.keyboard.press('z');
+  await page.clock.runFor(600);
+  const x = await page.evaluate(() => (window as any).circuitProbe.player.x);
+  await page.keyboard.down('d'); await page.clock.runFor(200); await page.keyboard.up('d');
+  expect(await page.evaluate(() => (window as any).circuitProbe.player.x)).toBeGreaterThan(x);
+  await page.keyboard.press('j'); await page.clock.runFor(32);
+  expect(await page.evaluate(() => (window as any).circuitProbe.player.attack.kind)).toBe('jab');
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(wasd).toBeChecked();
+  await wasd.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.getByRole('button', { name: 'Restart', exact: true }).click();
+  await page.clock.runFor(50);
+  await expect(page.locator('[data-control="light"] [data-key]')).toHaveText('J');
+  await page.keyboard.press('Escape'); await expect(wasd).toBeChecked();
+  await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  await page.getByRole('button', { name: 'Open game: Midnight Circuit', exact: true }).click();
+  await expect(page.getByRole('radio', { name: /Arrows/ })).toBeChecked();
+});
 
 test('Midnight Circuit controls, interruption, restart, finale and switching own one clean session', async ({ page }, info) => {
   const errors: string[] = [], unrelated: string[] = [];
@@ -49,21 +96,21 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   expect((await state()).elapsed).toBe(0); expect(await page.evaluate(() => (window as any).circuitContexts.length)).toBe(0);
   await page.getByRole('button', { name: 'Play', exact: true }).click(); await page.clock.runFor(50);
   await expect(page.getByLabel('Combat tip', { exact: true })).toContainText('MOVE RIGHT');
-  await page.keyboard.down('d'); await page.clock.runFor(1150); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(1150); await page.keyboard.up('ArrowRight');
   expect((await state()).gated).toBe(true); expect((await state()).enemies.length).toBe(2);
   expect(await page.evaluate(() => [...(window as any).circuitLabels])).not.toContain('LOCK');
   expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => frame >= 1 && frame <= 4).sort())).toEqual([1, 2, 3, 4]);
-  await page.keyboard.down('j'); await page.clock.runFor(400); await page.keyboard.up('j');
+  await page.keyboard.down('z'); await page.clock.runFor(400); await page.keyboard.up('z');
   const firstSwing = (await state()).nextSwing; await page.clock.runFor(250); expect((await state()).nextSwing).toBe(firstSwing);
   await page.evaluate(() => (window as any).circuitPoses.clear());
   await page.keyboard.down('Space'); await page.clock.runFor(150);
   expect((await state()).player.attack).toBeNull();
   expect(await page.evaluate(() => [...(window as any).circuitPoses])).toContain(8);
   expect(await page.evaluate(() => [...(window as any).circuitPoses])).not.toContain(7);
-  await page.keyboard.down('j'); await page.clock.runFor(150);
+  await page.keyboard.down('z'); await page.clock.runFor(150);
   expect(await page.evaluate(() => [...(window as any).circuitPoses])).toContain(7);
   expect((await state()).player.elevation).toBeGreaterThan(20); expect((await state()).player.attack.kind).toBe('air');
-  await page.keyboard.up('Space'); await page.keyboard.up('j');
+  await page.keyboard.up('Space'); await page.keyboard.up('z');
   await page.keyboard.press('Escape'); const paused = await state(); await page.clock.fastForward(60000); expect(await state()).toEqual(paused);
   await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); await page.clock.runFor(700);
@@ -74,7 +121,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await expect(page.locator('canvas[data-renderer="assets"]')).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click(); await page.clock.runFor(250);
   await page.evaluate(() => { (window as any).circuitPoses.clear(); (window as any).circuitProbe.player.immune = 10; });
-  await page.keyboard.down('d'); await page.clock.runFor(800); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(800); await page.keyboard.up('ArrowRight');
   expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => [1, 12, 2, 13, 3, 14, 4, 15].includes(frame)).sort((a: number, b: number) => a - b))).toEqual([1, 2, 3, 4, 12, 13, 14, 15]);
   await page.screenshot({ path: info.outputPath('midnight-street.png') });
   await page.keyboard.press('Escape');
@@ -98,7 +145,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await page.getByRole('button', { name: 'Jump', exact: true }).focus(); await page.keyboard.press('Space');
   await page.clock.runFor(150); expect((await state()).player.elevation).toBeGreaterThan(20);
   await page.clock.runFor(700);
-  await page.keyboard.down('d'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.clock.runFor(1000); await page.keyboard.up('ArrowRight');
   await expect(page.getByRole('button', { name: 'Resume', exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: false }).click(); const resumed = await state(); await page.clock.runFor(100);
   expect((await state()).player.x).toBe(resumed.player.x);
@@ -118,7 +165,7 @@ test('Midnight Circuit controls, interruption, restart, finale and switching own
   await expect(page.getByLabel('Combat tip', { exact: true })).toBeHidden();
   await page.screenshot({ path: info.outputPath('midnight-warning.png') });
   await page.evaluate(() => { const r = (window as any).circuitProbe, b = r.enemies[0]; b.health = 1; b.cooldown = 999; b.attack = null; r.player.x = b.x - 50; r.player.lane = b.lane; r.player.facing = 1; r.player.immune = 10; r.player.stun = 0; });
-  await page.keyboard.press('k'); await page.clock.runFor(3100);
+  await page.keyboard.press('x'); await page.clock.runFor(3100);
   await expect(page.getByRole('heading', { name: 'Victory' })).toBeVisible();
   await expect(page.getByLabel('Run results', { exact: true })).toContainText('CITY GRID: ONLINE');
   await page.getByRole('button', { name: 'Restart', exact: true }).click(); await page.clock.runFor(50);
@@ -179,7 +226,7 @@ test('Midnight Circuit appearances retain a paused run and recover from drawing 
   await expect(page.locator('canvas[data-renderer="quality"]')).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.keyboard.down('d'); await page.clock.runFor(800); await page.keyboard.up('d');
+  await page.keyboard.down('ArrowRight'); await page.clock.runFor(800); await page.keyboard.up('ArrowRight');
   expect(await page.evaluate(() => [...(window as any).circuitPoses].filter((frame: number) => [1, 12, 2, 13, 3, 14, 4, 15].includes(frame)).sort((a: number, b: number) => a - b))).toEqual([1, 2, 3, 4, 12, 13, 14, 15]);
   await page.keyboard.press('Escape');
   const state = () => page.evaluate(() => JSON.stringify((window as any).circuitProbe));

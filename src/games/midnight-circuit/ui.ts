@@ -3,28 +3,50 @@ import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { initialTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createGameMenu } from '../../common/ui/menu.ts';
+import { bindingLabel } from '../../engine/bindings.ts';
 import { attacks } from './content.ts';
 import { attackPhase, stageOf, type Run } from './game.ts';
-import type { Control } from './input.ts';
+import { initialLayout, layouts, type Layout, type Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = 'start' | 'resume' | 'restart' | 'continue' | 'pause' | 'quit' | 'fullscreen';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void, appearance: (value: Appearance) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (muted: boolean) => void, appearance: (value: Appearance) => void, onLayout: (value: Layout) => void) {
   root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
   <div class="circuit-coach" aria-label="Combat tip" hidden></div></main>
-  <footer class="circuit-footer"><div class="circuit-hint">WASD <span>MOVE / ALIGN</span>　J <span>COMBO</span>　K <span>HEAVY</span>　SPACE <span>JUMP</span></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><span>＋</span><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump">↟<small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack">K<small>HEAVY</small></button><button data-control="light" aria-label="Light attack">J<small>STRIKE</small></button></div></div></footer>`;
+  <footer class="circuit-footer"><div class="circuit-hint"></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><span>＋</span><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump"><span data-key="jump"></span><small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack"><span data-key="heavy"></span><small>HEAVY</small></button><button data-control="light" aria-label="Light attack"><span data-key="light"></span><small>STRIKE</small></button></div></div></footer>`;
   const $ = createElementLookup(root);
   $('.circuit-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
   pause.addEventListener('click', () => act('pause'), { signal });
   const results = createMenuReadout('Run results');
+  let layout: Layout = initialLayout;
+  const help = document.createElement('div');
+  const setup = document.createElement('div');
+  const keyboard = document.createElement('fieldset'); keyboard.className = 'menu-choice-group circuit-keyboard';
+  keyboard.innerHTML = `<legend>Keyboard layout</legend><div class="menu-choice-grid">${(Object.keys(layouts) as Layout[]).map(id =>
+    `<label class="menu-choice"><input type="radio" name="circuit-keyboard" value="${id}" ${id === layout ? 'checked' : ''}><strong>${layouts[id].name}</strong><small>${id === 'arrows' ? 'Right hand moves · left hand attacks' : 'Left hand moves · right hand attacks'}</small></label>`).join('')}</div>`;
+  keyboard.addEventListener('change', event => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || !target.checked || !(target.value in layouts)) return;
+    layout = target.value as Layout; onLayout(layout); reflectBindings();
+  }, { signal });
+  setup.append(keyboard, results.element);
+  function reflectBindings() {
+    const { movement, bindings } = layouts[layout];
+    const light = bindingLabel(bindings.light), heavy = bindingLabel(bindings.heavy), jump = bindingLabel(bindings.jump);
+    $('.circuit-hint').innerHTML = `${movement} <span>MOVE / ALIGN</span>　${light} <span>COMBO</span>　${heavy} <span>HEAVY</span>　${jump.toUpperCase()} <span>JUMP</span>`;
+    for (const action of ['light', 'heavy', 'jump'] as const) setText($(`[data-key="${action}"]`), action === 'jump' ? '↟' : bindingLabel(bindings[action]));
+    help.innerHTML = `<b>${movement}</b> move & align · <b>${light}</b> combo<br><b>${heavy}</b> heavy · <b>${jump}</b> jump · <b>${light} / ${heavy} IN AIR</b> flying kick<br>Tap ${light} again during each light strike to chain a finisher. Move during recovery to reposition. Step out of red telegraphs.<p>Repair cells stay until you need health. Touch: use the on-screen controls.</p>`;
+    surface.setAttribute('aria-label', `Midnight Circuit playfield. ${movement} move and align. ${light} light combo, ${heavy} heavy, ${jump} jump, ${light} in air flying kick. P pauses or resumes.`);
+  }
+  reflectBindings();
   const style = createThemeChoices({ names: { normal: 'Street sketch', assets: 'Signal / Rain', quality: 'Afterglow' }, modes: appearances, value: initialTheme, signal, onChange: appearance });
   const menu = createGameMenu<Intent, Screen>(root, surface, $('.circuit-stage'), {
     id: 'circuit', title: 'Midnight Circuit', signal, pause,
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
-    game: results.element, theme: style.element, cycleTheme: style.cycle,
-    controls: `<b>WASD / ARROWS</b> move & align · <b>J</b> combo<br><b>K</b> heavy · <b>SPACE</b> jump · <b>J / K IN AIR</b> flying kick<br>Tap J again during each light strike to chain a finisher. Move during recovery to reposition. Step out of red telegraphs.<p>Repair cells stay until you need health. Touch: use the on-screen controls.</p>`,
+    game: setup, theme: style.element, cycleTheme: style.cycle,
+    controls: help,
     actions: [{ id: 'start', label: 'Play', screens: ['title'], primary: true },
       { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
@@ -42,6 +64,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     fullscreen: menu.fullscreen,
     show(screen: Screen, focus = true) {
       current = screen;
+      keyboard.hidden = screen !== 'title' && screen !== 'paused';
       menu.heading.textContent = screen === 'title' ? 'Midnight Circuit' : screen === 'paused' ? 'Paused' : screen === 'victory' ? 'Victory' : screen === 'defeat' ? 'Defeat' : 'Stage complete';
       description.textContent = screen === 'title' ? "Fight through the backstreets and defeat the Circuit Warden at the power station." : screen === 'paused' ? '' : screen === 'interlude' ? 'The backstreets are behind you. The Warden is waiting at the heart of the grid. Health restored for the final push.' : screen === 'victory' ? 'Circuit Warden defeated.' : 'No lives remaining.';
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(screen);
@@ -68,7 +91,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       const tip = run.respawn || run.finale || boss?.attack && attackPhase(boss.attack) !== 'recovery' ? ''
         : run.gated && !alive ? encounter && run.wave + 1 < encounter.waves.length ? 'NEXT WAVE · GET READY' : 'AREA CLEAR · MOVE RIGHT →'
         : misaligned ? `MOVE ${nearest.lane < run.player.lane ? 'UP ↑' : 'DOWN ↓'} · LINE UP YOUR FEET TO LAND STRIKES`
-        : run.stageIndex === 0 && run.encounter === 0 && run.hits < 6 ? run.gated ? 'TAP J OR STRIKE AGAIN DURING EACH PUNCH TO CHAIN A FINISHER' : 'MOVE RIGHT → · LINE UP YOUR FEET WITH YOUR OPPONENT'
+        : run.stageIndex === 0 && run.encounter === 0 && run.hits < 6 ? run.gated ? `TAP ${bindingLabel(layouts[layout].bindings.light)} OR STRIKE AGAIN DURING EACH PUNCH TO CHAIN A FINISHER` : 'MOVE RIGHT → · LINE UP YOUR FEET WITH YOUR OPPONENT'
         : '';
       setText($('.circuit-coach'), tip);
       setProperty($('.circuit-coach'), 'hidden', !tip || current !== 'playing');
