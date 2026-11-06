@@ -113,9 +113,6 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void, fullsc
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return;
       }
       if (document.hidden || !document.hasFocus()) return;
-      if (intent === 'title' && screen !== 'playing') {
-        sound.reset(); run = createRun(); presentation.reset(); transition('title'); return;
-      }
       if (!readiness.ready) return;
       if (intent === 'start' || intent === 'restart' || intent === 'resume') {
         preparation.cancel(); ui.appearance(appearance); ui.appearanceStatus('');

@@ -14,7 +14,6 @@ export const menuActions = {
   start: { id: 'start', label: 'Play', screens: ['title'], primary: true },
   resume: { id: 'resume', label: 'Resume', screens: ['paused'], primary: true },
   restart: { id: 'restart', label: 'Restart', screens: ['paused', 'victory', 'defeat'], primary: true },
-  title: { id: 'title', label: 'Main menu', screens: ['paused', 'victory', 'defeat'], requiresReady: false },
   quit: { id: 'quit', label: 'Game selection', screens: ['title', 'paused', 'victory', 'defeat'], requiresReady: false },
 } as const;
 export type CommonMenuIntent = keyof typeof menuActions | 'pause' | 'fullscreen';
@@ -99,7 +98,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   const back = layer.querySelector<HTMLButtonElement>('.game-menu-back')!;
   const backLabel = layer.querySelector<HTMLElement>('.game-menu-back-label')!;
   // Pause menus wrap run actions and navigation as coherent groups.
-  const isNavigation = (button: HTMLButtonElement) => button.dataset.menuAction === 'title' || button.dataset.menuAction === 'quit';
+  const isNavigation = (button: HTMLButtonElement) => button.dataset.menuAction === 'quit';
   const runActions = document.createElement('div'); runActions.className = 'game-menu-run-actions';
   const navigation = document.createElement('div'); navigation.className = 'game-menu-navigation';
   runActions.append(...actions.filter(button => !isNavigation(button)));

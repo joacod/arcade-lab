@@ -86,7 +86,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       menuActions.start,
       menuActions.resume,
       menuActions.restart,
-      menuActions.title,
       { ...menuActions.quit, screens: [...menuActions.quit.screens, 'choosing'] },
     ],
   });

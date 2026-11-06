@@ -46,12 +46,5 @@ test('switching presentation preserves the paused run and Resume advances it', a
   await page.clock.runFor(50);
   expect(await page.evaluate(() => (window as any).presentationRun.elapsed)).toBeGreaterThan(JSON.parse(frozen).elapsed);
   expect(await page.evaluate(() => (window as any).presentationRun === (window as any).retainedRun)).toBe(true);
-  await page.keyboard.press('p');
-  await page.getByRole('button', { name: 'Main menu', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Skybreak', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeFocused();
-  await expect(page.getByRole('radio', { name: /^Deluxe/ })).toBeChecked();
-  expect(await page.evaluate(() => (window as any).presentationRun === (window as any).retainedRun)).toBe(false);
-  expect(await page.evaluate(() => (window as any).presentationRun.elapsed)).toBe(0);
   expect(errors).toEqual([]);
 });

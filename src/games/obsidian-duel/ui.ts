@@ -49,7 +49,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     actions: [menuActions.start,
       menuActions.resume,
       menuActions.restart,
-      menuActions.title,
       menuActions.quit],
   });
 

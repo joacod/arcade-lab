@@ -37,7 +37,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { id: 'retry', label: 'Retry checkpoint', screens: ['defeat'], primary: true },
       { ...menuActions.restart, screens: [...menuActions.restart.screens, 'interlude'] },
-      { ...menuActions.title, screens: [...menuActions.title.screens, 'interlude'] },
       { ...menuActions.quit, screens: [...menuActions.quit.screens, 'interlude'] }],
   });
 

@@ -49,7 +49,6 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       menuActions.resume,
       { id: 'continue', label: 'Continue', screens: ['interlude'], primary: true },
       { ...menuActions.restart, screens: [...menuActions.restart.screens, 'interlude'] },
-      { ...menuActions.title, screens: [...menuActions.title.screens, 'interlude'] },
       { ...menuActions.quit, screens: [...menuActions.quit.screens, 'interlude'] }],
   });
 

@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices. **Main menu** ends the current run and returns to that game’s title, where its round, fighter or other new-run choices can be changed. Both retain the theme and keyboard layout for this visit. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
+Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
 The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
 
