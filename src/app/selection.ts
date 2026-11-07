@@ -23,7 +23,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
       <div class="arcade-collection-tools"><button type="button" class="arcade-fullscreen" aria-keyshortcuts="F" hidden></button><a class="arcade-github" href="${site.repository}" target="_blank" rel="noopener noreferrer">${githubIcon}<span>GitHub</span><span aria-hidden="true">↗</span></a></div>
     </header>
     <section class="arcade-introduction" aria-labelledby="selection-heading">
-      <div><p class="arcade-eyebrow">SMALL WORLDS. GOOD GAMES.</p><h1 id="selection-heading">Find your next escape<span>.</span></h1></div>
+      <div><p class="arcade-eyebrow">SMALL WORLDS</p><h1 id="selection-heading">Press Play</h1></div>
       <p class="arcade-intro">Six original games. Pick a world and press play.<br><span>Keyboard or touch. Right in your browser.</span></p>
     </section>
     <div class="arcade-games" aria-labelledby="selection-heading">${games.map((game, index) => `
@@ -55,7 +55,8 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     });
   }, { signal: lifetime.signal });
   document.addEventListener('fullscreenchange', syncDisplay, { signal: lifetime.signal });
-  root.addEventListener('keydown', event => {
+  // Fresh landings leave focus on the body, outside the collection root.
+  document.addEventListener('keydown', event => {
     if (event.code !== 'KeyF' || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
     if (fullscreen.available) { event.preventDefault(); displayButton.click(); }
   }, { signal: lifetime.signal });
