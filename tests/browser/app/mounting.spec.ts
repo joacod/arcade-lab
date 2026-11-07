@@ -63,6 +63,11 @@ test('collection restores navigation and ignores a cancelled lazy load that fini
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.locator('.arcade-game:focus')).toHaveCount(0);
+  // A fresh landing has no focused descendant to bubble keyboard shortcuts through.
+  await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
+  await page.keyboard.press('f');
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
   const selected = page.getByRole('button', { name: 'Open game: Blastline', exact: true });
   await selected.scrollIntoViewIfNeeded();
   const scrollTop = await page.locator('.arcade-selection').evaluate(root => root.scrollTop);
