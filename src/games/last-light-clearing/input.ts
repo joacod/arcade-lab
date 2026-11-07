@@ -1,10 +1,11 @@
 import type { MoveAction } from './game.ts';
+import { bindButtons } from '../../engine/browser/buttons.ts';
+import type { KeyBindings } from '../../engine/bindings.ts';
 
-const directions: Record<string, MoveAction> = {
-  KeyW: { x: 0, y: -1 }, ArrowUp: { x: 0, y: -1 },
-  KeyS: { x: 0, y: 1 }, ArrowDown: { x: 0, y: 1 },
-  KeyA: { x: -1, y: 0 }, ArrowLeft: { x: -1, y: 0 },
-  KeyD: { x: 1, y: 0 }, ArrowRight: { x: 1, y: 0 },
+export type Control = 'left' | 'right' | 'up' | 'down';
+const bindings: KeyBindings<Control> = {
+  up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'],
+  left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'],
 };
 
 export interface Stick {
@@ -13,8 +14,8 @@ export interface Stick {
   radius: number;
 }
 
-export function bindInput(surface: HTMLElement, active: () => boolean, signal: AbortSignal) {
-  const held = new Set<string>();
+export function bindInput(surface: HTMLElement, controls: Readonly<Record<Control, HTMLButtonElement>>, active: () => boolean, signal: AbortSignal) {
+  const buttons = bindButtons({ surface, controls, bindings, active, signal });
   let pointerId: number | undefined;
   let stick: Stick | undefined;
   const point = (event: PointerEvent) => {
@@ -28,20 +29,13 @@ export function bindInput(surface: HTMLElement, active: () => boolean, signal: A
     stick = undefined;
     if (id !== undefined && surface.hasPointerCapture(id)) surface.releasePointerCapture(id);
   }
-  function clear() { held.clear(); releasePointer(); }
+  function clear() { buttons.clear(); releasePointer(); }
 
-  surface.addEventListener('keydown', event => {
-    if (!active() || !directions[event.code] || (event.repeat && !held.has(event.code))) return;
-    event.preventDefault();
-    held.add(event.code);
-  }, { signal });
-  window.addEventListener('keyup', event => held.delete(event.code), { signal });
   surface.addEventListener('pointerdown', event => {
     if (!active() || pointerId !== undefined || event.button !== 0) return;
     const origin = point(event);
     event.preventDefault();
     surface.focus({ preventScroll: true });
-    held.clear();
     pointerId = event.pointerId;
     stick = { origin, tip: origin, radius: 42 };
     surface.setPointerCapture(pointerId);
@@ -60,6 +54,7 @@ export function bindInput(surface: HTMLElement, active: () => boolean, signal: A
     clear,
     get stick() { return stick; },
     read(): MoveAction {
+      const { held } = buttons.read();
       if (stick) {
         // Gesture displacement stays in CSS pixels even while the camera follows.
         const dx = stick.tip.x - stick.origin.x;
@@ -71,8 +66,8 @@ export function bindInput(surface: HTMLElement, active: () => boolean, signal: A
       }
       // Opposite directions cancel; aliases cannot double movement strength.
       return {
-        x: Number(held.has('KeyD') || held.has('ArrowRight')) - Number(held.has('KeyA') || held.has('ArrowLeft')),
-        y: Number(held.has('KeyS') || held.has('ArrowDown')) - Number(held.has('KeyW') || held.has('ArrowUp')),
+        x: Number(held.has('right')) - Number(held.has('left')),
+        y: Number(held.has('down')) - Number(held.has('up')),
       };
     },
   };

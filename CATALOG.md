@@ -4,6 +4,8 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
+Every game offers on-screen movement and action controls on touch devices and narrow screens. Hold multiple buttons together to combine directions and actions. Last Light Clearing and Skybreak also support dragging in the playfield.
+
 Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
 The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
@@ -33,6 +35,7 @@ The camera follows the Keeper. Round cards compare the two round lengths before 
 |  ---  |
 |  WASD / arrow keys  |
 |  Hold and drag in the arena  |
+|  Touch arrows to move; weapons fire automatically  |
 |  Click / tap, or arrows + Enter / Space  |
 
 See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork guide](src/games/last-light-clearing/art/README.md).
@@ -49,6 +52,7 @@ Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an arm
 |  Space / J  |
 |  Shift / K / Roll button  |
 |  Hold and drag on the playfield  |
+|  Touch arrows + Fire / Roll  |
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and [artwork](src/games/skybreak/art/README.md).
 
