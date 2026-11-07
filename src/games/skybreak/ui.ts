@@ -5,6 +5,7 @@ import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common
 import { flight, fortress, waves } from './content.ts';
 import type { Run } from './game.ts';
 import { themes, type Appearance } from './themes.ts';
+import type { Control } from './input.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'victory' | 'defeat';
 export type Intent = CommonMenuIntent;
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: Appearance) => void) {
@@ -14,7 +15,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     <div class="skybreak-condition"><output aria-label="Aircraft hull"><span class="skybreak-condition-label" aria-hidden="true">Hull</span><span class="skybreak-hull-segments" aria-hidden="true">${Array.from({ length: flight.player.health }, () => '<span data-filled="true"></span>').join('')}</span><span class="skybreak-hull-value"></span></output><output aria-label="Aircraft lives"><span class="skybreak-condition-label">Lives</span> <span class="skybreak-lives-value"></span></output></div>
     <button data-intent="pause">Pause</button></header>
     <main class="skybreak-stage"><div class="skybreak-boss" hidden><div><strong>IRON TEMPEST</strong><output aria-label="Fortress phase"></output></div><progress aria-label="Iron Tempest hull" max="${fortress.health}" value="${fortress.health}"></progress><span class="skybreak-boss-pattern"></span></div></main>
-    <footer class="skybreak-footer"><div><output aria-label="Sortie progress"></output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><button class="skybreak-evade" aria-label="Evasive roll">ROLL (K) <span>READY</span></button></footer>`;
+    <footer class="skybreak-footer"><div class="skybreak-status"><output aria-label="Sortie progress"></output><output class="skybreak-loadout" aria-label="Aircraft weapons">GUN I</output><span class="skybreak-wave">AWAITING TAKEOFF</span></div><div class="skybreak-controls"><div class="skybreak-pad" role="group" aria-label="Steering controls"><button data-control="up" aria-label="Steer up">↑</button><button data-control="left" aria-label="Steer left">←</button><button data-control="right" aria-label="Steer right">→</button><button data-control="down" aria-label="Steer down">↓</button></div><div class="skybreak-triggers"><button class="skybreak-fire" data-control="fire" aria-label="Fire">ϟ<small>FIRE</small></button><button class="skybreak-evade" data-control="evade" aria-label="Evasive roll">ROLL <span>READY</span></button></div></div></footer>`;
   const $ = createElementLookup(root);
   $('.skybreak-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
@@ -27,7 +28,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: appearance.element,
-    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: hold & drag to steer and fire. Tap Roll to evade.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
+    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: use arrows + Fire / Roll, or hold & drag in the playfield to steer and fire.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [menuActions.start,
       menuActions.resume,
       menuActions.restart,
@@ -37,12 +38,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
   const description = menu.description;
   const evade = $<HTMLButtonElement>('.skybreak-evade');
+  const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'fire', 'evade'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
   const score = $('[aria-label="Score"]'), lives = $('.skybreak-lives-value');
   const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
   const hullValue = $('.skybreak-hull-value'), hullSegments = [...hull.querySelectorAll<HTMLElement>('.skybreak-hull-segments > span')];
   const formatTime = (time: number) => `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
-  return { evade,
+  return { controls,
     appearance(id: Appearance) { appearance.setValue(id); },
     appearancePending(id: Appearance) { appearance.prepare(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
@@ -53,7 +55,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       description.textContent = screen === 'paused' ? '' : screen === 'victory' ? 'Iron Tempest destroyed.' : screen === 'defeat' ? 'Sortie ended.' : 'Destroy Iron Tempest before 2:48. Collect supplies to upgrade your guns and repair your hull.';
 
       results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
-      evade.disabled = screen !== 'playing';
+      for (const control of Object.values(controls)) control.disabled = screen !== 'playing';
       menu.show(screen, focus);
     },
     update(run: Run) {

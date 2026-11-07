@@ -59,7 +59,6 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
     const newRun = () => createRun(undefined, configurations[configuration].round);
     let run = newRun(), screen: Screen = 'title', suspendedChoice = false;
     const confirmations = new Set<string>(), pointers = new Set<number>();
-    input = bindInput(host.surface, () => screen === 'playing', host.signal);
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, {
       signal: host.signal, onAction: act, onChoose: choose, onExit,
@@ -75,6 +74,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
       },
     });
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
     readiness.watch(() => selectTheme(defaultTheme(themes)));
     host.surface.prepend(presentation.canvas);
@@ -179,7 +179,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
     }
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
-      shouldSuspend: () => screen === 'playing' ? document.activeElement !== host.surface : !host.root.contains(document.activeElement) });
+      shouldSuspend: () => screen === 'playing' ? document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) : !host.root.contains(document.activeElement) });
     host.root.addEventListener('keydown', event => {
       if (event.code === 'Enter' || event.code === 'Space') confirmations.add(event.code);
     }, { signal: host.signal, capture: true });

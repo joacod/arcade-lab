@@ -25,7 +25,7 @@
 :where(.clearing-app) [hidden] { display: none !important; }
 .clearing-app { width: 100%; height: 100vh; height: 100dvh; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: var(--background); color: var(--text); font-family: var(--font); }
 .clearing-app:fullscreen { width: 100%; height: 100%; }
-:where(.clearing-app) .game-shell { position: relative; height: 100%; display: grid; grid-template-rows: auto 4px minmax(0, 1fr); background: var(--surface); }
+:where(.clearing-app) .game-shell { position: relative; height: 100%; display: grid; grid-template-rows: auto 4px minmax(0, 1fr) auto; background: var(--surface); }
 :where(.clearing-app) .hud { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; padding: 8px 14px; border-bottom: var(--border-width, 1px) solid var(--border); font-size: 14px; }
 :where(.clearing-app) .brand { color: var(--accent); text-decoration: none; font: 20px var(--heading-font); margin-right: auto; }
 :where(.clearing-app) .vitals { display: flex; align-items: center; gap: 8px; }
@@ -102,3 +102,22 @@
 .clearing-app[data-skin='ember'] .field-status { background: #152024e8; border-color: #c3af7a40; box-shadow: 0 4px 16px #0002; }
 .clearing-app[data-skin='ember'] .xp-track span { background: linear-gradient(90deg, #5a9b84, #c2e5b6); }
 .clearing-app[data-skin='ember'] .upgrade-choices button { background: linear-gradient(125deg, #39423b, #223033); }
+
+.clearing-app .clearing-touch { display: none; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 14px; border-top: 1px solid var(--border); }
+.clearing-app .clearing-touch > span { text-align: right; font: 11px/1.8 var(--font); color: var(--accent); }
+.clearing-app .clearing-touch small { color: var(--muted); }
+.clearing-app .clearing-pad { display: grid; grid-template: repeat(3, 44px) / repeat(3, 44px); gap: 2px; }
+.clearing-app .clearing-pad button { padding: 0; font-size: 24px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.clearing-app .clearing-pad [data-control='up'] { grid-area: 1 / 2; }
+.clearing-app .clearing-pad [data-control='left'] { grid-area: 2 / 1; }
+.clearing-app .clearing-pad [data-control='right'] { grid-area: 2 / 3; }
+.clearing-app .clearing-pad [data-control='down'] { grid-area: 3 / 2; }
+.clearing-app .clearing-pad button[data-held] { background: var(--hover); border-color: var(--accent); }
+@media (pointer: coarse), (max-width: 850px) {
+  .clearing-app .clearing-touch { display: flex; }
+}
+@media (max-height: 550px) and (min-width: 600px) {
+  .clearing-app .clearing-touch { position: absolute; bottom: 8px; left: 12px; padding: 0; border: 0; z-index: 3; pointer-events: none; }
+  .clearing-app .clearing-pad button { pointer-events: auto; opacity: .85; }
+  .clearing-app .clearing-touch > span { display: none; }
+}

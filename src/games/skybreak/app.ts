@@ -43,7 +43,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void, fullsc
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), id => {
       if (readiness.ready) void selectTheme(id); else readiness.watch(() => selectTheme(id));
     });
-    input = bindInput(host.surface, ui.evade, () => screen === 'playing', host.signal);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     presentation = createPresentation(host.surface, themes.arcade, { images: {} });
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
     readiness.watch(() => selectTheme(defaultTheme(themes)));
@@ -129,7 +129,7 @@ export function mountSkybreak(container: HTMLElement, onExit: () => void, fullsc
       if (screen === 'playing') { pauseRun(run, true); transition('paused', false); }
     }
     bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
-      shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.evade });
+      shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {

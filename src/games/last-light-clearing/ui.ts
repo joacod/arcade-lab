@@ -7,6 +7,7 @@ import { choiceLevel, pickupRadius, xpThreshold } from './progression.ts';
 import type { RunState } from './game.ts';
 import type { GameEvent } from './game-state.ts';
 import { themes, type ThemeId } from './themes.ts';
+import type { Control } from './input.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'choosing' | 'victory' | 'defeat';
 export type MenuAction = Exclude<CommonMenuIntent, 'quit' | 'fullscreen'>;
@@ -47,6 +48,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       </header>
       <div class="xp-track" aria-hidden="true"><span></span></div>
       <div class="stage"><div class="field-status"><output class="equipped-weapons" aria-label="Equipped weapons" aria-live="off"></output><output class="evolution-progress"></output></div><p class="field-message" role="status" hidden></p></div>
+      <footer class="clearing-touch"><div class="clearing-pad" role="group" aria-label="Movement controls"><button data-control="up" aria-label="Move up">↑</button><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down">↓</button></div><span>MOVE<br><small>Weapons fire automatically</small></span></footer>
     </main>`;
   const $ = createElementLookup(root);
   const pause = $<HTMLButtonElement>('[data-action="pause"]');
@@ -76,12 +78,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const appearance = createThemeChoices({ names: Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.name])), signal, modes: themes, value: defaultTheme(themes), onChange: onTheme });
   const menu = createGameMenu<MenuAction | 'quit', Screen>(root, surface, $('.stage'), {
     id: 'clearing', title: 'Last Light Clearing', signal, pause,
-    gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track'),
+    gameplayUI: root.querySelectorAll<HTMLElement>('.hud, .xp-track, .clearing-touch'),
     onAction: action => action === 'quit' ? options.onExit() : onAction(action),
     onMute, onFullscreen: options.onFullscreen,
     game: gameContent, setup: rounds,
     theme: appearance.element,
-    controls: `<p><b>WASD / arrows</b> move, or press and drag.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
+    controls: `<p><b>WASD / arrows</b> move. Touch: use the on-screen arrows, or press and drag in the arena.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       menuActions.start,
       menuActions.resume,
@@ -128,8 +130,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const evolutionProgress = $<HTMLOutputElement>('.evolution-progress');
   const fieldMessage = $<HTMLElement>('.field-message');
   let evolutionAt = -Infinity;
+  const controls = Object.fromEntries((['left', 'right', 'up', 'down'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   return {
+    controls,
     reset() { evolutionAt = -Infinity; },
     consume(events: readonly GameEvent[]) {
       for (const event of events) if (event.type === 'evolution') evolutionAt = event.at;
@@ -199,6 +203,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
       }
     },
     show(screen: Screen, focus = true) {
+      for (const control of Object.values(controls)) control.disabled = screen !== 'playing';
       results.element.hidden = !['paused', 'victory', 'defeat'].includes(screen);
       $<HTMLElement>('.upgrade-panel').hidden = screen !== 'choosing';
       if (screen === 'choosing') heading.textContent = 'Choose an upgrade';
