@@ -4,7 +4,6 @@ import { foundryCell, foundryFrame } from '../asset-art.ts';
 
 // Offline registration/packing of complete authored cels. No anatomical reconstruction.
 const motionClips = {
-  idle: Array.from({ length: 12 }, (_, i) => i),
   guard: [12], crouchGuard: [13], crouch: [14], block: [15, 12],
 };
 
@@ -13,24 +12,22 @@ const combatRows = {
   'eclipse-foundry/painted': { nera: [0, 303, 610, 850, 1127, 1402], kael: [0, 334, 647, 878, 1141, 1357] },
   'moonfall-sanctum/fighters': { nera: [0, 343, 667, 896, 1169, 1448], kael: [0, 317, 625, 852, 1140, 1402] },
 };
-// Inspected waist columns registered to each fighter's neutral stance, and common
-// row floor lines. Column fractions and each cel's lowest pixel are not anchors.
-const walkRegistration = {
-  'eclipse-foundry/painted': {
-    nera: { hipX: [246, 690, 1134, 1578, 246, 690, 1133, 1577], floorY: [432, 877] },
-    kael: { hipX: [223, 671, 1114, 1560, 230, 677, 1118, 1563], floorY: [433, 878] },
-  },
-  'moonfall-sanctum/fighters': {
-    nera: { hipX: [232, 676, 1119, 1564, 233, 676, 1119, 1562], floorY: [433, 878] },
-    kael: { hipX: [210, 655, 1098, 1543, 212, 656, 1098, 1543], floorY: [433, 879] },
-  },
+// Inspected hip columns for the new guarded step-slide. The leading boot stays
+// forward; a planted-foot midpoint would pull the torso sideways as stance widens.
+const footworkHips = {
+  'eclipse-foundry/painted': { nera: [184, 499, 814, 1129], kael: [174, 489, 804, 1119] },
+  'moonfall-sanctum/fighters': { nera: [178, 493, 808, 1123], kael: [177, 493, 809, 1125] },
+};
+const footworkFloors = {
+  'eclipse-foundry/painted': { nera: [296, 605, 915, 1227], kael: [310, 622, 924, 1228] },
+  'moonfall-sanctum/fighters': { nera: [287, 595, 910, 1224], kael: [299, 608, 917, 1227] },
 };
 
 async function packSheet(folder, kind, atlas, family) {
   const directory = new URL(`${folder}/`, import.meta.url);
   const source = new URL(`${kind}-${family}.png`, directory);
   const { data, info } = await sharp(readFileSync(source)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const rowCount = family === 'walk' ? 2 : 4;
+  const rowCount = 4;
   const rows = family === 'combat' ? combatRows[folder][kind]
     : Array.from({ length: rowCount + 1 }, (_, i) => Math.round(i * info.height / rowCount));
   const frames = [];
@@ -58,7 +55,7 @@ async function packSheet(folder, kind, atlas, family) {
       .sort((a, b) => a.center - b.center);
     if (figures.length !== 4) throw new Error(`Expected four complete ${kind} ${family} figures in row ${row}`);
     for (const [column, { component }] of figures.entries()) {
-      const index = row * 4 + column, image = Buffer.from(pixels), retained = new Uint8Array(width * height);
+      const image = Buffer.from(pixels), retained = new Uint8Array(width * height);
       let left = width, top = height, right = 0, bottom = 0;
       for (const p of component) {
         const px = p % width, py = Math.floor(p / width);
@@ -76,8 +73,8 @@ async function packSheet(folder, kind, atlas, family) {
       const hipColumn = (column + .55) * info.width / 4;
       const pivotX = family === 'combat'
         ? row === 3 ? hipColumn : footLeft + supportOffset
-        : family === 'walk' ? walkRegistration[folder][kind].hipX[index] : (footLeft + footRight) / 2;
-      const pivotY = family === 'walk' ? walkRegistration[folder][kind].floorY[row] - y : bottom;
+        : family === 'footwork' ? footworkHips[folder][kind][column] : (footLeft + footRight) / 2;
+      const pivotY = family === 'footwork' ? footworkFloors[folder][kind][row] - y : bottom;
       frames.push({ image, width, height, supportOffset: pivotX - footLeft,
         rect: [left, y + top, right - left + 1, bottom - top + 1], pivot: [pivotX, y + pivotY],
         local: { left, top, right, bottom, pivotX, pivotY } });
@@ -86,16 +83,16 @@ async function packSheet(folder, kind, atlas, family) {
   const worldHeight = kind === 'nera' ? 160 : 168;
   const scale = worldHeight / frames[0].rect[3];
   const draws = [], selections = family === 'motion' ? { ...motionClips }
-    : family === 'walk' ? { walk: Array.from({ length: 8 }, (_, i) => i) } : Object.fromEntries(
+    : family === 'footwork' ? { idle: [0, 1, 2, 3, 4, 3, 2, 1], walk: [0, 9, 10, 11, 12, 13, 14, 0] } : Object.fromEntries(
     ['light', 'heavy', 'sweep', 'air', 'special'].map((clip, row) => [clip,
       Object.fromEntries([0, 0, 0, 1, 1, 2, 3, 3].map((i, slot) => [slot, row * 4 + i]))]));
   // All standing attacks enter and return through the same neutral stance. Air and
   // sweep keep their low/airborne endpoints; hurt/rise/landing settle into neutral.
-  if (family === 'motion') {
+  if (family === 'footwork') {
     for (const clip of ['light', 'heavy', 'special']) selections[clip] = { 0: 0, 7: 0 };
     selections.hurt = { 2: 0 }; selections.rise = { 3: 0 }; selections.land = { 2: 0 };
   } else if (family === 'combat') {
-    // Neutral endpoints come from the exact idle drawing in the motion pass.
+    // Neutral endpoints come from the exact idle drawing in the footwork pass.
     for (const clip of ['light', 'heavy', 'special']) { delete selections[clip][0]; delete selections[clip][7]; }
   }
   for (const [clip, slots] of Object.entries(selections)) for (const [slot, index] of Object.entries(slots)) {
@@ -121,5 +118,5 @@ async function packSheet(folder, kind, atlas, family) {
 export async function packMotion(folder, kind, atlas) {
   const combat = await packSheet(folder, kind, atlas, 'combat');
   const stance = await packSheet(folder, kind, combat, 'motion');
-  return packSheet(folder, kind, stance, 'walk');
+  return packSheet(folder, kind, stance, 'footwork');
 }

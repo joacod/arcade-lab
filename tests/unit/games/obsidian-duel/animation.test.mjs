@@ -15,7 +15,7 @@ test('both renderers enter contact cels at the active boundary and recover on au
       assert.equal(sample.clip, move);
       const [x,y] = foundryFrame(sample), [firstX,firstY] = foundryFrame({clip:move,frame:0});
       const column = (y-firstY)/224*8+(x-firstX)/320;
-      if (time < d.startup) assert.ok(column < 3);
+      if (time < d.startup) assert.ok(column > 0 && column < 3, 'Anticipation must be visible immediately, without a neutral startup hold');
       else if (time < d.startup + d.active) assert.ok(column >= 3 && column <= 4);
       else assert.ok(column >= 5);
       assert.deepEqual(animation.sample(f, time, true), sample, 'reduced motion preserves attack information');
@@ -72,4 +72,22 @@ test('knockdown settles on the floor, wake-up returns to stance and a new round 
   f.state = 'wakeup'; f.stateTime = .15; assert.equal(animation.sample(f, .4, false).clip, 'rise');
   f.stateTime = 0; assert.deepEqual(animation.sample(f, .55, false), { clip: 'rise', frame: 3 });
   assert.equal(animation.sample(createMatch().fighters[0], 0, true).frame, 0);
+});
+
+// Protect the reported idle restart and a mid-step stop without a browser fixture.
+test('idle keeps its breath phase across actions and foot placement yields immediately', () => {
+  const f = createMatch().fighters[0], animation = createDuelAnimation();
+  animation.sample(f, 0, false);
+  const breath = animation.sample(f, .25, false);
+  f.guarding = true; f.state = 'block'; animation.sample(f, .25, false);
+  f.guarding = false; f.state = 'idle';
+  assert.deepEqual(animation.sample(f, .25, false), breath, 'Returning to idle cannot restart the breathing clock');
+  assert.deepEqual(animation.sample(f, .25, false), breath, 'Paused time cannot advance a pose');
+  f.state = 'move'; f.x += duelMotion.stride.nera * .3;
+  const moving = animation.sample(f, .3, false);
+  f.state = 'idle';
+  assert.deepEqual(animation.sample(f, .31, false), moving, 'Releasing direction retains the foot placement first');
+  assert.equal(animation.sample(f, .35, false).clip, 'walk');
+  f.guarding = true; f.state = 'block';
+  assert.equal(animation.sample(f, .36, false).clip, 'guard', 'Settling never delays defense');
 });

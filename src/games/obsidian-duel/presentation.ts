@@ -14,6 +14,10 @@ export function duelView(width: number, height: number) {
     top: (height - arena.height * scale) / 2
   };
 }
+/** Raster work is bounded independently of Retina/fullscreen CSS dimensions. */
+export function duelResolution(width: number, height: number, ratio: number) {
+  return Math.min(ratio, 1.5, 1920 / Math.max(1, width), 1080 / Math.max(1, height));
+}
 /** Cues follow the actual move windows, including misses, rather than predicting CPU decisions. */
 export function duelCue(f: Fighter): {
   text: string;
@@ -68,6 +72,8 @@ export function createPresentation(surface: HTMLElement) {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Canvas 2D is unavailable.');
   const ctx = context;
+  const backdrop = document.createElement('canvas');
+  let backdropReady = false;
   surface.append(canvas);
   let theme = themes.arcade;
   let art: ImageBundle | undefined;
@@ -111,7 +117,6 @@ export function createPresentation(surface: HTMLElement) {
   }
   function scenery(t: number, reduced: boolean) {
     if (art) {
-      ctx.drawImage(art.stage!, 0, 0, 1000, 560);
       // Subtle atmospheric motion stays behind the action and honors reduced motion.
       if (!reduced) for (let i = 0; i < 12; i++) {
         const x = (i * 89 + t * (3 + i % 3)) % 1000,
@@ -170,12 +175,14 @@ export function createPresentation(surface: HTMLElement) {
       theme = next;
       art = images;
       deluxe = drawing;
+      backdropReady = false;
       ctx.reset();
       return {
         rollback() {
           theme = previousTheme;
           art = previousArt;
           deluxe = previousDeluxe;
+          backdropReady = false;
           ctx.reset();
         }
       };
@@ -230,13 +237,15 @@ export function createPresentation(surface: HTMLElement) {
       const {
           width,
           height,
-          ratio
+          ratio: displayRatio
         } = host,
+        ratio = duelResolution(width, height, displayRatio),
         pw = Math.round(width * ratio),
         ph = Math.round(height * ratio);
       if (canvas.width !== pw || canvas.height !== ph) {
         canvas.width = pw;
         canvas.height = ph;
+        backdropReady = false;
       }
       const dt = last === undefined ? 0 : Math.min(.05, Math.max(0, m.elapsed - last));
       last = m.elapsed;
@@ -255,6 +264,17 @@ export function createPresentation(surface: HTMLElement) {
         impacts = impacts.filter(p => p.life > 0);
       }
       const v = duelView(width, height);
+      if (!backdropReady) {
+        backdrop.width = pw; backdrop.height = ph;
+        const background = backdrop.getContext('2d');
+        if (!background) throw new Error('Canvas 2D is unavailable.');
+        background.fillStyle = '#10121e';
+        background.fillRect(0, 0, pw, ph);
+        background.imageSmoothingQuality = 'high';
+        background.drawImage(art.stage!, v.left * ratio, v.top * ratio,
+          arena.width * v.scale * ratio, arena.height * v.scale * ratio);
+        backdropReady = true;
+      }
       ctx.save();
       // Every frame starts opaque on a cleared backing buffer. Effect state must
       // never blend an old actor pose into the next one.
@@ -262,8 +282,10 @@ export function createPresentation(surface: HTMLElement) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(backdrop, 0, 0);
+      // High-quality resampling belongs to the cached plate, not every moving cel.
+      ctx.imageSmoothingQuality = 'low';
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      rect(0, 0, width, height, '#10121e');
       // This single uniform transform owns arena, fighter positions, projectiles and all contact effects.
       ctx.translate(v.left, v.top);
       ctx.scale(v.scale, v.scale);
@@ -345,6 +367,7 @@ export function createPresentation(surface: HTMLElement) {
       deluxe = undefined;
       sparks = [];
       impacts = [];
+      backdrop.width = backdrop.height = 0;
       canvas.remove();
     }
   };
