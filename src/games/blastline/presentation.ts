@@ -1,10 +1,13 @@
+import { lobPoint, lobVelocity } from './ballistics.ts';
+import { enemyOrigin } from './enemies.ts';
 import { type ImageBundle } from '../../engine/browser/images.ts';
-import { operatorFrame, type ObjectRole } from './sprite-art.ts';
+import { frameMuzzle, operatorFrame, type ObjectRole } from './sprite-art.ts';
 import { themes, type BlastTheme } from './themes.ts';
-import { TILE, limits, materialHealth, type Mission, type Operator } from './content.ts';
+import { TILE, fuel, relay, enemyGrenade, enemyTypes, limits, materialHealth, type Mission, type Operator } from './content.ts';
 import { forTiles } from './terrain.ts';
 import { readyToExtract } from './game.ts';
-import type { BlastEvent, Player, Run } from './state.ts';
+import type { BlastEvent, Player, Projectile, Run } from './state.ts';
+import { projectilePoint } from './weapon-art.ts';
 import { createGroundGait, type GroundPose } from './animation.ts';
 export interface BlastView { x: number; y: number; width: number; height: number; scale: number }
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -23,6 +26,7 @@ export function createPresentation(surface: HTMLElement) {
   let theme = themes.arcade;
   let assets: ImageBundle | undefined, animationTime = 0;
   const playerGait = createGroundGait(), enemyGaits = new Map<number, ReturnType<typeof createGroundGait>>();
+  let launchPoses = new WeakMap<Projectile, GroundPose>();
   const images = () => assets ?? {};
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let particles: Particle[] = [], rings: Ring[] = [], camera: BlastView | undefined, last: number | undefined, shake = 0, disposed = false, sequence = 0;
@@ -40,15 +44,68 @@ export function createPresentation(surface: HTMLElement) {
     const { origin, draw } = theme.art.operators;
     ctx.save(); ctx.translate(Math.round(x + origin[0]), Math.round(y + origin[1])); ctx.scale(facing, 1);
     ctx.drawImage(image, ...frame.rect, ...draw);
-    if (firing && !motion.matches) {
-      const angle = Math.atan2(aimY,aimX*facing);
-      if (assets) {
-        ctx.save(); ctx.translate(Math.cos(angle)*19,-16+Math.sin(angle)*19); ctx.rotate(angle);
-        object('muzzle',0,-5,14,10); ctx.restore();
+    ctx.restore();
+    if (firing && !motion.matches) muzzleFlash(frameMuzzle(theme.art, frame, { x, y }, facing), Math.atan2(aimY, aimX));
+  }
+
+  function projectileMuzzle(shot: Projectile, pose: GroundPose) {
+    let muzzle: { x: number; y: number } = shot.launch ?? shot;
+    if (shot.launch) {
+      const source = shot.launch;
+      if (source.origin === 'player') {
+        let firingPose = launchPoses.get(shot);
+        if (!firingPose) { firingPose = { ...pose }; launchPoses.set(shot, firingPose); }
+        const actor = source.actor;
+        const frame = operatorFrame(theme.art, actor.operator, !actor.grounded, Math.abs(actor.vx) > 5,
+          firingPose.phase, motion.matches, actor.aimX, actor.aimY, true);
+        muzzle = frameMuzzle(theme.art, frame, actor, actor.facing);
+      } else {
+        const actor = source.actor, { cell, rows } = theme.art.enemies;
+        muzzle = frameMuzzle(theme.art, { image: 'enemies', rect: [0, rows[actor.kind] * cell, cell, cell] },
+          { x: actor.x + actor.w / 2, y: actor.y }, actor.facing, actor.kind);
       }
     }
-    ctx.restore();
+    return muzzle;
   }
+  function muzzleFlash(at: { x: number; y: number }, angle: number) {
+    ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(angle);
+    object('muzzle', 0, -3, 9, 6); ctx.restore();
+  }
+  function aircraft(x: number, y: number, time: number, extraction: number) {
+    ctx.save(); ctx.translate(x, y);
+    // Retain the complete fuselage and tail, replacing the baked main blades.
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(-64, -35); ctx.lineTo(-38, -35); ctx.lineTo(-38, -14);
+    ctx.lineTo(64, -14); ctx.lineTo(64, 29); ctx.lineTo(-64, 29); ctx.closePath(); ctx.clip();
+    object('extraction', -64, -35, 128, 64); ctx.restore();
+    const hubX = theme.art.smooth ? 17 : 8, hubY = -17;
+    line(hubX, -7, hubX, hubY, '#6d7773', 3);
+    const angle = motion.matches ? .4 : time * 37;
+    ctx.save(); ctx.translate(hubX, hubY); ctx.scale(1, .05);
+    if (!motion.matches) {
+      ctx.fillStyle = '#b5c4bd26'; ctx.beginPath(); ctx.ellipse(0, 0, 56, 45, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.rotate(angle);
+    for (let i = 0; i < 2; i++) {
+      ctx.rotate(Math.PI / 2);
+      rect(-55, -3, 110, 6, '#61706f'); rect(43, -3, 12, 6, '#d3c291'); rect(-55, -3, 12, 6, '#d3c291');
+    }
+    ctx.restore(); rect(hubX - 2, hubY - 2, 4, 4, '#d4d6bf');
+    // Tail rotor and a restrained downwash make hovering and departure readable.
+    ctx.save(); ctx.translate(-51, -13); ctx.rotate(-angle * 1.5);
+    rect(-5, -.5, 10, 1, '#9caa9b'); rect(-.5, -5, 1, 10, '#9caa9b'); ctx.restore();
+    ctx.restore();
+    if (!motion.matches && extraction < 1.4) {
+      for (let i = 0; i < 3; i++) {
+        const phase = (time * 1.6 + i / 3) % 1;
+        ctx.globalAlpha = (1 - phase) * .2;
+        ctx.strokeStyle = '#d5c7a4'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(x, 644, 24 + phase * 53, 2 + phase * 5, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
   function object(role: ObjectRole, x: number, y: number, w: number, h: number) {
     const image = images().objects, frame = theme.art.objects[role];
     if (image && frame) ctx.drawImage(image, ...frame, x, y, w, h);
@@ -92,9 +149,18 @@ export function createPresentation(surface: HTMLElement) {
     });
     for (const r of run.relays) {
       object(r.health > 0 ? 'relay' : 'offlineRelay',r.x-8,r.y-8,43,42);
-      text(r.health > 0 ? 'POWER RELAY' : 'OFFLINE',r.x+14,r.y-18,'#ffd58a',6,'center');
+      text(r.health > 0 ? 'AIR DEFENSE RELAY' : 'AIR DEFENSE OFFLINE',r.x+14,r.y-23,'#ffd58a',6,'center');
+      if (r.health > 0) {
+        text('+2 HEALTH / +1 GRENADE',r.x+14,r.y-14,'#c6edbc',5,'center');
+        rect(r.x, r.y - 7, relay.w, 3, '#162a34'); rect(r.x, r.y - 7, relay.w * r.health / relay.health, 2, '#ffd58a');
+      }
     }
     for (const b of run.barrels) if (!b.detonated && b.x > v.x - 40 && b.x < v.x + v.width + 40) {
+      if (Math.hypot(run.player.x + 9 - b.x - b.w / 2, run.player.y + 15 - b.y - b.h / 2) < fuel.radius + 42) {
+        ctx.strokeStyle = '#ff927199'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+        ctx.beginPath(); ctx.arc(b.x + b.w / 2, b.y + b.h / 2, fuel.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        text('LETHAL FUEL', b.x + b.w / 2, b.y - 7, '#ffc3a4', 6, 'center');
+      }
       object('barrel',b.x-3,b.y-3,24,30);
     }
     const rescue = run.mission.rescue;
@@ -103,14 +169,14 @@ export function createPresentation(surface: HTMLElement) {
       object('rescue',rescue.x-8,rescue.y-10,38,42);
       text('BOLT', rescue.x + 10, rescue.y - 28, '#ffe09a', 8, 'center'); text('REACH TO RESCUE', rescue.x + 10, rescue.y - 17, '#d7c69c', 6, 'center');
     }
-    const exit = run.mission.exit, ready = readyToExtract(run);
+    const exit = run.mission.exit, ready = readyToExtract(run), airClear = run.relays.every(r => r.health <= 0);
     rect(exit.x - 14, 648, exit.w + 28, 8, '#182f3a');
     for (let i = 0; i < 12; i++) rect(exit.x - 14 + i * 17, 649, 8, 4, ready ? '#b2e6b4' : '#bba269');
     const shipX = exit.x + exit.w / 2, shipY = 593 - (run.extraction > 0 ? Math.pow(run.extraction, 2) * 25 : Math.sin(time * 2) * 2);
-    object('extraction',Math.round(shipX)-64,Math.round(shipY)-35,128,64);
-    text(ready ? 'EXTRACT ↑' : 'EXTRACTION / LOCKED', shipX, 549, ready ? '#c8f7c0' : '#dabd8e', 8, 'center');
+    if (airClear) aircraft(shipX + Math.max(0, run.extraction - .7) ** 2 * 20, shipY, time, run.extraction);
+    text(ready ? 'EXTRACT ↑' : !airClear ? 'CUT AIR DEFENSE TO CALL EXTRACTION' : run.mission.rescue && !run.rescued ? 'RESCUE BOLT FIRST' : 'DEFEAT THE BASTION FIRST', shipX, 549, ready ? '#c8f7c0' : '#dabd8e', 8, 'center');
     for (const e of run.enemies) {
-      if (e.health <= 0 || e.x < v.x - 90 || e.x > v.x + v.width + 90) continue;
+      if (e.health <= 0 || e.warning <= 0 && (e.x < v.x - 90 || e.x > v.x + v.width + 90)) continue;
       ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y)); ctx.scale(e.facing, 1);
       const bastion = e.kind === 'bastion';
       const { cell, rows, draw } = theme.art.enemies;
@@ -123,26 +189,53 @@ export function createPresentation(surface: HTMLElement) {
       if (e.flash > 0 && !motion.matches) {ctx.shadowColor='#fff0b4';ctx.shadowBlur=6;}
       if (image) ctx.drawImage(image,frame*cell,row*cell,cell,cell,...draw[e.kind]);
       ctx.restore();
-      if (e.warning > 0) {
-        const from = { x: e.x + e.w / 2, y: e.y + (bastion ? 22 : 12) };
-        ctx.setLineDash([4, 5]); line(from.x, from.y, e.target.x, e.target.y, '#ffb56588'); ctx.setLineDash([]);
+      const from = frameMuzzle(theme.art, { image: 'enemies', rect: [frame * cell, row * cell, cell, cell] }, { x: e.x + e.w / 2, y: e.y }, e.facing, e.kind);
+      if (run.extraction === 0 && e.firing > 0 && !motion.matches) {
+        const direction = enemyTypes[e.kind].trajectory === 'lob' ? lobVelocity(enemyOrigin(e), e.target) : { vx: e.target.x - from.x, vy: e.target.y - from.y };
+        muzzleFlash(from, Math.atan2(direction.vy, direction.vx));
+      }
+      if (e.kind === 'grenadier' || e.kind === 'heavy') text(e.kind === 'grenadier' ? 'GRENADIER' : 'ROCKET HEAVY', e.x + e.w / 2, e.y - 18, e.kind === 'grenadier' ? '#ffdb8d' : '#ffa897', 6, 'center');
+      if (run.extraction === 0 && e.warning > 0) {
+        ctx.setLineDash([4, 5]);
+        if (enemyTypes[e.kind].trajectory === 'lob') {
+          const origin = enemyOrigin(e);
+          ctx.strokeStyle = '#ffc570aa'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(origin.x, origin.y);
+          for (let i = 1; i <= 18; i++) { const point = lobPoint(origin, e.target, enemyGrenade.flight * i / 18); ctx.lineTo(point.x, point.y); }
+          ctx.stroke();
+          ctx.beginPath(); ctx.arc(e.target.x, e.target.y, enemyTypes[e.kind].radius, 0, Math.PI * 2); ctx.stroke();
+          text('BLAST ZONE', e.target.x, e.target.y - enemyTypes[e.kind].radius - 5, '#ffdb8d', 6, 'center');
+        } else line(from.x, from.y, e.target.x, e.target.y, '#ffb56588');
+        ctx.setLineDash([]);
         text('!', e.x + e.w / 2, e.y - 10, '#ffe0a0', 12, 'center');
       }
       if (e.health < e.maxHealth || bastion) { rect(e.x, e.y - 7, e.w, 3, '#142a35'); rect(e.x, e.y - 7, e.w * e.health / e.maxHealth, 2, '#efaa6b'); }
     }
+    const p = run.player;
+    const pose = playerGait.observe(p, dt);
     for (const shot of run.projectiles) {
-      if (shot.kind === 'grenade') {
-        if (assets) object('grenade', shot.x - 5, shot.y - 5, 10, 10);
+      const muzzle = projectileMuzzle(shot, pose), head = projectilePoint(shot, muzzle);
+      if (shot.kind === 'grenade' || shot.kind === 'lob') {
+        if (assets) {
+          ctx.save(); ctx.translate(head.x, head.y); ctx.rotate(motion.matches ? 0 : time * 12);
+          object('grenade', -5, -5, 10, 10); ctx.restore();
+          if (!shot.friendly) {
+            ctx.strokeStyle = '#ffb75b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(head.x, head.y, 7, 0, Math.PI * 2); ctx.stroke();
+            const landing = { x: shot.x + shot.vx * Math.max(0, shot.life), y: shot.y + shot.vy * Math.max(0, shot.life) + enemyGrenade.gravity * Math.max(0, shot.life) ** 2 / 2 };
+            ctx.strokeStyle = '#ffb75b88'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+            ctx.beginPath(); ctx.arc(landing.x, landing.y, shot.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+          }
+        }
       }
       else {
         const length = shot.kind === 'rocket' || shot.kind === 'shell' ? 12 : 8, speed = Math.hypot(shot.vx, shot.vy);
-        line(shot.x, shot.y, shot.x - shot.vx / speed * length, shot.y - shot.vy / speed * length, shot.friendly ? '#fff2b0' : '#ff9271', shot.radius ? 4 : 2);
-        if (shot.radius) rect(shot.x - shot.vx / speed * 12 - 2, shot.y - shot.vy / speed * 12 - 2, 4, 4, '#ee8e59');
+
+        const tail = shot.launch ? projectilePoint(shot, muzzle, length)
+          : { x: shot.x - shot.vx / speed * length, y: shot.y - shot.vy / speed * length };
+        line(head.x, head.y, tail.x, tail.y, shot.friendly ? '#fff2b0' : '#ff9271', shot.radius ? 4 : 2);
+        if (shot.radius) rect(tail.x - 2, tail.y - 2, 4, 4, '#ee8e59');
       }
     }
-    const p = run.player;
-    const pose = playerGait.observe(p, dt);
-    if (p.health > 0 && run.extraction === 0 && (!playing || p.immune <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, pose, !p.grounded, p.aimX, p.aimY, p.cooldown > (p.operator === 'nova' ? .055 : .55));
+    if (p.health > 0 && run.extraction === 0 && (!playing || Math.max(p.immune, p.spawnImmune) <= 0 || Math.floor(time * 12) % 2 === 0)) human(p.x, p.y, p.operator, p.facing, pose, !p.grounded, p.aimX, p.aimY, p.firing > 0);
     if (p.health <= 0) text('REDEPLOYING…', p.x + p.w / 2, p.y - 18, '#ffe1ac', 9, 'center');
     for (const ring of rings) {
       const progress = 1 - ring.life / .38, r = ring.radius * (.3 + progress * .7);
@@ -181,7 +274,7 @@ export function createPresentation(surface: HTMLElement) {
       ctx.reset();
       return () => { theme = previousTheme; assets = previousImages; ctx.reset(); };
     },
-    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; playerGait.reset(); enemyGaits.clear(); },
+    reset() { particles = []; rings = []; camera = undefined; last = undefined; shake = 0; sequence = 0; animationTime = 0; playerGait.reset(); enemyGaits.clear(); launchPoses = new WeakMap(); },
     draw(run: Run, host: { width: number; height: number; ratio: number }, playing: boolean, time: number) {
       if (disposed || !assets) return;
       const dt = Math.max(0, Math.min(.05, last === undefined ? 0 : time - last)); last = time;
@@ -197,7 +290,7 @@ export function createPresentation(surface: HTMLElement) {
       ctx.imageSmoothingQuality = 'high';
       const target = blastView(host.width, host.height, run.mission, run.player);
       if (!camera) camera = target;
-      else { const ease = 1 - Math.exp(-12 * dt); camera = { ...target, x: camera.x + (target.x - camera.x) * ease, y: camera.y + (target.y - camera.y) * ease }; }
+      else { const ease = animate ? 1 - Math.exp(-12 * dt) : 0; camera = { ...target, x: camera.x + (target.x - camera.x) * ease, y: camera.y + (target.y - camera.y) * ease }; }
       const v = camera;
       const sceneTime = motion.matches ? 0 : run.elapsed === 0 ? time : animationTime;
       ctx.setTransform(v.scale * host.ratio, 0, 0, v.scale * host.ratio, 0, 0); background(v, run);

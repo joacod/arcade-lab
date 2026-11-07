@@ -2,22 +2,6 @@
 
 [Game guide](../../../../docs/games/blastline/README.md) | [Shared artwork workflow](../../../../docs/arcade.md)
 
-Iron coast uses original pixel-inspired SVG sprites under the repository's [MIT license](../../../../LICENSE). Teal Nova and ochre Bolt remain distinct from muted security uniforms and the broad tracked Bastion. Complete silhouettes and baked aim variants keep the renderer small. The industrial background and breakable terrain remain procedural.
-
-| Image | Layout | Drawing contract |
-| --- | --- | --- |
-| `operators.svg` | 320 × 512, 64-square cels. Five columns: up, diagonal up, forward, diagonal down, down. Four rows per operator: idle, two steps, airborne. Nova precedes Bolt. | Right-facing, sole pivot (27, 60), 48-square world footprint including padding. Mirror the entire cel for facing. Aim selects a drawing; no arms or weapons rotate at runtime. Reduced motion holds idle during grounded travel. |
-| `enemies.svg` | 192 × 192. Three columns: idle and two steps. Rows: guard, heavy, Bastion. | Complete right-facing figures; mirror at their world center. Bastion has a larger authored footprint. Hit flashes and target lines remain separate cues. |
-| `objects.svg` | 512 × 64. Live relay, offline relay, barrel, dormant supply post, supplied post, rescue cage, then a double-width extraction aircraft. | Object rectangles and world footprints live in `presentation.ts`. Text labels remain separate. |
-
-`../sprite-art.ts` defines image URLs, decoded-dimension checks and operator cel selection. `generate.mjs` preserves the editable whole-cel drawings and object illustrations. Regenerate with:
-
-```sh
-node src/games/blastline/art/generate.mjs
-```
-
-Every required output is committed.
-
 ## Ember Coast / Arcade
 
 ### Creative brief
@@ -38,7 +22,7 @@ All files below live in `ember-coast/`. PNG sprites have transparency and use ne
 | `objects.png` | 512 × 512, sixteen 128-square cells in row-major order. | Live relay, offline relay, barrel, dormant post; supplied post, cage, helicopter, grenade; steel, brick, armor, damaged brick; damaged armor, muzzle, explosion, smoke. Objects fill local draw rectangles, including the helicopter's 128 × 64 world rectangle. Labels and telegraphs are separate. |
 | `backdrop.webp` | 1536 × 1024; top 1536 × 512 harbor, bottom 1536 × 512 foundry. | One bounded panorama per mission, with cosmetic horizontal parallax. Covers tall viewports without repeating seams. No collision or interaction data. |
 
-Muzzle flashes follow weapon recovery, explosions expand during their existing 0.38-second visual lifetime, and smoke uses the bounded particle owner. No art clip advances simulation or derives collision dimensions. Reduced motion preserves action/aim observations and warning cues while suppressing decorative motion and flashes.
+Muzzle flashes follow actual firing observations, explosions expand during their existing 0.38-second visual lifetime, and smoke uses the bounded particle owner. No art clip advances simulation or derives collision dimensions. Reduced motion preserves action/aim observations and warning cues while suppressing decorative motion and flashes.
 
 `animation.ts` accumulates grounded horizontal travel, with one complete left/right stride per 96 world units. Reversing direction preserves phase; absolute world coordinates never select a frame. Pausing freezes the phase. Stopping, jumping, landing, redeployment-sized discontinuities and restart begin a fresh stride.
 
@@ -64,7 +48,7 @@ All files below live in `ember-reforged/`. PNG atlases retain transparency and u
 
 | Image | Layout | Anchor and playback |
 | --- | --- | --- |
-| `operators.png` | 960 × 1152; five columns and six rows of 192-square cels. Columns aim up, diagonal up, forward, diagonal down, down. Rows 0–2 Nova idle, recoil, airborne; rows 3–5 Bolt idle, recoil, airborne. | Sole pivot (80, 180), 48-square world draw rectangle. Mirror whole cels. Existing weapon recovery selects standing recoil; airborne takes precedence. Reduced motion holds idle instead of recoil. |
+| `operators.png` | 960 × 1152; five columns and six rows of 192-square cels. Columns aim up, diagonal up, forward, diagonal down, down. Rows 0–2 Nova idle, recoil, airborne; rows 3–5 Bolt idle, recoil, airborne. | Sole pivot (80, 180), 48-square world draw rectangle. Mirror whole cels. Actual firing selects standing recoil; airborne takes precedence. Reduced motion holds idle instead of recoil. |
 | `nova-run.png`, `bolt-run.png` | Each 1152 × 960; six stride columns and five aim rows of 192-square cels. | Same operator pivot and world draw rectangle. The existing grounded-distance phase drives one complete left/right stride. Uniform per-sheet scale and aligned opaque boot baselines avoid size changes between contact and passing poses. |
 | `enemies.png` | 576 × 576; three columns idle, step A, step B; rows guard, heavy, Bastion. | Bottom-center pivot (96, 180), preserving the existing enemy draw rectangles. The packer centers each complete illustration and uses one scale per role. Bastion cels vary tracks and vent illumination. |
 | `objects.png` | 768 × 768; sixteen 192-square cels, row-major. | Same semantic object order as Ember Coast: live/offline relay, barrel, dormant/supplied post, cage, aircraft, grenade, steel, brick, armor, damaged brick/armor, muzzle, explosion, smoke. Inspected crops retain complete objects, the wide aircraft and flush tile edges. |
@@ -83,3 +67,11 @@ node src/games/blastline/art/ember-reforged/pack.mjs
 ```
 
 An optional sheet name, such as `bolt-run`, exports only that sheet. The packer uses offline Chromium Canvas with smooth resampling and WebP quality 0.94 for scenery. Runtime never loads production sources or invokes generation.
+
+## Weapon and aircraft motion
+
+`weapon-art.ts` records inspected barrel tips in each atlas cell's pixel coordinates, including every operator aim, run and recoil cel and the enemy cels. `frameMuzzle` uses the selected source rectangle and the same full-body transform as the sprite. When replacing a sheet, inspect and update its tips alongside its foot registration. Running fire continues the stride; it does not insert a standing recoil drawing. Shot snapshots retain launch position, facing and actor observations. The first 48 world units visually connect the authored barrel to the physical swept projectile path without moving hitboxes or allowing shots through adjacent cover.
+
+The extraction sprite supplies the complete fuselage. The renderer masks its baked main rotor region and draws main and tail rotor motion, mast and downwash in the same local transform. Hover, lift and departure use the pause-aware presentation clock and extraction progress. Reduced motion uses stationary rotor blades and omits downwash and weapon flashes.
+
+Grenadiers map to the complete heavy-launcher cels in both atlases. Their `GRENADIER` label, arcing warning and amber-ringed grenade distinguish them from direct-fire rocket heavies. The Bastion uses the same marked ballistic barrage. Keep the full warning arc and landing zone visible even when the firing actor is just outside the camera. Nearby fuel displays its lethal radius. Relay artwork retains its live/offline roles, with air-defense purpose, reward and remaining health rendered separately. The extraction aircraft appears once all relay power is cut.

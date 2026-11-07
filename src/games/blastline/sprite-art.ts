@@ -1,3 +1,4 @@
+import { weaponTips } from './weapon-art.ts';
 import { type ImageDimensions } from '../../engine/browser/images.ts';
 export function operatorCel(airborne: boolean, moving: boolean, phase: number, reduced: boolean, aimX: number, aimY: number) {
   const aim = aimY < -.4 ? Math.abs(aimX) < .4 ? 0 : 1 : aimY > .4 ? Math.abs(aimX) < .4 ? 4 : 3 : 2;
@@ -11,9 +12,10 @@ type Rect = readonly [number, number, number, number];
 type Pose = 'idle' | 'stepA' | 'stepB' | 'airborne' | 'recoil';
 export type ObjectRole = 'relay' | 'offlineRelay' | 'barrel' | 'supply' | 'supplied' | 'rescue' | 'extraction'
   | 'grenade' | 'structure' | 'brick' | 'armor' | 'damagedBrick' | 'damagedArmor' | 'muzzle' | 'explosion' | 'smoke';
-type EnemyRole = 'guard' | 'heavy' | 'bastion';
+type EnemyRole = import('./content.ts').EnemyKind;
 export interface BlastArtLayout {
   readonly smooth: boolean;
+  readonly weaponTips: typeof weaponTips[Appearance];
   readonly operators: {
     readonly cell: number;
     readonly rows: Readonly<Record<Operator, Readonly<Record<Exclude<Pose, 'recoil'>, number> & { recoil?: number }>>>;
@@ -35,17 +37,17 @@ const arcadeRows = {
   bolt: { idle: 4, stepA: 5, stepB: 6, airborne: 7 },
 } as const;
 const operatorDrawing = { draw: [-20, -45, 48, 48], origin: [9, 32] } as const;
-const enemyDrawing = { rows: { guard: 0, heavy: 1, bastion: 2 },
-  draw: { guard: [-18, -1, 36, 34], heavy: [-18, -1, 36, 34], bastion: [-36, -10, 72, 64] } } as const;
+const enemyDrawing = { rows: { guard: 0, heavy: 1, grenadier: 1, bastion: 2 },
+  draw: { guard: [-18, -1, 36, 34], heavy: [-18, -1, 36, 34], grenadier: [-18, -1, 36, 34], bastion: [-36, -10, 72, 64] } } as const;
 const run = { images: { nova: 'novaRun', bolt: 'boltRun' }, frames: 6 } as const;
 export const blastLayouts: Readonly<Record<Appearance, BlastArtLayout>> = {
   arcade: {
-    smooth: false, operators: { ...operatorDrawing, cell: 128, rows: arcadeRows, run },
+    smooth: false, weaponTips: weaponTips.arcade, operators: { ...operatorDrawing, cell: 128, rows: arcadeRows, run },
     enemies: { ...enemyDrawing, cell: 128 }, objects: objectGrid(128),
     backdrops: { harbor: [0, 0, 1536, 512], foundry: [0, 512, 1536, 512] },
   },
   deluxe: {
-    smooth: true, operators: { ...operatorDrawing, cell: 192, run, rows: {
+    smooth: true, weaponTips: weaponTips.deluxe, operators: { ...operatorDrawing, cell: 192, run, rows: {
       nova: { idle: 0, stepA: 0, stepB: 0, airborne: 2, recoil: 1 },
       bolt: { idle: 3, stepA: 3, stepB: 3, airborne: 5, recoil: 4 },
     } },
@@ -71,6 +73,12 @@ export function validateBlastLayout(layout: BlastArtLayout, dimensions: ImageDim
     const size = dimensions[image], [x, y, width, height] = rect;
     if (!size || !rect.every(Number.isFinite) || x < 0 || y < 0 || width <= 0 || height <= 0
       || x + width > size.width || y + height > size.height) errors.push(`Invalid ${image} frame`);
+    if (image === 'objects' || image === 'backdrop') return;
+    const cell = image === 'enemies' ? layout.enemies.cell : layout.operators.cell;
+    for (let row = y / cell; row < (y + height) / cell; row++) for (let col = x / cell; col < (x + width) / cell; col++) {
+      const tip = layout.weaponTips[image]?.[row]?.[col];
+      if (!tip || !tip.every(n => Number.isFinite(n) && n >= 0 && n < cell)) errors.push(`Invalid ${image} muzzle`);
+    }
   }
   const actors = layout.operators;
   for (const rows of Object.values(actors.rows)) for (const row of Object.values(rows)) {
@@ -85,4 +93,15 @@ export function validateBlastLayout(layout: BlastArtLayout, dimensions: ImageDim
   for (const rect of Object.values(layout.objects)) frame('objects', rect);
   for (const rect of Object.values(layout.backdrops ?? {})) frame('backdrop', rect);
   return errors;
+}
+
+/** Socket and cel use the exact same source rectangle, including running/recoil. */
+export function frameMuzzle(layout: BlastArtLayout, frame: { image: string; rect: Rect },
+  position: { x: number; y: number }, facing: number, enemy?: EnemyRole) {
+  const cell = enemy ? layout.enemies.cell : layout.operators.cell;
+  const tip = layout.weaponTips[frame.image]![frame.rect[1] / cell]![frame.rect[0] / cell]!;
+  const [x, y, w, h] = enemy ? layout.enemies.draw[enemy] : layout.operators.draw;
+  const origin = enemy ? [0, 0] : layout.operators.origin;
+  return { x: position.x + origin[0]! + facing * (x + tip[0] / cell * w),
+    y: position.y + origin[1]! + y + tip[1] / cell * h };
 }

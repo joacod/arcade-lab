@@ -1,4 +1,4 @@
-import { TILE, limits, operators, fuel, relay, grenade as grenadeDefinition, type Point } from './content.ts';
+import { TILE, body, enemyGrenade, limits, operators, fuel, relay, grenade as grenadeDefinition, type Point } from './content.ts';
 import { circleTouchesRect, damageTile, forTiles, segmentRect, traceTerrain } from './terrain.ts';
 import { damageEnemy, emit, hurtPlayer, type Explosion, type Projectile, type Run } from './state.ts';
 export function spawnProjectile(run: Run, shot: Projectile) {
@@ -16,10 +16,10 @@ export function firePlayer(run: Run, grenade: boolean) {
     emit(run, 'throw', p); return;
   }
   if (p.cooldown > 0) return;
-  const d = operators[p.operator]; p.cooldown = d.interval; p.fireBuffer = 0;
+  const d = operators[p.operator]; p.cooldown = d.interval; p.fireBuffer = 0; p.firing = .065;
   // Start inside the physical body; tracing includes the muzzle path and cannot skip adjacent cover.
   spawnProjectile(run, { x: p.x + p.w / 2, y: p.y + 12, vx: p.aimX * d.speedShot, vy: p.aimY * d.speedShot, life: 1.2,
-    kind: p.operator === 'nova' ? 'bullet' : 'rocket', friendly: true, damage: d.damage, tileDamage: d.tileDamage, radius: d.radius });
+    kind: p.operator === 'nova' ? 'bullet' : 'rocket', friendly: true, damage: d.damage, tileDamage: d.tileDamage, radius: d.radius, launch: { x: p.x + p.w / 2, y: p.y + 12, origin: 'player', actor: { x: p.x, y: p.y, operator: p.operator, grounded: p.grounded, vx: p.vx, facing: p.facing, aimX: p.aimX, aimY: p.aimY } } });
   emit(run, p.operator === 'nova' ? 'shot' : 'launch', { x: p.x + p.w / 2 + p.aimX * 17, y: p.y + 12 + p.aimY * 17 });
 }
 function breakTile(run: Run, i: number, amount: number) {
@@ -39,7 +39,12 @@ function damageRelay(run: Run, index: number, damage: number) {
   const r = run.relays[index]!;
   if (r.health <= 0) return;
   r.health = Math.max(0, r.health - damage);
-  if (!r.health) { run.score += 500; emit(run, 'explosion', r, 1.2); }
+  if (!r.health) {
+    run.score += 500;
+    if (run.player.health > 0) run.player.health = Math.min(body.health, run.player.health + 2);
+    run.grenades = Math.min(body.grenades, run.grenades + 1);
+    emit(run, 'relay', r); emit(run, 'explosion', r, 1.2);
+  }
   else emit(run, 'impact', r);
 }
 /** Iterative worklist: a barrel is marked before enqueue, so cycles terminate deterministically.
@@ -55,7 +60,7 @@ export function resolveExplosions(run: Run) {
     run.barrels.forEach((b, i) => { if (!b.detonated && circleTouchesRect(blast, blast.radius, b)) detonateBarrel(run, i); });
     run.relays.forEach((r, i) => { if (r.health > 0 && circleTouchesRect(blast, blast.radius, { ...r, w: relay.w, h: relay.h })) damageRelay(run, i, blast.damage); });
     // Operator explosives are safe to use at close quarters. Machine shells and volatile fuel hurt.
-    if (blast.source !== 'player' && circleTouchesRect(blast, blast.radius, run.player)) hurtPlayer(run, 1);
+    if (blast.source !== 'player' && circleTouchesRect(blast, blast.radius, run.player)) hurtPlayer(run, body.health, 'blast');
   }
   run.explosions.length = 0;
 }
@@ -64,8 +69,9 @@ export function stepProjectiles(run: Run, dt: number) {
   for (const shot of run.projectiles) {
     if (shot.life <= 0) continue;
     shot.life -= dt;
-    if (shot.kind === 'grenade') shot.vy += 780 * dt;
-    const from = { x: shot.x, y: shot.y }, to = { x: shot.x + shot.vx * dt, y: shot.y + shot.vy * dt };
+    const gravity = shot.kind === 'grenade' || shot.kind === 'lob' ? enemyGrenade.gravity : 0;
+    const from = { x: shot.x, y: shot.y }, to = { x: shot.x + shot.vx * dt, y: shot.y + shot.vy * dt + gravity * dt * dt / 2 };
+    shot.vy += gravity * dt;
     const terrain = traceTerrain(run.terrain, from, to, shot.kind === 'grenade' ? 3 : 1);
     let time = terrain?.time ?? 1.001;
     let target: { type: 'enemy' | 'player' | 'barrel' | 'relay'; index: number } | undefined;

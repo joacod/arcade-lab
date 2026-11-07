@@ -14,7 +14,7 @@ function prepareMission(run: Run) {
   run.enemies = m.enemies.map((e, id) => {
     const { health, w, h } = enemyTypes[e.kind];
     return { ...e, y: e.y + body.h - h, id, w, h, vx: 0, vy: 0, grounded: false, health, maxHealth: health,
-      home: e.x, facing: -1, cooldown: .6 + id % 3 * .2, warning: 0, burst: 0, flash: 0, target: { x: 0, y: 0 } };
+      home: e.x, facing: -1, cooldown: .6 + id % 3 * .2, warning: 0, burst: 0, firing: 0, flash: 0, target: { x: 0, y: 0 } };
   });
   run.barrels = m.barrels.map(p => ({ x: p.x - fuel.w / 2, y: p.y - fuel.h / 2, w: fuel.w, h: fuel.h, vx: 0, vy: 0, grounded: false, detonated: false, health: fuel.health }));
   run.relays = m.relays.map(p => ({ ...p, health: relay.health }));
@@ -46,7 +46,7 @@ export function objectiveText(run: Run): string {
   const bearing = (x: number) => `${x >= run.player.x ? '→' : '←'} ${Math.ceil(Math.abs(x - run.player.x) / TILE)}m`;
   if (readyToExtract(run)) return `EXTRACT ${bearing(run.mission.exit.x + run.mission.exit.w / 2)} • COLLAPSE ${Math.max(0, Math.ceil(run.collapse))}s`;
   const remaining = run.relays.filter(r => r.health > 0).length;
-  const parts = remaining ? [`BREAK ${remaining} POWER RELAY${remaining === 1 ? '' : 'S'}`] : [];
+  const parts = remaining ? [`AIR DEFENSE: ${remaining} RELAY${remaining === 1 ? '' : 'S'} LEFT`] : [];
   if (run.mission.rescue && !run.rescued) parts.push('RESCUE BOLT');
   if (run.enemies.some(e => e.kind === 'bastion' && e.health > 0)) parts.push('DEFEAT THE BASTION');
   const targets = run.relays.filter(r => r.health > 0).map(r => ({ x: r.x, label: 'RELAY' }));
@@ -59,7 +59,7 @@ export function objectiveText(run: Run): string {
 function objectives(run: Run, dt: number) {
   const p = run.player, m = run.mission;
   if (m.rescue && !run.rescued && overlaps(p, { x: m.rescue.x - 24, y: m.rescue.y - 18, w: 70, h: 54 })) {
-    run.rescued = true; p.operator = 'bolt'; p.cooldown = .3; p.fireBuffer = 0; p.health = body.health; run.grenades = body.grenades;
+    run.rescued = true; p.operator = 'bolt'; p.cooldown = .3; p.firing = 0; p.fireBuffer = 0; p.health = body.health; run.grenades = body.grenades;
     run.score += 1000; emit(run, 'rescue', p);
   }
   m.checkpoints.forEach((point, i) => {
@@ -94,14 +94,16 @@ export function stepRun(run: Run, action: Action, dt: number) {
     }
     if (!run.respawn) {
       run.player = playerAt(run.mission.checkpoints[run.checkpoint] ?? run.mission.start, run.player.operator);
-      run.grenades = Math.max(2, run.grenades); emit(run, 'checkpoint', run.player);
+      run.grenades = Math.max(2, run.grenades); emit(run, 'redeploy', run.player);
     }
     return;
   }
   const p = run.player;
+  p.spawnImmune = Math.max(0, p.spawnImmune - dt);
+  p.firing = Math.max(0, p.firing - dt);
   p.immune = Math.max(0, p.immune - dt); p.cooldown = Math.max(0, p.cooldown - dt); p.grenadeCooldown = Math.max(0, p.grenadeCooldown - dt);
   p.fireBuffer = Math.max(0, p.fireBuffer - dt);
-  if (action.switch && run.rescued) { p.operator = p.operator === 'nova' ? 'bolt' : 'nova'; p.cooldown = Math.max(.25, p.cooldown); p.fireBuffer = 0; emit(run, 'switch', p); }
+  if (action.switch && run.rescued) { p.operator = p.operator === 'nova' ? 'bolt' : 'nova'; p.cooldown = Math.max(.25, p.cooldown); p.firing = 0; p.fireBuffer = 0; emit(run, 'switch', p); }
   // Only fresh presses survive release. Holding fire keeps its normal cadence without queuing a trailing shot.
   if (action.firePressed) p.fireBuffer = inputTiming.fireBuffer;
   movePlayer(run, action, dt);
@@ -111,7 +113,7 @@ export function stepRun(run: Run, action: Action, dt: number) {
   for (const b of run.barrels) if (!b.detonated) { b.vy = Math.min(body.fall, b.vy + body.gravity * dt); moveBody(run.terrain, b, dt); }
   stepProjectiles(run, dt); resolveExplosions(run);
   // Destruction removes support immediately; gravity resolves the resulting fall next step.
-  if (p.y > run.mission.rows * TILE) hurtPlayer(run, body.health);
-  for (const e of run.enemies) if (e.health > 0 && overlaps(p, e)) hurtPlayer(run, 1);
+  if (p.y > run.mission.rows * TILE) hurtPlayer(run, body.health, 'fall');
+  for (const e of run.enemies) if (e.health > 0 && overlaps(p, e)) hurtPlayer(run, 1, 'contact');
   if (p.health > 0 && run.status === 'active') objectives(run, dt);
 }
