@@ -8,7 +8,7 @@ Give the next action a clear place and name. In the catalog, identity, genre and
 
 After failure, distinguish retrying a checkpoint from restarting a full run. Name destinations when several continuations are plausible. Explain discarded progress near the relevant action when that consequence is not obvious. Reserve confirmation for genuinely costly mistakes; routine resume, theme changes and retries should not need an extra approval.
 
-Choose visibility by task importance and frequency, not by whether a control can be called a setting. A frequently compared visual choice can deserve permanent space beside Play or Resume. Put lengthy instructions or infrequently used developer tools behind a clear disclosure. Do not make a two-option choice require opening Settings and then a second picker. Disclosure reduces secondary detail; it should not hide the interaction the player came to use.
+Choose visibility by task importance and frequency, not by whether a control can be called a setting. A frequently compared visual choice can deserve permanent space beside Play or Resume. Do not make a two-option choice require opening Settings and then a second picker. Secondary detail should not hide the interaction the player came to use.
 
 Keep setup options before play and current-run information beside decisions. Primary actions stay reachable while constrained details scroll. Prefer one readable panel over nested menus, and assess real labels and setup content before adding columns or navigation levels.
 
@@ -16,7 +16,7 @@ Keep setup options before play and current-run information beside decisions. Pri
 
 For a small mutually exclusive set that fits comfortably, show labeled radio choices or a segmented radio group. This lets the player see both alternatives and choose either directly. A binary on/off switch fits a property such as sound; it does not communicate two named artistic presentations as well as named alternatives do. Dropdowns earn their space when a longer or genuinely secondary list would otherwise overwhelm the screen. The choice count is a heuristic, not a universal numeric cutoff.
 
-Give each option a stable name and make its purpose easy to compare. A short game-owned presentation name can add identity below a shared theme label. Avoid adding thumbnails, verbose explanations, rarity decorations or another confirmation step unless they help the actual decision. In development, separate baseline/debug controls from the ordinary player choices rather than making every run start in a different presentation.
+Give each option a stable name and make its purpose easy to compare. A short game-owned presentation name can add identity below a shared theme label. Avoid adding thumbnails, verbose explanations, rarity decorations or another confirmation step unless they help the actual decision.
 
 Prefer native controls and their keyboard behavior. For a radio group, Tab enters/exits the group and arrows move between choices; do not repurpose Tab as a theme hotkey. Style the complete label as the target, with a visible focus outline and selected marker in addition to color. A focus outline means the next input goes there; a checked marker means selected. These states must remain distinguishable.
 
@@ -31,6 +31,8 @@ For release-to-continue gameplay decisions, retain the chosen card and mark it w
 ## In-game navigation, focus and HUDs
 
 Separate utility navigation from gameplay-critical information. Keep Pause easy to find. Put frequently used sound, fullscreen and presentation controls in predictable places on title/pause screens, with a visible way back to play. Screen names, action meanings and navigation order should agree throughout the collection. Browser fullscreen belongs to the persistent arcade shell so returning to the catalog does not unexpectedly exit it.
+
+Use the shared [menu contract](../../../../docs/architecture.md#menus): Settings holds keyboard preferences and instructions, and Back returns to the originating menu without resetting the game. Keep game-specific new-run choices on the title screen. Reuse the shared [action-based bindings and layout replacement](../../../../docs/architecture.md#lifetimes-and-execution) and the keyboard-choice UI described in the menu contract.
 
 Move focus into the visible menu when play is deliberately paused, and back to the playfield on deliberate resume. Do not let hidden HUD controls or a closed disclosure receive menu focus. A scrolling region must reveal the focused control, and pinned action bars must not cover its outline. If a loading or retry control disappears, leave focus on an appropriate visible control. Preserve focus when a choice updates; loading artwork should not start play or move the player to another screen automatically. Browser blur must never steal focus back from another page or window.
 
