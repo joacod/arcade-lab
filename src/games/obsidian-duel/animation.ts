@@ -2,26 +2,33 @@ import { fighters } from './content.ts';
 import type { Fighter } from './game.ts';
 
 export const duelClips = {
-  idle: 12, walk: 8, jump: 3, crouch: 1, guard: 1, crouchGuard: 1,
+  idle: 8, walk: 8, jump: 3, crouch: 1, guard: 1, crouchGuard: 1,
   light: 8, heavy: 8, sweep: 8, air: 8, special: 8,
   hurt: 3, block: 2, down: 4, rise: 4, land: 3,
 } as const;
 export type DuelClip = keyof typeof duelClips;
-/** Complete strides, tuned to the planted boot sweep in the authored walk cels. */
-export const duelMotion = { idleFps: 10, stride: { nera: 200, kael: 224 } } as const;
+/** Short fighting step-slides, not alternating running strides. */
+export const duelMotion = { idleFps: 6, stride: { nera: 96, kael: 104 }, settle: .09 } as const;
 export interface AnimationSample { clip: DuelClip; frame: number }
 const clamp = (x: number, low = 0, high = 1) => Math.max(low, Math.min(high, x));
 
 /** Cosmetic observations stay with the presentation; pausing and theme replacement cannot advance them. */
 export function createDuelAnimation() {
   let observed: Fighter | undefined, previousX = 0, previousTime = 0, distance = 0, previousState = '', stateStart = 0;
-  let previousZ = 0, landedAt = -Infinity;
+  let previousZ = 0, landedAt = -Infinity, idleTime = 0, stoppedAt = -Infinity, stoppedFrame = 0;
   return {
-    reset() { observed = undefined; distance = 0; previousState = ''; landedAt = -Infinity; },
+    reset() { observed = undefined; distance = 0; previousState = ''; landedAt = stoppedAt = -Infinity; idleTime = 0; },
     sample(f: Fighter, time: number, reduced: boolean): AnimationSample {
       if (observed !== f || time < previousTime) {
         observed = f; previousX = f.x; previousZ = f.z; distance = 0;
         previousState = f.state; stateStart = time; landedAt = -Infinity;
+        previousTime = time; idleTime = 0; stoppedAt = -Infinity;
+      }
+      const dt = Math.max(0, time - previousTime);
+      if (f.state === 'idle') idleTime += dt;
+      if (previousState === 'move' && f.state === 'idle') {
+        stoppedAt = time;
+        stoppedFrame = ((distance / duelMotion.stride[f.kind] % 1 + 1) % 1) * duelClips.walk;
       }
       if (f.state !== previousState) stateStart = time;
       // A stop or reversal retains the step. Air travel, pushback and attack advances
@@ -34,9 +41,12 @@ export function createDuelAnimation() {
       if (f.attack) {
         const d = fighters[f.kind].attacks[f.attack.kind], t = f.attack.time;
         // Contact drawings only enter at the actual active boundary, never during anticipation.
-        const frame = t < d.startup ? Math.min(2, Math.floor(t / d.startup * 3))
+        // Respond with anticipation on the first visible tick. A neutral cel at
+        // the front of a long startup looked like input lag. Preserve all rules.
+        const recovery = clamp((t - d.startup - d.active) / d.recovery);
+        const frame = t < d.startup ? 1 + Math.min(1, Math.floor(t / d.startup * 2))
           : t < d.startup + d.active ? 3 + Math.min(1, Math.floor((t - d.startup) / d.active * 2))
-          : 5 + Math.min(2, Math.floor(clamp((t - d.startup - d.active) / d.recovery) * 3));
+          : recovery < .55 ? 5 : recovery < .85 ? 6 : 7;
         return { clip: f.attack.kind, frame };
       }
       if (f.state === 'ko') return { clip: 'down', frame: clamp(age / .22) * 3 };
@@ -51,7 +61,16 @@ export function createDuelAnimation() {
       // Ordinary jumps have a cosmetic landing too, interruptible by any action.
       if (time - landedAt < .10) return { clip: 'land', frame: 1 + clamp((time - landedAt) / .10) };
       if (f.state === 'move') return { clip: 'walk', frame: ((distance / duelMotion.stride[f.kind] % 1 + 1) % 1) * duelClips.walk };
-      return { clip: 'idle', frame: reduced ? 0 : (age * duelMotion.idleFps) % duelClips.idle };
+      // Finish only the cosmetic foot placement; all controls can interrupt it.
+      // Settle toward the nearest neutral endpoint instead of snapping mid-step.
+      if (f.state === 'idle' && time - stoppedAt < duelMotion.settle) {
+        const progress = clamp((time - stoppedAt) / duelMotion.settle);
+        const target = stoppedFrame < 4 ? 0 : 7;
+        const frame = stoppedFrame + (target - stoppedFrame) * progress;
+        distance = frame / duelClips.walk * duelMotion.stride[f.kind];
+        return { clip: 'walk', frame };
+      }
+      return { clip: 'idle', frame: reduced ? 0 : (idleTime * duelMotion.idleFps) % duelClips.idle };
     },
   };
 }

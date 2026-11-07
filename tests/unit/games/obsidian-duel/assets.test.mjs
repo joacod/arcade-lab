@@ -79,7 +79,7 @@ test('Arcade and Deluxe own distinct complete artwork with valid semantic covera
     const images = ['eclipse-foundry', 'moonfall-sanctum'].map(folder =>
       readFileSync(new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}.png`, import.meta.url)));
     for (let i = 0; i < images.length; i++) for (let j = i + 1; j < images.length; j++) assert.ok(!images[i].equals(images[j]), 'Each mode requires independent actor artwork');
-    for (const folder of ['eclipse-foundry/painted', 'moonfall-sanctum/fighters']) for (const family of ['motion', 'walk', 'combat']) {
+    for (const folder of ['eclipse-foundry/painted', 'moonfall-sanctum/fighters']) for (const family of ['motion', 'footwork', 'combat']) {
       const base = new URL(`../../../../src/games/obsidian-duel/art/${folder}/${kind}-${family}`, import.meta.url);
       const layout = JSON.parse(readFileSync(new URL(`${base.href}-layout.json`)));
       const png = readFileSync(new URL(`${base.href}.png`));
@@ -89,10 +89,15 @@ test('Arcade and Deluxe own distinct complete artwork with valid semantic covera
       for (const [clip, slots] of Object.entries(layout.selections)) for (const [slot, index] of Object.entries(slots)) {
         assert.ok(Number(slot) >= 0 && Number(slot) < duelClips[clip] && layout.frames[index], `${kind} ${clip}:${slot} has a complete source drawing`);
       }
-      const loop = family === 'motion' ? 'idle' : family === 'walk' ? 'walk' : null;
-      if (loop) {
-        assert.equal(layout.selections[loop].length, duelClips[loop], 'The whole authored loop is packed');
-        assert.equal(new Set(layout.selections[loop]).size, duelClips[loop], 'Loop slots cannot repeat a partial sequence');
+      if (family === 'footwork') {
+        for (let i = 0; i < 8; i++) assert.equal(layout.frames[i].pivot[0], layout.frames[i + 8].pivot[0],
+          'Idle and travel must register the same hip column, even when only one boot reaches the floor');
+        assert.equal(layout.selections.idle.length, duelClips.idle);
+        assert.equal(layout.selections.walk.length, duelClips.walk);
+        assert.equal(layout.selections.idle[0], layout.selections.walk[0], 'Movement begins in the same ready stance');
+        assert.equal(layout.selections.walk.at(-1), layout.selections.idle[0], 'Foot placement settles into ready stance');
+        assert.equal(Math.abs(layout.selections.idle.at(-1) - layout.selections.idle[0]), 1, 'The breath seam crosses adjacent drawings');
+        for (const clip of ['light', 'heavy', 'special']) assert.equal(layout.selections[clip][7], layout.selections.idle[0], 'Standing recovery returns through the same neutral drawing');
       }
     }
   }

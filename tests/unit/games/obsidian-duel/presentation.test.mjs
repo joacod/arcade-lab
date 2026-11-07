@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPresentation } from '../../../../src/games/obsidian-duel/presentation.ts';
+import { createPresentation, duelResolution } from '../../../../src/games/obsidian-duel/presentation.ts';
 import { createSanctumDrawing } from '../../../../src/games/obsidian-duel/deluxe-presentation.ts';
 import { createMatch } from '../../../../src/games/obsidian-duel/game.ts';
 import { themes } from '../../../../src/games/obsidian-duel/themes.ts';
@@ -20,7 +20,10 @@ test('both themes clear each frame and draw each fighter once, opaque even durin
     return () => {};
   } });
   const canvas = { width: 1000, height: 560, getContext: () => ctx, remove() {} };
-  globalThis.document = { createElement: () => canvas };
+  const cachedDraws = [];
+  const background = { width: 0, height: 0, getContext: () => ({ fillRect() {}, drawImage: image => cachedDraws.push(image) }) };
+  let created = 0;
+  globalThis.document = { createElement: () => created++ === 0 ? canvas : background };
   globalThis.window = { matchMedia: () => ({ matches: false }) };
   try {
     const presentation = createPresentation({ append() {} });
@@ -31,14 +34,20 @@ test('both themes clear each frame and draw each fighter once, opaque even durin
       presentation.replaceTheme(themes[theme], art, theme === 'deluxe' ? createSanctumDrawing : undefined);
       for (let frame = 0; frame < 2; frame++) {
         calls.length = 0;
+        const cachedBefore = cachedDraws.length;
         presentation.draw(match, { width: 1000, height: 560, ratio: 1 }, 'playing', frame / 60);
+        assert.equal(cachedDraws.length - cachedBefore, frame === 0 ? 1 : 0, 'Resample the arena only when its theme or size changes');
         assert.equal(calls.filter(call => call.clear).length, 1);
         assert.ok(calls[0].clear, 'Clear previous poses before drawing scenery or actors');
         for (const kind of ['nera', 'kael']) assert.deepEqual(calls.filter(call => call.image === art[kind]),
           [{ image: art[kind], alpha: 1 }], 'No mirrored copies, cross-fades or body translucency');
       }
     }
+    presentation.draw(match, { width: 3840, height: 2160, ratio: 2 }, 'paused', 1);
+    assert.ok(canvas.width <= 1920 && canvas.height <= 1080, 'Fullscreen must not multiply raster work with device DPR');
+    assert.equal(duelResolution(800, 500, 1), 1, 'Do not oversample ordinary displays');
     presentation.dispose();
+    assert.equal(background.width * background.height, 0, 'Release cached pixels on disposal');
   } finally {
     if (before.document === undefined) delete globalThis.document; else globalThis.document = before.document;
     if (before.window === undefined) delete globalThis.window; else globalThis.window = before.window;

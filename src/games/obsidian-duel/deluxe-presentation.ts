@@ -1,5 +1,4 @@
 import type { ImageBundle } from '../../engine/browser/images.ts';
-import { arena } from './content.ts';
 import { sanctumEffects } from './deluxe-art.ts';
 
 export type SanctumDrawing = ReturnType<typeof createSanctumDrawing>;
@@ -15,8 +14,6 @@ export function createSanctumDrawing(ctx: CanvasRenderingContext2D, art: ImageBu
   }
   return {
     scenery(time: number, reduced: boolean) {
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(art.stage!, 0, 0, arena.width, arena.height);
       const t = reduced ? 0 : time;
       // Layered low mist lives behind the actors and follows active match time.
       for (let i = 0; i < 3; i++) {
