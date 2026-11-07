@@ -68,6 +68,35 @@ test('atlas validation rejects missing role images and mappings outside the deco
   assert.deepEqual(validateBlastLayout(blastLayouts.arcade, dimensions), []);
   const shifted = { ...blastLayouts.arcade, objects: { ...blastLayouts.arcade.objects, relay: [500, 0, 128, 128] } };
   assert.ok(validateBlastLayout(shifted, dimensions).includes('Invalid objects frame'));
+  assert.ok(validateBlastLayout({ ...blastLayouts.arcade, weaponTips: {} }, dimensions).includes('Invalid operators muzzle'));
   delete dimensions.operators;
   assert.ok(validateBlastLayout(blastLayouts.arcade, dimensions).includes('Invalid operators frame'));
+});
+
+test('muzzle attachments follow selected whole cels and mirror around the actor, including recoil and running', async () => {
+  const { frameMuzzle } = await import('../../../../src/games/blastline/sprite-art.ts');
+  for (const layout of Object.values(blastLayouts)) for (const operator of ['nova', 'bolt']) {
+    for (const [airborne, moving, firing] of [[false, false, false], [false, false, true], [false, true, true], [true, true, true]]) {
+      const frame = operatorFrame(layout, operator, airborne, moving, .68, false, 1, 0, firing);
+      const right = frameMuzzle(layout, frame, { x: 100, y: 200 }, 1);
+      const left = frameMuzzle(layout, frame, { x: 100, y: 200 }, -1);
+      assert.ok(Number.isFinite(right.x) && Number.isFinite(right.y));
+      assert.equal(right.y, left.y);
+      assert.ok(Math.abs(right.x + left.x - 2 * (100 + layout.operators.origin[0])) < 1e-9);
+      if (moving && !airborne) assert.notEqual(frame.image, 'operators', 'firing never interrupts the running stride');
+    }
+  }
+});
+
+test('projectile lead-in begins at the visible weapon and converges to the authoritative collision path', async () => {
+  const { projectilePoint } = await import('../../../../src/games/blastline/weapon-art.ts');
+  const muzzle = { x: 18, y: -7 }, shot = { x: 0, y: 0, vx: 1200, vy: 0, launch: { x: 0, y: 0 } };
+  assert.deepEqual(projectilePoint(shot, muzzle), muzzle);
+  assert.deepEqual(projectilePoint(shot, muzzle, 8), muzzle, 'a fresh tail cannot extend through the actor');
+  shot.x = 20;
+  assert.equal(projectilePoint(shot, muzzle).y, projectilePoint(shot, muzzle, 8).y, 'tracers retain the actual firing direction during the lead-in');
+  shot.x = 48;
+  assert.deepEqual(projectilePoint(shot, muzzle), { x: 48, y: 0 });
+  shot.x = 100;
+  assert.deepEqual(projectilePoint(shot, muzzle, 8), { x: 92, y: 0 });
 });

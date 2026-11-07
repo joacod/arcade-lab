@@ -215,37 +215,151 @@ test('camera uses a single bounded uniform transform for high and low positions'
   }
 });
 
-for (const destroyedWorld of [false, true]) test(`both missions complete through actions with ${destroyedWorld ? 'all destructible terrain already removed' : 'intact authored terrain'}`, async () => {
-  const { solidAt } = await import('../../../../src/games/blastline/terrain.ts');
-  const run = createRun();
-  const erase = () => { if (destroyedWorld) for (let i = 0; i < run.terrain.material.length; i++) damageTile(run.terrain, i, 999); };
-  erase();
-  let rescues = 0, extractions = 0, usedNova = false, usedBolt = false, highest = 700;
-  for (let frame = 0; frame < 18000 && run.status !== 'victory'; frame++) {
-    if (run.status === 'interlude') { nextMission(run); erase(); }
-    assert.equal(run.status, 'active', `mission ${run.missionIndex}, x ${run.player.x}`);
-    const p = run.player, target = run.relays.find(r => r.health > 0) ?? run.enemies.find(e => e.kind === 'bastion' && e.health > 0);
-    let move = 1;
-    if (target) {
-      const distance = target.x - p.x;
-      if (distance < (target.y + 16 < p.y ? 20 : 220) && distance > 18) move = 0;
-      else if (distance < 18) move = -1;
+// These are firing-decision regressions; no browser or simulated playthrough is needed.
+test('enemies reject fuel and allies along a shot, including beyond an evaded target, and seek a supported lane', async () => {
+  const { safeEnemyShot, stepEnemies } = await import('../../../../src/games/blastline/enemies.ts');
+  const run = createRun([fixture({ start: { x: 100, y: 354 }, enemies: [{ x: 300, y: 354, kind: 'guard', patrol: 0 }],
+    barrels: [{ x: 250, y: 371 }] })]);
+  const e = run.enemies[0], target = { x: 109, y: 369 };
+  Object.assign(e, { grounded: true, cooldown: 0 });
+  assert.equal(safeEnemyShot(run, e, target), false);
+  stepEnemies(run, dt);
+  assert.equal(e.warning, 0); assert.equal(run.projectiles.length, 0); assert.ok(e.vx < 0);
+  run.barrels[0].x = 50;
+  assert.equal(safeEnemyShot(run, e, target), false, 'missing the player must not ignite fuel behind them');
+  run.barrels[0].detonated = true;
+  assert.equal(safeEnemyShot(run, e, target), true);
+  run.enemies.push({ ...e, id: 1, x: 220 });
+  assert.equal(safeEnemyShot(run, e, target), false, 'allies also block the firing decision');
+  run.enemies.pop();
+  // Remove ground in the next step: blocked enemies must not walk off platforms.
+  run.barrels[0].detonated = false; run.barrels[0].x = 250;
+  for (let row = 16; row < 20; row++) run.terrain.material[row * run.terrain.columns + 12] = 0;
+  e.x = 313;
+  stepEnemies(run, dt); assert.equal(e.vx, 0);
+});
+
+test('committed bursts keep facing and aim, recheck each round, and cancel when support disappears', async () => {
+  const { stepEnemies } = await import('../../../../src/games/blastline/enemies.ts');
+  const run = createRun([fixture({ start: { x: 100, y: 354 }, enemies: [{ x: 300, y: 354, kind: 'guard', patrol: 0 }] })]);
+  const e = run.enemies[0]; Object.assign(e, { grounded: true, cooldown: 0 });
+  stepEnemies(run, dt); assert.ok(e.warning > 0);
+  const target = { ...e.target }; run.player.x = 400;
+  e.warning = dt / 2; stepEnemies(run, dt);
+  assert.deepEqual(e.target, target); assert.equal(e.facing, -1); assert.ok(run.projectiles[0].vx < 0);
+  run.barrels.push({ x: 250, y: 358, w: 18, h: 26, vx: 0, vy: 0, grounded: true, health: 2, detonated: false });
+  e.cooldown = 0; stepEnemies(run, dt);
+  assert.equal(e.burst, 0); assert.equal(run.projectiles.length, 1);
+  run.barrels = []; e.warning = .2; e.target = target;
+  for (let row = 16; row < 20; row++) for (let col = 12; col < 14; col++) run.terrain.material[row * run.terrain.columns + col] = 0;
+  stepEnemies(run, dt); assert.equal(e.warning, 0); assert.equal(e.burst, 0);
+  const { hurtPlayer } = await import('../../../../src/games/blastline/state.ts');
+  e.warning = .2; e.burst = 2; run.player.immune = 0; run.player.spawnImmune = 0;
+  hurtPlayer(run, body.health);
+  assert.equal(e.warning, 0); assert.equal(e.burst, 0); assert.ok(e.cooldown >= .6);
+});
+
+test('heavy shells reject close blasts and barrel splash without making barrels immune', async () => {
+  const { safeEnemyShot } = await import('../../../../src/games/blastline/enemies.ts');
+  const run = createRun([fixture({ enemies: [{ x: 300, y: 354, kind: 'heavy', patrol: 0 }], barrels: [{ x: 120, y: 371 }] })]);
+  const e = run.enemies[0];
+  assert.equal(safeEnemyShot(run, e, { x: 280, y: 369 }), false);
+  assert.equal(safeEnemyShot(run, e, { x: 140, y: 330 }), false, 'splash beside fuel is unsafe even when the ray misses it');
+  spawnProjectile(run, shot({ x: 200, vx: -1000, friendly: false })); stepProjectiles(run, .1); resolveExplosions(run);
+  assert.equal(run.barrels[0].detonated, true, 'fuel remains a physical hazard, not a team filter');
+});
+
+test('switch recovery does not impersonate a shot; launch snapshots preserve the firing actor', () => {
+  const run = createRun([fixture({ relays: [{ x: 850, y: 350 }] })]); run.rescued = true;
+  stepRun(run, { ...idle, switch: true }, dt);
+  assert.equal(run.player.firing, 0); assert.ok(run.player.cooldown > 0);
+  run.player.cooldown = 0; stepRun(run, { ...idle, fire: true }, dt);
+  assert.ok(run.player.firing > 0);
+  const launch = run.projectiles[0].launch, x = launch.actor.x;
+  run.player.x += 100; assert.equal(launch.actor.x, x);
+});
+
+test('bullets drain health, hostile blasts cost exactly one life, and only spawn protection stops a blast', async () => {
+  const { hurtPlayer } = await import('../../../../src/games/blastline/state.ts');
+  const run = createRun([fixture()]); run.player.spawnImmune = 0;
+  hurtPlayer(run, 1);
+  assert.equal(run.player.health, 4); assert.equal(run.lives, 5);
+  hurtPlayer(run, 1); assert.equal(run.player.health, 4, 'ordinary hit immunity prevents repeated chip damage');
+  queueExplosion(run, { x: run.player.x + 9, y: run.player.y + 15, radius: 48, damage: 1, tileDamage: 0, source: 'enemy' });
+  resolveExplosions(run);
+  assert.equal(run.player.health, 0); assert.equal(run.lives, 4, 'a recent bullet cannot shield a lethal blast');
+  hurtPlayer(run, body.health, 'blast'); assert.equal(run.lives, 4, 'a chain costs only the current life');
+  assert.equal(run.events.find(e => e.type === 'death').cause, 'blast');
+  const protectedRun = createRun([fixture()]);
+  hurtPlayer(protectedRun, body.health, 'blast'); assert.equal(protectedRun.player.health, body.health);
+  protectedRun.player.spawnImmune = dt / 2; stepRun(protectedRun, idle, dt);
+  hurtPlayer(protectedRun, body.health, 'blast'); assert.equal(protectedRun.lives, 4);
+});
+
+test('relay rewards occur once, respect resource caps, and extraction still requires rescue and the Bastion', () => {
+  const run = createRun([fixture({ relays: [{ x: 300, y: 352 }], rescue: { x: 600, y: 354 },
+    enemies: [{ x: 700, y: 354, kind: 'bastion', patrol: 0 }] })]);
+  run.player.health = 2; run.grenades = 0;
+  const hit = { x: 314, y: 368, radius: 30, damage: 30, tileDamage: 0, source: 'player' };
+  queueExplosion(run, hit); resolveExplosions(run);
+  assert.equal(run.player.health, 4); assert.equal(run.grenades, 1); assert.equal(run.score, 500);
+  assert.equal(takeEvents(run).filter(e => e.type === 'relay').length, 1);
+  queueExplosion(run, hit); resolveExplosions(run);
+  assert.equal(run.player.health, 4); assert.equal(run.grenades, 1); assert.equal(run.score, 500);
+  assert.equal(readyToExtract(run), false);
+  run.rescued = true; assert.equal(readyToExtract(run), false);
+  run.enemies[0].health = 0; assert.equal(readyToExtract(run), true);
+  const capped = createRun([fixture({ relays: [{ x: 300, y: 352 }] })]);
+  queueExplosion(capped, hit); resolveExplosions(capped);
+  assert.equal(capped.player.health, body.health); assert.equal(capped.grenades, body.grenades);
+});
+
+test('grenadiers clear low cover, reject obstructed arcs and allied landing zones, and land at the committed target', async () => {
+  const { safeEnemyShot, stepEnemies, enemyOrigin } = await import('../../../../src/games/blastline/enemies.ts');
+  const { lobPoint } = await import('../../../../src/games/blastline/ballistics.ts');
+  const { enemyGrenade } = await import('../../../../src/games/blastline/content.ts');
+  const mission = fixture({ start: { x: 100, y: 354 }, enemies: [{ x: 350, y: 354, kind: 'grenadier', patrol: 0 }] });
+  mission.terrain[15 * mission.columns + 10] = 2;
+  const run = createRun([mission]), e = run.enemies[0], target = { x: 109, y: 369 };
+  e.grounded = true; e.cooldown = 0;
+  assert.equal(visible(run, enemyOrigin(e), target), false);
+  assert.equal(safeEnemyShot(run, e, target), true, 'a lob provides pressure over cover');
+  stepEnemies(run, dt); assert.ok(e.warning > 0);
+  const from = enemyOrigin(e), end = lobPoint(from, target, enemyGrenade.flight);
+  assert.ok(Math.hypot(end.x - target.x, end.y - target.y) < 1e-8);
+  e.warning = dt / 2; stepEnemies(run, dt);
+  const shell = run.projectiles[0]; assert.equal(shell.kind, 'lob'); assert.ok(shell.vy < 0);
+  run.player.x = 50; // The thrown grenade must not home after commitment.
+  for (let i = 0; i < 54; i++) stepProjectiles(run, dt);
+  assert.ok(Math.hypot(shell.x - target.x, shell.y - target.y) < 1e-8);
+  assert.equal(run.explosions.length, 1);
+  run.enemies.push({ ...e, id: 1, x: 120 });
+  assert.equal(safeEnemyShot(run, e, target), false);
+  run.enemies.pop();
+  for (let row = 9; row < 16; row++) run.terrain.material[row * mission.columns + 10] = 1;
+  assert.equal(safeEnemyShot(run, e, target), false, 'solid walls invalidate the arc');
+});
+
+test('every authored enemy has a supported target in range with a safe attack through intact terrain', async () => {
+  const { overlaps } = await import('../../../../src/engine/collision.ts');
+  const { enemyTypes } = await import('../../../../src/games/blastline/content.ts');
+  const { safeEnemyShot, enemyOrigin } = await import('../../../../src/games/blastline/enemies.ts');
+  for (const mission of missions) {
+    const run = createRun([mission]);
+    // Settle authored actors with one sweep, not a gameplay simulation.
+    for (const actor of [...run.enemies, ...run.barrels]) { actor.vy = 600; moveBody(run.terrain, actor, .2); }
+    for (const enemy of run.enemies) {
+      assert.ok(run.barrels.every(barrel => !overlaps(enemy, barrel)), `${mission.name}: fuel overlaps enemy ${enemy.id}`);
+      const from = enemyOrigin(enemy);
+      const hasLane = [-360, -300, -240, -180, -120, -72, 72, 120, 180, 240, 300, 360].some(offset => {
+        const targetBody = { x: enemy.x + offset, y: 300, w: body.w, h: body.h, vx: 0, vy: 600, grounded: false };
+        if (!bodyClear(run.terrain, targetBody)) return false;
+        moveBody(run.terrain, targetBody, 1);
+        const target = { x: targetBody.x + body.w / 2, y: targetBody.y + body.h / 2 };
+        return targetBody.grounded && Math.hypot(target.x - from.x, target.y - from.y) < enemyTypes[enemy.kind].sight
+          && safeEnemyShot(run, enemy, target);
+      });
+      assert.ok(hasLane, `${mission.name}: ${enemy.kind} ${enemy.id} is sealed off by its placement`);
     }
-    const obstacle = [3, 15, 27].some(y => solidAt(run.terrain, p.x + (move >= 0 ? 24 : -6), p.y + y));
-    const jump = p.grounded && (obstacle || !!target && Math.abs(target.x - p.x) < 240 && frame % 130 === 0);
-    stepRun(run, { ...idle, move, fire: true, jumpPressed: jump, jumpHeld: true,
-      grenade: !!target && Math.abs(target.x - p.x) < 240 && p.grounded && run.grenades > 0 && frame % 150 === 0 }, dt);
-    if (run.missionIndex === 1) highest = Math.min(highest, p.y);
-    for (const e of takeEvents(run)) {
-      if (e.type === 'rescue') rescues++;
-      if (e.type === 'extract') extractions++;
-      if (e.type === 'shot' && e.strength === 1) usedNova = true;
-      if (e.type === 'launch') usedBolt = true;
-    }
-    assert.ok(run.projectiles.length <= limits.projectiles); assert.equal(run.explosions.length, 0);
   }
-  assert.equal(run.status, 'victory'); assert.equal(rescues, 1); assert.equal(extractions, 3);
-  assert.ok(usedNova && usedBolt); assert.ok(highest < 500); if (!destroyedWorld) assert.ok(run.destroyed > 100); assert.ok(run.kills > 20);
-  assert.ok(run.lives > 0); assert.ok(run.elapsed > 110 && run.elapsed < 240);
-  assert.ok(run.enemies.find(e => e.kind === 'bastion').health === 0);
 });

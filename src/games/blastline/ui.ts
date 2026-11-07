@@ -3,7 +3,7 @@ import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
-import { operators } from './content.ts';
+import { body, operators } from './content.ts';
 import { objectiveText, readyToExtract } from './game.ts';
 import type { Run, BlastEvent } from './state.ts';
 import { initialLayout, layouts, type Layout, type Control } from './input.ts';
@@ -12,7 +12,7 @@ import { createKeyboardChoices } from '../../common/ui/keyboard-choices.ts';
 export type Screen = 'title' | 'playing' | 'paused' | 'interlude' | 'victory' | 'defeat';
 export type Intent = CommonMenuIntent | 'continue';
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, appearance: (id: Appearance) => void, onLayout: (value: Layout) => void) {
-  root.innerHTML = `<header class="blast-hud"><div class="blast-identity"><span class="blast-emblem" aria-hidden="true">↗</span><div><b class="blast-operator">NOVA</b><small class="blast-weapon">ASSAULT / AUTO RIFLE</small><span class="blast-health" aria-label="Health">▰ ▰ ▰ ▰ ▰</span></div></div><div class="blast-orders"><small class="blast-mission">01 / BORDER STATION</small><output class="blast-objective" aria-label="Mission objective"></output></div><div class="blast-resources"><span><b class="blast-lives">5</b> LIVES</span><span><b class="blast-grenades">4</b> GRENADES</span></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
+  root.innerHTML = `<header class="blast-hud"><div class="blast-identity"><span class="blast-emblem" aria-hidden="true">↗</span><div><b class="blast-operator">NOVA</b><small class="blast-weapon">ASSAULT / AUTO RIFLE</small></div></div><div class="blast-vitals" aria-label="Health, lives and ammunition"><div class="blast-health-group"><span>HEALTH <b class="blast-health-value">${body.health}/${body.health}</b></span><div class="blast-health" role="meter" aria-label="Health" aria-valuemin="0" aria-valuemax="${body.health}" aria-valuenow="${body.health}">${Array.from({ length: body.health }, () => '<i></i>').join('')}</div></div><div class="blast-stock"><b class="blast-lives">${body.lives}</b><span>LIVES</span></div><div class="blast-stock"><b class="blast-grenades">${body.grenades}</b><span>GRENADES</span></div></div><div class="blast-orders"><small class="blast-mission">01 / BORDER STATION</small><output class="blast-objective" aria-label="Mission objective"></output></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="blast-stage"><div class="blast-topline"><span>ROGUE MACHINE TERRITORY</span><span class="blast-sector">SECTOR 01 / BORDER STATION</span></div><div class="blast-banner" role="status" hidden><b></b><span></span></div>
   </main>
   <div class="blast-route" aria-label="Mission route"><div class="blast-progress"></div><span class="blast-route-label">INSERTION</span><span>EXTRACTION →</span></div>
@@ -34,7 +34,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     const jump = bindingLabel(bindings.jump), fire = bindingLabel(bindings.fire), grenade = bindingLabel(bindings.grenade), swap = bindingLabel(bindings.switch);
     $('.blast-hint').innerHTML = `${move} <span>MOVE</span>　${jump.toUpperCase()} <span>JUMP</span>　${fire} <span>FIRE</span>　${aim} <span>AIM</span>　${grenade} <span>GRENADE</span>　${swap} <span>SWITCH</span>　P <span>PAUSE / RESUME</span>`;
     for (const action of ['fire', 'grenade', 'switch'] as const) write(`[data-key="${action}"]`, bindingLabel(bindings[action]));
-    help.innerHTML = `<b>${move}</b> MOVE　 <b>${jump}</b> JUMP　 <b>${fire}</b> HOLD TO FIRE<br><b>${aim}</b> AIM　 <b>${grenade}</b> GRENADE　 <b>${swap}</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Hit red barrels. Shoot glowing relays. Green flags resupply.<br>Five lives. Checkpoints keep your progress. Get to the extraction pad.</span><p>Touch: use the on-screen controls.</p>`;
+    help.innerHTML = `<b>${move}</b> MOVE　 <b>${jump}</b> JUMP　 <b>${fire}</b> HOLD TO FIRE<br><b>${aim}</b> AIM　 <b>${grenade}</b> GRENADE　 <b>${swap}</b> SWITCH AFTER RESCUE<br><span>Move + aim for diagonals. Release jump for a short hop.<br>Bullets cost 1 health. Enemy explosives and red barrels cost a life.<br>Health reaches 0 → lose one life and redeploy. Green flags save progress.<br>Destroy air-defense relays to unlock extraction: +2 health, +1 grenade and 500 points each.<br>Grenadiers lob over cover. Move out of the marked blast zone.</span><p>Touch: use the on-screen controls.</p>`;
     surface.setAttribute('aria-label', `Blastline playfield. ${move} move, ${jump} jump, ${fire} fire, ${aim} aim, ${grenade} grenade, ${swap} switch operator. P pauses or resumes.`);
   }
   reflectBindings();
@@ -60,17 +60,24 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     readiness: menu.readiness,
     fullscreen: menu.fullscreen,
-    reset() { notice = ''; noticeUntil = 0; },
+    reset() { notice = ''; detail = ''; noticeUntil = 0; },
     consume(events: readonly BlastEvent[], run: Run) {
-      const event = events.find(e => ['rescue', 'alarm', 'death', 'checkpoint', 'switch'].includes(e.type));
+      const event = ['death', 'rescue', 'alarm', 'relay', 'checkpoint', 'redeploy', 'switch'].map(type => events.find(e => e.type === type)).find(Boolean);
       if (!event) return;
-      [notice, detail] = event.type === 'rescue' ? ['BOLT IS BACK.', 'DEMOLITION ONLINE / SWITCH OPERATORS / SUPPLIES REFILLED'] : event.type === 'alarm' ? ['TIME TO LEAVE.', 'POWER OFFLINE / 70 SECONDS TO EXTRACT →'] : event.type === 'death' ? ['KEEP THE LINE.', `${run.lives} LIVES / REDEPLOYING AT LAST SUPPLY POST`] : event.type === 'checkpoint' ? ['LOCKED & LOADED.', 'CHECKPOINT SAVED / HEALTH + GRENADES REFILLED'] : [operators[run.player.operator].name.toUpperCase(), `${operators[run.player.operator].role} ONLINE`];
+      const remaining = run.relays.filter(r => r.health > 0).length;
+      [notice, detail] = event.type === 'rescue' ? ['BOLT IS BACK.', 'DEMOLITION ONLINE / HEALTH + GRENADES REFILLED']
+        : event.type === 'alarm' ? ['EXTRACTION UNLOCKED.', 'AIR DEFENSE OFFLINE / 70 SECONDS TO REACH THE HELICOPTER →']
+        : event.type === 'relay' ? ['AIR DEFENSE CUT.', `+500 POINTS / HEALTH + AMMO RESTORED / ${remaining ? `${remaining} RELAY${remaining === 1 ? '' : 'S'} LEFT` : 'ALL RELAYS OFFLINE'}`]
+        : event.type === 'death' ? [event.cause === 'blast' ? 'LETHAL BLAST. LIFE LOST.' : 'LIFE LOST.', `${run.lives} LIVES LEFT / ${run.lives ? 'REDEPLOYING AT LAST SUPPLY POST' : 'OPERATION ENDED'}`]
+        : event.type === 'checkpoint' ? ['SUPPLY POST SAVED.', 'FULL HEALTH + GRENADES / PROGRESS KEPT IF YOU FALL']
+        : event.type === 'redeploy' ? ['BACK IN ACTION.', `HEALTH RESTORED / ${run.grenades} GRENADES / BRIEF SPAWN PROTECTION`]
+        : [operators[run.player.operator].name.toUpperCase(), `${operators[run.player.operator].role} ONLINE`];
       noticeUntil = run.elapsed + (event.type === 'rescue' ? 5 : 2.8);
     },
     show(next: Screen, focus = true) {
       screen = next;
       results.element.hidden = !['paused', 'interlude', 'victory', 'defeat'].includes(next);
-      menu.description.textContent = next === 'title' ? 'Rescue Bolt, cut the power and reach extraction. Supply posts save progress and refill your resources.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';
+      menu.description.textContent = next === 'title' ? 'Air-defense relays keep your helicopter locked out. Destroy them for health and ammo, rescue Bolt and reach extraction. Losing all health costs one life; hostile explosions are lethal.' : next === 'paused' ? '' : next === 'interlude' ? 'Bolt is free. The border is behind you. The foundry is still running. Time to fix that.' : next === 'victory' ? 'Both operators extracted.' : 'Restart to restore terrain and supplies.';
 
       for (const b of Object.values(controls)) b.disabled = next !== 'playing';
       menu.show(next, focus);
@@ -78,7 +85,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     update(run: Run) {
       const p = run.player, op = operators[p.operator];
       write('.blast-operator', op.name.toUpperCase()); write('.blast-weapon', `${op.role} / ${p.operator === 'nova' ? 'AUTO RIFLE' : 'ROCKET LAUNCHER'}`);
-      write('.blast-health', Array.from({ length: 5 }, (_, i) => i < p.health ? '▰' : '▱').join(' ')); setAttribute($('.blast-health'), 'aria-label', `Health ${p.health} of 5`);
+      write('.blast-health-value', `${p.health}/${body.health}`);
+      setAttribute($('.blast-health'), 'aria-valuenow', String(p.health));
+      setAttribute($('.blast-health-group'), 'data-critical', String(p.health <= 2));
+      [...$('.blast-health').children].forEach((cell, i) => cell.classList.toggle('filled', i < p.health));
       write('.blast-lives', String(run.lives)); write('.blast-grenades', String(run.grenades));
       write('.blast-mission', `0${run.missionIndex + 1} / ${run.mission.name.toUpperCase()}`); write('.blast-objective', objectiveText(run));
       write('.blast-sector', `SECTOR 0${run.missionIndex + 1} / ${run.mission.name.toUpperCase()}`);

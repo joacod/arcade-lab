@@ -1,8 +1,9 @@
 import { createCooldowns } from '../../engine/cooldowns.ts';
 import { createGameAudio } from '../../engine/browser/audio.ts';
 import { blastRecipes } from './sound-recipes.ts';
-import type { BlastEvent, Player } from './state.ts';
+import type { BlastEvent, Player, EventType } from './state.ts';
 type Cue = keyof typeof blastRecipes;
+const cueFor = (event: EventType): Cue => event === 'relay' || event === 'redeploy' ? 'checkpoint' : event;
 const order: readonly Cue[] = ['victory', 'defeat', 'rescue', 'extract', 'death', 'alarm', 'checkpoint', 'hurt', 'explosion', 'launch', 'chain', 'kill', 'throw', 'switch', 'shot', 'terrain', 'hit', 'impact', 'jump'];
 const interval: Partial<Record<Cue, number>> = { explosion: .1, shot: .07, chain: .2, impact: .13, terrain: .18, hit: .09, kill: .1 };
 export function createSound(onStatus: (message: string) => void) {
@@ -12,9 +13,9 @@ export function createSound(onStatus: (message: string) => void) {
     consume(events: readonly BlastEvent[], player: Player) {
       next.advance(audio.time);
       const milestone = events.find(e => ['victory', 'defeat', 'rescue', 'extract', 'death'].includes(e.type));
-      if (milestone) { audio.reset(); next.clear(); audio.play(milestone.type); return; }
+      if (milestone) { audio.reset(); next.clear(); audio.play(cueFor(milestone.type)); return; }
       // Coalesce each cue per batch, choose priority first and admit at most four voices.
-      const batch = new Set(events.filter(e => Math.abs(e.x - player.x) < 700).map(e => e.type));
+      const batch = new Set(events.filter(e => Math.abs(e.x - player.x) < 700).map(e => cueFor(e.type)));
       let admitted = 0;
       for (const cue of order) {
         if (!batch.has(cue) || !next.allows(cue) || admitted >= 4) continue;
