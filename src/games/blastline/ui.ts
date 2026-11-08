@@ -1,3 +1,4 @@
+import { createDirectionPad } from '../../common/ui/direction-pad.ts';
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setProperty, setAttribute } from '../../common/ui/dom.ts';
@@ -53,9 +54,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'jump', 'fire', 'grenade', 'switch'] as const).map(c => [c, $<HTMLButtonElement>(`[data-control="${c}"]`)])) as Record<Control, HTMLButtonElement>;
+  const directions = createDirectionPad<Control>($('.blast-directions'), { up: 'up', down: 'down', left: 'left', right: 'right' });
   let screen: Screen = 'title', notice = '', detail = '', noticeUntil = 0;
   function write(selector: string, value: string) { const el = $(selector); if (el.textContent !== value) el.textContent = value; }
-  return { controls,
+  return { controls, directions,
     appearanceStatus(value: Appearance, message: string, preparing = false) { if (preparing) theme.prepare(value); else theme.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     readiness: menu.readiness,

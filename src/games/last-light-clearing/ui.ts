@@ -1,3 +1,4 @@
+import { createDirectionPad } from '../../common/ui/direction-pad.ts';
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -83,7 +84,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
     onMute, onFullscreen: options.onFullscreen,
     game: gameContent, setup: rounds,
     theme: appearance.element,
-    controls: `<p><b>WASD / arrows</b> move. Touch: use the on-screen arrows, or press and drag in the arena.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
+    controls: `<p><b>WASD / arrows</b> move. Touch: slide the direction pad, or press and drag in the arena.</p><p>Weapons fire automatically. Collect gems and choose upgrades.</p><p>Resume after changing display settings or leaving the game window.</p>`,
     actions: [
       menuActions.start,
       menuActions.resume,
@@ -131,9 +132,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, options: UIOpt
   const fieldMessage = $<HTMLElement>('.field-message');
   let evolutionAt = -Infinity;
   const controls = Object.fromEntries((['left', 'right', 'up', 'down'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
+  const directions = createDirectionPad<Control>($('.clearing-pad'), { up: 'up', down: 'down', left: 'left', right: 'right' });
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   return {
-    controls,
+    controls, directions,
     reset() { evolutionAt = -Infinity; },
     consume(events: readonly GameEvent[]) {
       for (const event of events) if (event.type === 'evolution') evolutionAt = event.at;

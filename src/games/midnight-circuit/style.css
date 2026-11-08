@@ -32,13 +32,7 @@
 .circuit-app .circuit-hint { font: 9px monospace; letter-spacing: .03em; color: #d5dfdd; text-align: center; }
 .circuit-app .circuit-hint span { color: #7a94a5; }
 .circuit-app .circuit-touch { display: none; justify-content: space-between; align-items: center; gap: 12px; }
-.circuit-app .circuit-pad { display: grid; grid-template-columns: repeat(3,42px); grid-template-rows: repeat(3,32px); gap: 2px; }
-.circuit-app .circuit-pad button { padding: 0; min-height: 0; font-size: 20px; touch-action: none; user-select: none; -webkit-user-select: none; }
-.circuit-app [data-control="up"] { grid-column: 2; }
-.circuit-app [data-control="left"] { grid-column: 1; grid-row: 2; }
-.circuit-app .circuit-pad > span { grid-column: 2; grid-row: 2; align-self: center; justify-self: center; color: #365164; }
-.circuit-app [data-control="right"] { grid-column: 3; grid-row: 2; }
-.circuit-app [data-control="down"] { grid-column: 2; grid-row: 3; }
+.circuit-app .circuit-pad { --direction-size: 120px; }
 .circuit-app .circuit-attack-buttons { display: flex; gap: 8px; align-items: center; }
 .circuit-app .circuit-attack-buttons button { border-radius: 50%; width: 58px; height: 58px; padding: 0; font: italic 700 22px system-ui; touch-action: none; user-select: none; -webkit-user-select: none; }
 .circuit-app .circuit-attack-buttons small { display: block; font: 7px monospace; margin-top: 2px; letter-spacing: .06em; }
@@ -65,6 +59,14 @@
   .circuit-app .circuit-boss { bottom: 10px; left: 28%; right: 28%; }
   .circuit-app .circuit-coach { top: 8px; bottom: auto; font-size: 9px; max-width: 70%; }
   .circuit-app .circuit-boss:not([hidden]) ~ .circuit-coach { top: 8px; bottom: auto; }
+}
+
+@media (max-width: 380px) {
+  .circuit-app .circuit-pad { --direction-size: 112px; }
+  .circuit-app .circuit-touch { gap: 8px; }
+  .circuit-app .circuit-attack-buttons { gap: 6px; }
+  .circuit-app .circuit-attack-buttons button { width: 48px; height: 48px; }
+  .circuit-app [data-control="light"] { width: 54px; height: 54px; }
 }
 
 /* Signal / Rain carries the ink-and-paper palette into the shared menu and instruments. */

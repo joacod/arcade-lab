@@ -68,12 +68,7 @@
 
 .skybreak-app .skybreak-controls, .skybreak-app .skybreak-triggers { display: flex; align-items: center; gap: 12px; }
 .skybreak-app .skybreak-pad, .skybreak-app .skybreak-fire { display: none; }
-.skybreak-app .skybreak-pad { grid-template: repeat(3, 44px) / repeat(3, 44px); gap: 2px; }
-.skybreak-app .skybreak-pad button { min-height: 44px; padding: 0; font-size: 24px; }
-.skybreak-app .skybreak-pad [data-control='up'] { grid-area: 1 / 2; }
-.skybreak-app .skybreak-pad [data-control='left'] { grid-area: 2 / 1; }
-.skybreak-app .skybreak-pad [data-control='right'] { grid-area: 2 / 3; }
-.skybreak-app .skybreak-pad [data-control='down'] { grid-area: 3 / 2; }
+.skybreak-app .skybreak-pad { --direction-size: 128px; }
 .skybreak-app .skybreak-controls button { touch-action: none; user-select: none; -webkit-user-select: none; }
 .skybreak-app .skybreak-controls button[data-held] { background: #375a61; border-color: var(--sky-accent); }
 @media (pointer: coarse), (max-width: 850px) {
@@ -82,7 +77,7 @@
   .skybreak-app .skybreak-loadout, .skybreak-app .skybreak-wave { margin-top: 0; }
   .skybreak-app .skybreak-wave { margin-left: auto; text-align: right; }
   .skybreak-app .skybreak-controls { width: 100%; justify-content: space-between; }
-  .skybreak-app .skybreak-pad { display: grid; }
+  .skybreak-app .skybreak-pad { display: block; }
   .skybreak-app .skybreak-fire { display: block; width: 64px; height: 64px; padding: 0; border-radius: 50%; font-size: 24px; border-color: var(--sky-accent); }
   .skybreak-app .skybreak-fire small { display: block; font: 9px monospace; }
   .skybreak-app .skybreak-evade { min-width: 72px; padding-inline: 8px; }

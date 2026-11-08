@@ -1,3 +1,4 @@
+import { createDirectionPad } from '../../common/ui/direction-pad.ts';
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { createElementLookup, setText, setProperty, setAttribute } from '../../common/ui/dom.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -28,7 +29,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     gameplayUI: root.querySelectorAll<HTMLElement>(':scope > header, :scope > footer'),
     onAction: act, onMute: mute, onFullscreen: () => act('fullscreen'),
     game: results.element, theme: appearance.element,
-    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: use arrows + Fire / Roll, or hold & drag in the playfield to steer and fire.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
+    controls: `WASD / arrows to steer · Space / J to fire<br>Shift / K to roll<br>Touch: slide the direction pad + Fire / Roll, or hold & drag in the playfield to steer and fire.<p><b>↑ POWER</b> forward guns · <b>⋔ SPREAD</b> 24s<br><b>+ REPAIR</b> one hull · Glow marks boss weak points.</p>`,
     actions: [menuActions.start,
       menuActions.resume,
       menuActions.restart,
@@ -39,12 +40,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const description = menu.description;
   const evade = $<HTMLButtonElement>('.skybreak-evade');
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'fire', 'evade'] as const).map(action => [action, $<HTMLButtonElement>(`[data-control="${action}"]`)])) as Record<Control, HTMLButtonElement>;
+  const directions = createDirectionPad<Control>($('.skybreak-pad'), { up: 'up', down: 'down', left: 'left', right: 'right' });
   const score = $('[aria-label="Score"]'), lives = $('.skybreak-lives-value');
   const hull = $('[aria-label="Aircraft hull"]'), progress = $('[aria-label="Sortie progress"]');
   const hullValue = $('.skybreak-hull-value'), hullSegments = [...hull.querySelectorAll<HTMLElement>('.skybreak-hull-segments > span')];
   const formatTime = (time: number) => `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
   const wave = $('.skybreak-wave'), roll = evade.querySelector('span')!;
-  return { controls,
+  return { controls, directions,
     appearance(id: Appearance) { appearance.setValue(id); },
     appearancePending(id: Appearance) { appearance.prepare(id); },
     appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },

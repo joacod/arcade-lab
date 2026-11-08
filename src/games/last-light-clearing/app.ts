@@ -74,7 +74,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
         void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); });
       },
     });
-    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal, ui.directions);
     const readiness = createReadiness(host.signal, (state, retry) => ui.readiness(state, retry));
     readiness.watch(() => selectTheme(defaultTheme(themes)));
     host.surface.prepend(presentation.canvas);
@@ -178,7 +178,7 @@ export function mountClearing(container: HTMLElement, onExit: () => void, fullsc
       else if (screen === 'playing') { pauseRun(run, true); syncScreen(false); }
     }
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
-    bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input.clear(), suspend,
+    bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: () => input.clear(), suspend,
       shouldSuspend: () => screen === 'playing' ? document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) : !host.root.contains(document.activeElement) });
     host.root.addEventListener('keydown', event => {
       if (event.code === 'Enter' || event.code === 'Space') confirmations.add(event.code);

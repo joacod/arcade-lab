@@ -110,8 +110,8 @@ export function mountBlastline(container: HTMLElement, onExit: () => void, fulls
     presentation = createPresentation(host.surface);
     readiness.watch(() => appearance(defaultTheme(themes)));
 
-    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
-    bindSessionFocus(host.root, { signal: host.signal, clearInput: () => input?.clear(), suspend,
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal, ui.directions);
+    bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: () => input?.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.show('title'); ui.update(run); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);

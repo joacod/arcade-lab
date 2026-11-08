@@ -1,4 +1,4 @@
-import { bindButtons } from '../../engine/browser/buttons.ts';
+import { bindButtons, type DirectionPad } from '../../engine/browser/buttons.ts';
 import type { KeyBindings } from '../../engine/bindings.ts';
 import type { Action } from './game.ts';
 export type Control = 'left' | 'right' | 'up' | 'down' | 'light' | 'heavy' | 'jump';
@@ -14,8 +14,8 @@ export const layouts = {
 } as const satisfies Record<string, { name: string; movement: string; description: string; bindings: KeyBindings<Control> }>;
 export type Layout = keyof typeof layouts;
 export const initialLayout: Layout = 'arrows';
-export function bindInput(surface: HTMLElement, controls: Record<Control, HTMLButtonElement>, active: () => boolean, signal: AbortSignal) {
-  const buttons = bindButtons({ surface, controls, bindings: layouts[initialLayout].bindings, active, signal });
+export function bindInput(surface: HTMLElement, controls: Record<Control, HTMLButtonElement>, active: () => boolean, signal: AbortSignal, directions: DirectionPad<Control>) {
+  const buttons = bindButtons({ surface, controls, bindings: layouts[initialLayout].bindings, active, signal, directions });
   return { clear: buttons.clear, setLayout(layout: Layout) { buttons.setBindings(layouts[layout].bindings); }, read(): Action {
     const { held, pressed } = buttons.read();
     return { x: Number(held.has('right')) - Number(held.has('left')), lane: Number(held.has('down')) - Number(held.has('up')),

@@ -1,4 +1,5 @@
 import type { FullscreenControl } from './fullscreen.ts';
+import './host.css';
 
 interface HostOptions {
   className: string;
@@ -10,11 +11,15 @@ interface HostOptions {
 }
 export function createHost(container: HTMLElement, callbacks: HostOptions) {
   const root = document.createElement('section');
-  root.className = callbacks.className;
+  root.className = `game-host ${callbacks.className}`;
   root.setAttribute('aria-label', callbacks.label);
   container.append(root);
   const fullscreen = callbacks.fullscreen;
   const lifetime = new AbortController();
+  // Long presses belong to the game, including its HUD and touch controls.
+  for (const name of ['contextmenu', 'selectstart', 'dragstart']) {
+    root.addEventListener(name, event => event.preventDefault(), { signal: lifetime.signal });
+  }
   const surface = document.createElement('div');
   surface.className = 'play-surface';
   surface.tabIndex = 0;
@@ -22,7 +27,7 @@ export function createHost(container: HTMLElement, callbacks: HostOptions) {
   let width = 1;
   let height = 1;
   let ratio = 1;
-  let left = 0, top = 0;
+  let viewportWidth = window.innerWidth, viewportHeight = window.innerHeight, displayRatio = window.devicePixelRatio;
   let frame: number | undefined;
   let started = false;
   let disposed = false;
@@ -43,15 +48,18 @@ export function createHost(container: HTMLElement, callbacks: HostOptions) {
     const rect = surface.getBoundingClientRect();
     const nextWidth = Math.max(1, rect.width), nextHeight = Math.max(1, rect.height);
     const nextRatio = Math.min(window.devicePixelRatio || 1, 2);
-    const changed = width !== nextWidth || height !== nextHeight || ratio !== nextRatio
-      || left !== rect.left || top !== rect.top;
-    left = rect.left; top = rect.top;
     width = nextWidth; height = nextHeight; ratio = nextRatio;
-    if (changed) callbacks.onDisplayChange();
   }
   const observer = new ResizeObserver(resize);
   observer.observe(surface);
-  window.addEventListener('resize', resize, { signal: lifetime.signal });
+  window.addEventListener('resize', () => {
+    const changed = viewportWidth !== window.innerWidth || viewportHeight !== window.innerHeight || displayRatio !== window.devicePixelRatio;
+    viewportWidth = window.innerWidth; viewportHeight = window.innerHeight; displayRatio = window.devicePixelRatio;
+    resize();
+    // HUD text can wrap as pickups, scores and objectives change. Measuring the
+    // resulting playfield must not turn a normal gameplay update into a pause.
+    if (changed) callbacks.onDisplayChange();
+  }, { signal: lifetime.signal });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       if (frame !== undefined) cancelAnimationFrame(frame);

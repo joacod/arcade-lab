@@ -1,3 +1,4 @@
+import { createDirectionPad } from '../../common/ui/direction-pad.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
 import { appearances, type Appearance } from './graphics.ts';
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
@@ -14,7 +15,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   root.innerHTML = `<header class="circuit-hud"><div class="circuit-wordmark">MC<span>MIDNIGHT CIRCUIT</span></div><div class="circuit-vitals"><span>ROOK <output aria-label="Lives">× 3</output></span><meter aria-label="Health" min="0" max="100" value="100"></meter></div><div class="circuit-score"><small>SCORE</small><output aria-label="Score">000000</output></div><button data-intent="pause" aria-label="Pause">Pause</button></header>
   <main class="circuit-stage"><div class="circuit-location"><span>01 / NEON BACKSTREETS</span><small>FOLLOW THE DEAD GRID EAST</small></div><div class="circuit-combo" aria-live="off"></div><div class="circuit-boss" hidden><span>CIRCUIT WARDEN <small>BREAK THE BLACKOUT</small></span><meter aria-label="Circuit Warden health" min="0" max="720" value="720"></meter></div>
   <div class="circuit-coach" aria-label="Combat tip" hidden></div></main>
-  <footer class="circuit-footer"><div class="circuit-hint"></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><span>＋</span><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump"><span data-key="jump"></span><small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack"><span data-key="heavy"></span><small>HEAVY</small></button><button data-control="light" aria-label="Light attack"><span data-key="light"></span><small>STRIKE</small></button></div></div></footer>`;
+  <footer class="circuit-footer"><div class="circuit-hint"></div><div class="circuit-touch"><div class="circuit-pad" aria-label="Direction controls"><button data-control="up" aria-label="Move up lane">↑</button><button data-control="left" aria-label="Move left">←</button><button data-control="right" aria-label="Move right">→</button><button data-control="down" aria-label="Move down lane">↓</button></div><div class="circuit-attack-buttons"><button data-control="jump" aria-label="Jump"><span data-key="jump"></span><small>JUMP</small></button><button data-control="heavy" aria-label="Heavy attack"><span data-key="heavy"></span><small>HEAVY</small></button><button data-control="light" aria-label="Light attack"><span data-key="light"></span><small>STRIKE</small></button></div></div></footer>`;
   const $ = createElementLookup(root);
   $('.circuit-stage').prepend(surface);
   const pause = $<HTMLButtonElement>('[data-intent="pause"]');
@@ -49,9 +50,10 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const controls = Object.fromEntries((['left', 'right', 'up', 'down', 'light', 'heavy', 'jump'] as const).map(key => [key, $<HTMLButtonElement>(`[data-control="${key}"]`)])) as Record<Control, HTMLButtonElement>;
+  const directions = createDirectionPad<Control>($('.circuit-pad'), { up: 'up', down: 'down', left: 'left', right: 'right' });
   const description = menu.description;
   let current: Screen = 'title';
-  return { controls,
+  return { controls, directions,
     appearanceStatus(value: Appearance, message: string, preparing = false) { if (preparing) style.prepare(value); else style.setValue(value); menu.displayStatus(message); },
     soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     readiness: menu.readiness,
