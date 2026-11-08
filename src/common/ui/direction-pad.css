@@ -1,0 +1,45 @@
+[data-menu-owner] .touch-direction-pad {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: var(--direction-size, 128px);
+  height: var(--direction-size, 128px);
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 45%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(circle, #19323ce8 0 32%, #0b1c29e8 34% 62%, #29414be8 64%);
+  box-shadow: inset 0 1px 6px #ffffff12, 0 3px 12px #0004;
+  touch-action: none;
+  pointer-events: auto;
+}
+[data-menu-owner] .touch-direction-pad::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 29%; height: 29%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 55%, transparent);
+  background: radial-gradient(circle at 35% 25%, #627d85, #223c48 70%);
+  box-shadow: 0 2px 5px #0008;
+  transform: translate(calc(-50% + var(--direction-x, 0px)), calc(-50% + var(--direction-y, 0px)));
+  pointer-events: none;
+}
+[data-menu-owner] .touch-direction-pad[data-engaged]::after { border-color: var(--menu-accent); }
+[data-menu-owner] .touch-direction-pad > button[data-control][data-direction] {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 36%; height: 36%;
+  min-width: 0; min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--menu-accent);
+  font: 24px/1 system-ui, sans-serif;
+  text-shadow: 0 1px 3px #000;
+}
+[data-menu-owner] .touch-direction-pad > [data-direction='up'] { left: 32%; top: 0; }
+[data-menu-owner] .touch-direction-pad > [data-direction='left'] { left: 0; top: 32%; }
+[data-menu-owner] .touch-direction-pad > [data-direction='right'] { right: 0; top: 32%; }
+[data-menu-owner] .touch-direction-pad > [data-direction='down'] { left: 32%; bottom: 0; }
+[data-menu-owner] .touch-direction-pad > button[data-direction][data-held] { color: #fff; background: #ffffff1c; }

@@ -171,9 +171,11 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
     presentation = createPresentation(host.surface);
     readiness.watch(() => appearance(defaultTheme(themes)));
 
-    input = bindInput(host.surface, ui.controls, () => screen === 'playing' && match.phase === 'fight', host.signal);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing' && match.phase === 'fight', host.signal, ui.directions);
     bindSessionFocus(host.root, {
       signal: host.signal,
+      surface: host.surface,
+      playing: () => screen === 'playing',
       clearInput: () => input?.clear(),
       suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && !Object.values(ui.controls).includes(document.activeElement as HTMLButtonElement)

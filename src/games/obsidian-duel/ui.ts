@@ -1,3 +1,4 @@
+import { createDirectionPad } from '../../common/ui/direction-pad.ts';
 import { defaultTheme, createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { themes, appearanceNames, type Appearance } from './themes.ts';
 import { createElementLookup, setText, setProperty } from '../../common/ui/dom.ts';
@@ -53,12 +54,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   });
 
   const controls = Object.fromEntries((['left', 'right', 'jump', 'crouch', 'light', 'heavy', 'special', 'block'] as const).map(k => [k, $<HTMLButtonElement>(`[data-control="${k}"]`)])) as Record<Control, HTMLButtonElement>;
+  const directions = createDirectionPad<Control>($('.duel-pad'), { up: 'jump', down: 'crouch', left: 'left', right: 'right' });
   const roster = [...root.querySelectorAll<HTMLButtonElement>('[data-fighter]')];
   for (const button of roster) button.addEventListener('click', () => {
     for (const b of roster) b.setAttribute('aria-pressed', String(b === button)); select(button.dataset.fighter as FighterId);
   }, { signal });
   let current: Screen = 'title', activeAppearance: Appearance = 'arcade';
-  return { controls,
+  return { controls, directions,
     appearanceStatus(id: Appearance, message: string, preparing = false) {
       if (preparing) theme.prepare(id); else theme.setValue(id);menu.displayStatus(message);
       if(!message && !preparing){

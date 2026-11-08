@@ -1,5 +1,5 @@
 import type { MoveAction } from './game.ts';
-import { bindButtons } from '../../engine/browser/buttons.ts';
+import { bindButtons, type DirectionPad } from '../../engine/browser/buttons.ts';
 import type { KeyBindings } from '../../engine/bindings.ts';
 
 export type Control = 'left' | 'right' | 'up' | 'down';
@@ -14,8 +14,8 @@ export interface Stick {
   radius: number;
 }
 
-export function bindInput(surface: HTMLElement, controls: Readonly<Record<Control, HTMLButtonElement>>, active: () => boolean, signal: AbortSignal) {
-  const buttons = bindButtons({ surface, controls, bindings, active, signal });
+export function bindInput(surface: HTMLElement, controls: Readonly<Record<Control, HTMLButtonElement>>, active: () => boolean, signal: AbortSignal, directions: DirectionPad<Control>) {
+  const buttons = bindButtons({ surface, controls, bindings, active, signal, directions });
   let pointerId: number | undefined;
   let stick: Stick | undefined;
   const point = (event: PointerEvent) => {

@@ -40,12 +40,7 @@
 .duel-app .duel-hint { text-align: center; font: 9px monospace; color: #d5c2a7; }
 .duel-app .duel-hint span { color: #868493; }
 .duel-app .duel-touch { display: none; justify-content: space-between; align-items: center; gap: 8px; }
-.duel-app .duel-pad { display: grid; grid-template-columns: repeat(3,38px); grid-template-rows: repeat(3,29px); gap: 2px; }
-.duel-app .duel-pad button { min-height: 0; padding: 0; font: 20px system-ui; }
-.duel-app [data-control="jump"] { grid-column: 2; }
-.duel-app [data-control="left"] { grid-column: 1; grid-row: 2; }
-.duel-app [data-control="right"] { grid-column: 3; grid-row: 2; }
-.duel-app [data-control="crouch"] { grid-column: 2; grid-row: 3; }
+.duel-app .duel-pad { --direction-size: 120px; }
 .duel-app .duel-strikes { display: grid; grid-template-columns: repeat(2,50px); gap: 6px; }
 .duel-app .duel-strikes button { width: 50px; height: 43px; min-height: 0; padding: 0; border-radius: 30%; font: 600 16px Georgia,serif; }
 .duel-app .duel-strikes small { display: block; font: 6px monospace; margin-top: 3px; }

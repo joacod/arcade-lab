@@ -1,5 +1,5 @@
 import type { Action } from './game.ts';
-import { bindButtons } from '../../engine/browser/buttons.ts';
+import { bindButtons, type DirectionPad } from '../../engine/browser/buttons.ts';
 import type { KeyBindings } from '../../engine/bindings.ts';
 
 export type Control = 'left' | 'right' | 'up' | 'down' | 'fire' | 'evade';
@@ -9,8 +9,8 @@ const bindings: KeyBindings<Control> = {
   fire: ['Space', 'KeyJ'], evade: ['ShiftLeft', 'ShiftRight', 'KeyK'],
 };
 /** Relative steering stays in CSS pixels. A pointer hold also fires. */
-export function bindInput(surface: HTMLElement, controls: Readonly<Record<Control, HTMLButtonElement>>, active: () => boolean, signal: AbortSignal) {
-  const buttons = bindButtons({ surface, controls, bindings, active, signal });
+export function bindInput(surface: HTMLElement, controls: Readonly<Record<Control, HTMLButtonElement>>, active: () => boolean, signal: AbortSignal, directions: DirectionPad<Control>) {
+  const buttons = bindButtons({ surface, controls, bindings, active, signal, directions });
   let pointer: number | undefined, origin = { x: 0, y: 0 }, tip = origin;
   function release() {
     const id = pointer; pointer = undefined;

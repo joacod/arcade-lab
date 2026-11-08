@@ -1,0 +1,7 @@
+.game-host, .game-host * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.game-host .play-surface, .game-host [data-control] { touch-action: none; }
+.game-host .game-menu-layer button, .game-host .game-pause { touch-action: manipulation; }

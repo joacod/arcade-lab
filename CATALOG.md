@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Every game offers on-screen movement and action controls on touch devices and narrow screens. Hold multiple buttons together to combine directions and actions. Last Light Clearing and Skybreak also support dragging in the playfield.
+Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield.
 
 Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
@@ -35,7 +35,7 @@ The camera follows the Keeper. Round cards compare the two round lengths before 
 |  ---  |
 |  WASD / arrow keys  |
 |  Hold and drag in the arena  |
-|  Touch arrows to move; weapons fire automatically  |
+|  Touch direction pad to move; weapons fire automatically  |
 |  Click / tap, or arrows + Enter / Space  |
 
 See [game rules and implementation](docs/games/last-light-clearing/README.md) and [artwork guide](src/games/last-light-clearing/art/README.md).
@@ -52,7 +52,7 @@ Fly a 2–3 minute sortie through fifteen formations to **Iron Tempest**, an arm
 |  Space / J  |
 |  Shift / K / Roll button  |
 |  Hold and drag on the playfield  |
-|  Touch arrows + Fire / Roll  |
+|  Touch direction pad + Fire / Roll  |
 
 The portrait playfield scales uniformly and stays centered. Roll supports a second touch while steering. See [game rules and implementation](docs/games/skybreak/README.md) for pickups, boss patterns, tuning and [artwork](src/games/skybreak/art/README.md).
 
@@ -82,7 +82,7 @@ The grid is dead. The streets aren't. Fight as **Rook** through **Neon Backstree
 |  Z  |
 |  X  |
 |  Space, then Z / X  |
-|  Touch arrows + Strike / Heavy / Jump  |
+|  Touch direction pad + Strike / Heavy / Jump  |
 
 **Keyboard layout** in Settings also offers WASD movement with J/K attacks and Space jump. The selection lasts for this visit, including restarts.
 
@@ -103,7 +103,7 @@ Two warriors. One eye of the storm. Choose agile **Nera**, with fast palms and a
 |  Low sweep / overhead jump attack  |  Crouch + J / airborne J or K  |
 |  Guard; crouch as well to stop sweeps  |  Shift  |
 
-**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to fighter selection. Touch directions + Light / Heavy / Special / Guard support independent held controls and attack presses.
+**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and returning to fighter selection. Touch direction pad + Light / Heavy / Special / Guard support independent held controls and attack presses.
 
 Action-specific poses and feedback distinguish misses, contact and guard. The fixed arena scales uniformly on narrower screens. See [fighting rules and source ownership](docs/games/obsidian-duel/README.md) and the [artwork guide](src/games/obsidian-duel/art/README.md).
 
@@ -122,7 +122,7 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 |  Throw a fused grenade  |  K  |
 |  Switch operator after rescuing Bolt  |  L  |
 
-**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch directions + Jump / Fire / Grenade / Switch support independent simultaneous controls.
+**Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch direction pad + Jump / Fire / Grenade / Switch support independent simultaneous controls.
 
 Health and lives are grouped in the HUD: bullets chip health, while hostile explosives and fuel blasts cost a life. Green supply checkpoints support retries. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete sprites, bounded debris and procedural AudioBits sounds power the action. Deluxe adds painted commandos, machines, equipment and coastal scenery. See [gameplay and source ownership](docs/games/blastline/README.md).
 
