@@ -32,7 +32,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
         <span class="arcade-card-copy"><span class="arcade-number" aria-hidden="true">0${index + 1}</span><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-card-action-label">Play</span><svg class="arcade-play-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 1.7 10.4 6 3.2 10.3Z"/></svg></span></span>
         <span id="${game.id}-description" class="arcade-game-description">${game.description} ${game.controls}.</span>
       </button>`).join('')}</div>
-    <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span>Explore each game’s artwork <span aria-hidden="true">·</span> Choose your theme in game</span></footer>
+    <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span class="arcade-credit">Built by <a href="https://joacod.com" target="_blank" rel="noopener noreferrer">joacod</a></span></footer>
     <p class="arcade-display-status" role="status" hidden></p>
     <div class="arcade-loading" ${message ? '' : 'hidden'}><p class="arcade-selection-status" role="status"></p><button type="button" class="arcade-cancel" hidden>Cancel loading</button></div>
     </div>`;
