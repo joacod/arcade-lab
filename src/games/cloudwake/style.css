@@ -57,3 +57,10 @@
   .cloudwake-app .cloudwake-touch button { min-height: 36px; min-width: 44px; }
   .cloudwake-app .cloudwake-touch [data-control='thrust'] { min-width: 108px; min-height: 36px; }
 }
+
+.cloudwake-app[data-theme='deluxe'] { background: #102f3a; --menu-accent: #f5d79f; }
+.cloudwake-app[data-theme='deluxe'] .cloudwake-hud { background: linear-gradient(110deg, #183f49, #102f3a); border-color: #e6c68a50; }
+.cloudwake-app[data-theme='deluxe'] .cloudwake-brand { color: #ffe4b6; text-shadow: 0 1px 12px #e5b75b20; }
+.cloudwake-app[data-theme='deluxe'] .cloudwake-footer { background: #102f3a; }
+.cloudwake-app[data-theme='deluxe'] :is(.cloudwake-leg, .cloudwake-shield) { background: #102f3aeb; border-color: #e6c68a60; box-shadow: 0 3px 14px #0b293630; }
+.cloudwake-app[data-theme='deluxe'] .game-menu { background: radial-gradient(ellipse at 0 0, #3d72744d, transparent 70%), #102f3af7; border-color: #edce9680; box-shadow: 0 24px 80px #07202d66, inset 0 1px #ffebbd20; }

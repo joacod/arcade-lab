@@ -4,7 +4,7 @@ import { flight, fly, multiplierAt, speedAt, slide, fragmentShape, pickupRear } 
 import { createRoute, nextPassage, reachable, minePosition, steerTo, legAt, safeGap, passageCenter } from '../../../../src/games/cloudwake/route.ts';
 import { continueRun, createRun, stepRun, pauseRun, takeEvents } from '../../../../src/games/cloudwake/game.ts';
 import { touchesFragment } from '../../../../src/games/cloudwake/collection.ts';
-import { cloudTiles } from '../../../../src/games/cloudwake/presentation.ts';
+import { cloudTiles, createPassageViews } from '../../../../src/games/cloudwake/presentation.ts';
 const dt = 1 / 60;
 
 test('hold gives continuous lift, release brakes then falls, speed and cloud boundaries are bounded', () => {
@@ -227,6 +227,23 @@ test('fragment streaks multiply points, near misses stay uncollected, and a char
   run.passages = [obstacle];
   stepRun(run, { thrust: false }, dt);
   assert.equal(run.status, 'crashed'); assert.equal(run.lives, flight.lives - 1);
+});
+
+test('retired passage artwork remains until fully clipped by the viewport, and reset releases the old route', () => {
+  const views = createPassageViews();
+  const base = { ...createRun(42).route.previous, x: 700, width: 60 };
+  const lantern = { ...base, id: 10, pattern: 'breather', cleared: false };
+  const pillar = { ...base, id: 11, pattern: 'gate' };
+  const mine = { ...base, id: 12, pattern: 'drift' };
+  const ids = entries => [...entries].map(passage => passage.id);
+  assert.deepEqual(ids(views.update([lantern, pillar, mine], 1000, -300)), [10, 11, 12]);
+  lantern.cleared = true;
+  assert.equal([...views.update([], 1001, -300)][0].cleared, true, 'retain the final checkpoint state after simulation compaction');
+  assert.deepEqual(ids(views.update([], 1100, -300)), [10], 'the lantern overhang remains visible after its pocket and nearby hazards leave');
+  assert.deepEqual(ids(views.update([], 1200, -300)), [], 'fully clipped images release their history');
+  views.update([lantern], 1000, -300);
+  views.clear();
+  assert.deepEqual(ids(views.update([], 1000, -300)), [], 'restart or checkpoint continuation cannot revive stale scenery');
 });
 
 test('cloud identities preserve height and continuous travel across scroll wrapping, including the camera inset', () => {

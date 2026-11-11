@@ -1,6 +1,6 @@
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import { createHost } from '../../engine/browser/host.ts';
-import { createReadiness } from '../../engine/browser/preparation.ts';
+import { createReadiness, createPreparationScope } from '../../engine/browser/preparation.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import { createClock, FIXED_STEP } from '../../engine/clock.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -10,17 +10,20 @@ import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
+import { themes, type Appearance } from './themes.ts';
 import './style.css';
 
 export function mountCloudwake(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, screen: Screen = 'title', run = createRun();
   const clock = createClock();
-  let outcomeAt = 0;
+  let outcomeAt = 0, appearance: Appearance = 'arcade', active = false;
+  const preparation = createPreparationScope();
   let host: ReturnType<typeof createHost>, ui: ReturnType<typeof createUI>, input: ReturnType<typeof bindInput>;
   let presentation: ReturnType<typeof createPresentation>, sound: ReturnType<typeof createSound>;
   function dispose() {
     if (disposed) return;
     disposed = true;
+    preparation.dispose();
     disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
@@ -28,7 +31,9 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
       surfaceLabel: 'Cloudwake playfield. Hold Space, mouse or touch to rise. Release to fall. A, D or sideways drag slides across the view. P pauses.',
       onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
-    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value));
+    ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value), id => {
+      if (readiness.ready) void selectTheme(id); else readiness.watch(() => selectTheme(id));
+    });
     input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     presentation = createPresentation(host.surface);
     const readiness = createReadiness(host.signal, (state, retry) => {
@@ -36,9 +41,50 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
       if (state === 'ready' && screen === 'title' && document.hasFocus()
         && document.activeElement === host.root.querySelector('[data-menu-action="quit"]')) ui.launchButtons[0]!.focus({ preventScroll: true });
     });
-    readiness.watch(() => presentation.prepare().then(() => { if (!disposed) presentation.draw(run, host); }));
+    readiness.watch(() => selectTheme('arcade'));
     host.root.dataset.theme = 'arcade';
 
+    async function selectTheme(id: Appearance) {
+      if (disposed || screen === 'playing') return false;
+      const request = preparation.begin();
+      ui.appearancePending(id); ui.appearanceStatus(`Preparing ${themes[id].name}…`);
+      let candidate: ReturnType<typeof createPresentation> | undefined;
+      try {
+        candidate = createPresentation(document.createElement('div'), id);
+        const display = candidate;
+        const cancelCandidate = () => display.dispose();
+        request.signal.addEventListener('abort', cancelCandidate, { once: true });
+        await candidate.prepare();
+        if (!request.current()) return false;
+        candidate.draw(run, host, screen === 'title' ? performance.now() / 1000 : undefined);
+        const previous = presentation;
+        host.surface.append(candidate.element); presentation = candidate; candidate = undefined;
+        // The active owner must survive cancellation of the next request.
+        request.signal.removeEventListener('abort', cancelCandidate);
+        appearance = id; active = true;
+        host.root.dataset.theme = id;
+        ui.appearance(id); ui.appearanceStatus('');
+        previous.dispose();
+        return true;
+      } catch {
+        if (request.current()) {
+          ui.appearance(appearance);
+          ui.appearanceStatus(`Could not load ${themes[id].name}. ${active ? `Keeping ${themes[appearance].name}.` : 'Retry artwork or return to game selection.'} Your flight is preserved.`);
+        }
+      } finally { candidate?.dispose(); }
+      return false;
+    }
+    function recoverPresentation() {
+      const failed = appearance;
+      suspend(); preparation.cancel(); presentation.dispose(); active = false;
+      delete host.root.dataset.theme;
+      let reportFailure = failed === 'arcade';
+      ui.appearanceStatus(`Graphics interrupted. Your flight is preserved. ${reportFailure ? 'Retry artwork to continue.' : 'Recovering Arcade; resume when ready.'}`);
+      readiness.watch(() => {
+        if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+        return selectTheme('arcade');
+      });
+    }
     function transition(next: Screen, focus = true) {
       input.clear(); clock.reset(); screen = next;
       if (next === 'paused' || next === 'title') sound.pause();
@@ -50,6 +96,9 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
       if (intent === 'pause') { suspend(); return; }
       if (intent === 'fullscreen') { void host.toggleFullscreen().then(message => { if (!disposed) ui.displayStatus(message); }); return; }
       if (!readiness.ready || document.hidden || !document.hasFocus()) return;
+      if (['start', 'restart', 'continue', 'resume'].includes(intent)) {
+        preparation.cancel(); ui.appearance(appearance); ui.appearanceStatus('');
+      }
       if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
         sound.reset(); sound.activate();
         run = createRun(crypto.getRandomValues(new Uint32Array(1))[0]);
@@ -95,16 +144,7 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
         }
       }
       try { presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined, screen === 'crashed' || screen === 'defeat' ? (now - outcomeAt) / 1000 : 0); }
-      catch {
-        suspend(); presentation.dispose();
-        let report = true;
-        readiness.watch(() => {
-          if (report) { report = false; return Promise.resolve(false); }
-          presentation.dispose();
-          presentation = createPresentation(host.surface);
-          return presentation.prepare().then(() => { if (!disposed) presentation.draw(run, host); });
-        });
-      }
+      catch { recoverPresentation(); }
       ui.update(run);
     });
     return { dispose };

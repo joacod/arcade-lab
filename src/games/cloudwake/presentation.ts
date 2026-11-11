@@ -1,7 +1,8 @@
-import { createImageResource, validateImageDimensions } from '../../engine/browser/images.ts';
+import { prepareImages, validateImageDimensions, type PreparedImages } from '../../engine/browser/images.ts';
+import type { Appearance } from './themes.ts';
 import type { Run, FlightEvent } from './game.ts';
 import { flight, viewScale, fragmentShape } from './content.ts';
-import { minePosition, passageCenter } from './route.ts';
+import { minePosition, passageCenter, type Passage } from './route.ts';
 
 const urls = {
   courier: new URL('./art/courier.webp', import.meta.url).href,
@@ -34,22 +35,56 @@ export function flightView(width: number, height: number) {
   return { scale, width: width / scale, y: (height - flight.height * scale) / 2, x: Math.max(0, width / scale * .2 - flight.playerX) };
 }
 
-export function createPresentation(surface: HTMLElement) {
+/** Simulation retires hazards behind the flight slots; artwork lives to the viewport edge. */
+export function createPassageViews() {
+  const passages = new Map<number, Passage>();
+  return {
+    update(current: readonly Passage[], distance: number, left: number) {
+      for (const passage of current) passages.set(passage.id, passage);
+      for (const [id, passage] of passages) {
+        const right = passage.pattern === 'breather'
+          ? passage.x + passage.width + flight.radius + beacon.size * (1 - beacon.anchorX)
+          : passage.pattern === 'drift' ? passage.x + passage.width / 2 + 47
+          : passage.x + passage.width;
+        if (right - distance < left) passages.delete(id);
+      }
+      return passages.values();
+    },
+    clear() { passages.clear(); },
+  };
+}
+
+export function createPresentation(surface: HTMLElement, appearance: Appearance = 'arcade') {
   const element = document.createElement('canvas'); element.className = 'cloudwake-canvas'; element.setAttribute('aria-hidden', 'true');
   const context = element.getContext('2d');
   if (!context) throw new Error('Canvas 2D unavailable');
   const ctx = context;
-  const art = createImageResource(urls, dimensions => validateImageDimensions(dimensions, sizes));
+  const lifetime = new AbortController();
+  let art: PreparedImages | undefined, pending: Promise<void> | undefined;
+  function prepare(): Promise<void> {
+    if (art) return Promise.resolve();
+    if (pending) return pending;
+    pending = (async () => {
+      const pack = appearance === 'deluxe' ? await import('./deluxe-art.ts') : { urls, sizes };
+      const prepared = await prepareImages(pack.urls, lifetime.signal, dimensions => validateImageDimensions(dimensions, pack.sizes));
+      if (lifetime.signal.aborted) { prepared.dispose(); return; }
+      art = prepared;
+    })().finally(() => { pending = undefined; });
+    return pending;
+  }
+  const deluxe = appearance === 'deluxe';
+  const courierRole = deluxe ? { ...courier, size: 90, anchorX: .58, anchorY: .52, thrust: [1] as const } : courier;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const sparks: Spark[] = [];
   const scores: ScorePop[] = [];
+  const passages = createPassageViews();
   // A gameplay miss ends collection eligibility, not the gem's visible lifetime.
   // Keep its cosmetic image until the actual viewport edge eats it, including
   // the extra space behind the courier on wide displays.
   const missedFragments: { x: number; y: number }[] = [];
   let disposed = false, lastTime = 0, crashTime = -Infinity, checkpointTime = -Infinity, checkpointAt = NaN;
   surface.append(element);
-  function reset() { sparks.length = scores.length = missedFragments.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
+  function reset() { passages.clear(); sparks.length = scores.length = missedFragments.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
   function consume(events: readonly FlightEvent[]) {
     for (const event of events) {
       if (event.type === 'fragment-missed') { missedFragments.push({ x: event.x, y: event.y }); continue; }
@@ -67,16 +102,20 @@ export function createPresentation(surface: HTMLElement) {
   }
   function draw(run: Run, viewport: Viewport, titleTime?: number, outcomeAge = 0) {
     if (disposed) return;
-    const { width, height, ratio } = viewport;
+    const { width, height } = viewport;
+    const ratio = Math.min(2, viewport.ratio);
     const backingWidth = Math.max(1, Math.round(width * ratio)), backingHeight = Math.max(1, Math.round(height * ratio));
     if (element.width !== backingWidth || element.height !== backingHeight) { element.width = backingWidth; element.height = backingHeight; }
-    const images = art.images;
+    const images = art?.images ?? {};
     if (!images.courier) return;
     lastTime = run.elapsed;
     const time = titleTime ?? run.elapsed + Math.min(.8, outcomeAge), decorative = motion.matches ? 0 : time;
     const distance = titleTime !== undefined ? decorative * 38 : run.distance;
     const view = flightView(width, height);
+    ctx.reset();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    // Keep live transforms bilinear; high-quality resampling stalls large Retina canvases.
+    ctx.imageSmoothingQuality = 'low';
     ctx.fillStyle = '#79bbcd'; ctx.fillRect(0, 0, width, height);
     // Mirrored plates keep the scrolling horizon continuous without a hard seam.
     const skyWidth = Math.max(width, height * 1.5), skyHeight = skyWidth / 1.5;
@@ -103,7 +142,7 @@ export function createPresentation(surface: HTMLElement) {
     }
     clouds(.12, 325, .22, 370, 410);
     clouds(.32, 475, .68, 300, 370);
-    for (const passage of run.passages) {
+    for (const passage of passages.update(run.passages, distance, -view.x)) {
       const x = passage.x - distance;
       if (x > worldWidth + 120 || x + passage.width < -view.x - 120) continue;
       if (passage.pattern === 'breather') {
@@ -157,8 +196,11 @@ export function createPresentation(surface: HTMLElement) {
     const shieldLeft = run.shieldUntil - run.elapsed;
     if (titleTime === undefined && shieldLeft > 0) {
       const fade = Math.min(1, shieldLeft / .7);
-      ctx.globalAlpha = fade; ctx.strokeStyle = '#b8fff2'; ctx.lineWidth = 2; ctx.fillStyle = '#a4fff018';
-      ctx.beginPath(); ctx.ellipse(playerX - 7, playerY, 46, 36, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.globalAlpha = fade; ctx.strokeStyle = '#b8fff2'; ctx.lineWidth = deluxe ? 1.5 : 2;
+      const glass = ctx.createRadialGradient(playerX - 20, playerY - 22, 2, playerX - 6, playerY - 5, 48);
+      glass.addColorStop(0, '#e6fff92e'); glass.addColorStop(.7, '#a4fff008'); glass.addColorStop(1, '#c5fff940');
+      ctx.fillStyle = deluxe ? glass : '#a4fff018';
+      ctx.beginPath(); ctx.ellipse(playerX - 7, playerY - (deluxe ? 5 : 0), deluxe ? 48 : 46, deluxe ? 42 : 36, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.globalAlpha = 1;
     }
     if (!motion.matches && run.thrust && run.status === 'active' && titleTime === undefined) {
@@ -170,13 +212,13 @@ export function createPresentation(surface: HTMLElement) {
       }
       ctx.globalAlpha = 1;
     }
-    const frames = run.thrust ? courier.thrust : courier.glide;
-    const frame = frames[motion.matches ? 0 : Math.floor(time * (run.thrust ? 9 : 3)) % 2]!;
+    const frames = run.thrust ? courierRole.thrust : courierRole.glide;
+    const frame = frames[motion.matches ? 0 : Math.floor(time * (run.thrust ? 9 : 3)) % frames.length]!;
     ctx.save(); ctx.translate(playerX, playerY);
     const tilt = motion.matches || titleTime !== undefined ? 0 : Math.max(-.19, Math.min(.22, run.player.vy / 1500));
     ctx.rotate(tilt);
-    ctx.drawImage(images.courier, frame % 2 * courier.cell, Math.floor(frame / 2) * courier.cell, courier.cell, courier.cell,
-      -courier.size * courier.anchorX, -courier.size * courier.anchorY, courier.size, courier.size);
+    ctx.drawImage(images.courier, frame % 2 * courierRole.cell, Math.floor(frame / 2) * courierRole.cell, courierRole.cell, courierRole.cell,
+      -courierRole.size * courierRole.anchorX, -courierRole.size * courierRole.anchorY, courierRole.size, courierRole.size);
     ctx.restore();
     let keep = 0;
     for (const spark of sparks) {
@@ -208,7 +250,7 @@ export function createPresentation(surface: HTMLElement) {
       ctx.globalAlpha = (1 - (time - crashTime) / .18) * .25; ctx.fillStyle = '#ffecd0'; ctx.fillRect(-view.x, 0, worldWidth, flight.height); ctx.globalAlpha = 1;
     }
   }
-  return { prepare: art.prepare, draw, consume, reset,
-    dispose() { if (disposed) return; disposed = true; art.dispose(); sparks.length = scores.length = missedFragments.length = 0; element.remove(); element.width = element.height = 0; },
+  return { element, prepare, draw, consume, reset,
+    dispose() { if (disposed) return; disposed = true; lifetime.abort(); art?.dispose(); art = undefined; passages.clear(); sparks.length = scores.length = missedFragments.length = 0; element.remove(); element.width = element.height = 0; },
   };
 }

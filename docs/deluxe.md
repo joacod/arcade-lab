@@ -45,6 +45,8 @@ Follow the [shared presentation timing and reduced-motion rules](architecture.md
 
 Bound particles, trails, temporary lights and history buffers. Cache expensive scenery, reuse atlas images, batch compatible sprite/effect draws and recycle temporary presentation objects where this saves allocation. Size cached canvases and light stamps from their displayed footprint and cap both axes. Bound backing-buffer resolution independently of display DPR when needed. Optimizations must preserve visual hierarchy and collision alignment.
 
+Use standard image smoothing for live Canvas transforms. Perform expensive image resampling during asset preparation or when building a bounded cache instead of enabling high-quality filtering across every frame. Profile actual gameplay at large display sizes and high DPR: short JavaScript draw calls can still queue costly graphics work, so compare frame delivery as well as callback duration.
+
 ## Replace and recover safely
 
 Follow the [shared replacement and recovery contract](architecture.md#replacement-and-recovery) for candidate validation, cancellation, resource release, draw failure and Canvas state recovery. Keep Deluxe’s local resource ownership and recovery behavior in the owning game’s guide.
