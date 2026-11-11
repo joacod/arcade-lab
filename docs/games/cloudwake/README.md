@@ -26,11 +26,11 @@ Hold Space, W, ↑, mouse/touch on the playfield, or the mobile Rise button. Rel
 
 ## Deluxe · Sunward Radiance
 
-The same courier, ivory-and-teal scooter, coral-crystal ruins and winged lanterns receive a dimensional painted treatment: glazed ceramic, chased brass, translucent crystal and warm fabric. Complete authored flight cels carry the pilot and vehicle together. Glide/release and alternating thrust cels retain a stable vehicle anchor, while scarf and exhaust provide the motion accents.
+The same courier, ivory-and-teal scooter, coral-crystal ruins and winged lanterns receive a dimensional painted treatment: glazed ceramic, chased brass, translucent crystal and warm fabric. Complete authored flight cels carry the pilot and vehicle together. Held thrust uses a steady leaning pose with moving exhaust trails; glide/release cels retain a stable vehicle anchor.
 
 A luminous cloud sea and distant ivory terraces occupy the lower scenery, with quiet blue air behind the flight corridors. Coral silhouettes identify danger; turquoise fragments and lantern cores identify rewards and safety. Background contrast stays below the foreground ruins, and decorative parallax never moves physical geometry. The title, HUD and menus use deep petrol surfaces with champagne and turquoise accents.
 
-A lantern opens once on checkpoint passage, blooms and settles into its lit cel. The shield forms a restrained glass envelope around the courier; pickup points remain attached to the collected fragment. Trails and glints stay bounded and use active flight time. Pause freezes them, and reduced motion keeps still cels and essential state cues while suppressing decorative movement and flashes.
+A lantern opens once on checkpoint passage, blooms and settles into its lit cel. The renderer retains retired lanterns and hazard artwork until their complete visual footprints scroll past the left viewport edge, independently of simulation cleanup. Restart and checkpoint continuation clear this cosmetic history. The shield forms a restrained glass envelope around the courier; pickup points remain attached to the collected fragment. Trails and glints stay bounded and use active flight time. Pause freezes them, and reduced motion keeps still cels and essential state cues while suppressing decorative movement and flashes.
 
 Deluxe loads its own courier, ruins, mine, fragment, cloud, lantern and horizon artwork only when selected. The working presentation stays visible during preparation. Failed preparation retains the current theme; a draw failure pauses the flight and recovers to Arcade with fresh Canvas state, following the shared [replacement contract](../../architecture.md#replacement-and-recovery).
 

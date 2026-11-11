@@ -2,7 +2,7 @@ import { prepareImages, validateImageDimensions, type PreparedImages } from '../
 import type { Appearance } from './themes.ts';
 import type { Run, FlightEvent } from './game.ts';
 import { flight, viewScale, fragmentShape } from './content.ts';
-import { minePosition, passageCenter } from './route.ts';
+import { minePosition, passageCenter, type Passage } from './route.ts';
 
 const urls = {
   courier: new URL('./art/courier.webp', import.meta.url).href,
@@ -35,6 +35,25 @@ export function flightView(width: number, height: number) {
   return { scale, width: width / scale, y: (height - flight.height * scale) / 2, x: Math.max(0, width / scale * .2 - flight.playerX) };
 }
 
+/** Simulation retires hazards behind the flight slots; artwork lives to the viewport edge. */
+export function createPassageViews() {
+  const passages = new Map<number, Passage>();
+  return {
+    update(current: readonly Passage[], distance: number, left: number) {
+      for (const passage of current) passages.set(passage.id, passage);
+      for (const [id, passage] of passages) {
+        const right = passage.pattern === 'breather'
+          ? passage.x + passage.width + flight.radius + beacon.size * (1 - beacon.anchorX)
+          : passage.pattern === 'drift' ? passage.x + passage.width / 2 + 47
+          : passage.x + passage.width;
+        if (right - distance < left) passages.delete(id);
+      }
+      return passages.values();
+    },
+    clear() { passages.clear(); },
+  };
+}
+
 export function createPresentation(surface: HTMLElement, appearance: Appearance = 'arcade') {
   const element = document.createElement('canvas'); element.className = 'cloudwake-canvas'; element.setAttribute('aria-hidden', 'true');
   const context = element.getContext('2d');
@@ -54,17 +73,18 @@ export function createPresentation(surface: HTMLElement, appearance: Appearance 
     return pending;
   }
   const deluxe = appearance === 'deluxe';
-  const courierRole = deluxe ? { ...courier, size: 90, anchorX: .58, anchorY: .52 } : courier;
+  const courierRole = deluxe ? { ...courier, size: 90, anchorX: .58, anchorY: .52, thrust: [1] as const } : courier;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const sparks: Spark[] = [];
   const scores: ScorePop[] = [];
+  const passages = createPassageViews();
   // A gameplay miss ends collection eligibility, not the gem's visible lifetime.
   // Keep its cosmetic image until the actual viewport edge eats it, including
   // the extra space behind the courier on wide displays.
   const missedFragments: { x: number; y: number }[] = [];
   let disposed = false, lastTime = 0, crashTime = -Infinity, checkpointTime = -Infinity, checkpointAt = NaN;
   surface.append(element);
-  function reset() { sparks.length = scores.length = missedFragments.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
+  function reset() { passages.clear(); sparks.length = scores.length = missedFragments.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
   function consume(events: readonly FlightEvent[]) {
     for (const event of events) {
       if (event.type === 'fragment-missed') { missedFragments.push({ x: event.x, y: event.y }); continue; }
@@ -122,7 +142,7 @@ export function createPresentation(surface: HTMLElement, appearance: Appearance 
     }
     clouds(.12, 325, .22, 370, 410);
     clouds(.32, 475, .68, 300, 370);
-    for (const passage of run.passages) {
+    for (const passage of passages.update(run.passages, distance, -view.x)) {
       const x = passage.x - distance;
       if (x > worldWidth + 120 || x + passage.width < -view.x - 120) continue;
       if (passage.pattern === 'breather') {
@@ -193,7 +213,7 @@ export function createPresentation(surface: HTMLElement, appearance: Appearance 
       ctx.globalAlpha = 1;
     }
     const frames = run.thrust ? courierRole.thrust : courierRole.glide;
-    const frame = frames[motion.matches ? 0 : Math.floor(time * (run.thrust ? 9 : 3)) % 2]!;
+    const frame = frames[motion.matches ? 0 : Math.floor(time * (run.thrust ? 9 : 3)) % frames.length]!;
     ctx.save(); ctx.translate(playerX, playerY);
     const tilt = motion.matches || titleTime !== undefined ? 0 : Math.max(-.19, Math.min(.22, run.player.vy / 1500));
     ctx.rotate(tilt);
@@ -231,6 +251,6 @@ export function createPresentation(surface: HTMLElement, appearance: Appearance 
     }
   }
   return { element, prepare, draw, consume, reset,
-    dispose() { if (disposed) return; disposed = true; lifetime.abort(); art?.dispose(); art = undefined; sparks.length = scores.length = missedFragments.length = 0; element.remove(); element.width = element.height = 0; },
+    dispose() { if (disposed) return; disposed = true; lifetime.abort(); art?.dispose(); art = undefined; passages.clear(); sparks.length = scores.length = missedFragments.length = 0; element.remove(); element.width = element.height = 0; },
   };
 }

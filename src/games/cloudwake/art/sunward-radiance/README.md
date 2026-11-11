@@ -14,7 +14,7 @@ Original AI-generated artwork, distributed under the repository's [MIT license](
 | `cloud.webp` | 640×252 transparent cream-and-blue cloud bank |
 | `sky.webp` | 1536×1024 quiet sky above distant ivory terraces, mirrored in adjacent scrolling tiles |
 
-The courier draws in a 90-unit square with a stable anchor at 58% across and 52% down. This registers the rider and scooter to the existing pickup silhouette without changing gameplay geometry. Authored poses move the upper body and scarf while retaining the scooter registration. The lantern shares Arcade's 124-unit footprint and anchor; its pulse is a single checkpoint response rather than a repeating animation.
+The courier draws in a 90-unit square with a stable anchor at 58% across and 52% down. This registers the rider and scooter to the existing pickup silhouette without changing gameplay geometry. Held thrust uses the first thrust cel as a steady pose, with exhaust trails providing motion. The alternate thrust cel remains in the source sheet. The lantern shares Arcade's 124-unit footprint and anchor; its pulse is a single checkpoint response rather than a repeating animation.
 
 ## Repacking
 
