@@ -22,7 +22,7 @@ The table lists the presentations currently implemented; their artwork and rende
 
 All current games start in **Arcade** and optionally switch to **Deluxe**. Arcade is the complete finished presentation. Deluxe enhances its artwork and effects through the same Canvas 2D gameplay presentation. Prototype is a temporary stage for new games and is removed once Arcade is complete. See the [mode contract](docs/architecture.md#mode-contract).
 
-All artwork required by enabled presentations ships with the repository. Screenshots below show the best completed presentation: **Deluxe** where available, **Arcade** for Cloudwake.
+All artwork required by enabled presentations ships with the repository. Screenshots below show each game's best completed presentation.
 
 ## Last Light Clearing
 
@@ -131,7 +131,7 @@ Health and lives are grouped in the HUD: bullets chip health, while hostile expl
 
 ![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
 
-Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. Broad opening passages introduce flight control before tighter gates and gently drifting storm mines. Clear-air pockets break up the pressure as speed builds toward its cap. Distance and fragments contribute to the current run’s score, with immediate retries. There is no time limit.
+Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. A gentle approach leads to checkpoint legs with high/low gates, central storm mines and longer crystal passages. Winged lanterns activate as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments charges a one-hit light shield. There is no time limit.
 
 | Control | Action |
 | --- | --- |
@@ -140,7 +140,7 @@ Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, 
 | On-screen Hold to rise button | Rise |
 | Release | Fall |
 
-Pressing Play or Restart applies thrust immediately while held. Cloud banks cushion the upper and lower boundaries; crystal structures and storm mines end the flight. See [gameplay and source ownership](docs/games/cloudwake/README.md) and the [artwork guide](src/games/cloudwake/art/README.md).
+Pressing Play, Continue or Restart applies thrust immediately while held. Cloud banks cushion the upper and lower boundaries; crystal structures and storm mines cost a life. Restart begins a fresh three-life flight. See [gameplay and source ownership](docs/games/cloudwake/README.md) and the [artwork guide](src/games/cloudwake/art/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

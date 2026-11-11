@@ -5,7 +5,7 @@ import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session
 import { createClock, FIXED_STEP } from '../../engine/clock.ts';
 import { disposeAll } from '../../engine/disposal.ts';
 import type { GameSession } from '../../engine/session.ts';
-import { createRun, pauseRun, stepRun, takeEvents } from './game.ts';
+import { continueRun, createRun, pauseRun, stepRun, takeEvents } from './game.ts';
 import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
@@ -54,6 +54,8 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
         sound.reset(); sound.activate();
         run = createRun(crypto.getRandomValues(new Uint32Array(1))[0]);
         presentation.reset(); transition('playing');
+      } else if (intent === 'continue' && screen === 'crashed' && continueRun(run)) {
+        sound.reset(); sound.activate(); presentation.reset(); transition('playing');
       } else if (intent === 'resume' && screen === 'paused') {
         sound.activate(); pauseRun(run, false); transition('playing');
       }
@@ -86,12 +88,12 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
         const steps = clock.advance(now);
         for (let i = 0; i < steps && run.status === 'active'; i++) stepRun(run, input.read(), FIXED_STEP);
         const events = takeEvents(run); presentation.consume(events); sound.consume(events, run.thrust);
-        if (run.status === 'defeat') {
+        if (run.status === 'crashed' || run.status === 'defeat') {
           outcomeAt = now;
-          transition('defeat');
+          transition(run.status);
         }
       }
-      try { presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined, screen === 'defeat' ? (now - outcomeAt) / 1000 : 0); }
+      try { presentation.draw(run, host, screen === 'title' ? now / 1000 : undefined, screen === 'crashed' || screen === 'defeat' ? (now - outcomeAt) / 1000 : 0); }
       catch {
         suspend(); presentation.dispose();
         let report = true;

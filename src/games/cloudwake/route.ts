@@ -5,10 +5,19 @@ export interface Passage {
   id: number; x: number; width: number; center: number; gap: number;
   pattern: Pattern; phase: number; cleared: boolean;
 }
-export interface Route { seed: number; index: number; previous: Passage }
+export interface Route { seed: number; index: number; mirrored: boolean; previous: Passage }
+
+interface Leg { name: string; patterns: readonly Pattern[]; centers: readonly number[]; gap: number; width: number }
+const legs: readonly Leg[] = [
+  { name: 'Sunward Approach', patterns: ['rise', 'dive', 'gate', 'rise', 'dive'], centers: [270, 330, 280, 230, 370], gap: 270, width: 86 },
+  { name: 'High / Low', patterns: ['gate', 'gate', 'drift', 'gate', 'gate'], centers: [170, 430, 180, 430, 170], gap: 210, width: 86 },
+  { name: 'Crystal Steps', patterns: ['gate', 'drift', 'gate', 'gate', 'drift'], centers: [160, 440, 170, 430, 170], gap: 190, width: 100 },
+  { name: 'Storm Run', patterns: ['drift', 'gate', 'gate', 'drift', 'gate'], centers: [440, 170, 430, 170, 440], gap: 175, width: 112 },
+];
+export const legAt = (index: number) => legs[Math.min(index, legs.length - 1)]!;
 
 export function createRoute(seed: number): Route {
-  return { seed: seed >>> 0 || 1, index: 0,
+  return { seed: seed >>> 0 || 1, index: 0, mirrored: (seed & 1) === 0,
     previous: { id: -1, x: 0, width: 0, center: 300, gap: 260, pattern: 'breather', phase: 0, cleared: true } };
 }
 function random(route: Route) {
@@ -47,15 +56,19 @@ export function reachable(previous: Passage, next: Passage): boolean {
   return true;
 }
 
-export function nextPassage(route: Route, elapsed: number): Passage {
-  const difficulty = Math.min(1, elapsed / flight.rampSeconds);
+export function nextPassage(route: Route): Passage {
   const id = route.index++;
-  const pattern: Pattern = id % 6 === 5 ? 'breather' : id < 2 ? (id === 0 ? 'rise' : 'dive')
-    : (['gate', 'rise', 'dive', ...(id > 5 ? ['drift'] as const : [])] as const)[Math.floor(random(route) * (id > 5 ? 4 : 3))]!;
-  const gap = pattern === 'breather' ? 290 : 280 - difficulty * 90;
-  const center = clamp(route.previous.center + (random(route) * 2 - 1) * (70 + difficulty * 35), 185, 415);
-  const next: Passage = { id, x: route.previous.x + route.previous.width + (id === 0 ? 780 : 460 - difficulty * 70),
-    width: pattern === 'drift' ? 102 : 86, center, gap, pattern, phase: random(route) * Math.PI * 2, cleared: false };
+  const level = Math.floor(id / 6), slot = id % 6, leg = legAt(level);
+  // Each checkpoint advances the repertoire, rather than merely increasing speed.
+  // Later legs alternate high and low gates, central mines and longer corridors.
+  if (slot === 0 && level > 0) route.mirrored = random(route) < .5;
+  let pattern: Pattern = slot === 5 ? 'breather' : leg.patterns[slot]!;
+  if (route.mirrored) pattern = pattern === 'rise' ? 'dive' : pattern === 'dive' ? 'rise' : pattern;
+  const target = slot === 5 ? 300 : leg.centers[slot]! + (random(route) * 2 - 1) * (level === 0 ? 8 : 16);
+  const center = clamp(route.mirrored ? flight.height - target : target, 140, 460);
+  const next: Passage = { id, x: route.previous.x + route.previous.width + (id === 0 ? 780 : 460 - Math.min(level, 3) * 20),
+    width: pattern === 'breather' ? 86 : leg.width, center, gap: pattern === 'breather' ? 290 : leg.gap,
+    pattern, phase: random(route) * Math.PI * 2, cleared: false };
   // Increase empty travel rather than accepting an unreachable random pattern.
   while (!reachable(route.previous, next)) next.x += 32;
   route.previous = next;

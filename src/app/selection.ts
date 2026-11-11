@@ -24,7 +24,7 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     </header>
     <section class="arcade-introduction" aria-labelledby="selection-heading">
       <div><p class="arcade-eyebrow">SMALL WORLDS</p><h1 id="selection-heading">Press Play</h1></div>
-      <p class="arcade-intro">Original games. Pick a world and press play.<br><span>Keyboard or touch. Right in your browser.</span></p>
+      <p class="arcade-intro">${site.introduction}<br><span>Keyboard or touch. Right in your browser.</span></p>
     </section>
     <div class="arcade-games" aria-labelledby="selection-heading">${games.map(game => `
       <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
