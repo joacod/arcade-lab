@@ -198,7 +198,7 @@ export function mountDuel(container: HTMLElement, onExit: () => void, fullscreen
           stepMatch(match, input!.read(), FIXED_STEP);
           const events = takeEvents(match);
           presentation!.consume(events);
-          sound!.consume(events);
+          sound!.consume(events, match.fighters);
           if (match.phase !== phase) {
             input!.clear();
             clock.reset();

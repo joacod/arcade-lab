@@ -1,37 +1,55 @@
-import { defineSound, type Recipe } from 'audiobits';
-// Soft filtered air is separated from contact: a missed punch never gets the bass/crack.
-const swing = defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .12, layers: [
-  { id: 'air', source: { type: 'noise', color: 'white' }, gainDb: -28, envelope: { attack: .018, decay: .045, sustain: 0, release: .045 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 800], [.1, 2800]], curve: 'exponential' }, q: .8 }] },
-] });
-function impact(low: number, length: number, grit: number): Recipe {
-  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration: length,
+import { defineSound } from 'audiobits';
+
+// Cloth on a miss, a short skin snap on contact, chest weight only on committed blows.
+function swing(heavy: boolean) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration: heavy ? .22 : .13, layers: [
+    { id: 'sleeve', source: { type: 'noise', color: 'white' }, gainDb: heavy ? -29 : -33,
+      envelope: { attack: heavy ? .025 : .012, decay: heavy ? .17 : .1, sustain: 0, release: .015 },
+      effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, heavy ? 500 : 1100], [.1, heavy ? 1800 : 2600]], curve: 'exponential' }, q: .65 }] },
+  ] });
+}
+function contact(bass: number, duration: number, snap: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration,
     parameters: { strength: { min: 0, max: 1, default: .65, mode: 'play' } }, layers: [
-      { id: 'weight', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, low], [.045, low * .45], [length, 42]], curve: 'exponential' } }, gainDb: { control: 'strength', range: [-29, -18], scale: 'linear' }, envelope: { attack: .002, decay: length * .55, sustain: .05, release: .09 } },
-      { id: 'snap', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [-32, -23], scale: 'linear' }, envelope: { attack: .001, decay: .04, sustain: 0, release: .055 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: grit, q: .65 }] },
-      { id: 'armor', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, low * 3.1], [length * .6, low * 1.3]], curve: 'exponential' } }, gainDb: -33, envelope: { attack: .002, decay: .05, sustain: 0, release: .07 } },
+      { id: 'chest', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, bass], [.027, bass * .52], [duration, 48]], curve: 'exponential' } },
+        gainDb: { control: 'strength', range: [-31, -21], scale: 'linear' }, envelope: { attack: .002, decay: duration * .85, sustain: 0, release: .025 } },
+      { id: 'skin-snap', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [-33, -23], scale: 'linear' },
+        envelope: { attack: .002, decay: .04, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { random: [snap * .92, snap * 1.08] }, q: .6 }] },
+      { id: 'clothing', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [-40, -32], scale: 'linear' },
+        envelope: { attack: .004, decay: duration * .65, sustain: 0, release: .02 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 680, q: .6 }] },
     ] });
 }
-function signal(notes: readonly [number, number, number], length: number): Recipe {
-  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration: length, layers: [
-    { id: 'signal', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, notes[0]], [length * .28, notes[1]], [length * .55, notes[2]]], curve: 'exponential' } }, gainDb: -26, envelope: { attack: .004, decay: length * .55, sustain: .12, release: length * .4 } },
-    { id: 'halo', source: { type: 'oscillator', waveform: 'sine', frequency: notes[2] * 1.5 }, gainDb: -34, envelope: { attack: length * .3, decay: length * .35, sustain: .08, release: length * .4 } },
-  ], effects: [{ type: 'delay', time: .12, feedback: .12, mix: .1 }] });
+// Power-grid signals use clean electronic intervals, never the timbre of a landed punch.
+function relay(root: number, duration: number, ratio = 1.5) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
+    { id: 'indicator', source: { type: 'oscillator', waveform: 'triangle', frequency: root }, gainDb: -29,
+      envelope: { attack: .006, decay: duration * .8, sustain: .025, release: .06 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1800, q: .6 }] },
+    { id: 'voltage', source: { type: 'oscillator', waveform: 'sine', frequency: root * ratio }, gainDb: -33,
+      envelope: { attack: duration * .12, decay: duration * .75, sustain: .025, release: .06 } },
+  ], effects: [{ type: 'delay', time: .093, feedback: .1, mix: .09 }] });
 }
 export const circuitRecipes = {
-  swing, hit: impact(165, .15, 1450), heavy: impact(118, .27, 850), finisher: impact(190, .24, 2100),
-  air: impact(210, .20, 1800), damage: impact(125, .3, 1100),
-  ko: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .35, layers: [
-    { id: 'fall', source: { type: 'oscillator', waveform: 'sawtooth', frequency: { points: [[0, 160], [.3, 48]], curve: 'exponential' } }, gainDb: -30, envelope: { attack: .003, decay: .18, sustain: .05, release: .14 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 700, q: .7 }] },
-    { id: 'rattle', source: { type: 'noise', color: 'white' }, gainDb: -31, envelope: { attack: .003, decay: .1, sustain: 0, release: .11 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2200, q: 1.2 }] },
+  swing: swing(false), heavySwing: swing(true),
+  hit: contact(185, .13, 1700), heavy: contact(112, .26, 950),
+  finisher: contact(145, .22, 2300), air: contact(205, .18, 1450),
+  damage: contact(125, .27, 1250),
+  ko: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .34, layers: [
+    { id: 'road-contact', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 100], [.07, 48]], curve: 'exponential' } }, gainDb: -25,
+      envelope: { attack: .005, decay: .23, sustain: 0, release: .025 } },
+    { id: 'asphalt', source: { type: 'noise', color: 'white' }, gainDb: -29,
+      envelope: { attack: .008, decay: .3, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 1200], [.32, 280]], curve: 'exponential' }, q: .7 }] },
   ] }),
   jump: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .12, layers: [
-    { id: 'lift', source: { type: 'noise', color: 'white' }, gainDb: -33, envelope: { attack: .012, decay: .055, sustain: 0, release: .04 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 1100, q: .7 }] },
+    { id: 'shoe-scuff', source: { type: 'noise', color: 'white' }, gainDb: -35,
+      envelope: { attack: .006, decay: .09, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1600, q: .7 }] },
   ] }),
-  boss: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .6, layers: [
-    { id: 'capacitor', source: { type: 'oscillator', waveform: 'sawtooth', frequency: { points: [[0, 80], [.5, 230]], curve: 'exponential' } }, gainDb: -30, envelope: { attack: .05, decay: .3, sustain: .35, release: .15 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 550, q: 1.5 }] },
-    { id: 'relay', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 520], [.5, 390]], curve: 'exponential' } }, gainDb: -32, envelope: { attack: .02, decay: .35, sustain: .1, release: .15 } },
+  boss: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .48, layers: [
+    { id: 'transformer', source: { type: 'oscillator', waveform: 'sawtooth', frequency: { points: [[0, 65.4], [.46, 130.8]], curve: 'exponential' } }, gainDb: -31,
+      envelope: { attack: .025, decay: .4, sustain: .04, release: .045 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 250], [.45, 1200]], curve: 'exponential' }, q: 1.1 }] },
+    { id: 'arcing-relay', source: { type: 'noise', color: 'white' }, gainDb: -34,
+      envelope: { attack: .02, decay: .36, sustain: 0, release: .03 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2200, q: 1.6 }] },
   ] }),
-  encounter: signal([164.8, 220, 196], .3), clear: signal([329.6, 440, 659.3], .5),
-  pickup: signal([523.25, 659.25, 1046.5], .35), respawn: signal([220, 329.6, 440], .6),
-  stage: signal([261.63, 392, 523.25], .8), victory: signal([329.6, 493.9, 659.25], 1.2), gameover: signal([220, 164.8, 110], .9),
+  encounter: relay(164.81, .22, 1.06), clear: relay(329.63, .38),
+  pickup: relay(659.25, .3, 1.25), respawn: relay(261.63, .6, 2),
+  stage: relay(220, .68), victory: relay(329.63, 1.05, 2), gameover: relay(110, .85, 1.1892),
 };

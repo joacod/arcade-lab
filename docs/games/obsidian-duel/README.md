@@ -45,6 +45,10 @@ Each fighter is drawn once at full opacity. Deluxe has no mirrored actor copy; t
 
 Reduced motion preserves physical movement, action cels, warnings and contact confirmation. It removes idle breathing, shake, drifting scenery and pulsing lights, reduces sparks, and keeps contact artwork at a steady size. Active run time owns animation; pause freezes it. Deluxe uses Canvas 2D with the same context as the other modes.
 
+## Sound identity
+
+Silk movement, stone contact and struck bronze give the duel its own material palette. Missed attacks move air; confirmed light and heavy hits add strength-scaled weight, while guards ring with bright obsidian partials and knockdowns hit a low slab. Nera's Stormglass casts a high glass-and-ion wake; Kael's Riftbreaker grinds and ruptures the ground. The adapter resolves specials from the emitting fighter's identity, including when player selection swaps the sides, and places combat feedback gently across the arena. Bronze gongs distinguish countdown, fight, KO, time-out and match outcomes. Recipes and policy use the [shared audio owner](../../architecture.md#sound).
+
 ## Source ownership
 
 Paths below are relative to `src/games/obsidian-duel/`.

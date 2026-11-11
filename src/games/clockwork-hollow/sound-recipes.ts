@@ -1,41 +1,57 @@
 import { defineSound } from 'audiobits';
 
-// A little brass automaton: spring lift, soft stone contact, broken metal, glass and a waking bell.
+// Struck porcelain has inharmonic modes, rather than a pitch sweep or a pure chord.
+function bell(root: number, duration: number, gain: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
+    { id: 'bowl', source: { type: 'oscillator', waveform: 'sine', frequency: root }, gainDb: gain,
+      envelope: { attack: .003, decay: duration * .92, sustain: .015, release: .08 } },
+    { id: 'rim', source: { type: 'oscillator', waveform: 'sine', frequency: root * 2.756 }, gainDb: gain - 10,
+      envelope: { attack: .002, decay: duration * .45, sustain: 0, release: .025 } },
+    { id: 'crown', source: { type: 'oscillator', waveform: 'sine', frequency: root * 5.404 }, gainDb: gain - 19,
+      envelope: { attack: .002, decay: duration * .18, sustain: 0, release: .015 } },
+  ] });
+}
+
 export const hollowRecipes = {
-  jump: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.15, layers: [
-    { id: 'spring', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 240], [0.08, 660], [0.15, 520]], curve: 'exponential' } }, gainDb: -25, envelope: { attack: 0.003, decay: 0.08, sustain: 0.2, release: 0.08 } },
-    { id: 'air', source: { type: 'noise', color: 'white' }, gainDb: -34, envelope: { attack: 0.005, decay: 0.04, sustain: 0, release: 0.04 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2100, q: 0.8 }] },
+  jump: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .17, layers: [
+    { id: 'wound-spring', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 320], [.045, 680], [.16, 430]], curve: 'exponential' } }, gainDb: -29,
+      envelope: { attack: .004, decay: .15, sustain: 0, release: .02 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1600, q: .6 }] },
+    { id: 'escapement', source: { type: 'noise', color: 'white' }, gainDb: -32,
+      envelope: { attack: .002, decay: .018, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2300, q: 1.8 }] },
   ] }),
-  land: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.07, parameters: { strength: { min: 0, max: 1, default: 0.5, mode: 'play' } }, layers: [
-    { id: 'feet', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [-36, -24], scale: 'linear' }, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.05 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1000, q: 0.7 }] },
-    { id: 'body', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 140], [0.06, 60]], curve: 'exponential' } }, gainDb: -29, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.05 } },
+  land: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .12,
+    parameters: { strength: { min: 0, max: 1, default: .5, mode: 'play' } }, layers: [
+      { id: 'stone-contact', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [-42, -26], scale: 'linear' },
+        envelope: { attack: .002, decay: .055, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { control: 'strength', range: [650, 1800], scale: 'exponential' }, q: .65 }] },
+      { id: 'brass-feet', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 205], [.085, 95]], curve: 'exponential' } }, gainDb: { control: 'strength', range: [-42, -29], scale: 'linear' },
+        envelope: { attack: .002, decay: .09, sustain: 0, release: .02 } },
+      { id: 'ceramic-body', source: { type: 'oscillator', waveform: 'sine', frequency: 1460 }, gainDb: { control: 'strength', range: [-48, -36], scale: 'linear' },
+        envelope: { attack: .002, decay: .04, sustain: 0, release: .015 } },
+    ] }),
+  damage: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .38, layers: [
+    { id: 'loose-spring', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 610], [.06, 280], [.16, 360], [.36, 85]], curve: 'exponential' } }, gainDb: -26,
+      envelope: { attack: .002, decay: .34, sustain: 0, release: .03 } },
+    { id: 'porcelain-fracture', source: { type: 'noise', color: 'white' }, gainDb: -27,
+      envelope: { attack: .002, decay: .065, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2450, q: 1.3 }] },
+    { id: 'broken-rim', source: { type: 'oscillator', waveform: 'sine', frequency: 1735 }, gainDb: -35,
+      envelope: { attack: .002, decay: .19, sustain: 0, release: .025 } },
   ] }),
-  damage: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.32, layers: [
-    { id: 'unwind', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 370], [0.3, 70]], curve: 'exponential' } }, gainDb: -24, envelope: { attack: 0.002, decay: 0.2, sustain: 0.15, release: 0.14 } },
-    { id: 'crack', source: { type: 'noise', color: 'white' }, gainDb: -29, envelope: { attack: 0.002, decay: 0.05, sustain: 0, release: 0.08 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1600, q: 0.7 }] },
+  interaction: bell(1396.9, .22, -31),
+  stomp: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .19, layers: [
+    { id: 'beetle-shell', source: { type: 'oscillator', waveform: 'sine', frequency: 510 }, gainDb: -26,
+      envelope: { attack: .002, decay: .12, sustain: 0, release: .02 } },
+    { id: 'shell-mode', source: { type: 'oscillator', waveform: 'sine', frequency: 1377 }, gainDb: -34,
+      envelope: { attack: .002, decay: .055, sustain: 0, release: .015 } },
+    { id: 'gear-teeth', source: { type: 'noise', color: 'white' }, gainDb: -30,
+      envelope: { attack: .002, decay: .04, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1800, q: 1.7 }] },
   ] }),
-  interaction: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.18, layers: [
-    { id: 'glass', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 880], [0.06, 1320]], curve: 'exponential' } }, gainDb: -24, envelope: { attack: 0.002, decay: 0.11, sustain: 0.1, release: 0.15 } },
-    { id: 'overtone', source: { type: 'oscillator', waveform: 'triangle', frequency: 1760 }, gainDb: -35, envelope: { attack: 0.003, decay: 0.07, sustain: 0, release: 0.12 } },
+  vent: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .43, layers: [
+    { id: 'pressure-release', source: { type: 'noise', color: 'white' }, gainDb: -31,
+      envelope: { attack: .016, decay: .35, sustain: .025, release: .055 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 2400], [.08, 1600], [.42, 650]], curve: 'exponential' }, q: .65 }] },
+    { id: 'pipe-resonance', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 780], [.4, 540]], curve: 'exponential' } }, gainDb: -40,
+      envelope: { attack: .03, decay: .32, sustain: 0, release: .035 } },
   ] }),
-  stomp: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.16, layers: [
-    { id: 'shell', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 380], [0.05, 110], [0.14, 240]], curve: 'exponential' } }, gainDb: -25, envelope: { attack: 0.002, decay: 0.08, sustain: 0, release: 0.09 } },
-    { id: 'click', source: { type: 'noise', color: 'white' }, gainDb: -32, envelope: { attack: 0.001, decay: 0.025, sustain: 0, release: 0.03 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1900, q: 1 }] },
-  ] }),
-  vent: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.45, layers: [
-    { id: 'steam', source: { type: 'noise', color: 'white' }, gainDb: -33, envelope: { attack: 0.045, decay: 0.2, sustain: 0.3, release: 0.18 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 700], [0.4, 2600]], curve: 'exponential' }, q: 0.6 }] },
-  ] }),
-  checkpoint: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.65, layers: [
-    { id: 'wick', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 392], [0.15, 523.25], [0.3, 784]], curve: 'exponential' } }, gainDb: -25, envelope: { attack: 0.004, decay: 0.3, sustain: 0.1, release: 0.3 } },
-    { id: 'halo', source: { type: 'oscillator', waveform: 'sine', frequency: 1046.5 }, gainDb: -35, envelope: { attack: 0.18, decay: 0.2, sustain: 0, release: 0.3 } },
-  ] }),
-  level: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.8, layers: [
-    { id: 'bell', source: { type: 'oscillator', waveform: 'sine', frequency: 392 }, gainDb: -24, envelope: { attack: 0.004, decay: 0.35, sustain: 0.1, release: 0.4 } },
-    { id: 'answer', source: { type: 'oscillator', waveform: 'triangle', frequency: 587.33 }, gainDb: -32, envelope: { attack: 0.16, decay: 0.3, sustain: 0, release: 0.4 } },
-  ], effects: [{ type: 'delay', time: 0.16, feedback: 0.14, mix: 0.12 }] }),
-  complete: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 1.1, layers: [
-    { id: 'bell', source: { type: 'oscillator', waveform: 'sine', frequency: 523.25 }, gainDb: -23, envelope: { attack: 0.004, decay: 0.5, sustain: 0.12, release: 0.6 } },
-    { id: 'fifth', source: { type: 'oscillator', waveform: 'triangle', frequency: 784 }, gainDb: -30, envelope: { attack: 0.14, decay: 0.4, sustain: 0.1, release: 0.6 } },
-    { id: 'shimmer', source: { type: 'oscillator', waveform: 'sine', frequency: 1318.5 }, gainDb: -30, envelope: { attack: 0.3, decay: 0.4, sustain: 0.1, release: 0.6 } },
-  ], effects: [{ type: 'delay', time: 0.18, feedback: 0.18, mix: 0.15 }] }),
+  checkpoint: bell(698.46, .68, -25),
+  level: defineSound({ ...bell(349.23, 1.05, -23), effects: [{ type: 'delay', time: .173, feedback: .13, mix: .12 }] }),
+  complete: defineSound({ ...bell(523.25, 1.45, -23), effects: [{ type: 'delay', time: .217, feedback: .19, mix: .16 }] }),
 };

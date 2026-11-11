@@ -1,38 +1,76 @@
-import { defineSound, type Recipe } from 'audiobits';
-// Short dry rifle transients leave space for the slower launch and explosion tails.
-function crack(duration: number, frequency: number, bass: number, gain = -26): Recipe {
-  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
-    { id: 'mechanism', source: { type: 'noise', color: 'white' }, gainDb: gain,
-      envelope: { attack: .001, decay: duration * .35, sustain: 0, release: duration * .6 },
-      effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, frequency], [duration, frequency * .4]], curve: 'exponential' }, q: .7 }] },
-    { id: 'body', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, bass], [duration, 45]], curve: 'exponential' } }, gainDb: gain - 1,
-      envelope: { attack: .001, decay: duration * .5, sustain: 0, release: duration * .45 } },
-  ] });
+import { defineSound } from 'audiobits';
+
+// Rifle, launcher and debris have separate mechanisms; explosions carry the low end.
+function debris(frequency: number, duration: number, gain: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration,
+    parameters: { strength: { min: 0, max: 1, default: .5, mode: 'play' } }, layers: [
+      { id: 'fragments', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [gain - 6, gain], scale: 'linear' },
+        envelope: { attack: .002, decay: duration * .9, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { random: [frequency * .85, frequency * 1.15] }, q: .8 }] },
+      { id: 'surface', source: { type: 'oscillator', waveform: 'sine', frequency: frequency * .26 }, gainDb: { control: 'strength', range: [gain - 15, gain - 7], scale: 'linear' },
+        envelope: { attack: .002, decay: duration * .55, sustain: 0, release: .015 } },
+    ] });
 }
-function explosion(): Recipe {
-  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .72, layers: [
-    { id: 'pressure', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 155], [.07, 65], [.65, 28]], curve: 'exponential' } }, gainDb: -18,
-      envelope: { attack: .002, decay: .32, sustain: .04, release: .35 } },
-    { id: 'fire', source: { type: 'noise', color: 'white' }, gainDb: -22,
-      envelope: { attack: .003, decay: .25, sustain: .1, release: .4 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 4200], [.16, 1000], [.7, 180]], curve: 'exponential' }, q: .6 }] },
-    { id: 'shrapnel', source: { type: 'noise', color: 'white' }, gainDb: -29,
-      envelope: { attack: .025, decay: .13, sustain: 0, release: .2 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 3400, q: .7 }] },
-  ] });
+function blast(duration: number, gain: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration,
+    parameters: { strength: { min: 0, max: 1, default: .65, mode: 'play' } }, layers: [
+      { id: 'pressure', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 145], [.045, 62], [duration, 29]], curve: 'exponential' } }, gainDb: { control: 'strength', range: [gain - 7, gain], scale: 'linear' },
+        envelope: { attack: .003, decay: duration * .85, sustain: 0, release: .04 } },
+      { id: 'fireball', source: { type: 'noise', color: 'white' }, gainDb: { control: 'strength', range: [gain - 8, gain - 2], scale: 'linear' },
+        envelope: { attack: .003, decay: duration * .9, sustain: 0, release: .04 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 3800], [duration * .25, 1000], [duration, 160]], curve: 'exponential' }, q: .6 }] },
+      { id: 'shrapnel', source: { type: 'noise', color: 'white' }, gainDb: gain - 11,
+        envelope: { attack: .018, decay: duration * .35, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 2900, q: .7 }] },
+    ] });
 }
-function signal(notes: readonly [number, number, number], duration: number): Recipe {
+// Narrow-band radio acknowledgements, with static kept beneath the tonal information.
+function radio(root: number, duration: number, interval = 1.5) {
   return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
-    { id: 'radio', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, notes[0]], [duration * .28, notes[1]], [duration * .55, notes[2]]], curve: 'exponential' } }, gainDb: -31,
-      envelope: { attack: .005, decay: duration * .5, sustain: .15, release: duration * .4 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1800, q: .6 }] },
-    { id: 'harmonic', source: { type: 'oscillator', waveform: 'sine', frequency: notes[2] * 1.5 }, gainDb: -35,
-      envelope: { attack: .04, decay: duration * .5, sustain: .05, release: duration * .35 } },
-  ], effects: [{ type: 'delay', time: .12, feedback: .12, mix: .1 }] });
+    { id: 'carrier', source: { type: 'oscillator', waveform: 'square', frequency: root }, gainDb: -32,
+      envelope: { attack: .004, decay: duration * .85, sustain: .02, release: .025 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1500, q: .7 }] },
+    { id: 'acknowledgement', source: { type: 'oscillator', waveform: 'sine', frequency: root * interval }, gainDb: -32,
+      envelope: { attack: .02, decay: duration * .8, sustain: .02, release: .035 } },
+    { id: 'radio-squelch', source: { type: 'noise', color: 'white' }, gainDb: -40,
+      envelope: { attack: .002, decay: .045, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1700, q: 1.2 }] },
+  ] });
 }
 export const blastRecipes = {
-  shot: crack(.085, 2900, 190), launch: crack(.3, 750, 150, -23), throw: crack(.17, 1700, 310, -29),
-  impact: crack(.07, 3400, 360, -31), terrain: crack(.22, 1200, 95, -30),
-  explosion: explosion(), chain: crack(.23, 2500, 230, -28), hit: crack(.11, 1800, 220, -29), kill: crack(.28, 820, 180, -27),
-  hurt: crack(.25, 1650, 140, -25), death: signal([220, 110, 55], .75),
-  rescue: signal([330, 495, 660], .8), switch: signal([330, 440, 550], .22), checkpoint: signal([262, 330, 392], .45),
-  alarm: signal([440, 330, 440], .8), extract: signal([330, 440, 660], .8), victory: signal([392, 587, 784], 1.1), defeat: signal([196, 147, 73.5], .9),
-  jump: crack(.08, 600, 140, -36),
+  shot: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .09, layers: [
+    { id: 'muzzle-crack', source: { type: 'noise', color: 'white' }, gainDb: -28,
+      envelope: { attack: .002, decay: .035, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { random: [2300, 2850] }, q: .65 }] },
+    { id: 'barrel', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 210], [.055, 78]], curve: 'exponential' } }, gainDb: -31,
+      envelope: { attack: .002, decay: .065, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 700, q: .7 }] },
+    { id: 'bolt-return', source: { type: 'noise', color: 'white' }, gainDb: -38,
+      envelope: { attack: .025, decay: .055, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 3600, q: 2 }] },
+  ] }),
+  launch: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .3, layers: [
+    { id: 'exhaust', source: { type: 'noise', color: 'white' }, gainDb: -26,
+      envelope: { attack: .008, decay: .26, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 550], [.06, 1600], [.29, 450]], curve: 'exponential' }, q: .7 }] },
+    { id: 'tube', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 165], [.08, 72]], curve: 'exponential' } }, gainDb: -25,
+      envelope: { attack: .003, decay: .16, sustain: 0, release: .02 } },
+  ] }),
+  throw: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .17, layers: [
+    { id: 'arm-swish', source: { type: 'noise', color: 'white' }, gainDb: -33,
+      envelope: { attack: .018, decay: .13, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1200, q: .65 }] },
+    { id: 'pin', source: { type: 'oscillator', waveform: 'sine', frequency: 2180 }, gainDb: -35,
+      envelope: { attack: .002, decay: .035, sustain: 0, release: .01 } },
+  ] }),
+  impact: debris(2900, .075, -31), terrain: debris(750, .22, -29),
+  explosion: blast(.65, -22), chain: blast(.32, -27),
+  hit: debris(1500, .1, -30), kill: debris(650, .19, -28),
+  hurt: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .25, layers: [
+    { id: 'vest-impact', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 155], [.05, 68], [.24, 48]], curve: 'exponential' } }, gainDb: -22,
+      envelope: { attack: .002, decay: .22, sustain: 0, release: .025 } },
+    { id: 'fabric-tear', source: { type: 'noise', color: 'white' }, gainDb: -25,
+      envelope: { attack: .002, decay: .08, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1150, q: .65 }] },
+  ] }),
+  death: radio(146.83, .65, 1.0595), rescue: radio(440, .65),
+  switch: radio(880, .14, 1.25), checkpoint: radio(587.33, .32, 1.25),
+  alarm: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .75, layers: [
+    { id: 'evacuation-siren', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 440], [.18, 660], [.36, 440], [.54, 660], [.74, 440]], curve: 'linear' } }, gainDb: -31,
+      envelope: { attack: .015, decay: .15, sustain: .55, release: .06 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1500, q: .7 }] },
+  ] }),
+  extract: radio(523.25, .65, 2), victory: radio(587.33, 1, 1.5), defeat: radio(196, .8, 1.1892),
+  jump: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .08, layers: [
+    { id: 'boot', source: { type: 'noise', color: 'white' }, gainDb: -36,
+      envelope: { attack: .002, decay: .06, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 950, q: .6 }] },
+  ] }),
 };

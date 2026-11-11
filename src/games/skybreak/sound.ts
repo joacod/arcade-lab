@@ -21,13 +21,14 @@ export function createSound(onStatus: (message: string) => void) {
         if (frame.has(cue)) { audio.reset(); next.clear(); audio.play(cue); return; }
       }
       next.advance(audio.time);
+      let admitted = 0;
       for (const cue of priority) {
         const event = frame.get(cue);
-        if (!event || !next.allows(cue)) continue;
+        if (!event || !next.allows(cue) || admitted >= 4) continue;
         // Restrained world-space placement; the aircraft's own feedback stays centered.
         const spatial = ['hit', 'boss-hit', 'explosion', 'boss-shot'].includes(cue);
         const pan = spatial && Number.isFinite(event.x) ? Math.max(-0.65, Math.min(0.65, (event.x / flight.width * 2 - 1) * 0.65)) : 0;
-        if (audio.play(cue, { pan })) next.record(cue, (interval[cue] ?? 0));
+        if (audio.play(cue, { pan })) { next.record(cue, (interval[cue] ?? 0)); admitted++; }
       }
     },
   };

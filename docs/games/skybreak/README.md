@@ -54,7 +54,7 @@ The HUD separates three spaced hull segments from the remaining lives count, wit
 
 Aircraft, supplies and weak-point housings are committed images; nacelle rings remain semantic overlays. Particles are capped at 180; fortress destruction adds nine analytic fire blooms. The tactical Canvas layer supplies firing preparation and roll readiness across all modes. Reduced motion also suppresses ocean drift, roll spin, particles, the roll-ready outline and damage flashes; attack lanes, muzzle cells, recharge and immunity cues remain visible.
 
-Dry gun transients leave room for metal impacts, enemy blasts, hull fractures and slipstream rolls. Armor hits, charge warnings, cannon releases and core destruction have distinct recipes. Supply and outcome tones use a brighter arcade palette. The sound adapter coalesces each cue per frame, caps voices at 12 and uses restrained world-space stereo placement.
+Dry gun-port transients and compact mechanisms keep forward fire beneath thin-metal ricochets and burning-fuel explosions. Boss armor rings in a lower plate register; hull damage buckles and strains the aircraft, while a lost life produces a longer muffled blast. Rolls sweep slipstream air around a low airframe resonance. Radar pings, dissonant target-lock warnings, low cannon releases and the fortress rupture have separate roles. Clean cockpit intervals announce supplies and defeat; filtered brass marks victory. `sound-recipes.ts` and `sound.ts` own the palette and restrained world-space stereo placement through the [shared audio owner](../../architecture.md#sound).
 
 | Responsibility | Owner in `src/games/skybreak/` |
 | --- | --- |

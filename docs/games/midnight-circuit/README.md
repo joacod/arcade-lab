@@ -43,6 +43,10 @@ Positioning, readable intent and responsive attacks guide the encounter design. 
 
 The walk cadence and guard silhouette support those combat decisions without slowing action input. Additional movement cels never lengthen startup or contact. Passing feet stay low rather than marching, and retreating in guard plays the gait backward. Encounter bounds belong to simulation and camera framing rather than physical-looking scenery. Inspiration: the [Streets of Rage 4 developer interview](https://www.nintendolife.com/news/2020/12/feature_the_making_of_streets_of_rage_4_by_the_people_who_made_it_happen) discusses positioning, small crowds and animation responsiveness; the [Absolum developer interview](https://www.pcgamer.com/games/action/absolum-interview-how-the-beat-em-ups-developers-created-four-fabulous-characters/) discusses clear silhouettes and distinct anticipation/contact poses. [Signals and Light's enemy positioning essay](https://signalsandlight.substack.com/p/how-do-enemy-attacks-work-with-the) explains how attack visibility and enemy spacing relate to the camera.
 
+## Sound identity
+
+Dry street-combat sounds separate sleeve movement from confirmed contact. Light, heavy, finisher and aerial hits use different chest transients and skin-snap bands; event strength controls their weight and clothing texture. Heavy swings move more air, KOs meet the asphalt, and jumps scuff a shoe. The Warden charges with transformer hum and electrical arcing. Encounters, repairs, respawns, restored power and outcomes use short electronic intervals. `sound-recipes.ts` and `sound.ts` own this palette through the [shared audio owner](../../architecture.md#sound).
+
 ## Source and tuning
 
 Paths below are relative to `src/games/midnight-circuit/`.
