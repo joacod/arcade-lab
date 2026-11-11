@@ -5,6 +5,6 @@ export default defineConfig(async () => {
   await generateSiteAssets();
   return {
     optimizeDeps: { include: ['audiobits'] },
-    plugins: [{ name: 'arcade-site', transformIndexHtml: siteHtml }],
+    plugins: [{ name: 'arcade-site', transformIndexHtml: { order: 'pre', handler: siteHtml } }],
   };
 });

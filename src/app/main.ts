@@ -1,19 +1,17 @@
 import { createApplication } from './application.ts';
 import { mountSelection, type SelectionState } from './selection.ts';
 import { games, type GameId } from './catalog.ts';
-import './application.css';
 
 const container = document.querySelector<HTMLElement>('#app');
 if (!container) throw new Error('Missing application container.');
-container.replaceChildren(); // Replace the static, crawlable introduction with the interactive collection.
 const application = createApplication(container);
 let generation = 0, disposed = false;
 const selection: SelectionState = { scrollTop: 0 };
-function showSelection(message = '') {
+function showSelection(message = '', initialRoot?: HTMLElement) {
   if (disposed) return;
   generation++;
   application.mount({ mount: (host, fullscreen) => mountSelection(host, {
-    select: selectGame, cancel: () => showSelection(), state: selection, message, fullscreen,
+    select: selectGame, cancel: () => showSelection(), state: selection, message, fullscreen, initialRoot,
   }) });
 }
 async function selectGame(id: GameId) {
@@ -24,7 +22,8 @@ async function selectGame(id: GameId) {
     if (!disposed && request === generation) application.mount({ mount: (host, fullscreen) => mount(host, showSelection, fullscreen) });
   } catch { if (!disposed && request === generation) showSelection('Could not load the game. Try again.'); }
 }
-showSelection();
+// Bind the existing landing without replacing its already loading images.
+showSelection('', container.querySelector<HTMLElement>('.arcade-selection') ?? undefined);
 if (import.meta.hot) {
   import.meta.hot.accept();
   import.meta.hot.dispose(() => { disposed = true; generation++; application.dispose(); });
