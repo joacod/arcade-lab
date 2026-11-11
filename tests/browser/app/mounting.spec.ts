@@ -54,14 +54,20 @@ test('a game host suspends its single loop and releases it on collection navigat
   expect(errors).toEqual([]);
 });
 
-test('collection restores navigation and ignores a cancelled lazy load that finishes late', async ({ page }) => {
+test('collection keeps readable previews, restores navigation and ignores a cancelled lazy load that finishes late', async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route(/\/src\/games\/skybreak\/app\.ts(?:\?.*)?$/, async route => {
     const response = await route.fetch(); await gate; await route.fulfill({ response });
   });
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  // Covers must keep their artwork visible when the catalog needs another row.
+  const covers = await page.locator('.arcade-cover').evaluateAll(elements => elements.map(element => {
+    const { width, height } = element.getBoundingClientRect();
+    return { width, height };
+  }));
+  for (const cover of covers) expect(cover.height).toBeGreaterThan(cover.width / 2);
+  await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('.arcade-game:focus')).toHaveCount(0);
   // A fresh landing has no focused descendant to bubble keyboard shortcuts through.
   await page.keyboard.press('f');

@@ -10,14 +10,16 @@ const svg = body => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="
 /** Derived files stay out of git and are recreated for both dev and production. */
 export async function generateSiteAssets() {
   const icon = await readFile(new URL('../public/icon.svg', import.meta.url));
-  const columns = Math.min(4, Math.ceil(gameInfo.length / 2));
+  // A fixed-size share card shows a sample; the launcher holds the full catalog.
+  const previews = gameInfo.slice(0, 8);
+  const columns = Math.min(4, Math.ceil(previews.length / 2));
   const tileWidth = Math.floor((1104 - (columns - 1) * 18) / columns);
   const position = index => ({ left: 48 + index % columns * (tileWidth + 18), top: 250 + Math.floor(index / columns) * 178 });
-  const tiles = await Promise.all(gameInfo.map(async (game, index) => ({
+  const tiles = await Promise.all(previews.map(async (game, index) => ({
     input: await sharp(fileURLToPath(game.cover)).resize(tileWidth, 132, { fit: 'cover' }).png().toBuffer(),
     ...position(index),
   })));
-  const labels = gameInfo.map((game, index) => {
+  const labels = previews.map((game, index) => {
     const { left: x, top: y } = position(index);
     return `<rect x="${x}" y="${y + 132}" width="${tileWidth}" height="30" fill="#1a2930"/><text x="${x + 12}" y="${y + 153}" font-size="16" font-weight="600">${escape(game.title)}</text>`;
   }).join('');
