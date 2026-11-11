@@ -94,7 +94,8 @@ export function createPresentation(surface: HTMLElement, appearance: Appearance 
     const view = flightView(width, height);
     ctx.reset();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
+    // Keep live transforms bilinear; high-quality resampling stalls large Retina canvases.
+    ctx.imageSmoothingQuality = 'low';
     ctx.fillStyle = '#79bbcd'; ctx.fillRect(0, 0, width, height);
     // Mirrored plates keep the scrolling horizon continuous without a hard seam.
     const skyWidth = Math.max(width, height * 1.5), skyHeight = skyWidth / 1.5;
