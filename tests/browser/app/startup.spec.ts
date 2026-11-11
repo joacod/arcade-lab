@@ -9,7 +9,7 @@ for (const { title } of gameInfo) {
     await page.goto('/');
     await page.getByRole('button', { name: `Open game: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
-    await expect(page.getByRole('radio', { name: /^Arcade/ })).toBeChecked();
+    await expect(page.getByRole('radio', { name: /^Arcade/, includeHidden: true })).toBeChecked();
     const play = page.getByRole('button', { name: 'Play', exact: true });
     await expect(play).toBeEnabled();
     await expect(page.locator('.play-surface canvas').first()).toBeVisible();

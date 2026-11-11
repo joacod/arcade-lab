@@ -1,0 +1,45 @@
+.cloudwake-app { --menu-accent: #f6ce88; width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #123d49; color: #f8edcf; font-family: 'Avenir Next', Avenir, system-ui, sans-serif; }
+.cloudwake-app *, .cloudwake-app *::before, .cloudwake-app *::after { box-sizing: border-box; }
+.cloudwake-app [hidden] { display: none !important; }
+.cloudwake-app .cloudwake-hud { display: flex; align-items: center; gap: clamp(14px, 3vw, 40px); min-height: 76px; padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left)); border-bottom: 1px solid #edcf8e45; background: #123d49; }
+.cloudwake-app .cloudwake-brand { margin-right: auto; font: 800 20px/1.2 'Avenir Next', system-ui, sans-serif; letter-spacing: .16em; color: #f6dba2; }
+.cloudwake-app .cloudwake-brand span { display: block; font: 500 8px/1.5 monospace; letter-spacing: .16em; color: #a8c7c7; margin-top: 5px; }
+.cloudwake-app .cloudwake-hud small { display: block; color: #a8c7c7; font: 9px/1.5 monospace; letter-spacing: .16em; }
+.cloudwake-app .cloudwake-hud output { font: 22px/1.2 monospace; font-variant-numeric: tabular-nums; }
+.cloudwake-app .cloudwake-best output { color: #9adfd5; font-size: 18px; }
+.cloudwake-app :is(.cloudwake-hud,.cloudwake-footer) button { cursor: pointer; color: #ffedc8; background: #20515b; border: 1px solid #d4d8b85c; border-radius: 9px; font: 600 12px system-ui, sans-serif; min-height: 44px; padding: 10px 16px; }
+.cloudwake-app :is(.cloudwake-hud,.cloudwake-footer) button:focus-visible { outline: 2px solid #ffe1a5; outline-offset: 3px; }
+.cloudwake-app .cloudwake-stage { min-height: 0; position: relative; overflow: hidden; }
+.cloudwake-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; }
+.cloudwake-app .cloudwake-canvas { width: 100%; height: 100%; display: block; }
+.cloudwake-app .cloudwake-footer { display: flex; gap: 20px; align-items: center; justify-content: space-between; min-height: 58px; padding: 10px max(20px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); border-top: 1px solid #edcf8e45; }
+.cloudwake-app .cloudwake-footer > div { display: flex; gap: 18px; font: 11px monospace; }
+.cloudwake-app .cloudwake-fragments { color: #9adfd5; }
+.cloudwake-app .cloudwake-hint { font: 10px/1.5 monospace; letter-spacing: .1em; color: #c3dbd5; margin: 0; }
+.cloudwake-app .cloudwake-hint span { color: #edc57e; padding-inline: 10px; }
+.cloudwake-app [data-control='thrust'] { display: none; touch-action: none; min-width: 140px; }
+.cloudwake-app [data-control='thrust']:is([data-held],[data-thrusting='true']) { background: #367578; border-color: #a6f5e4; }
+.cloudwake-app .game-menu-layer { background: linear-gradient(100deg, #0c3546d9, #0c35464a 70%); }
+.cloudwake-app .game-menu { background: radial-gradient(ellipse at 0 0, #31647166, transparent 70%), #113642f5; border-color: #e2c58a75; }
+.cloudwake-app .game-menu h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; font-style: italic; font-size: clamp(38px, 6vw, 62px); letter-spacing: -.045em; color: #ffe5af; }
+.cloudwake-app .game-menu-description { max-width: 43ch; color: #c1d7d4; }
+@media (pointer: coarse), (max-width: 850px) {
+  .cloudwake-app [data-control='thrust'] { display: flex; justify-content: center; gap: 10px; align-items: center; min-height: 54px; }
+  .cloudwake-app .cloudwake-hint { display: none; }
+}
+@media (max-width: 480px) {
+  .cloudwake-app .cloudwake-hud { min-height: 70px; padding-inline: 12px; gap: 12px; }
+  .cloudwake-app .cloudwake-brand { font-size: 12px; letter-spacing: .08em; }
+  .cloudwake-app .cloudwake-brand span { font-size: 7px; max-width: 110px; }
+  .cloudwake-app .cloudwake-hud output { font-size: 17px; }
+  .cloudwake-app .cloudwake-best output { font-size: 14px; }
+  .cloudwake-app .cloudwake-hud button { padding: 8px 10px; }
+  .cloudwake-app .cloudwake-footer { padding-inline: 12px; gap: 10px; }
+  .cloudwake-app .cloudwake-footer > div { display: grid; gap: 6px; }
+}
+@media (max-height: 500px) {
+  .cloudwake-app .cloudwake-hud { min-height: 48px; padding-block: 6px; }
+  .cloudwake-app .cloudwake-brand span { display: none; }
+  .cloudwake-app .cloudwake-footer { min-height: 42px; padding-block: 5px; }
+  .cloudwake-app [data-control='thrust'] { min-height: 36px; }
+}

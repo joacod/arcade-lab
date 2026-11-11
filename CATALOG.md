@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield.
+Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield. Cloudwake uses one hold/release control on the playfield or its Rise button.
 
 Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
@@ -18,10 +18,11 @@ The table lists the presentations currently implemented; their artwork and rende
 |  Midnight Circuit  |  Signal / Rain, inked arcade shops and industrial bays  |  Afterglow, detailed modern fighters and painted city with wet-road reflections  |
 |  Obsidian Duel  |  Eclipse Foundry, painted arcade fighters and forge-lit arena  |  Moonfall Sanctum, detailed fighters and jade-and-gold combat artwork  |
 |  Blastline  |  Ember Coast, detailed arcade commandos and rusted harbor defenses  |  Ember Reforged, dimensional painted commandos and industrial coast  |
+|  Cloudwake  |  The Sunward Route, painted sky courier and crystal ruins  |  —  |
 
 All current games start in **Arcade** and optionally switch to **Deluxe**. Arcade is the complete finished presentation. Deluxe enhances its artwork and effects through the same Canvas 2D gameplay presentation. Prototype is a temporary stage for new games and is removed once Arcade is complete. See the [mode contract](docs/architecture.md#mode-contract).
 
-All artwork required by enabled presentations ships with the repository. Screenshots below show each game in **Deluxe**.
+All artwork required by enabled presentations ships with the repository. Screenshots below show the best completed presentation: **Deluxe** where available, **Arcade** for Cloudwake.
 
 ## Last Light Clearing
 
@@ -125,6 +126,21 @@ Make an entrance. Catch the last ride out. Run, jump and blast through **Border 
 **Keyboard layout** in Settings chooses right-hand movement with left-hand attacks, or left-hand movement with right-hand attacks. The selection lasts for this visit, including restarts and mission transitions. Touch direction pad + Jump / Fire / Grenade / Switch support independent simultaneous controls.
 
 Health and lives are grouped in the HUD: bullets chip health, while hostile explosives and fuel blasts cost a life. Green supply checkpoints support retries. Brick and armored cover break, while structural routes keep required objectives accessible. Death preserves destruction and mission progress; Restart restores the complete world. Original complete sprites, bounded debris and procedural AudioBits sounds power the action. Deluxe adds painted commandos, machines, equipment and coastal scenery. See [gameplay and source ownership](docs/games/blastline/README.md).
+
+## Cloudwake
+
+![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
+
+Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. Broad opening passages introduce flight control before tighter gates and gently drifting storm mines. Clear-air pockets break up the pressure as speed builds toward its cap. Distance and fragments contribute to score, with a locally saved best and immediate retries. There is no time limit.
+
+| Control | Action |
+| --- | --- |
+| Hold Space / W / ↑ | Rise |
+| Hold mouse / touch on the playfield | Rise |
+| On-screen Hold to rise button | Rise |
+| Release | Fall |
+
+Pressing Play or Restart applies thrust immediately while held. Cloud banks cushion the upper and lower boundaries; crystal structures and storm mines end the flight. See [gameplay and source ownership](docs/games/cloudwake/README.md) and the [artwork guide](src/games/cloudwake/art/README.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 
