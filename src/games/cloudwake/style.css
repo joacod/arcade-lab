@@ -12,26 +12,30 @@
 .cloudwake-app .play-surface { position: absolute; inset: 0; outline: none; touch-action: none; }
 .cloudwake-app .cloudwake-canvas { width: 100%; height: 100%; display: block; }
 .cloudwake-app .cloudwake-footer { display: flex; gap: 20px; align-items: center; justify-content: space-between; min-height: 58px; padding: 10px max(20px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); border-top: 1px solid #edcf8e45; }
-.cloudwake-app .cloudwake-footer > div { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 11px monospace; }
+.cloudwake-app .cloudwake-readout { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 11px monospace; }
 .cloudwake-app .cloudwake-fragments { color: #9adfd5; }
-.cloudwake-app .cloudwake-checkpoint { color: #f6dba2; }
 .cloudwake-app .cloudwake-flight-status { position: absolute; inset: 12px 16px auto; z-index: 1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 8px; pointer-events: none; font: 700 10px/1.4 monospace; letter-spacing: .03em; }
 .cloudwake-app :is(.cloudwake-leg, .cloudwake-shield) { padding: 8px 10px; background: #123d49eb; border: 1px solid #d4d8b840; border-radius: 10px; }
 .cloudwake-app .cloudwake-shield { display: grid; gap: 4px; min-width: 108px; color: #a9e9de; }
-.cloudwake-app .cloudwake-shield[data-ready='true'] { border-color: #a0ffe8; color: #c3fff1; }
+.cloudwake-app .cloudwake-shield[data-live='true'] { border-color: #fff1b8; color: #fff6d4; }
 .cloudwake-app .cloudwake-shield progress { width: 100%; height: 4px; appearance: none; border: 0; border-radius: 4px; background: #3b6268; accent-color: #9affdf; }
 .cloudwake-app .cloudwake-shield progress::-webkit-progress-bar { background: #3b6268; border-radius: 4px; }
 .cloudwake-app .cloudwake-shield progress::-webkit-progress-value { background: #9affdf; border-radius: 4px; }
+.cloudwake-app .cloudwake-shield[data-live='true'] progress { accent-color: #fff1b8; }
+.cloudwake-app .cloudwake-shield[data-live='true'] progress::-webkit-progress-value { background: #fff1b8; }
 .cloudwake-app .cloudwake-hint { font: 10px/1.5 monospace; letter-spacing: .1em; color: #c3dbd5; margin: 0; }
 .cloudwake-app .cloudwake-hint span { color: #edc57e; padding-inline: 10px; }
-.cloudwake-app [data-control='thrust'] { display: none; touch-action: none; min-width: 140px; }
-.cloudwake-app [data-control='thrust']:is([data-held],[data-thrusting='true']) { background: #367578; border-color: #a6f5e4; }
+.cloudwake-app .cloudwake-touch { display: none; }
+.cloudwake-app .cloudwake-touch button { touch-action: none; min-width: 54px; }
+.cloudwake-app .cloudwake-touch [data-control='thrust'] { min-width: 140px; }
+.cloudwake-app .cloudwake-touch button:is([data-held],[data-thrusting='true']) { background: #367578; border-color: #a6f5e4; }
 .cloudwake-app .game-menu-layer { background: linear-gradient(100deg, #0c3546d9, #0c35464a 70%); }
 .cloudwake-app .game-menu { background: radial-gradient(ellipse at 0 0, #31647166, transparent 70%), #113642f5; border-color: #e2c58a75; }
 .cloudwake-app .game-menu h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; font-style: italic; font-size: clamp(38px, 6vw, 62px); letter-spacing: -.045em; color: #ffe5af; }
 .cloudwake-app .game-menu-description { max-width: 43ch; color: #c1d7d4; }
 @media (pointer: coarse), (max-width: 850px) {
-  .cloudwake-app [data-control='thrust'] { display: flex; justify-content: center; gap: 10px; align-items: center; min-height: 54px; }
+  .cloudwake-app .cloudwake-touch { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  .cloudwake-app .cloudwake-touch [data-control='thrust'] { display: flex; justify-content: center; gap: 10px; align-items: center; min-height: 54px; }
   .cloudwake-app .cloudwake-hint { display: none; }
 }
 @media (max-width: 480px) {
@@ -40,8 +44,9 @@
   .cloudwake-app .cloudwake-brand span { font-size: 7px; max-width: 110px; }
   .cloudwake-app .cloudwake-hud output { font-size: 17px; }
   .cloudwake-app .cloudwake-hud button { padding: 8px 10px; }
-  .cloudwake-app .cloudwake-footer { padding-inline: 12px; gap: 10px; }
-  .cloudwake-app .cloudwake-footer > div { display: grid; gap: 6px; }
+  .cloudwake-app .cloudwake-footer { flex-wrap: wrap; align-items: center; padding-inline: 12px; gap: 8px; }
+  .cloudwake-app .cloudwake-readout { width: 100%; display: flex; justify-content: space-between; }
+  .cloudwake-app .cloudwake-touch { width: 100%; justify-content: flex-end; }
   .cloudwake-app .cloudwake-flight-status { inset-inline: 12px; font-size: 9px; }
   .cloudwake-app :is(.cloudwake-leg, .cloudwake-shield) { padding: 6px 8px; }
 }
@@ -49,5 +54,6 @@
   .cloudwake-app .cloudwake-hud { min-height: 48px; padding-block: 6px; }
   .cloudwake-app .cloudwake-brand span { display: none; }
   .cloudwake-app .cloudwake-footer { min-height: 42px; padding-block: 5px; }
-  .cloudwake-app [data-control='thrust'] { min-height: 36px; }
+  .cloudwake-app .cloudwake-touch button { min-height: 36px; min-width: 44px; }
+  .cloudwake-app .cloudwake-touch [data-control='thrust'] { min-width: 108px; min-height: 36px; }
 }
