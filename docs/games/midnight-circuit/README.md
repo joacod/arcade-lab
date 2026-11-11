@@ -45,7 +45,7 @@ The walk cadence and guard silhouette support those combat decisions without slo
 
 ## Sound identity
 
-Dry street-combat sounds separate sleeve movement from confirmed contact. Light, heavy, finisher and aerial hits use different chest transients and skin-snap bands; event strength controls their weight and clothing texture. Heavy swings move more air, KOs meet the asphalt, and jumps scuff a shoe. The Warden charges with transformer hum and electrical arcing. Encounters, repairs, respawns, restored power and outcomes use short electronic intervals. `sound-recipes.ts` and `sound.ts` own this palette through the [shared audio owner](../../architecture.md#sound).
+Dry street-combat sounds separate sleeve movement from confirmed contact. Light, heavy, finisher and aerial hits use different chest transients and skin-snap bands; event strength controls their weight and clothing texture. Heavy swings move more air, KOs meet the asphalt, and jumps scuff a shoe. The Warden charges with transformer hum and electrical arcing. Encounters, repairs, respawns, restored power and outcomes use short electronic intervals, with a voltage pulse following the indicator tone. `sound-recipes.ts` and `sound.ts` own this palette through the [shared audio owner](../../architecture.md#sound).
 
 ## Source and tuning
 

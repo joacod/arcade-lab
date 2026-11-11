@@ -55,7 +55,7 @@ Deluxe uses Canvas 2D and its own [art bundle, sources, prompts and registration
 
 ## Sound identity
 
-`sound-recipes.ts` gives each weapon a material role: ember-and-air Spark casts, ionized Arc Spark forks, inharmonic glass Shards, gold-rimmed Halo contacts and a low dust-wave Pulse. Enemy contacts and ash dissolves stay beneath the casts. Clustered gems brighten and reveal extra crystal facets, while health damage breaks the ward with a low crack. Fully absorbed hits retain the protective Halo ring. Lantern partials bloom for upgrades and dawn; evolution swells through rekindling air, the elite enters with a beating low horn and earth, and defeat extinguishes the wick.
+`sound-recipes.ts` gives each weapon a material role: ember-and-air Spark casts, ionized Arc Spark forks, inharmonic glass Shards, gold-rimmed Halo contacts and a low dust-wave Pulse. Enemy contacts and ash dissolves stay beneath the casts. Clustered gems brighten and reveal extra crystal facets, while health damage breaks the ward with a low crack. Fully absorbed hits retain the protective Halo ring. Lantern partials bloom for upgrades and dawn; evolution swells through rekindling air before the core and crown enter in sequence, the elite enters with a beating low horn and earth, and defeat extinguishes the wick.
 
 `sound.ts` receives weapon identity, Halo contact and elite-entry notifications from simulation. Recipes are procedural one-shots, with event policy and the [shared audio owner](../../architecture.md#sound) keeping busy combat bounded.
 

@@ -76,10 +76,10 @@ export const clearingRecipes = {
   evolution: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .85, layers: [
     { id: 'rekindle', source: { type: 'noise', color: 'white' }, gainDb: -31,
       envelope: { attack: .23, decay: .3, sustain: 0, release: .04 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 450], [.3, 3200], [.84, 1200]], curve: 'exponential' }, q: .8 }] },
-    { id: 'awakened-core', source: { type: 'oscillator', waveform: 'sine', frequency: 783.99 }, gainDb: -25,
-      envelope: { attack: .2, decay: .6, sustain: .02, release: .12 } },
-    { id: 'crown', source: { type: 'oscillator', waveform: 'sine', frequency: 1174.66 }, gainDb: -31,
-      envelope: { attack: .27, decay: .5, sustain: .02, release: .12 } },
+    { id: 'awakened-core', startOffset: .16, source: { type: 'oscillator', waveform: 'sine', frequency: 783.99 }, gainDb: -25,
+      envelope: { attack: .04, decay: .6, sustain: .02, release: .12 } },
+    { id: 'crown', startOffset: .24, source: { type: 'oscillator', waveform: 'sine', frequency: 1174.66 }, gainDb: -31,
+      envelope: { attack: .03, decay: .5, sustain: .02, release: .12 } },
   ], effects: [{ type: 'delay', time: .167, feedback: .18, mix: .13 }] }),
   elite: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .7, layers: [
     { id: 'briar-horn', source: { type: 'oscillator', waveform: 'triangle', frequency: 98 }, gainDb: -26,

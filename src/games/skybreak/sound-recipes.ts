@@ -15,8 +15,8 @@ function cockpit(root: number, duration: number, ratio: number) {
   return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
     { id: 'instrument', source: { type: 'oscillator', waveform: 'sine', frequency: root }, gainDb: -29,
       envelope: { attack: .004, decay: duration * .83, sustain: .02, release: .025 } },
-    { id: 'indicator', source: { type: 'oscillator', waveform: 'triangle', frequency: root * ratio }, gainDb: -36,
-      envelope: { attack: .012, decay: duration * .75, sustain: .02, release: .03 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 2200, q: .7 }] },
+    { id: 'indicator', startOffset: duration * .22, source: { type: 'oscillator', waveform: 'triangle', frequency: root * ratio }, gainDb: -36,
+      envelope: { attack: .004, decay: duration * .7, sustain: .02, release: .03 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 2200, q: .7 }] },
   ] });
 }
 export const skybreakRecipes = {
@@ -74,10 +74,10 @@ export const skybreakRecipes = {
   victory: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .85, layers: [
     { id: 'brass', source: { type: 'oscillator', waveform: 'sawtooth', frequency: 523.25 }, gainDb: -31,
       envelope: { attack: .025, decay: .65, sustain: .05, release: .1 } },
-    { id: 'fifth', source: { type: 'oscillator', waveform: 'square', frequency: 783.99 }, gainDb: -36,
-      envelope: { attack: .04, decay: .65, sustain: .05, release: .1 } },
-    { id: 'octave', source: { type: 'oscillator', waveform: 'triangle', frequency: 1046.5 }, gainDb: -33,
-      envelope: { attack: .055, decay: .65, sustain: .025, release: .08 } },
+    { id: 'fifth', startOffset: .12, source: { type: 'oscillator', waveform: 'square', frequency: 783.99 }, gainDb: -36,
+      envelope: { attack: .025, decay: .65, sustain: .05, release: .1 } },
+    { id: 'octave', startOffset: .24, source: { type: 'oscillator', waveform: 'triangle', frequency: 1046.5 }, gainDb: -33,
+      envelope: { attack: .025, decay: .55, sustain: .025, release: .08 } },
   ], effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 1100], [.09, 2600], [.8, 900]], curve: 'exponential' }, q: .6 }] }),
   defeat: cockpit(164.81, .8, 1.1892),
 };

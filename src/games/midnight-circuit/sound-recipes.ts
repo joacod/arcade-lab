@@ -19,13 +19,13 @@ function contact(bass: number, duration: number, snap: number) {
         envelope: { attack: .004, decay: duration * .65, sustain: 0, release: .02 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 680, q: .6 }] },
     ] });
 }
-// Power-grid signals use clean electronic intervals, never the timbre of a landed punch.
+// Power-grid signals answer the indicator with a separate voltage pulse.
 function relay(root: number, duration: number, ratio = 1.5) {
   return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
     { id: 'indicator', source: { type: 'oscillator', waveform: 'triangle', frequency: root }, gainDb: -29,
       envelope: { attack: .006, decay: duration * .8, sustain: .025, release: .06 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1800, q: .6 }] },
-    { id: 'voltage', source: { type: 'oscillator', waveform: 'sine', frequency: root * ratio }, gainDb: -33,
-      envelope: { attack: duration * .12, decay: duration * .75, sustain: .025, release: .06 } },
+    { id: 'voltage', startOffset: duration * .12, source: { type: 'oscillator', waveform: 'sine', frequency: root * ratio }, gainDb: -33,
+      envelope: { attack: .006, decay: duration * .75, sustain: .025, release: .06 } },
   ], effects: [{ type: 'delay', time: .093, feedback: .1, mix: .09 }] });
 }
 export const circuitRecipes = {
