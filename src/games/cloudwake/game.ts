@@ -10,7 +10,7 @@ export type FlightEvent = { x: number; y: number } & (
 interface Progress {
   elapsed: number; distance: number; speed: number; score: number; player: Flyer;
   passages: Passage[]; fragments: Fragment[]; pickups: number; pickupPoints: number; chain: number;
-  shieldCharge: number; shieldUntil: number; shieldCue: number; passed: number; route: Route;
+  shieldCharge: number; shieldUntil: number; shieldContact: number | null; passed: number; route: Route;
 }
 export interface Run extends Progress {
   status: 'active' | 'paused' | 'crashed' | 'defeat'; thrust: boolean; lives: number;
@@ -20,12 +20,12 @@ function copyProgress(state: Progress): Progress {
   return { elapsed: state.elapsed, distance: state.distance, speed: state.speed, score: state.score, player: { ...state.player },
     passages: state.passages.map(passage => ({ ...passage })), fragments: state.fragments.map(fragment => ({ ...fragment })),
     pickups: state.pickups, pickupPoints: state.pickupPoints, chain: state.chain,
-    shieldCharge: state.shieldCharge, shieldUntil: state.shieldUntil, shieldCue: state.shieldCue,
+    shieldCharge: state.shieldCharge, shieldUntil: state.shieldUntil, shieldContact: state.shieldContact,
     passed: state.passed, route: { ...state.route, previous: { ...state.route.previous } } };
 }
 export function createRun(seed = 1): Run {
   const state: Progress = { elapsed: 0, distance: 0, speed: flight.startSpeed, score: 0, player: { x: flight.playerX, y: 300, vx: 0, vy: 0 },
-    passages: [], fragments: [], pickups: 0, pickupPoints: 0, chain: 0, shieldCharge: 0, shieldUntil: 0, shieldCue: 0,
+    passages: [], fragments: [], pickups: 0, pickupPoints: 0, chain: 0, shieldCharge: 0, shieldUntil: 0, shieldContact: null,
     passed: 0, route: createRoute(seed) };
   populate(state);
   return { ...state, status: 'active', thrust: false, lives: flight.lives,
@@ -63,6 +63,7 @@ export function stepRun(run: Run, action: { thrust: boolean; strafe?: number; sl
   const point = { x: run.distance + run.player.x, y: run.player.y };
   const body = { x: point.x - flight.radius, y: point.y - flight.radius, w: flight.radius * 2, h: flight.radius * 2 };
   let checkpoint: Passage | undefined;
+  let shieldContact: number | null = null;
   for (const passage of run.passages) {
     if (passage.x > point.x + 140 || passage.x + passage.width < old.x - flight.radius) continue;
     let collision = false;
@@ -78,9 +79,12 @@ export function stepRun(run: Run, action: { thrust: boolean; strafe?: number; sl
       }
     }
     const shielded = run.elapsed < run.shieldUntil;
-    if (collision && shielded) {
-      if (run.elapsed >= run.shieldCue) {
-        run.shieldCue = run.elapsed + .45;
+    if (collision && (shielded || passage.id === run.shieldContact)) {
+      // Spend the shield immediately, but let this contact finish. Otherwise
+      // the same solid would kill the courier again on the following frame.
+      shieldContact = passage.id;
+      if (shielded) {
+        run.shieldUntil = 0;
         run.events.push({ type: 'shield-hit', ...point });
       }
     } else if (collision) {
@@ -94,6 +98,7 @@ export function stepRun(run: Run, action: { thrust: boolean; strafe?: number; sl
       else run.passed++;
     }
   }
+  run.shieldContact = shieldContact;
   // A fragment is missed only once it slips behind the rear of the movement window.
   const missed = run.distance + flight.minX + pickupRear - fragmentShape.halfWidth;
   for (const fragment of run.fragments) {

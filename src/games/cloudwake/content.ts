@@ -5,7 +5,7 @@ export const flight = {
   strafeSpeed: 210, strafeAccel: 1680,
   startSpeed: 205, maxSpeed: 435, speedStep: 46, speedRise: 24,
   minimumView: 560, reaction: .28, fragmentPoints: 25, lives: 3, mineRadius: 35,
-  shieldFragments: 15, shieldSeconds: 5,
+  shieldFragments: 30, shieldSeconds: 5,
 } as const;
 /** Pickup silhouette covers helmet/rider/scooter but excludes scarf and exhaust.
  * Its convex envelope is separate from the forgiving hazard-contact radius. */

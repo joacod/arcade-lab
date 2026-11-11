@@ -169,9 +169,10 @@ test('clear air saves a safe repeatable checkpoint without farming score, route 
   }
 });
 
-test('fragment streaks multiply points, near misses stay uncollected, and the light shield is a short window', () => {
+test('fragment streaks multiply points, near misses stay uncollected, and a charged shield absorbs one contact', () => {
   const run = createRun(17);
-  for (let count = 1; count <= 16; count++) {
+  const collected = flight.shieldFragments + 1;
+  for (let count = 1; count <= collected; count++) {
     run.fragments = [{ x: run.distance + run.player.x, y: run.player.y, collected: false }];
     stepRun(run, { thrust: false }, dt);
     const events = takeEvents(run);
@@ -186,16 +187,16 @@ test('fragment streaks multiply points, near misses stay uncollected, and the li
       assert.equal(events.some(event => event.type === 'shield-ready'), true);
     } else assert.equal(run.shieldCharge, count - flight.shieldFragments);
   }
-  assert.equal(run.pickupPoints, 5 * 25 + 5 * 50 + 5 * 75 + 100);
+  assert.equal(run.pickupPoints, 5 * 25 + 5 * 50 + 5 * 75 + (collected - 15) * 100);
   assert.equal(multiplierAt(run.chain), 4);
   const beside = run.player.y + 60;
   run.fragments = [{ x: run.distance + run.player.x, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.pickups, 16, 'a gem beside the body is not collected');
+  assert.equal(run.pickups, collected, 'a gem beside the body is not collected');
   assert.equal(run.fragments.length, 1);
   run.fragments = [{ x: run.distance + flight.minX, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.chain, 16, 'a gem still inside the flight window is not a miss');
+  assert.equal(run.chain, collected, 'a gem still inside the flight window is not a miss');
   assert.equal(run.fragments.length, 1);
   run.fragments = [{ x: run.distance + flight.minX + pickupRear - fragmentShape.halfWidth - 1, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
@@ -203,13 +204,27 @@ test('fragment streaks multiply points, near misses stay uncollected, and the li
   assert.equal(takeEvents(run).filter(e => e.type === 'fragment-missed').length, 1, 'a miss hands its image to presentation exactly once');
   assert.equal(multiplierAt(run.chain), 1);
   run.passages = [{ ...run.route.previous, x: run.distance + run.player.x, center: 100, gap: 100, pattern: 'rise', cleared: false }];
-  const until = run.shieldUntil;
+  const expired = structuredClone(run);
+  expired.elapsed = expired.shieldUntil;
+  stepRun(expired, { thrust: false }, dt);
+  assert.equal(expired.status, 'crashed', 'an unused shield still expires');
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.status, 'active'); assert.equal(run.lives, flight.lives); assert.equal(run.shieldUntil, until);
-  assert.equal(takeEvents(run).some(event => event.type === 'shield-hit'), true);
+  assert.equal(run.status, 'active'); assert.equal(run.lives, flight.lives);
+  assert.equal(run.shieldUntil, 0, 'the first hit consumes all remaining shield time');
+  assert.equal(run.shieldCharge, 1, 'the next shield retains its earned charge');
+  assert.equal(takeEvents(run).filter(event => event.type === 'shield-hit').length, 1);
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.lives, flight.lives, 'hazards during the shield window do not cost a life');
-  run.elapsed = run.shieldUntil;
+  assert.equal(run.status, 'active', 'the absorbed contact does not kill again on the next frame');
+  assert.equal(takeEvents(run).some(event => event.type === 'shield-hit'), false);
+  const other = structuredClone(run);
+  other.passages[0].id++;
+  stepRun(other, { thrust: false }, dt);
+  assert.equal(other.status, 'crashed', 'another obstacle is dangerous immediately');
+  const obstacle = run.passages[0];
+  run.passages = [];
+  stepRun(run, { thrust: false }, dt);
+  assert.equal(run.shieldContact, null, 'separating ends protection from the spent contact');
+  run.passages = [obstacle];
   stepRun(run, { thrust: false }, dt);
   assert.equal(run.status, 'crashed'); assert.equal(run.lives, flight.lives - 1);
 });
