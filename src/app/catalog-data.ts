@@ -13,6 +13,6 @@ export const gameInfo = [
   { id: 'blastline', title: 'Blastline', cover: new URL('../../docs/games/blastline/preview.webp', import.meta.url).href,
     genre: 'RUN & GUN', controls: 'Run · shoot · rescue', description: 'Rescue an operator, destroy defenses and reach extraction.' },
   { id: 'cloudwake', title: 'Cloudwake', cover: new URL('../../docs/games/cloudwake/preview.webp', import.meta.url).href,
-    genre: 'ONE-BUTTON FLIGHT', controls: 'Hold to rise · release to fall', description: 'Thread the sky ruins, gather lost light and chase your best flight.' },
+    genre: 'ONE-BUTTON FLIGHT', controls: 'Hold to rise · release to fall', description: 'Thread the sky ruins, gather lost light and fly as far as you can.' },
 ] as const;
 export type GameId = typeof gameInfo[number]['id'];

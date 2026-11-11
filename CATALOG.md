@@ -131,7 +131,7 @@ Health and lives are grouped in the HUD: bullets chip health, while hostile expl
 
 ![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
 
-Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. Broad opening passages introduce flight control before tighter gates and gently drifting storm mines. Clear-air pockets break up the pressure as speed builds toward its cap. Distance and fragments contribute to score, with a locally saved best and immediate retries. There is no time limit.
+Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. Broad opening passages introduce flight control before tighter gates and gently drifting storm mines. Clear-air pockets break up the pressure as speed builds toward its cap. Distance and fragments contribute to the current run’s score, with immediate retries. There is no time limit.
 
 | Control | Action |
 | --- | --- |

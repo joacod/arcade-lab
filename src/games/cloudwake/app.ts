@@ -12,14 +12,8 @@ import { createSound } from './sound.ts';
 import { createUI, type Intent, type Screen } from './ui.ts';
 import './style.css';
 
-const bestKey = 'arcade-lab.cloudwake.best';
-function readBest() {
-  try { const value = Number(localStorage.getItem(bestKey)); return Number.isSafeInteger(value) && value > 0 ? value : 0; }
-  catch { return 0; }
-}
-
 export function mountCloudwake(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
-  let disposed = false, screen: Screen = 'title', run = createRun(), best = readBest(), record = false;
+  let disposed = false, screen: Screen = 'title', run = createRun();
   const clock = createClock();
   let outcomeAt = 0;
   let host: ReturnType<typeof createHost>, ui: ReturnType<typeof createUI>, input: ReturnType<typeof bindInput>;
@@ -48,7 +42,7 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
     function transition(next: Screen, focus = true) {
       input.clear(); clock.reset(); screen = next;
       if (next === 'paused' || next === 'title') sound.pause();
-      ui.update(run, best, record); ui.show(next, focus);
+      ui.update(run); ui.show(next, focus);
     }
     function act(intent: Intent) {
       if (disposed) return;
@@ -58,7 +52,7 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
       if (!readiness.ready || document.hidden || !document.hasFocus()) return;
       if ((intent === 'start' && screen === 'title') || (intent === 'restart' && screen !== 'playing')) {
         sound.reset(); sound.activate();
-        run = createRun(crypto.getRandomValues(new Uint32Array(1))[0]); record = false;
+        run = createRun(crypto.getRandomValues(new Uint32Array(1))[0]);
         presentation.reset(); transition('playing');
       } else if (intent === 'resume' && screen === 'paused') {
         sound.activate(); pauseRun(run, false); transition('playing');
@@ -85,7 +79,7 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
     bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: () => input.clear(), suspend,
       shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.thrust });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
-    ui.update(run, best, record); ui.show('title'); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
+    ui.update(run); ui.show('title'); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
       if (!readiness.ready) return;
       if (screen === 'playing') {
@@ -94,8 +88,6 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
         const events = takeEvents(run); presentation.consume(events); sound.consume(events, run.thrust);
         if (run.status === 'defeat') {
           outcomeAt = now;
-          record = run.score > best; best = Math.max(best, run.score);
-          try { localStorage.setItem(bestKey, String(best)); } catch { /* Best remains usable for this visit. */ }
           transition('defeat');
         }
       }
@@ -110,7 +102,7 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
           return presentation.prepare().then(() => { if (!disposed) presentation.draw(run, host); });
         });
       }
-      ui.update(run, best, record);
+      ui.update(run);
     });
     return { dispose };
   } catch (error) { dispose(); throw error; }

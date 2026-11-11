@@ -8,7 +8,7 @@ export type Screen = 'title' | 'playing' | 'paused' | 'defeat';
 export type Intent = CommonMenuIntent;
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
   root.innerHTML = `<header class="cloudwake-hud"><div class="cloudwake-brand">CLOUDWAKE<span>SKY COURIER / ENDLESS FLIGHT</span></div>
-    <div class="cloudwake-score"><small>SCORE</small><output aria-label="Score">0</output></div><div class="cloudwake-best"><small>BEST</small><output aria-label="Best score">0</output></div><button data-intent="pause">Pause</button></header>
+    <div class="cloudwake-score"><small>SCORE</small><output aria-label="Score">0</output></div><button data-intent="pause">Pause</button></header>
     <main class="cloudwake-stage"></main><footer class="cloudwake-footer"><div><output aria-label="Distance">0 m</output><span class="cloudwake-fragments">0 fragments</span></div><p class="cloudwake-hint">HOLD TO RISE <span>·</span> RELEASE TO FALL</p><button data-control="thrust" aria-label="Hold to rise">↑ <span>HOLD TO RISE</span></button></footer>`;
   const $ = createElementLookup(root), stage = $('.cloudwake-stage');
   stage.prepend(surface);
@@ -35,13 +35,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       menu.show(screen, focus);
       if (screen === 'defeat') menu.heading.textContent = 'Flight complete';
     },
-    update(run: Run, best: number, record: boolean) {
+    update(run: Run) {
       setText($('[aria-label="Score"]'), String(run.score).padStart(5, '0'));
-      setText($('[aria-label="Best score"]'), String(best).padStart(5, '0'));
       setText($('[aria-label="Distance"]'), `${Math.floor(run.distance / 10)} m`);
       setText($('.cloudwake-fragments'), `${run.pickups} fragments`);
       setProperty(thrust.dataset, 'thrusting', String(run.thrust));
-      results.update(`${run.score.toLocaleString()} POINTS${record ? ' · NEW BEST' : ''}\n${Math.floor(run.distance / 10)} m flown · ${run.pickups} fragments\nBEST ${best.toLocaleString()} · ${Math.floor(run.elapsed)} seconds aloft`);
+      results.update(`${run.score.toLocaleString()} POINTS\n${Math.floor(run.distance / 10)} m flown · ${run.pickups} fragments\n${Math.floor(run.elapsed)} seconds aloft`);
     },
   };
 }

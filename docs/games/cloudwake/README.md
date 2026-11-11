@@ -10,7 +10,7 @@ Thrust is continuous acceleration with bounded ascent and descent speeds. Revers
 
 A flight begins with broad lower and upper obstacles, then introduces paired gates and floating mines. Each seeded route moves a bounded safe corridor between patterns. Its feasibility check integrates the actual flight physics from both edges and the center of the previous corridor, with extreme entry velocities and both possible holds during a reaction allowance. It checks clearance over the full next obstacle width at maximum scroll speed, extending empty travel if necessary. Moving mines remain outside that corridor throughout their oscillation. Fragments trace a small arc inside it. Every sixth pattern is a clear-air pocket.
 
-Speed rises gradually toward a cap over the first 90 seconds, while gaps tighten toward a minimum. There is no time limit or upgrade economy. Distance contributes one point per displayed meter, and each fragment adds 25 points. Every five cleared hazards earns a short visual/audio acknowledgement. The browser session stores only the best score under `arcade-lab.cloudwake.best`; unavailable storage leaves the game usable and retains the best for the visit.
+Speed rises gradually toward a cap over the first 90 seconds, while gaps tighten toward a minimum. There is no time limit or upgrade economy. Distance contributes one point per displayed meter, and each fragment adds 25 points. Every five cleared hazards earns a short visual/audio acknowledgement.
 
 Hold Space, W, ↑, mouse/touch on the playfield, or the mobile Rise button. Release to descend. See [shared menus, controls and lifecycle](../../../CATALOG.md) for pause, sound, fullscreen and navigation.
 
@@ -21,7 +21,7 @@ Hold Space, W, ↑, mouse/touch on the playfield, or the mobile Rise button. Rel
 | `content.ts` | Physical geometry, acceleration, braking and speed progression |
 | `route.ts` | Seeded patterns, corridor feasibility and mine motion |
 | `game.ts` | Mutable run, collision, collectibles, score and semantic events |
-| `app.ts` | Browser composition, fresh runs, best-score persistence and readiness/recovery |
+| `app.ts` | Browser composition, fresh runs and readiness/recovery |
 | `input.ts` | Shared button owner plus playfield and launch-hold capture |
 | `ui.ts`, `style.css` | HUD, results and shared menu composition |
 | `presentation.ts` | Whole-cel roles, uniform projection, image preparation, parallax and bounded effects |
