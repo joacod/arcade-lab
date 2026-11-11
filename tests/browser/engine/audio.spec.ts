@@ -32,7 +32,7 @@ async function fixture(page: Page) {
     const [{ createGameAudio }, { skybreakRecipes }] = await Promise.all([import(ownerPath), import(recipesPath)]);
     const w = window as any;
     w.messages = [];
-    w.owner = createGameAudio({ 'skybreak/shot': skybreakRecipes.shot }, (message: string) => w.messages.push(message));
+    w.owner = createGameAudio({ 'skybreak/shot': skybreakRecipes.shot, 'skybreak/victory': skybreakRecipes.victory }, (message: string) => w.messages.push(message));
     for (const [label, action] of Object.entries({
       'Audio play': () => w.owner.activate(),
       'Audio retry': () => { w.owner.reset(); w.owner.activate(); },
@@ -62,6 +62,15 @@ test('cancelled activation cannot play or report late, and a failed gesture can 
   await page.getByRole('button', { name: 'Audio retry', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).messages.at(-1))).toBe('');
   expect(await page.evaluate(() => (window as any).owner.play('skybreak/shot'))).toBe(true);
+  // Pause must cut the entire fanfare, including layers scheduled after this gesture.
+  expect(await page.evaluate(() => {
+    const w = window as any;
+    w.owner.reset();
+    const played = w.owner.play('skybreak/victory');
+    const allocated = w.audioProbe.live.size > 0;
+    w.owner.pause();
+    return { played, allocated, live: w.audioProbe.live.size };
+  })).toEqual({ played: true, allocated: true, live: 0 });
   // A reset followed by a new activation in the same gesture must survive an old cancellation.
   await page.evaluate(() => {
     const w = window as any; w.owner.pause(); w.audioProbe.hold = true;

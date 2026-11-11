@@ -56,7 +56,7 @@ Nova's rifle combines a dry muzzle crack, short barrel body and bolt return. Bol
 
 Terrain copies authored materials and health into each run. Axis-separated leading-edge sweeps query the current grid. Projectile segments test the occupied tiles in their swept bounds and choose the earliest terrain or actor contact. Contact removes or damages tiles before subsequent shots query them. Explosions use circle/rectangle intersection and an iterative barrel queue. A barrel is marked before enqueue, preventing cycles and repeated detonation. The queue can hold the finite projectile limit plus every authored barrel; all work resolves in simulation before presentation events are consumed.
 
-Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire.
+Projectiles, queued blasts, semantic events, visual rings and particles have explicit bounds. Terrain rendering visits the visible tile range. Debris can be discarded when full without changing gameplay. Audio prioritizes milestones and heavy impacts over routine fire. The rifle's bolt clicks after the muzzle crack, and radio acknowledgements answer the carrier with a separate tone.
 
 The [artwork guide](../../../src/games/blastline/art/README.md) owns the complete sprite layouts and editable sources. Arcade and Deluxe each supply their own authored scenery and effects.
 

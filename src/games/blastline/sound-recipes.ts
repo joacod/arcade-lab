@@ -21,13 +21,13 @@ function blast(duration: number, gain: number) {
         envelope: { attack: .018, decay: duration * .35, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 2900, q: .7 }] },
     ] });
 }
-// Narrow-band radio acknowledgements, with static kept beneath the tonal information.
+// A crisp second radio tone follows the carrier; static stays beneath both.
 function radio(root: number, duration: number, interval = 1.5) {
   return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
     { id: 'carrier', source: { type: 'oscillator', waveform: 'square', frequency: root }, gainDb: -32,
       envelope: { attack: .004, decay: duration * .85, sustain: .02, release: .025 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1500, q: .7 }] },
-    { id: 'acknowledgement', source: { type: 'oscillator', waveform: 'sine', frequency: root * interval }, gainDb: -32,
-      envelope: { attack: .02, decay: duration * .8, sustain: .02, release: .035 } },
+    { id: 'acknowledgement', startOffset: duration * .18, source: { type: 'oscillator', waveform: 'sine', frequency: root * interval }, gainDb: -32,
+      envelope: { attack: .004, decay: duration * .72, sustain: .02, release: .035 } },
     { id: 'radio-squelch', source: { type: 'noise', color: 'white' }, gainDb: -40,
       envelope: { attack: .002, decay: .045, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 1700, q: 1.2 }] },
   ] });
@@ -38,8 +38,8 @@ export const blastRecipes = {
       envelope: { attack: .002, decay: .035, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { random: [2300, 2850] }, q: .65 }] },
     { id: 'barrel', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 210], [.055, 78]], curve: 'exponential' } }, gainDb: -31,
       envelope: { attack: .002, decay: .065, sustain: 0, release: .015 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 700, q: .7 }] },
-    { id: 'bolt-return', source: { type: 'noise', color: 'white' }, gainDb: -38,
-      envelope: { attack: .025, decay: .055, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 3600, q: 2 }] },
+    { id: 'bolt-return', startOffset: .025, source: { type: 'noise', color: 'white' }, gainDb: -38,
+      envelope: { attack: .002, decay: .055, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 3600, q: 2 }] },
   ] }),
   launch: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .3, layers: [
     { id: 'exhaust', source: { type: 'noise', color: 'white' }, gainDb: -26,
