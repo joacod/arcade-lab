@@ -24,12 +24,12 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     </header>
     <section class="arcade-introduction" aria-labelledby="selection-heading">
       <div><p class="arcade-eyebrow">SMALL WORLDS</p><h1 id="selection-heading">Press Play</h1></div>
-      <p class="arcade-intro">Six original games. Pick a world and press play.<br><span>Keyboard or touch. Right in your browser.</span></p>
+      <p class="arcade-intro">Original games. Pick a world and press play.<br><span>Keyboard or touch. Right in your browser.</span></p>
     </section>
-    <div class="arcade-games" aria-labelledby="selection-heading">${games.map((game, index) => `
+    <div class="arcade-games" aria-labelledby="selection-heading">${games.map(game => `
       <button type="button" class="arcade-game" data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
         <span class="arcade-cover" aria-hidden="true">${state.selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${game.cover}" alt="" width="1440" height="1000" decoding="async"><span class="arcade-cover-shade"></span><span class="arcade-genre">${game.genre.replaceAll('&', '&amp;')}</span></span>
-        <span class="arcade-card-copy"><span class="arcade-number" aria-hidden="true">0${index + 1}</span><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-card-action-label">Play</span><svg class="arcade-play-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 1.7 10.4 6 3.2 10.3Z"/></svg></span></span>
+        <span class="arcade-card-copy"><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-card-action-label">Play</span><svg class="arcade-play-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 1.7 10.4 6 3.2 10.3Z"/></svg></span></span>
         <span id="${game.id}-description" class="arcade-game-description">${game.description} ${game.controls}.</span>
       </button>`).join('')}</div>
     <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span class="arcade-credit">Built by <a href="https://joacod.com" target="_blank" rel="noopener noreferrer">joacod</a></span></footer>
