@@ -1,8 +1,8 @@
 # Cloudwake
 
-![Cloudwake · The Sunward Route](preview.webp)
+![Cloudwake · Deluxe · Sunward Radiance](preview.webp)
 
-An endless flight through a sunlit sky civilization. Carry a satchel of lost light between ivory ruins on a little turbine scooter. Hold to rise, release to descend, slide across the view, dodge coral crystals and collect turquoise fragments. The complete presentation is **Arcade · The Sunward Route**.
+An endless flight through a sunlit sky civilization. Carry a satchel of lost light between ivory ruins on a little turbine scooter. Hold to rise, release to descend, slide across the view, dodge coral crystals and collect turquoise fragments. The game starts in **Arcade · The Sunward Route**. **Deluxe · Sunward Radiance** adds dimensional painted artwork through the same Canvas renderer.
 
 ## Flight and progression
 
@@ -24,6 +24,16 @@ Filling the fragment charge meter raises a **light shield** for a few seconds. T
 
 Hold Space, W, ↑, mouse/touch on the playfield, or the mobile Rise button. Release to descend. Slide with A, D, ←, →, the on-screen arrows, or a sideways drag. See [shared menus, controls and lifecycle](../../../CATALOG.md) for pause, sound, fullscreen and navigation.
 
+## Deluxe · Sunward Radiance
+
+The same courier, ivory-and-teal scooter, coral-crystal ruins and winged lanterns receive a dimensional painted treatment: glazed ceramic, chased brass, translucent crystal and warm fabric. Complete authored flight cels carry the pilot and vehicle together. Glide/release and alternating thrust cels retain a stable vehicle anchor, while scarf and exhaust provide the motion accents.
+
+A luminous cloud sea and distant ivory terraces occupy the lower scenery, with quiet blue air behind the flight corridors. Coral silhouettes identify danger; turquoise fragments and lantern cores identify rewards and safety. Background contrast stays below the foreground ruins, and decorative parallax never moves physical geometry. The title, HUD and menus use deep petrol surfaces with champagne and turquoise accents.
+
+A lantern opens once on checkpoint passage, blooms and settles into its lit cel. The shield forms a restrained glass envelope around the courier; pickup points remain attached to the collected fragment. Trails and glints stay bounded and use active flight time. Pause freezes them, and reduced motion keeps still cels and essential state cues while suppressing decorative movement and flashes.
+
+Deluxe loads its own courier, ruins, mine, fragment, cloud, lantern and horizon artwork only when selected. The working presentation stays visible during preparation. Failed preparation retains the current theme; a draw failure pauses the flight and recovers to Arcade with fresh Canvas state, following the shared [replacement contract](../../architecture.md#replacement-and-recovery).
+
 ## Local owners and adaptation
 
 | Owner | Responsibility |
@@ -35,6 +45,7 @@ Hold Space, W, ↑, mouse/touch on the playfield, or the mobile Rise button. Rel
 | `app.ts` | Browser composition, fresh runs, checkpoint continuation and readiness/recovery |
 | `input.ts` | Shared button owner, playfield and launch-hold capture, and sideways drag in CSS pixels |
 | `ui.ts`, `style.css` | HUD, results and shared menu composition |
+| `themes.ts`, `deluxe-art.ts` | Available themes and lazy Deluxe artwork URLs/dimensions |
 | `presentation.ts` | Whole-cel roles, checkpoint activation, uniform projection, image preparation, missed-gem clipping, stable world-indexed clouds and bounded effects |
 | `sound.ts`, `sound-recipes.ts` | Quiet turbine pulses, glass pickups, multiplier/shield cues, checkpoint chime and hull impact |
 | [Artwork guide](../../../src/games/cloudwake/art/README.md) | Asset roles, provenance and prompts |

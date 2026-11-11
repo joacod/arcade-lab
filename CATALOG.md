@@ -18,7 +18,7 @@ The table lists the presentations currently implemented; their artwork and rende
 |  Midnight Circuit  |  Signal / Rain, inked arcade shops and industrial bays  |  Afterglow, detailed modern fighters and painted city with wet-road reflections  |
 |  Obsidian Duel  |  Eclipse Foundry, painted arcade fighters and forge-lit arena  |  Moonfall Sanctum, detailed fighters and jade-and-gold combat artwork  |
 |  Blastline  |  Ember Coast, detailed arcade commandos and rusted harbor defenses  |  Ember Reforged, dimensional painted commandos and industrial coast  |
-|  Cloudwake  |  The Sunward Route, painted sky courier and crystal ruins  |  —  |
+|  Cloudwake  |  The Sunward Route, painted sky courier and crystal ruins  |  Sunward Radiance, dimensional ceramic-and-brass courier, crystal ruins and luminous cloud terraces  |
 
 All current games start in **Arcade** and optionally switch to **Deluxe**. Arcade is the complete finished presentation. Deluxe enhances its artwork and effects through the same Canvas 2D gameplay presentation. Prototype is a temporary stage for new games and is removed once Arcade is complete. See the [mode contract](docs/architecture.md#mode-contract).
 
@@ -129,7 +129,7 @@ Health and lives are grouped in the HUD: bullets chip health, while hostile expl
 
 ## Cloudwake
 
-![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
+![Cloudwake · Deluxe: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
 
 Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, slide across the view, and thread coral-crystal ruins while gathering turquoise fragments. The route keeps scrolling either way. A gentle approach leads to longer checkpoint legs with high/low gates, crystal steps, sweeping mines and moving openings. Speed rises at widening leg milestones as passages become more precise. Winged lanterns light as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments raises a temporary light shield that breaks on its first hit. There is no time limit.
 

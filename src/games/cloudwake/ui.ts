@@ -2,13 +2,14 @@ import { createElementLookup, setText, setProperty } from '../../common/ui/dom.t
 import { createMenuReadout } from '../../common/ui/menu-components.ts';
 import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { createThemeChoices } from '../../common/ui/theme-choices.ts';
+import { themes as themeDefinitions, type Appearance } from './themes.ts';
 import { flight, multiplierAt } from './content.ts';
 import { legAt } from './route.ts';
 import type { Run } from './game.ts';
 
 export type Screen = 'title' | 'playing' | 'paused' | 'crashed' | 'defeat';
 export type Intent = CommonMenuIntent | 'continue';
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, act: (intent: Intent) => void, mute: (value: boolean) => void, onTheme: (id: Appearance) => void) {
   root.innerHTML = `<header class="cloudwake-hud"><div class="cloudwake-brand">CLOUDWAKE<span>SKY COURIER / ENDLESS FLIGHT</span></div>
     <div><small>LIVES</small><output aria-label="Lives">3</output></div><div class="cloudwake-score"><small>SCORE</small><output aria-label="Score">0</output></div><button data-intent="pause">Pause</button></header>
     <main class="cloudwake-stage"><div class="cloudwake-flight-status"><span class="cloudwake-leg"></span><div class="cloudwake-shield"><span class="cloudwake-shield-label"></span><progress aria-label="Light shield" max="1" value="0"></progress></div></div></main><footer class="cloudwake-footer"><div class="cloudwake-readout"><output aria-label="Distance">0 m</output><span class="cloudwake-fragments">0 fragments</span></div><p class="cloudwake-hint">HOLD TO RISE <span>·</span> A D OR DRAG TO SLIDE</p><div class="cloudwake-touch"><button data-control="left" aria-label="Slide left">←</button><button data-control="right" aria-label="Slide right">→</button><button data-control="thrust" aria-label="Hold to rise">↑ <span>HOLD TO RISE</span></button></div></footer>`;
@@ -22,7 +23,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     right: $<HTMLButtonElement>('[data-control="right"]'),
   };
   const results = createMenuReadout('Flight results');
-  const themes = createThemeChoices({ modes: { arcade: {} }, names: { arcade: 'The Sunward Route' }, value: 'arcade', signal, onChange() {} });
+  const themes = createThemeChoices({ modes: themeDefinitions, names: Object.fromEntries(Object.entries(themeDefinitions).map(([id, theme]) => [id, theme.name])), value: 'arcade', signal, onChange: onTheme });
+  const assetStatus = document.createElement('p'); assetStatus.setAttribute('role', 'status'); assetStatus.hidden = true;
   themes.setValue('arcade');
   const menu = createGameMenu<Intent, Screen>(root, surface, stage, {
     id: 'cloudwake', title: 'Cloudwake', signal, pause,
@@ -32,7 +34,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     actions: [menuActions.start, menuActions.resume, { id: 'continue', label: 'Continue', screens: ['crashed'], primary: true },
       { ...menuActions.restart, screens: ['paused', 'crashed', 'defeat'] }, { ...menuActions.quit, screens: ['title', 'paused', 'crashed', 'defeat'] }],
   });
-  return { controls, launchButtons: menu.actions.filter(button => ['start', 'restart', 'continue'].includes(button.dataset.menuAction!)),
+  menu.layer.querySelector('.game-menu-notices')!.prepend(assetStatus);
+  return {
+    appearance(id: Appearance) { themes.setValue(id); },
+    appearancePending(id: Appearance) { themes.prepare(id); },
+    appearanceStatus(message: string) { assetStatus.textContent = message; assetStatus.hidden = !message; },
+    controls, launchButtons: menu.actions.filter(button => ['start', 'restart', 'continue'].includes(button.dataset.menuAction!)),
     readiness: menu.readiness, fullscreen: menu.fullscreen, soundStatus: menu.soundStatus, displayStatus: menu.displayStatus,
     show(screen: Screen, focus = true) {
       menu.description.textContent = screen === 'title' ? 'Take the sunward route. Hold to rise, release to fall, and slide across the view. Three lives, with lantern checkpoints in clear air.'

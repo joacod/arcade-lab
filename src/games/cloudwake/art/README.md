@@ -1,6 +1,6 @@
 # The Sunward Route
 
-Original Cloudwake artwork generated for Arcade Lab with the built-in imagegen tool, then mechanically cropped, sized and encoded with Sharp. The complete prompt set is retained in [prompts.json](prompts.json). These assets are distributed under the repository's [MIT license](../../../../LICENSE). No third-party game imagery, fonts, branding or source artwork is used.
+Original AI-generated Cloudwake artwork, then mechanically cropped, sized and encoded with Sharp. The complete prompt set is retained in [prompts.json](prompts.json). These assets are distributed under the repository's [MIT license](../../../../LICENSE). No third-party game imagery, fonts, branding or source artwork is used.
 
 ## Visual brief and roles
 
@@ -20,6 +20,8 @@ The courier's stable anchor is near the vehicle center, with a common square cel
 
 The original generated sheets were 1254×1254: four equal 627×627 cells. The courier was resized as a whole to 1024×1024. Object cells were extracted in reading order, trimmed to their alpha content and resized to their listed widths with aspect ratio preserved. The generated 1536×1024 sky was encoded at WebP quality 86; transparent runtime sprites use lossless WebP. All required runtime images live here. Regeneration should use the saved prompts, inspect complete silhouettes and alpha, then update local dimensions if necessary.
 
-The checkpoint is an ivory-and-brass floating lantern with wing-shaped fins and a turquoise crystal. Its separate original 1254×1254 generated sheet was resized as a whole to 1024×1024 and encoded as lossless WebP, preserving alpha. Each 512-pixel cel draws in a 124-unit square with an anchor at 52% across and 48% down. On passing, the dormant cel opens to amber, blooms once on the pulse cel, then holds the steady turquoise cel. The pulse cel is not a loop. A reduced-motion view switches directly to the still activated cel. The lantern marks passage through the entire clear-air pocket; it has no collision body and does not require touching the illustration. A short ring on the lantern is the only activation effect. The `checkpoint` entry in `prompts.json` retains the complete built-in imagegen prompt.
+The checkpoint is an ivory-and-brass floating lantern with wing-shaped fins and a turquoise crystal. Its separate original 1254×1254 generated sheet was resized as a whole to 1024×1024 and encoded as lossless WebP, preserving alpha. Each 512-pixel cel draws in a 124-unit square with an anchor at 52% across and 48% down. On passing, the dormant cel opens to amber, blooms once on the pulse cel, then holds the steady turquoise cel. The pulse cel is not a loop. A reduced-motion view switches directly to the still activated cel. The lantern marks passage through the entire clear-air pocket; it has no collision body and does not require touching the illustration. A short ring on the lantern is the only activation effect. The `checkpoint` entry in `prompts.json` retains the complete creative prompt.
 
 Follow the shared [Arcade artwork workflow](../../../../docs/arcade.md) for replacements and [canonical preview workflow](../../../../docs/architecture.md#collection-previews-and-site-identity) for the collection screenshot.
+
+Deluxe has its own [Sunward Radiance artwork bundle](sunward-radiance/README.md), source illustrations and packing script. Arcade remains independently playable.
