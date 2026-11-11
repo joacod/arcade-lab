@@ -32,10 +32,11 @@ export function createSound(onStatus: (message: string) => void) {
         if (frame.has(cue)) { audio.reset(); next.clear(); audio.play(cue); return; }
       }
       next.advance(audio.time);
+      let admitted = 0;
       for (const cue of priority) {
-        if (!frame.has(cue) || !next.allows(cue)) continue;
+        if (!frame.has(cue) || !next.allows(cue) || admitted >= 5) continue;
         const options = cue === 'pickup' ? { parameters: { cluster: Math.min(1, Math.max(0, (pickups - 1) / 5)) } } : undefined;
-        if (audio.play(cue, options)) next.record(cue, (interval[cue] ?? 0));
+        if (audio.play(cue, options)) { next.record(cue, (interval[cue] ?? 0)); admitted++; }
       }
     },
   };

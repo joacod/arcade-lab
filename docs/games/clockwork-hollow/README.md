@@ -32,6 +32,10 @@ Deluxe uses Canvas 2D with shaded image assets, bevelled platform materials and 
 
 Signs stand on authored platform surfaces, in clear spaces away from lanterns, vents and jump blocks. Their posts and plaques sit behind the solid route. Lantern soles meet the landing edge, and bell chains attach to their arch crowns. Deluxe’s curved copper thorns repeat individually with shaded brass sockets, fitting each hazard patch without flattening a fixed strip or extending its danger bounds.
 
+## Sound identity
+
+Porcelain and brass define the keeper's sound. Jumps combine a wound spring with an escapement click; landings scale the stone contact, brass feet and ceramic resonance with impact strength. Beetle stomps ring a metal shell, failure fractures the porcelain and unwinds the spring, and vents release falling-pressure steam. Motes, checkpoint lanterns and district bells use struck inharmonic partials with progressively lower registers and longer decays; the final bell adds a restrained echo. Recipes and event policy live in `sound-recipes.ts` and `sound.ts`, using the [shared audio owner](../../architecture.md#sound).
+
 ## Source ownership and customization
 
 Paths below are relative to `src/games/clockwork-hollow/`.

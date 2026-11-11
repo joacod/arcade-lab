@@ -26,6 +26,10 @@ Artwork must distinguish breakable brick and armored cover from structural steel
 
 ![Ember Reforged: painted commandos and a tracked Bastion against the coastal foundry](preview.webp)
 
+## Sound identity
+
+Nova's rifle combines a dry muzzle crack, short barrel body and bolt return. Bolt's launcher releases a lower tube impulse and exhaust; grenade throws add a pin tick and arm swish. Surface impacts, collapsing terrain, enemy contacts and chain reactions each have a different debris band or blast envelope. Explosion size and contact strength shape impact weight, with restrained distance attenuation and stereo placement; hostile rifle shots sit beneath the player's feedback. Hurt has a distinct vest impact, mission acknowledgements use narrow-band radio tones and squelch, and evacuation uses a rising/falling siren. Final defeat takes precedence over the death event that triggers it. Local recipes and event policy use the [shared audio owner](../../architecture.md#sound).
+
 ## Source ownership
 
 | Responsibility | Owner in `src/games/blastline/` |

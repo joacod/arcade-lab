@@ -55,9 +55,9 @@ Deluxe uses Canvas 2D and its own [art bundle, sources, prompts and registration
 
 ## Sound identity
 
-`src/games/last-light-clearing/sound-recipes.ts` defines original AudioBits recipes: soft Spark glints, brighter Arc Spark partials, crystalline Shard transients, Halo contact rings, and a low Pulse bloom. Enemy impacts/dissolves stay subdued, clustered gems brighten a bounded pickup control, and health damage has a distinct low crack. Fully absorbed shield hits use a protective Halo chime. Harmonic chords and restrained delay mark upgrades, evolution and dawn; a low dissonant omen announces the elite. Defeat closes with a falling minor-colored tone.
+`sound-recipes.ts` gives each weapon a material role: ember-and-air Spark casts, ionized Arc Spark forks, inharmonic glass Shards, gold-rimmed Halo contacts and a low dust-wave Pulse. Enemy contacts and ash dissolves stay beneath the casts. Clustered gems brighten and reveal extra crystal facets, while health damage breaks the ward with a low crack. Fully absorbed hits retain the protective Halo ring. Lantern partials bloom for upgrades and dawn; evolution swells through rekindling air, the elite enters with a beating low horn and earth, and defeat extinguishes the wick.
 
-Sound uses procedural cues without recordings or ambient music. `sound.ts` receives projectile weapon identity, Halo contact and elite-entry notifications from simulation.
+`sound.ts` receives weapon identity, Halo contact and elite-entry notifications from simulation. Recipes are procedural one-shots, with event policy and the [shared audio owner](../../architecture.md#sound) keeping busy combat bounded.
 
 ## Implementation ownership
 

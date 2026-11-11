@@ -1,58 +1,83 @@
 import { defineSound } from 'audiobits';
 
-// Compact arcade machinery: dry gun transients, filtered air, metal and low hull impacts.
+// Aircraft guns are light and dry; armor pings and hull failure occupy different registers.
+function detonation(duration: number, gain: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
+    { id: 'pressure-front', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 120], [.04, 58], [duration, 32]], curve: 'exponential' } }, gainDb: gain,
+      envelope: { attack: .003, decay: duration * .87, sustain: 0, release: .035 } },
+    { id: 'burning-fuel', source: { type: 'noise', color: 'white' }, gainDb: gain - 2,
+      envelope: { attack: .003, decay: duration * .9, sustain: 0, release: .035 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 3200], [duration * .3, 1100], [duration, 180]], curve: 'exponential' }, q: .65 }] },
+    { id: 'torn-skin', source: { type: 'noise', color: 'white' }, gainDb: gain - 10,
+      envelope: { attack: .012, decay: duration * .35, sustain: 0, release: .02 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2600, q: .9 }] },
+  ] });
+}
+function cockpit(root: number, duration: number, ratio: number) {
+  return defineSound({ schemaVersion: 1, kind: 'one-shot', duration, layers: [
+    { id: 'instrument', source: { type: 'oscillator', waveform: 'sine', frequency: root }, gainDb: -29,
+      envelope: { attack: .004, decay: duration * .83, sustain: .02, release: .025 } },
+    { id: 'indicator', source: { type: 'oscillator', waveform: 'triangle', frequency: root * ratio }, gainDb: -36,
+      envelope: { attack: .012, decay: duration * .75, sustain: .02, release: .03 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 2200, q: .7 }] },
+  ] });
+}
 export const skybreakRecipes = {
-  shot: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.025, layers: [
-    { id: 'muzzle', source: { type: 'noise', color: 'white' }, gainDb: -32, envelope: { attack: 0.001, decay: 0.015, sustain: 0, release: 0.012 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2400, q: 0.8 }] },
-    { id: 'bolt', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 980], [0.02, 420]], curve: 'exponential' } }, gainDb: -38, envelope: { attack: 0.001, decay: 0.018, sustain: 0, release: 0.012 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1800, q: 0.7 }] },
+  shot: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .055, layers: [
+    { id: 'gun-port', source: { type: 'noise', color: 'white' }, gainDb: -33,
+      envelope: { attack: .002, decay: .025, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { random: [2100, 2550] }, q: .7 }] },
+    { id: 'mechanism', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 310], [.04, 145]], curve: 'exponential' } }, gainDb: -36,
+      envelope: { attack: .002, decay: .04, sustain: 0, release: .01 } },
   ] }),
-  hit: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.025, layers: [
-    { id: 'ricochet', source: { type: 'oscillator', waveform: 'triangle', frequency: { random: [1600, 2200] } }, gainDb: -34, envelope: { attack: 0.001, decay: 0.02, sustain: 0, release: 0.025 } },
-    { id: 'metal', source: { type: 'noise', color: 'white' }, gainDb: -32, envelope: { attack: 0.001, decay: 0.015, sustain: 0, release: 0.02 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 1700, q: 0.7 }] },
+  hit: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .08, layers: [
+    { id: 'thin-metal', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, { random: [1850, 2250] }], [.07, 1250]], curve: 'exponential' } }, gainDb: -35,
+      envelope: { attack: .002, decay: .065, sustain: 0, release: .01 } },
+    { id: 'sparks', source: { type: 'noise', color: 'white' }, gainDb: -36,
+      envelope: { attack: .002, decay: .025, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'highpass', frequency: 2200, q: .7 }] },
   ] }),
-  'boss-hit': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.045, layers: [
-    { id: 'armor', source: { type: 'oscillator', waveform: 'square', frequency: 146.8 }, gainDb: -32, envelope: { attack: 0.001, decay: 0.025, sustain: 0.1, release: 0.035 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 900, q: 1 }] },
-    { id: 'sparks', source: { type: 'noise', color: 'white' }, gainDb: -31, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.035 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2800, q: 1.2 }] },
+  'boss-hit': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .12, layers: [
+    { id: 'armor-plate', source: { type: 'oscillator', waveform: 'sine', frequency: { random: [340, 370] } }, gainDb: -31,
+      envelope: { attack: .002, decay: .1, sustain: 0, release: .015 } },
+    { id: 'plate-mode', source: { type: 'oscillator', waveform: 'sine', frequency: 973 }, gainDb: -37,
+      envelope: { attack: .002, decay: .05, sustain: 0, release: .01 } },
+    { id: 'ricochet', source: { type: 'noise', color: 'white' }, gainDb: -34,
+      envelope: { attack: .002, decay: .025, sustain: 0, release: .01 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 2900, q: 1.2 }] },
   ] }),
-  explosion: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.14, layers: [
-    { id: 'blast', source: { type: 'noise', color: 'white' }, gainDb: -25, envelope: { attack: 0.002, decay: 0.11, sustain: 0.1, release: 0.16 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 2300], [0.13, 250]], curve: 'exponential' }, q: 0.7 }] },
-    { id: 'thump', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 115], [0.1, 42]], curve: 'exponential' } }, gainDb: -24, envelope: { attack: 0.002, decay: 0.08, sustain: 0, release: 0.12 } },
+  explosion: detonation(.27, -27),
+  damage: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .28, layers: [
+    { id: 'buckled-hull', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 185], [.045, 78], [.27, 52]], curve: 'exponential' } }, gainDb: -24,
+      envelope: { attack: .002, decay: .24, sustain: 0, release: .025 } },
+    { id: 'fracture', source: { type: 'noise', color: 'white' }, gainDb: -24,
+      envelope: { attack: .002, decay: .085, sustain: 0, release: .02 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 950, q: .7 }] },
+    { id: 'strained-metal', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 740], [.25, 510]], curve: 'exponential' } }, gainDb: -34,
+      envelope: { attack: .003, decay: .23, sustain: 0, release: .02 } },
   ] }),
-  damage: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.16, layers: [
-    { id: 'hull', source: { type: 'oscillator', waveform: 'sawtooth', frequency: { points: [[0, 180], [0.15, 65]], curve: 'exponential' } }, gainDb: -25, envelope: { attack: 0.002, decay: 0.09, sustain: 0.2, release: 0.16 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 850, q: 0.7 }] },
-    { id: 'fracture', source: { type: 'noise', color: 'white' }, gainDb: -22, envelope: { attack: 0.001, decay: 0.045, sustain: 0, release: 0.07 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: 900, q: 1 }] },
+  evade: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .38, layers: [
+    { id: 'slipstream', source: { type: 'noise', color: 'white' }, gainDb: -29,
+      envelope: { attack: .035, decay: .31, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 420], [.11, 2900], [.37, 550]], curve: 'exponential' }, q: 1.1 }] },
+    { id: 'airframe', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 145], [.1, 220], [.37, 110]], curve: 'exponential' } }, gainDb: -36,
+      envelope: { attack: .035, decay: .3, sustain: 0, release: .025 } },
   ] }),
-  evade: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.28, layers: [
-    { id: 'slipstream', source: { type: 'noise', color: 'white' }, gainDb: -25, envelope: { attack: 0.035, decay: 0.1, sustain: 0.2, release: 0.1 }, effects: [{ type: 'filter', filter: 'bandpass', frequency: { points: [[0, 500], [0.12, 3200], [0.28, 700]], curve: 'exponential' }, q: 1.5 }] },
+  warning: cockpit(880, .085, 2),
+  life: defineSound({ ...detonation(.52, -24), effects: [{ type: 'filter', filter: 'lowpass', frequency: 1800, q: .7 }] }),
+  pickup: cockpit(1174.66, .2, 1.5),
+  'boss-warning': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .48, layers: [
+    { id: 'target-lock', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 220], [.46, 440]], curve: 'exponential' } }, gainDb: -32,
+      envelope: { attack: .008, decay: .15, sustain: .45, release: .04 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1400, q: .8 }] },
+    { id: 'danger-interval', source: { type: 'oscillator', waveform: 'sine', frequency: 622.25 }, gainDb: -31,
+      envelope: { attack: .012, decay: .4, sustain: .02, release: .04 } },
   ] }),
-  warning: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.09, layers: [
-    { id: 'radar', source: { type: 'oscillator', waveform: 'sine', frequency: 880 }, gainDb: -31, envelope: { attack: 0.003, decay: 0.06, sustain: 0.1, release: 0.06 } },
+  'boss-shot': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .19, layers: [
+    { id: 'cannon', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 185], [.035, 70], [.18, 40]], curve: 'exponential' } }, gainDb: -26,
+      envelope: { attack: .002, decay: .16, sustain: 0, release: .02 } },
+    { id: 'muzzle-pressure', source: { type: 'noise', color: 'white' }, gainDb: -29,
+      envelope: { attack: .003, decay: .13, sustain: 0, release: .025 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 2400], [.18, 500]], curve: 'exponential' }, q: .7 }] },
   ] }),
-  life: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.4, layers: [
-    { id: 'mayday', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 440], [0.18, 220], [0.38, 110]], curve: 'exponential' } }, gainDb: -27, envelope: { attack: 0.003, decay: 0.25, sustain: 0.2, release: 0.2 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1300, q: 0.7 }] },
-    { id: 'debris', source: { type: 'noise', color: 'white' }, gainDb: -27, envelope: { attack: 0.002, decay: 0.2, sustain: 0, release: 0.2 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 600, q: 0.7 }] },
-  ] }),
-  pickup: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.14, layers: [
-    { id: 'supply', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 660], [0.045, 880], [0.12, 1320]], curve: 'exponential' } }, gainDb: -30, envelope: { attack: 0.002, decay: 0.07, sustain: 0.2, release: 0.13 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 2600, q: 0.7 }] },
-  ] }),
-  'boss-warning': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.3, layers: [
-    { id: 'lock', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 220], [0.27, 440]], curve: 'linear' } }, gainDb: -30, envelope: { attack: 0.01, decay: 0.16, sustain: 0.3, release: 0.09 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1700, q: 1 }] },
-    { id: 'beacon', source: { type: 'oscillator', waveform: 'sine', frequency: 660 }, gainDb: -30, envelope: { attack: 0.08, decay: 0.12, sustain: 0.3, release: 0.09 } },
-  ] }),
-  'boss-shot': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.12, layers: [
-    { id: 'cannon', source: { type: 'oscillator', waveform: 'triangle', frequency: { points: [[0, 210], [0.1, 55]], curve: 'exponential' } }, gainDb: -23, envelope: { attack: 0.002, decay: 0.08, sustain: 0.1, release: 0.13 } },
-    { id: 'pressure', source: { type: 'noise', color: 'white' }, gainDb: -27, envelope: { attack: 0.002, decay: 0.07, sustain: 0, release: 0.1 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1600, q: 0.7 }] },
-  ] }),
-  'boss-break': defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.65, layers: [
-    { id: 'rupture', source: { type: 'noise', color: 'white' }, gainDb: -22, envelope: { attack: 0.003, decay: 0.4, sustain: 0.15, release: 0.4 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 3000], [0.6, 140]], curve: 'exponential' }, q: 0.8 }] },
-    { id: 'core', source: { type: 'oscillator', waveform: 'sine', frequency: { points: [[0, 130], [0.6, 32]], curve: 'exponential' } }, gainDb: -21, envelope: { attack: 0.004, decay: 0.35, sustain: 0.2, release: 0.4 } },
-  ] }),
-  victory: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.5, layers: [
-    { id: 'brass', source: { type: 'oscillator', waveform: 'sawtooth', frequency: 523.25 }, gainDb: -29, envelope: { attack: 0.012, decay: 0.16, sustain: 0.4, release: 0.25 } },
-    { id: 'fifth', source: { type: 'oscillator', waveform: 'square', frequency: 784 }, gainDb: -33, envelope: { attack: 0.06, decay: 0.16, sustain: 0.4, release: 0.25 } },
-    { id: 'octave', source: { type: 'oscillator', waveform: 'triangle', frequency: 1046.5 }, gainDb: -29, envelope: { attack: 0.12, decay: 0.16, sustain: 0.4, release: 0.3 } },
-  ], effects: [{ type: 'filter', filter: 'lowpass', frequency: 2300, q: 0.7 }] }),
-  defeat: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: 0.45, layers: [
-    { id: 'fall', source: { type: 'oscillator', waveform: 'square', frequency: { points: [[0, 330], [0.2, 220], [0.4, 82.5]], curve: 'exponential' } }, gainDb: -28, envelope: { attack: 0.008, decay: 0.25, sustain: 0.25, release: 0.3 }, effects: [{ type: 'filter', filter: 'lowpass', frequency: 1100, q: 0.7 }] },
-  ] }),
+  'boss-break': detonation(.95, -23),
+  victory: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .85, layers: [
+    { id: 'brass', source: { type: 'oscillator', waveform: 'sawtooth', frequency: 523.25 }, gainDb: -31,
+      envelope: { attack: .025, decay: .65, sustain: .05, release: .1 } },
+    { id: 'fifth', source: { type: 'oscillator', waveform: 'square', frequency: 783.99 }, gainDb: -36,
+      envelope: { attack: .04, decay: .65, sustain: .05, release: .1 } },
+    { id: 'octave', source: { type: 'oscillator', waveform: 'triangle', frequency: 1046.5 }, gainDb: -33,
+      envelope: { attack: .055, decay: .65, sustain: .025, release: .08 } },
+  ], effects: [{ type: 'filter', filter: 'lowpass', frequency: { points: [[0, 1100], [.09, 2600], [.8, 900]], curve: 'exponential' }, q: .6 }] }),
+  defeat: cockpit(164.81, .8, 1.1892),
 };
