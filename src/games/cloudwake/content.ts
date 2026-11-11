@@ -3,12 +3,28 @@ export const flight = {
   height: 600, playerX: 112, minX: 52, maxX: 236, radius: 16, ceiling: 30, floor: 570,
   gravity: 790, lift: 960, braking: 380, upLimit: 255, downLimit: 275,
   strafeSpeed: 210, strafeAccel: 1680,
-  startSpeed: 205, maxSpeed: 325, rampSeconds: 90,
-  minimumView: 560, reaction: .28, pickupRadius: 6, fragmentPoints: 25, lives: 3,
+  startSpeed: 205, maxSpeed: 435, speedStep: 46, speedRise: 24,
+  minimumView: 560, reaction: .28, fragmentPoints: 25, lives: 3, mineRadius: 35,
   shieldFragments: 15, shieldSeconds: 5,
 } as const;
+/** Pickup silhouette covers helmet/rider/scooter but excludes scarf and exhaust.
+ * Its convex envelope is separate from the forgiving hazard-contact radius. */
+export const pickupHull = [
+  { x: -13, y: -38 }, { x: 8, y: -38 }, { x: 15, y: -23 },
+  { x: 29, y: 2 }, { x: 29, y: 16 }, { x: 17, y: 26 },
+  { x: -28, y: 25 }, { x: -40, y: 15 }, { x: -38, y: 3 },
+] as const;
+export const fragmentShape = { halfWidth: 10, halfHeight: 15 } as const;
+export const pickupRear = Math.min(...pickupHull.map(point => point.x));
 export const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
-export const speedAt = (elapsed: number) => flight.startSpeed + (flight.maxSpeed - flight.startSpeed) * Math.min(1, elapsed / flight.rampSeconds);
+/** Speed steps after 2 legs, then 3 more, then 4 more, and so on. */
+export function speedAt(leg: number) {
+  let tier = 0, boundary = 2;
+  while (leg >= boundary && flight.startSpeed + tier * flight.speedStep < flight.maxSpeed) {
+    tier++; boundary += tier + 2;
+  }
+  return Math.min(flight.maxSpeed, flight.startSpeed + tier * flight.speedStep);
+}
 export const multiplierAt = (chain: number) => Math.min(4, 1 + Math.floor(chain / 5));
 /** World units per CSS pixel. The slide gesture uses this so the camera cannot change its meaning. */
 export const viewScale = (width: number, height: number) => Math.min(width / flight.minimumView, height / flight.height);
