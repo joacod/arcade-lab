@@ -1,8 +1,10 @@
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
+import { relative } from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
 import { gameInfo } from '../src/app/catalog-data.ts';
 import { site } from '../src/app/site.ts';
+import { selectionMarkup } from '../src/app/selection-markup.ts';
 
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
 const svg = body => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">${body}</svg>`);
@@ -54,6 +56,8 @@ export function siteHtml(html) {
     }).map(([name, value]) => `<meta name="${name}" content="${escape(value)}">`),
     `<script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>`,
   ].join('\n    ');
-  const introduction = `<main class="arcade-selection"><div class="arcade-selection-inner"><h1>${site.name}</h1><p>${site.description}</p><ul>${gameInfo.map(game => `<li><h2>${escape(game.title)}</h2><p>${escape(game.description)}</p></li>`).join('')}</ul><a href="${site.repository}">View Arcade Lab on GitHub</a><noscript><p>Enable JavaScript to choose and play a game.</p></noscript></div></main>`;
+  const introduction = `<main class="arcade-selection">${selectionMarkup({
+    coverUrl: url => `/${relative(fileURLToPath(new URL('../', import.meta.url)), fileURLToPath(url))}`,
+  })}</main>`;
   return html.replace('<!--site-metadata-->', metadata).replace('<!--collection-introduction-->', introduction);
 }

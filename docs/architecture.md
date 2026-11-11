@@ -137,7 +137,7 @@ The first argument is the collection ID from `src/app/catalog-data.ts`. The comm
 
 `public/icon.svg` owns the arcade cabinet mark. `src/app/site.ts` owns the public URL, repository link and search/share copy. Vite generates the PNG favicon, Apple touch icon, 1200×630 social card, robots.txt and sitemap.xml at startup and on every build. Those files stay ignored; the fixed-size social card composes a bounded sample of canonical screenshots in collection order. Only the icon SVG and the canonical game screenshots need to be maintained. Restart development or rebuild after changing branding or site metadata.
 
-The Vite HTML transform emits canonical, Open Graph, Twitter and WebSite structured data plus a static collection introduction. Search and link-preview clients receive this content before JavaScript runs. Only the collection URL belongs in the sitemap: games currently mount within it rather than exposing individual routes. A production build remains a static `dist/` directory.
+The Vite HTML transform emits canonical, Open Graph, Twitter and WebSite structured data plus the complete static collection landing, using `src/app/selection-markup.ts` for both initial HTML and later collection visits. Stylesheets load from the document head before the first paint, and startup binds the existing landing DOM so previews and layout survive JavaScript initialization. Search and link-preview clients receive this content before JavaScript runs. Only the collection URL belongs in the sitemap: games currently mount within it rather than exposing individual routes. A production build remains a static `dist/` directory.
 
 ## Local verification
 

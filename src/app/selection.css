@@ -7,6 +7,7 @@
 .arcade-selection .arcade-brand img { display: block; }
 .arcade-selection .arcade-collection-tools { display: flex; gap: 8px; align-items: center; }
 .arcade-selection .arcade-fullscreen { min-height: 40px; border: 1px solid #65817e66; border-radius: 24px; padding: 8px 14px; color: #c9d8d4; background: #192b32; font: 600 12px system-ui, sans-serif; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.arcade-selection .arcade-fullscreen svg { display: none; width: 18px; height: 18px; }
 .arcade-selection .arcade-fullscreen:hover { color: #adf5cf; border-color: #adf5cf; background: #213841; }
 .arcade-selection .arcade-fullscreen:focus-visible { outline: 2px solid #adf5cf; outline-offset: 4px; }
 .arcade-selection .arcade-display-status { margin: 0; color: #ffd48e; font-size: 12px; }
@@ -23,7 +24,8 @@
 .arcade-selection .arcade-game { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; text-align: left; color: inherit; background: linear-gradient(180deg, #1f3037, #182830); border: 1px solid #73968c88; border-radius: 12px; box-shadow: 0 10px 28px #0005, inset 0 1px #ffffff10; cursor: pointer; font: inherit; transition: border-color .16s, background .16s, box-shadow .16s, transform .16s; }
 .arcade-selection .arcade-game:enabled:hover { border-color: #adf5cf; background: linear-gradient(180deg, #29413f, #1d3238); box-shadow: 0 18px 42px #0007, 0 0 0 1px #adf5cf55, inset 0 1px #ffffff18; transform: translateY(-3px); }
 .arcade-selection :is(.arcade-game, .arcade-cancel, .arcade-github, .arcade-credit a):focus-visible { outline: 2px solid #adf5cf; outline-offset: 4px; }
-.arcade-selection .arcade-game:disabled { opacity: .5; cursor: wait; }
+.arcade-selection .arcade-game:disabled { cursor: wait; }
+.arcade-selection .arcade-games[aria-busy] .arcade-game:disabled:not([data-loading]) { opacity: .5; }
 .arcade-selection .arcade-game[data-loading] { opacity: 1; border-color: #adf5cf; box-shadow: 0 0 0 1px #adf5cf88, 0 18px 42px #0007; }
 .arcade-selection .arcade-cover { display: block; position: relative; width: 100%; overflow: hidden; border-radius: 11px 11px 0 0; flex: none; aspect-ratio: 1.8; background: #071018; }
 .arcade-selection .arcade-cover::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px #ffffff14, inset 0 -40px 60px -30px #000c; pointer-events: none; }
@@ -48,6 +50,9 @@
 .arcade-selection .arcade-return { position: absolute; z-index: 1; top: 10px; left: 10px; padding: 4px 8px; border: 1px solid #adf5cf77; border-radius: 999px; background: #101a21eb; color: #adf5cf; font-size: 10px; font-weight: 600; box-shadow: 0 4px 12px #0007; }
 .arcade-selection .arcade-game:enabled:active { transform: translateY(-1px); background: linear-gradient(180deg, #2b474d, #213a41); box-shadow: 0 8px 20px #0007, 0 0 0 1px #adf5cf66, inset 0 2px 6px #0005; }
 @media (max-width: 700px) {
+  .arcade-selection .arcade-fullscreen { width: 40px; flex: none; padding: 10px; }
+  .arcade-selection .arcade-fullscreen svg { display: block; }
+  .arcade-selection .arcade-fullscreen span { display: none; }
   .arcade-selection .arcade-selection-inner { gap: 16px; padding-top: 12px; }
   .arcade-selection .arcade-introduction { display: block; }
   .arcade-selection .arcade-intro { margin-top: 8px; font-size: 11px; }
