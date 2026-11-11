@@ -3,10 +3,12 @@ export const flight = {
   height: 600, playerX: 112, radius: 16, ceiling: 30, floor: 570,
   gravity: 790, lift: 960, braking: 380, upLimit: 255, downLimit: 275,
   startSpeed: 205, maxSpeed: 325, rampSeconds: 90,
-  minimumView: 560, reaction: .28, pickupRadius: 18, fragmentPoints: 25,
+  minimumView: 560, reaction: .28, pickupRadius: 18, fragmentPoints: 25, lives: 3,
+  shieldFragments: 15, shieldRecovery: 1.1,
 } as const;
 export const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
 export const speedAt = (elapsed: number) => flight.startSpeed + (flight.maxSpeed - flight.startSpeed) * Math.min(1, elapsed / flight.rampSeconds);
+export const multiplierAt = (chain: number) => Math.min(4, 1 + Math.floor(chain / 5));
 
 export interface Flyer { y: number; vy: number }
 /** The same integration is used by the run and the route feasibility check. */

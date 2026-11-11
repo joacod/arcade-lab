@@ -20,7 +20,7 @@ Built with TypeScript, Canvas 2D, original and bundled artwork, and procedural s
   </tr>
 </table>
 
-Screenshots show the best completed presentations, **Deluxe** where available and **Arcade** for Cloudwake. See the [game catalog](CATALOG.md) for descriptions, controls and theme options.
+See the [game catalog](CATALOG.md) for descriptions, controls and theme options.
 
 ## Play locally
 

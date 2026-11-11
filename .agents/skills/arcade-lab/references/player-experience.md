@@ -66,6 +66,8 @@ After failure, can players identify a cause and imagine a better response? Separ
 
 Separate challenge from repetition cost. A checkpoint can shorten the return without simplifying the jump; recovery protection can prevent helpless repeated damage but also remove meaningful risk. Inspect where retries place the player and what state persists. Automated completion establishes some rule properties, not the enjoyment or readability of a human attempt.
 
+Match checkpoint feedback to the game's progression. For a physical save point or a route boundary the player passes, a game-owned landmark with distinct dormant and active artwork can make its location and activation clear. Communicate whether crossing a boundary or touching the marker saves progress, and keep the saved state readable without sound or animation. Stage, wave or encounter checkpoints may need only a HUD cue or transition message. Choose a world marker when recognizing a place helps navigation or explains the retry destination; a checkpoint alone does not require an asset.
+
 ## Progression, pacing and challenge
 
 When encounters drag or spike, compare the intended activity with what the player is doing: choosing targets, waiting, collecting, recovering or repeating a solved action. Track pressure from surviving enemies, lingering projectiles, space restrictions and resource state across transitions. A scheduled gap is not relief if the old threats remain.
