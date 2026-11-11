@@ -1,6 +1,6 @@
 import { createImageResource, validateImageDimensions } from '../../engine/browser/images.ts';
 import type { Run, FlightEvent } from './game.ts';
-import { flight } from './content.ts';
+import { flight, viewScale } from './content.ts';
 import { minePosition } from './route.ts';
 
 const urls = {
@@ -30,7 +30,7 @@ export function cloudTiles(scroll: number, left: number, right: number, size: nu
 }
 
 export function flightView(width: number, height: number) {
-  const scale = Math.min(width / flight.minimumView, height / flight.height);
+  const scale = viewScale(width, height);
   return { scale, width: width / scale, y: (height - flight.height * scale) / 2, x: Math.max(0, width / scale * .2 - flight.playerX) };
 }
 
@@ -43,22 +43,15 @@ export function createPresentation(surface: HTMLElement) {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const sparks: Spark[] = [];
   const scores: ScorePop[] = [];
-  let disposed = false, lastTime = 0, crashTime = -Infinity, rewardTime = -Infinity, checkpointTime = -Infinity;
-  let announcement = '', announcementTime = -Infinity;
+  let disposed = false, lastTime = 0, crashTime = -Infinity, checkpointTime = -Infinity, checkpointAt = NaN;
   surface.append(element);
-  function reset() { sparks.length = scores.length = 0; lastTime = 0; crashTime = rewardTime = checkpointTime = announcementTime = -Infinity; }
+  function reset() { sparks.length = scores.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
   function consume(events: readonly FlightEvent[]) {
     for (const event of events) {
       if (event.type === 'crash') crashTime = lastTime;
-      if (event.type === 'reward') rewardTime = lastTime;
-      if (event.type === 'checkpoint') checkpointTime = lastTime;
+      if (event.type === 'checkpoint') { checkpointTime = lastTime; checkpointAt = event.x; }
       if (event.type === 'pickup' && scores.length < 12) scores.push({ x: event.x, y: event.y, start: lastTime, points: event.points });
-      if (event.type === 'combo' || event.type === 'shield-ready' || event.type === 'shield-hit') {
-        announcementTime = lastTime;
-        announcement = event.type === 'combo' ? `FRAGMENT STREAK · ×${event.multiplier}`
-          : event.type === 'shield-ready' ? 'LIGHT SHIELD READY' : 'SHIELD SAVED YOU';
-      }
-      if (motion.matches || event.type === 'reward' || event.type === 'checkpoint') continue;
+      if (motion.matches || event.type === 'checkpoint') continue;
       const count = event.type === 'crash' || event.type === 'shield-hit' ? 22 : 7;
       for (let i = 0; i < count && sparks.length < 90; i++) {
         const angle = i / count * Math.PI * 2;
@@ -110,18 +103,20 @@ export function createPresentation(surface: HTMLElement) {
       if (x > worldWidth + 120 || x + passage.width < -view.x - 120) continue;
       if (passage.pattern === 'breather') {
         const markerX = x + passage.width + flight.radius;
+        const markerWorld = passage.x + passage.width + flight.radius;
         const active = passage.cleared;
-        const age = time - checkpointTime;
-        const frame = !active ? 0 : !motion.matches && age < .2 ? 1 : motion.matches ? 2 : 2 + Math.floor(time * 3) % 2;
-        const glow = ctx.createLinearGradient(0, 95, 0, flight.height - 65);
-        glow.addColorStop(0, active ? '#b2fff150' : '#ffdf9840'); glow.addColorStop(.5, '#b2fff112'); glow.addColorStop(1, '#b2fff100');
-        ctx.fillStyle = glow; ctx.fillRect(markerX - 24, 95, 48, flight.height - 160);
+        const age = active && Math.abs(markerWorld - checkpointAt) < 90 ? time - checkpointTime : Infinity;
+        // One opening, one bloom, then the steady crystal. The pulse cel is not a loop.
+        const frame = !active ? 0 : motion.matches || age >= .48 ? 2 : age < .16 ? 1 : 3;
+        ctx.fillStyle = active ? '#9cf6e230' : '#ffdf9820';
+        ctx.beginPath(); ctx.ellipse(markerX, 108, 30, 34, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = !active || motion.matches ? 1 : .9 + Math.sin(time * 2.2) * .1;
         drawBeacon(frame, markerX, 108);
-        ctx.fillStyle = '#173c43'; ctx.font = '700 11px system-ui'; ctx.textAlign = 'center';
-        ctx.fillText(active ? 'ROUTE SAVED' : 'CHECKPOINT', markerX, 176);
-        if (active && !motion.matches && age < .8) {
-          ctx.strokeStyle = `rgb(177 255 242 / ${Math.max(0, 1 - age / .8)})`; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.ellipse(markerX, passage.center, 24 + age * 100, 80 + age * 100, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+        if (active && !motion.matches && age < .5) {
+          const t = age / .5;
+          ctx.strokeStyle = `rgb(177 255 242 / ${Math.max(0, 1 - t)})`; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.ellipse(markerX, 108, 16 + t * 34, 18 + t * 26, 0, 0, Math.PI * 2); ctx.stroke();
         }
         continue;
       }
@@ -144,23 +139,27 @@ export function createPresentation(surface: HTMLElement) {
       ctx.drawImage(images.fragment!, x - 10, fragment.y - 16, 20, 30);
     }
     ctx.globalAlpha = 1;
+    const playerX = titleTime !== undefined ? flight.playerX : run.player.x;
     const playerY = titleTime !== undefined ? 280 + Math.sin(decorative * 1.8) * 12 : run.player.y;
-    if (titleTime === undefined && (run.shieldCharge >= flight.shieldFragments || run.elapsed < run.protectedUntil)) {
-      ctx.strokeStyle = run.elapsed < run.protectedUntil ? '#fff1b8' : '#96ffed'; ctx.lineWidth = 2;
-      ctx.fillStyle = '#a4fff016'; ctx.beginPath(); ctx.ellipse(flight.playerX - 7, playerY, 54, 44, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    const shieldLeft = run.shieldUntil - run.elapsed;
+    if (titleTime === undefined && shieldLeft > 0) {
+      const fade = Math.min(1, shieldLeft / .7);
+      ctx.globalAlpha = fade; ctx.strokeStyle = '#b8fff2'; ctx.lineWidth = 2; ctx.fillStyle = '#a4fff018';
+      ctx.beginPath(); ctx.ellipse(playerX - 7, playerY, 46, 36, -.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.globalAlpha = 1;
     }
     if (!motion.matches && run.thrust && run.status === 'active' && titleTime === undefined) {
       ctx.lineCap = 'round'; ctx.strokeStyle = '#bcfff1aa'; ctx.lineWidth = 3;
       for (let i = 0; i < 3; i++) {
         const pulse = (time * 95 + i * 23) % 70;
         ctx.globalAlpha = (1 - pulse / 70) * .55;
-        ctx.beginPath(); ctx.moveTo(flight.playerX - 28 - pulse, playerY + 10 + i * 4); ctx.lineTo(flight.playerX - 40 - pulse, playerY + 10 + i * 4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(playerX - 28 - pulse, playerY + 10 + i * 4); ctx.lineTo(playerX - 40 - pulse, playerY + 10 + i * 4); ctx.stroke();
       }
       ctx.globalAlpha = 1;
     }
     const frames = run.thrust ? courier.thrust : courier.glide;
     const frame = frames[motion.matches ? 0 : Math.floor(time * (run.thrust ? 9 : 3)) % 2]!;
-    ctx.save(); ctx.translate(flight.playerX, playerY);
+    ctx.save(); ctx.translate(playerX, playerY);
     const tilt = motion.matches || titleTime !== undefined ? 0 : Math.max(-.19, Math.min(.22, run.player.vy / 1500));
     ctx.rotate(tilt);
     ctx.drawImage(images.courier, frame % 2 * courier.cell, Math.floor(frame / 2) * courier.cell, courier.cell, courier.cell,
@@ -188,22 +187,9 @@ export function createPresentation(surface: HTMLElement) {
     scores.length = keep; ctx.globalAlpha = 1;
     clouds(.85, 558, .95, 340, 305);
     clouds(.6, -104, .75, 380, 380);
-    if (run.elapsed < 2.8 && titleTime === undefined) {
+    if (run.elapsed < 3.2 && titleTime === undefined && run.status === 'active') {
       ctx.fillStyle = '#123d49d9'; ctx.font = '600 12px system-ui'; ctx.textAlign = 'left';
-      ctx.fillText('HOLD TO RISE · RELEASE TO FALL', flight.playerX + 55, 285);
-    }
-    if (time - checkpointTime < 2 || time - rewardTime < 1.3) {
-      const x = worldWidth / 2 - view.x;
-      ctx.fillStyle = '#123d49ed'; ctx.beginPath(); ctx.roundRect(x - 144, 56, 288, 54, 14); ctx.fill();
-      if (time - checkpointTime < 2) drawBeacon(2, x - 112, 83, 54);
-      ctx.fillStyle = '#fff0bb'; ctx.font = '700 14px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText(time - checkpointTime < 2 ? `CHECKPOINT ${run.checkpoint.number} · SAVED` : 'CLEAR SKIES · 5 PASSAGES', x + (time - checkpointTime < 2 ? 16 : 0), 89);
-    }
-    if (time - announcementTime < 1.4) {
-      ctx.fillStyle = '#123d49ed'; ctx.font = '800 13px system-ui'; ctx.textAlign = 'center';
-      const x = worldWidth / 2 - view.x;
-      ctx.beginPath(); ctx.roundRect(x - 135, 118, 270, 32, 10); ctx.fill();
-      ctx.fillStyle = '#b7fff0'; ctx.fillText(announcement, x, 139);
+      ctx.fillText('HOLD TO RISE · SLIDE SIDEWAYS', Math.min(Math.max(playerX + 46, 70), 300), Math.min(Math.max(playerY - 36, 78), 520));
     }
     if (!motion.matches && time - crashTime < .18) {
       ctx.globalAlpha = (1 - (time - crashTime) / .18) * .25; ctx.fillStyle = '#ffecd0'; ctx.fillRect(-view.x, 0, worldWidth, flight.height); ctx.globalAlpha = 1;

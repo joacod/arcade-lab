@@ -1,4 +1,4 @@
-import { clamp, flight, fly, type Flyer } from './content.ts';
+import { clamp, flight, fly } from './content.ts';
 
 export type Pattern = 'rise' | 'dive' | 'gate' | 'drift' | 'breather';
 export interface Passage {
@@ -28,7 +28,7 @@ function random(route: Route) {
 }
 
 /** Braking-distance steering is a feasibility witness, never an in-game autopilot. */
-export function steerTo(player: Flyer, target: number) {
+export function steerTo(player: { y: number; vy: number }, target: number) {
   const brake = player.vy > 0 ? flight.lift + flight.braking : flight.gravity + flight.braking;
   return player.y + player.vy * Math.abs(player.vy) / (2 * brake) > target;
 }

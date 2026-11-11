@@ -4,7 +4,7 @@ Choose a game from the collection screen. **Game selection** returns there; each
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield. Cloudwake uses one hold/release control on the playfield or its Rise button.
+Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield. Cloudwake uses hold/release to rise and fall, plus left/right arrows or a sideways drag to slide inside the scrolling view.
 
 Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
@@ -131,13 +131,14 @@ Health and lives are grouped in the HUD: bullets chip health, while hostile expl
 
 ![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
 
-Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, and thread coral-crystal ruins while gathering turquoise fragments. A gentle approach leads to checkpoint legs with high/low gates, central storm mines and longer crystal passages. Winged lanterns activate as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments charges a one-hit light shield. There is no time limit.
+Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, slide across the view, and thread coral-crystal ruins while gathering turquoise fragments. The route keeps scrolling either way. A gentle approach leads to checkpoint legs with high/low gates, central storm mines and longer crystal passages. Winged lanterns light as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments raises a light shield for a few seconds. There is no time limit.
 
 | Control | Action |
 | --- | --- |
 | Hold Space / W / ↑ | Rise |
-| Hold mouse / touch on the playfield | Rise |
-| On-screen Hold to rise button | Rise |
+| A / D / ← / → | Slide within the view |
+| Hold mouse / touch on the playfield | Rise; drag sideways to slide |
+| On-screen arrows and Hold to rise | Slide and rise |
 | Release | Fall |
 
 Pressing Play, Continue or Restart applies thrust immediately while held. Cloud banks cushion the upper and lower boundaries; crystal structures and storm mines cost a life. Restart begins a fresh three-life flight. See [gameplay and source ownership](docs/games/cloudwake/README.md) and the [artwork guide](src/games/cloudwake/art/README.md).

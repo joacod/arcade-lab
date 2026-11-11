@@ -10,11 +10,9 @@ function chime(root: number, duration: number) {
 }
 export const cloudwakeRecipes = {
   pickup: chime(1174.66, .19),
-  reward: chime(783.99, .65),
   checkpoint: chime(659.25, .8),
   'shield-ready': chime(987.77, .55),
   'shield-hit': chime(392, .28),
-  combo: chime(1567.98, .3),
   thrust: defineSound({ schemaVersion: 1, kind: 'one-shot', duration: .14, layers: [
     { id: 'soft-turbine', source: { type: 'noise', color: 'white' }, gainDb: -37,
       envelope: { attack: .025, decay: .08, sustain: .12, release: .03 },

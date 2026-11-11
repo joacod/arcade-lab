@@ -25,11 +25,11 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
   }
   try {
     host = createHost(container, { fullscreen, className: 'cloudwake-app', label: 'Cloudwake',
-      surfaceLabel: 'Cloudwake playfield. Hold Space, mouse or touch to rise. Release to fall. P pauses.',
+      surfaceLabel: 'Cloudwake playfield. Hold Space, mouse or touch to rise. Release to fall. A, D or sideways drag slides across the view. P pauses.',
       onDisplayChange: suspend, onFullscreenChange: () => ui.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     sound = createSound(message => { if (!disposed) ui.soundStatus(message); });
     ui = createUI(host.root, host.surface, host.signal, act, value => sound.setMuted(value));
-    input = bindInput(host.surface, ui.thrust, () => screen === 'playing', host.signal);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing', host.signal);
     presentation = createPresentation(host.surface);
     const readiness = createReadiness(host.signal, (state, retry) => {
       ui.readiness(state, retry);
@@ -79,7 +79,8 @@ export function mountCloudwake(container: HTMLElement, onExit: () => void, fulls
       if (screen === 'playing') input.holdKey(event.code);
     }, { signal: host.signal, capture: true });
     bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: () => input.clear(), suspend,
-      shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface && document.activeElement !== ui.thrust });
+      shouldSuspend: () => screen === 'playing' && document.activeElement !== host.surface
+        && !(document.activeElement instanceof HTMLElement && document.activeElement.dataset.control !== undefined) });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     ui.update(run); ui.show('title'); ui.fullscreen(host.fullscreenAvailable, host.fullscreen);
     host.start(now => {
