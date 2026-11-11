@@ -1,7 +1,7 @@
 import { createImageResource, validateImageDimensions } from '../../engine/browser/images.ts';
 import type { Run, FlightEvent } from './game.ts';
-import { flight, viewScale } from './content.ts';
-import { minePosition } from './route.ts';
+import { flight, viewScale, fragmentShape } from './content.ts';
+import { minePosition, passageCenter } from './route.ts';
 
 const urls = {
   courier: new URL('./art/courier.webp', import.meta.url).href,
@@ -43,11 +43,16 @@ export function createPresentation(surface: HTMLElement) {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const sparks: Spark[] = [];
   const scores: ScorePop[] = [];
+  // A gameplay miss ends collection eligibility, not the gem's visible lifetime.
+  // Keep its cosmetic image until the actual viewport edge eats it, including
+  // the extra space behind the courier on wide displays.
+  const missedFragments: { x: number; y: number }[] = [];
   let disposed = false, lastTime = 0, crashTime = -Infinity, checkpointTime = -Infinity, checkpointAt = NaN;
   surface.append(element);
-  function reset() { sparks.length = scores.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
+  function reset() { sparks.length = scores.length = missedFragments.length = 0; lastTime = 0; crashTime = checkpointTime = -Infinity; checkpointAt = NaN; }
   function consume(events: readonly FlightEvent[]) {
     for (const event of events) {
+      if (event.type === 'fragment-missed') { missedFragments.push({ x: event.x, y: event.y }); continue; }
       if (event.type === 'crash') crashTime = lastTime;
       if (event.type === 'checkpoint') { checkpointTime = lastTime; checkpointAt = event.x; }
       if (event.type === 'pickup' && scores.length < 12) scores.push({ x: event.x, y: event.y, start: lastTime, points: event.points });
@@ -124,20 +129,28 @@ export function createPresentation(surface: HTMLElement) {
         const point = minePosition(passage, run.elapsed);
         ctx.drawImage(images.mine!, point.x - distance - 47, point.y - 47, 94, 94);
       } else {
-        const upper = passage.center - passage.gap / 2, lower = passage.center + passage.gap / 2;
-        if (passage.pattern === 'rise' || passage.pattern === 'gate') ctx.drawImage(images.pillar!, x, lower, passage.width, flight.height - lower + 32);
-        if (passage.pattern === 'dive' || passage.pattern === 'gate') {
+        const center = passageCenter(passage, run.elapsed), upper = center - passage.gap / 2, lower = center + passage.gap / 2;
+        if (passage.pattern === 'rise' || passage.pattern === 'gate' || passage.pattern === 'sway') ctx.drawImage(images.pillar!, x, lower, passage.width, flight.height - lower + 32);
+        if (passage.pattern === 'dive' || passage.pattern === 'gate' || passage.pattern === 'sway') {
           ctx.save(); ctx.translate(x + passage.width, upper); ctx.scale(-1, -1);
           ctx.drawImage(images.pillar!, 0, 0, passage.width, upper + 32); ctx.restore();
         }
       }
     }
-    for (const fragment of run.fragments) {
+    function drawFragment(fragment: { x: number; y: number }) {
       const x = fragment.x - distance;
-      if (x < -40 || x > worldWidth || fragment.collected) continue;
+      if (x + fragmentShape.halfWidth < -view.x || x - fragmentShape.halfWidth > worldWidth - view.x) return;
       ctx.globalAlpha = motion.matches ? 1 : .9 + Math.sin(time * 4 + fragment.x) * .1;
-      ctx.drawImage(images.fragment!, x - 10, fragment.y - 16, 20, 30);
+      ctx.drawImage(images.fragment!, x - fragmentShape.halfWidth, fragment.y - fragmentShape.halfHeight,
+        fragmentShape.halfWidth * 2, fragmentShape.halfHeight * 2);
     }
+    for (const fragment of run.fragments) if (!fragment.collected) drawFragment(fragment);
+    let retained = 0;
+    for (const fragment of missedFragments) {
+      if (fragment.x - distance + fragmentShape.halfWidth < -view.x) continue;
+      missedFragments[retained++] = fragment; drawFragment(fragment);
+    }
+    missedFragments.length = retained;
     ctx.globalAlpha = 1;
     const playerX = titleTime !== undefined ? flight.playerX : run.player.x;
     const playerY = titleTime !== undefined ? 280 + Math.sin(decorative * 1.8) * 12 : run.player.y;
@@ -196,6 +209,6 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { prepare: art.prepare, draw, consume, reset,
-    dispose() { if (disposed) return; disposed = true; art.dispose(); sparks.length = scores.length = 0; element.remove(); element.width = element.height = 0; },
+    dispose() { if (disposed) return; disposed = true; art.dispose(); sparks.length = scores.length = missedFragments.length = 0; element.remove(); element.width = element.height = 0; },
   };
 }

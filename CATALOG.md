@@ -131,7 +131,7 @@ Health and lives are grouped in the HUD: bullets chip health, while hostile expl
 
 ![Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea](docs/games/cloudwake/preview.webp)
 
-Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, slide across the view, and thread coral-crystal ruins while gathering turquoise fragments. The route keeps scrolling either way. A gentle approach leads to checkpoint legs with high/low gates, central storm mines and longer crystal passages. Winged lanterns light as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments raises a light shield for a few seconds. There is no time limit.
+Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, slide across the view, and thread coral-crystal ruins while gathering turquoise fragments. The route keeps scrolling either way. A gentle approach leads to longer checkpoint legs with high/low gates, crystal steps, sweeping mines and moving openings. Speed rises at widening leg milestones as passages become more precise. Winged lanterns light as checkpoints. Three lives let you continue from the latest checkpoint, restoring its route and rewards; the third unshielded crash ends the flight. Fragment streaks raise pickup points up to ×4, and collecting fragments raises a temporary light shield that breaks on its first hit. There is no time limit.
 
 | Control | Action |
 | --- | --- |

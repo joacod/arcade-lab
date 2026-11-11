@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flight, fly, multiplierAt, speedAt, slide } from '../../../../src/games/cloudwake/content.ts';
-import { createRoute, nextPassage, reachable, minePosition, steerTo } from '../../../../src/games/cloudwake/route.ts';
+import { flight, fly, multiplierAt, speedAt, slide, fragmentShape, pickupRear } from '../../../../src/games/cloudwake/content.ts';
+import { createRoute, nextPassage, reachable, minePosition, steerTo, legAt, safeGap, passageCenter } from '../../../../src/games/cloudwake/route.ts';
 import { continueRun, createRun, stepRun, pauseRun, takeEvents } from '../../../../src/games/cloudwake/game.ts';
+import { touchesFragment } from '../../../../src/games/cloudwake/collection.ts';
 import { cloudTiles } from '../../../../src/games/cloudwake/presentation.ts';
 const dt = 1 / 60;
 
@@ -37,31 +38,69 @@ test('hold gives continuous lift, release brakes then falls, speed and cloud bou
   assert.equal(dragged.vx, 0);
 });
 
-test('seeded route keeps traversable corridors, conservative spacing and moving hazards outside the route', () => {
+test('seeded legs grow between checkpoints and certify varied static/moving corridors at their own speed', () => {
   const seen = new Set();
   for (const seed of [1, 17, 42, 2026]) {
-    const route = createRoute(seed), duplicate = createRoute(seed);
-    const centerBlockers = [0, 0, 0, 0, 0];
-    let widest = 0;
-    for (let i = 0; i < 30; i++) {
-      const previous = route.previous, next = nextPassage(route);
-      assert.deepEqual(next, nextPassage(duplicate));
-      assert.ok(reachable(previous, next), `${seed}/${i} unreachable`);
-      assert.ok(next.x - previous.x - previous.width >= 390);
-      assert.ok(next.gap > 2 * (flight.radius + flight.pickupRadius + 10)); seen.add(next.pattern);
-      widest = Math.max(widest, next.width);
-      if (next.pattern === 'gate' && Math.abs(next.center - 300) + flight.radius > next.gap / 2 + 5) centerBlockers[Math.floor(i / 6)]++;
-      if (next.pattern === 'drift') {
-        for (const t of [0, .4, 1, 2, 3]) assert.ok(Math.abs(minePosition(next, t).y - next.center) - 44 > next.gap / 2);
+    const lengths = [];
+    for (const level of [0, 1, 3, 7, 14, 27]) {
+      const route = createRoute(seed), duplicate = createRoute(seed);
+      route.leg = duplicate.leg = level;
+      let blockers = 0;
+      const leg = legAt(level);
+      for (let i = 0; i <= leg.hazards; i++) {
+        const previous = route.previous, next = nextPassage(route);
+        assert.deepEqual(next, nextPassage(duplicate));
+        assert.equal(next.leg, level);
+        assert.ok(reachable(previous, next), `${seed}/${level}/${i} unreachable`);
+        assert.ok((next.x - previous.x - previous.width) / speedAt(level) >= flight.reaction);
+        assert.ok(safeGap(next) > 2 * (flight.radius + 14));
+        assert.equal(next.pattern === 'breather', i === leg.hazards);
+        seen.add(next.pattern);
+        if (['gate', 'sway'].includes(next.pattern) && Math.abs(next.center - 300) + flight.radius > safeGap(next) / 2 + 5) blockers++;
+        if (next.pattern === 'sway') {
+          const high = passageCenter(next, (Math.PI / 2 - next.phase) / 1.25);
+          const low = passageCenter(next, (3 * Math.PI / 2 - next.phase) / 1.25);
+          assert.ok(Math.abs(high - low - next.motion * 2) < 1e-8);
+        }
+        if (next.pattern === 'drift') {
+          for (const t of [0, .4, 1, 2, 3]) assert.ok(Math.abs(minePosition(next, t).y - next.center) - flight.mineRadius > next.gap / 2);
+        }
       }
+      assert.ok((flight.minimumView - flight.maxX - leg.width) / speedAt(level) >= flight.reaction, 'forward slot keeps a reaction margin');
+      if (level > 0) assert.ok(blockers >= 3, 'later legs require leaving the middle');
+      lengths.push(route.previous.x + route.previous.width);
     }
-    assert.ok((flight.minimumView - flight.maxX - widest) / flight.maxSpeed >= flight.reaction, 'forward slide keeps a reaction margin');
-    assert.equal(centerBlockers[0], 0, 'the approach remains forgiving');
-    for (const count of centerBlockers.slice(1)) assert.ok(count >= 3, 'later legs cannot be solved by camping in the middle');
+    assert.ok(lengths[1] > lengths[0]);
+    assert.ok(lengths.at(-1) > lengths[1] * 2, 'later lanterns are farther apart');
   }
-  assert.equal(seen.size, 5);
+  assert.equal(seen.size, 6);
   const previous = createRoute(1).previous;
   assert.equal(reachable(previous, { ...previous, x: 40, center: 415, width: 86, gap: 190 }), false);
+});
+
+test('speed increases at widening leg intervals and eases into the new pace', () => {
+  for (const [leg, tier] of [[0, 0], [1, 0], [2, 1], [4, 1], [5, 2], [8, 2], [9, 3], [14, 4], [20, 5]]) {
+    assert.equal(speedAt(leg), Math.min(flight.maxSpeed, flight.startSpeed + tier * flight.speedStep));
+  }
+  const run = createRun(42);
+  run.checkpoint.number = 2;
+  stepRun(run, { thrust: false }, dt);
+  assert.ok(run.speed > flight.startSpeed && run.speed < speedAt(2));
+  const before = run.speed;
+  pauseRun(run, true); stepRun(run, { thrust: true }, dt);
+  assert.equal(run.speed, before);
+});
+
+test('pickup contact follows the rider and hull, excludes empty corners, and sweeps fast crossings', () => {
+  const center = { x: 100, y: 300 };
+  for (const [x, y] of [[0, -38], [28, 10], [-37, 12], [0, 26]]) {
+    assert.equal(touchesFragment(center, center, { x: center.x + x, y: center.y + y }), true, `body contact ${x}/${y}`);
+  }
+  for (const [x, y] of [[32, -31], [-45, -30], [0, -55], [0, 43], [-58, 12]]) {
+    assert.equal(touchesFragment(center, center, { x: center.x + x, y: center.y + y }), false, `near miss ${x}/${y}`);
+  }
+  assert.equal(touchesFragment({ x: 0, y: 300 }, { x: 200, y: 300 }, center), true);
+  assert.equal(touchesFragment({ x: 0, y: 240 }, { x: 200, y: 240 }, center), false);
 });
 
 test('pickups score once, pause freezes rules, three crashes end a run and restart is pristine', () => {
@@ -130,9 +169,10 @@ test('clear air saves a safe repeatable checkpoint without farming score, route 
   }
 });
 
-test('fragment streaks multiply points, near misses stay uncollected, and the light shield is a short window', () => {
+test('fragment streaks multiply points, near misses stay uncollected, and a charged shield absorbs one contact', () => {
   const run = createRun(17);
-  for (let count = 1; count <= 16; count++) {
+  const collected = flight.shieldFragments + 1;
+  for (let count = 1; count <= collected; count++) {
     run.fragments = [{ x: run.distance + run.player.x, y: run.player.y, collected: false }];
     stepRun(run, { thrust: false }, dt);
     const events = takeEvents(run);
@@ -147,29 +187,44 @@ test('fragment streaks multiply points, near misses stay uncollected, and the li
       assert.equal(events.some(event => event.type === 'shield-ready'), true);
     } else assert.equal(run.shieldCharge, count - flight.shieldFragments);
   }
-  assert.equal(run.pickupPoints, 5 * 25 + 5 * 50 + 5 * 75 + 100);
+  assert.equal(run.pickupPoints, 5 * 25 + 5 * 50 + 5 * 75 + (collected - 15) * 100);
   assert.equal(multiplierAt(run.chain), 4);
-  const beside = run.player.y + flight.radius + flight.pickupRadius + 8;
+  const beside = run.player.y + 60;
   run.fragments = [{ x: run.distance + run.player.x, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.pickups, 16, 'a gem beside the body is not collected');
+  assert.equal(run.pickups, collected, 'a gem beside the body is not collected');
   assert.equal(run.fragments.length, 1);
   run.fragments = [{ x: run.distance + flight.minX, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.chain, 16, 'a gem still inside the flight window is not a miss');
+  assert.equal(run.chain, collected, 'a gem still inside the flight window is not a miss');
   assert.equal(run.fragments.length, 1);
-  run.fragments = [{ x: run.distance + flight.minX - flight.radius - flight.pickupRadius - 1, y: beside, collected: false }];
+  run.fragments = [{ x: run.distance + flight.minX + pickupRear - fragmentShape.halfWidth - 1, y: beside, collected: false }];
   stepRun(run, { thrust: false }, dt);
   assert.equal(run.chain, 0); assert.equal(run.fragments.length, 0);
+  assert.equal(takeEvents(run).filter(e => e.type === 'fragment-missed').length, 1, 'a miss hands its image to presentation exactly once');
   assert.equal(multiplierAt(run.chain), 1);
   run.passages = [{ ...run.route.previous, x: run.distance + run.player.x, center: 100, gap: 100, pattern: 'rise', cleared: false }];
-  const until = run.shieldUntil;
+  const expired = structuredClone(run);
+  expired.elapsed = expired.shieldUntil;
+  stepRun(expired, { thrust: false }, dt);
+  assert.equal(expired.status, 'crashed', 'an unused shield still expires');
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.status, 'active'); assert.equal(run.lives, flight.lives); assert.equal(run.shieldUntil, until);
-  assert.equal(takeEvents(run).some(event => event.type === 'shield-hit'), true);
+  assert.equal(run.status, 'active'); assert.equal(run.lives, flight.lives);
+  assert.equal(run.shieldUntil, 0, 'the first hit consumes all remaining shield time');
+  assert.equal(run.shieldCharge, 1, 'the next shield retains its earned charge');
+  assert.equal(takeEvents(run).filter(event => event.type === 'shield-hit').length, 1);
   stepRun(run, { thrust: false }, dt);
-  assert.equal(run.lives, flight.lives, 'hazards during the shield window do not cost a life');
-  run.elapsed = run.shieldUntil;
+  assert.equal(run.status, 'active', 'the absorbed contact does not kill again on the next frame');
+  assert.equal(takeEvents(run).some(event => event.type === 'shield-hit'), false);
+  const other = structuredClone(run);
+  other.passages[0].id++;
+  stepRun(other, { thrust: false }, dt);
+  assert.equal(other.status, 'crashed', 'another obstacle is dangerous immediately');
+  const obstacle = run.passages[0];
+  run.passages = [];
+  stepRun(run, { thrust: false }, dt);
+  assert.equal(run.shieldContact, null, 'separating ends protection from the spent contact');
+  run.passages = [obstacle];
   stepRun(run, { thrust: false }, dt);
   assert.equal(run.status, 'crashed'); assert.equal(run.lives, flight.lives - 1);
 });
@@ -190,14 +245,16 @@ test('cloud identities preserve height and continuous travel across scroll wrapp
 });
 
 test('certified routes stay clear in the actual collision simulation across consecutive patterns', () => {
-  for (const [seed, level] of [[17, 0], [42, 1], [17, 3]]) {
+  for (const [seed, level, slot = flight.playerX] of [[17, 0], [42, 1], [17, 3], [42, 14], [1, 20, flight.maxX]]) {
     const run = createRun(seed);
     if (level > 0) {
       run.route = createRoute(seed);
-      for (let i = 0; i < level * 6; i++) nextPassage(run.route);
+      run.route.leg = level - 1;
+      do { nextPassage(run.route); } while (run.route.previous.pattern !== 'breather');
+      run.checkpoint.number = level; run.speed = speedAt(level);
       const previous = run.route.previous;
-      run.distance = previous.x + previous.width + flight.radius - flight.playerX + 1;
-      run.player = { x: flight.playerX, y: previous.center, vx: 0, vy: 0 }; run.elapsed = flight.rampSeconds;
+      run.distance = previous.x + previous.width + flight.radius - slot + 1;
+      run.player = { x: slot, y: previous.center, vx: 0, vy: 0 }; run.elapsed = 37;
       run.passages = []; run.fragments = [];
       stepRun(run, { thrust: false }, dt);
     }
@@ -205,7 +262,7 @@ test('certified routes stay clear in the actual collision simulation across cons
     // Three transitions per representative leg, including narrow-screen reveal
     // and reaction time. No automated full-run playthrough or checkpoint journey.
     for (let frame = 0; frame < 900 && run.passed < 3; frame++) {
-      const next = run.passages.find(p => p.x + p.width >= run.distance + flight.playerX - flight.radius);
+      const next = run.passages.find(p => p.x + p.width >= run.distance + run.player.x - flight.radius);
       if (next.id !== seenId && next.x - run.distance <= flight.minimumView) { seenId = next.id; observedAt = run.elapsed; }
       if (run.elapsed - observedAt >= flight.reaction) target = next.center;
       stepRun(run, { thrust: steerTo(run.player, target) }, dt);
@@ -213,6 +270,6 @@ test('certified routes stay clear in the actual collision simulation across cons
       assert.ok(takeEvents(run).every(event => event.type !== 'shield-hit'), 'a shield cannot hide an unreachable transition');
     }
     assert.equal(run.passed, 3);
-    assert.ok(run.passages.length < 8 && run.fragments.length < 40);
+    assert.ok(run.passages.length < 10 && run.fragments.length < 50);
   }
 });
