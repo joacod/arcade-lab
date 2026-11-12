@@ -43,6 +43,19 @@ Add destination-local guidance for gameplay and asset adaptation. Point to actua
 
 Document development, verification and static build output. Use a deployment base appropriate for root/subdirectory hosting, and check it in the production build. Do not deploy or add provider-specific infrastructure merely because deployment is a future objective.
 
+## Leave an optional origin note
+
+The MIT license requires the copyright notice and the permission notice to remain in copies of the software. Carry the destination LICENSE, and any third-party notices, for that reason. MIT does not require a link, a credits screen, or a visible mention of Arcade Lab.
+
+Also leave a short courtesy note. The next owner can edit or delete it without affecting the build:
+
+- In the architecture origin section, record `https://github.com/joacod/arcade-lab`, the game's source path, the extracted commit, and `https://joacod.com`. That section is where a later reader looks for source changes. Do not also link the playable collection there.
+- End the README with a few lines that name the game and presentation, link the repository, and state that this copy is independent. Point at the architecture origin section instead of repeating the commit. Do not also link the playable collection there.
+- End the destination adaptation skill with one paragraph: read that origin section before porting a later change, copy only behavior this game still wants, and remove the note once the games have diverged. Do not add a sync workflow. Tell that skill the title-menu credit opens the playable collection, and the repository address stays in the architecture origin section.
+- On the title menu only, under the actions, add one quiet line: "Built by joacod · from Arcade Lab". Link joacod to `https://joacod.com` and Arcade Lab to `https://arcade.joacod.com/`. Hide it on pause, settings, and results. Use static links that open in a new tab.
+
+Public credit links are not collection branding, and they are not source-repository paths. Imports, filesystem paths, the catalog, and the launcher stay removed. The game must still run with no request to Arcade Lab. No update check, submodule, wordmark, or more-games entry.
+
 ## Verify independence
 
 Install from the destination's manifest and lockfile. No workspace links, symlinks into Arcade Lab, absolute machine paths, outside-repository assets or source-repository runtime requests may be required. Preserve relevant bounded mechanics/lifecycle tests, pruning imports and scenarios for removed features. Validate AudioBits recipes against the installed runtime.
