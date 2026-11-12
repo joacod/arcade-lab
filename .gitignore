@@ -9,3 +9,5 @@ public/apple-touch-icon.png
 public/social.png
 public/robots.txt
 public/sitemap.xml
+.neon
+.env.local
