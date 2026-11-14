@@ -1,6 +1,7 @@
 import type { FullscreenControl } from '../../engine/browser/fullscreen.ts';
 import type { GameSession } from '../../engine/session.ts';
 import { createHost } from '../../engine/browser/host.ts';
+import { createPreparationScope, createReadiness } from '../../engine/browser/preparation.ts';
 import { bindPageLifetime, bindSessionFocus } from '../../engine/browser/session.ts';
 import { createClock, FIXED_STEP } from '../../engine/clock.ts';
 import { disposeAll } from '../../engine/disposal.ts';
@@ -20,11 +21,13 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
   let disposed = false, screen: Screen = 'title', run = createRun(), savedRevision = -1, presentationTime = 0;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clock = createClock();
+  const preparation = createPreparationScope();
   let host: ReturnType<typeof createHost>, ui: ReturnType<typeof createUI>, input: ReturnType<typeof bindInput>;
-  let presentation: ReturnType<typeof createPresentation>, sound: ReturnType<typeof createSound>;
+  let presentation: ReturnType<typeof createPresentation> | undefined, sound: ReturnType<typeof createSound>;
   let menu: ReturnType<typeof createGameMenu<CommonMenuIntent, Screen>>, saves: ReturnType<typeof createSaveStore>;
   function dispose() {
     if (disposed) return; disposed = true;
+    preparation.dispose();
     disposeAll(() => input?.clear(), () => presentation?.dispose(), () => sound?.dispose(), () => host?.dispose());
   }
   try {
@@ -38,9 +41,8 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     host = createHost(container, { fullscreen, className: 'adventure-game', label: 'The Thirteenth Guest',
       surfaceLabel: 'Blackthorn Castle. Click people to talk, objects to investigate and doorways to enter. Tab and Enter also activate scene targets. I opens inventory, B opens the casebook, X cancels, P pauses.',
       onDisplayChange: suspend, onFullscreenChange: () => menu?.fullscreen(host.fullscreenAvailable, host.fullscreen) });
-    ui = createUI(host.root, host.surface, host.signal, send);
+    ui = createUI(host.root, host.surface, host.signal, send, id => presentation?.itemIcon(id));
     sound = createSound(message => { if (!disposed) menu?.soundStatus(message); });
-    presentation = createPresentation(host.surface);
     input = bindInput(host.surface, ui.controls, () => screen === 'playing' && !run.dialogue, send, host.signal);
     let storage: Pick<Storage, 'getItem' | 'setItem'>;
     try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('Storage unavailable'); }, setItem() { throw new Error('Storage unavailable'); } }; }
@@ -55,7 +57,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     const newRunNotice = document.createElement('p'); newRunNotice.textContent = 'Play starts a new case.';
     const premise = document.createElement('p'); premise.textContent = 'Blackthorn Castle, 1889. A skeptical detective, a stubborn ghost household, and one client who has forgotten to mention something.';
     details.append(premise, savedButtons, newRunNotice, saveInfo);
-    const themes = createThemeChoices({ modes: { prototype: {} }, value: 'prototype', signal: host.signal, onChange() {} }); themes.setValue('prototype');
+    const themes = createThemeChoices({ modes: { arcade: {} }, value: 'arcade', names: { arcade: 'Blackthorn by Candlelight' }, signal: host.signal, onChange() {} });
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
       gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
@@ -63,8 +65,37 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });
-    menu.readiness('ready', () => {}); menu.fullscreen(host.fullscreenAvailable, host.fullscreen);
-    host.root.dataset.theme = 'prototype';
+    const readiness = createReadiness(host.signal, (state, retry) => {
+      menu.readiness(state, retry); current.disabled = previous.disabled = state !== 'ready';
+    });
+    menu.fullscreen(host.fullscreenAvailable, host.fullscreen);
+    async function prepareArtwork() {
+      const request = preparation.begin();
+      let candidate: ReturnType<typeof createPresentation> | undefined;
+      try {
+        candidate = createPresentation(document.createElement('div'));
+        const display = candidate, cancel = () => display.dispose();
+        request.signal.addEventListener('abort', cancel, { once: true });
+        await candidate.prepare();
+        if (!request.current()) return false;
+        candidate.draw(run, host, debug, reduced, presentationTime);
+        const previous = presentation;
+        host.surface.append(candidate.canvas); presentation = candidate; candidate = undefined;
+        request.signal.removeEventListener('abort', cancel);
+        host.root.dataset.theme = 'arcade'; themes.setValue('arcade'); previous?.dispose();
+        return true;
+      } finally { candidate?.dispose(); }
+    }
+    readiness.watch(prepareArtwork);
+    function recoverArtwork() {
+      suspend(); presentation?.dispose(); presentation = undefined;
+      delete host.root.dataset.theme;
+      let reportFailure = true;
+      readiness.watch(() => {
+        if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
+        return prepareArtwork();
+      });
+    }
     ui.pause.addEventListener('click', () => act('pause'), { signal: host.signal });
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: input.clear,
@@ -72,7 +103,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     function refreshSaves() { newRunNotice.hidden = !saves.available() && !saves.available(true); current.hidden = !saves.available(); previous.hidden = saves.available() || !saves.available(true); }
     function show(next: Screen, focus = true) {
       screen = next; clock.reset(); input.clear(); refreshSaves();
-      menu.description.textContent = next === 'title' ? 'A comic ghost mystery · playable Prototype' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
+      menu.description.textContent = next === 'title' ? 'A comic ghost mystery · Blackthorn by Candlelight' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
       savedButtons.hidden = next !== 'title'; premise.hidden = next !== 'title'; newRunNotice.hidden ||= next !== 'title';
       menu.show(next, focus);
       if (next === 'victory') menu.heading.textContent = 'Case closed';
@@ -80,23 +111,28 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       if (next === 'playing' && focus) ui.focusPlay();
     }
     function load(backup: boolean) {
+      if (!readiness.ready) return;
       const loaded = saves.load(backup); if (!loaded) return;
-      run = loaded; savedRevision = run.saveRevision; ui.reset(); sound.reset(); sound.activate(); show(run.status === 'complete' ? 'victory' : 'playing');
+      run = loaded; savedRevision = run.saveRevision; presentationTime = 0; presentation?.reset(); ui.reset(); sound.reset(); sound.activate(); show(run.status === 'complete' ? 'victory' : 'playing');
     }
     function act(intent: CommonMenuIntent) {
       if (disposed) return;
       if (intent === 'quit') { dispose(); onExit(); return; }
       if (intent === 'pause') { suspend(); return; }
+      if (!readiness.ready) return;
       if (intent === 'start' || intent === 'restart') {
-        run = createRun(); savedRevision = -1; presentationTime = 0; ui.reset(); sound.reset(); sound.activate(); introduce(run); show('playing'); ui.showLetter();
+        run = createRun(); savedRevision = -1; presentationTime = 0; presentation?.reset(); ui.reset(); sound.reset(); sound.activate(); introduce(run); show('playing'); ui.showLetter();
       } else if (intent === 'resume') { sound.activate(); show('playing'); }
     }
     function send(command: Command) {
-      if (disposed || screen !== 'playing') return;
-      dispatch(run, command); ui.update(run);
+      if (disposed || !readiness.ready || screen !== 'playing') return;
+      dispatch(run, command);
+      if (!run.pending) presentation?.react(command, presentationTime);
+      ui.update(run);
     }
     show('title');
     host.start(now => {
+      if (!readiness.ready) return;
       if (screen === 'playing') {
         for (const action of input.read().pressed) ui.action(action);
         for (let steps = clock.advance(now); steps > 0; steps--) { stepRun(run, FIXED_STEP); presentationTime += FIXED_STEP; }
@@ -104,7 +140,8 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
         if (!run.pending && !run.dialogue && run.saveRevision !== savedRevision) { savedRevision = run.saveRevision; saves.write(run); }
         if (run.status === 'complete') show('victory');
       }
-      presentation.draw(run, host, debug, reduced, presentationTime);
+      try { presentation?.draw(run, host, debug, reduced, screen === 'title' ? now / 1000 : presentationTime); }
+      catch { recoverArtwork(); }
     });
     return { dispose };
   } catch (error) { dispose(); throw error; }

@@ -3,7 +3,7 @@ import { gameInfo } from '../../../src/app/catalog-data.ts';
 
 // One smoke per catalog entry: reach its ready presentation, start, and stop testing.
 for (const { id, title } of gameInfo) {
-  const presentation = id === 'guest' ? 'Prototype' : 'Arcade';
+  const presentation = 'Arcade';
   test(`${title} starts in ${presentation}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));

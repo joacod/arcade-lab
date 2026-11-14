@@ -2,7 +2,7 @@
 
 [Game guide](README.md) · [Design references](research.md)
 
-Author-facing spoilers for the playable Prototype. [`content.ts`](../../../src/games/point-and-click-adventure/content.ts) owns the room definitions, evidence and scene text; [`game.ts`](../../../src/games/point-and-click-adventure/game.ts) owns their rules. Keep this reference aligned when changing either. Controls, saves and source ownership live in the game guide.
+Author-facing spoilers for the implemented case. [`content.ts`](../../../src/games/point-and-click-adventure/content.ts) owns the room definitions, evidence and scene text; [`game.ts`](../../../src/games/point-and-click-adventure/game.ts) owns their rules. Keep this reference aligned when changing either. Controls, saves and source ownership live in the game guide.
 
 ## Mystery and cast
 
@@ -87,7 +87,7 @@ Sounding the fork before closing a filled lantern releases the spirit nearby. It
 
 ## Art and sound direction
 
-This is the creative direction for adapting the temporary presentation, not an asset specification. Follow the shared [Arcade workflow](../../arcade.md) for production and integration.
+This is the narrative art direction. The [Arcade artwork guide](../../../src/games/point-and-click-adventure/art/README.md) owns the implemented brief and asset specification. Follow the shared [Arcade workflow](../../arcade.md) for production and integration.
 
 Use a storybook Gothic castle: a towering rain-dark hall, crooked portrait gallery, amber library, copper-and-soot kitchen and moonlit bell chamber. Midnight blue, bottle green, tarnished brass and candle amber frame restrained spectral turquoise. Preserve readable clues and target silhouettes against the scenery.
 
