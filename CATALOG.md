@@ -1,14 +1,14 @@
 # Game catalog
 
-Choose a game from the collection screen. **Game selection** returns there; each visit starts a fresh session. Games fill the viewport, with fullscreen including the arena, HUD and menus where supported.
+Choose a game from the collection screen. **Game selection** returns there; each visit starts a fresh session. The Thirteenth Guest additionally offers explicit continuation from a local adventure save. Games fill the viewport, with fullscreen including the arena, HUD and menus where supported.
 
 Main and pause menus provide available theme choices and sound/fullscreen controls. **Settings** holds keyboard layouts where available and How to play; **Back** returns to the menu you came from without changing your run. **P** pauses/resumes, **F** toggles fullscreen, and **Tab / Shift+Tab** moves through menu controls. Escape pauses when delivered; browsers may use it to leave fullscreen. Focus loss, hidden pages and display transitions pause play and clear held input; use Resume to continue. Unavailable audio leaves play usable. Play waits for required artwork; if loading fails, use **Retry artwork**, choose another theme or return to Game selection.
 
-Every game offers on-screen movement and action controls on touch devices and narrow screens. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield. Cloudwake uses hold/release to rise and fall, plus left/right arrows or a sideways drag to slide inside the scrolling view.
+Games offer on-screen actions on touch devices and narrow screens. The Thirteenth Guest uses scene targeting and accessible room/inventory lists. Slide the circular direction pad to change direction or combine diagonals while holding action buttons with another finger. Clockwork Hollow uses left/right arrows and a separate Jump button. Last Light Clearing and Skybreak also support dragging in the playfield. Cloudwake uses hold/release to rise and fall, plus left/right arrows or a sideways drag to slide inside the scrolling view.
 
 Theme changes retain the paused run. **Restart** immediately creates a fresh run with the current choices, retaining the theme and keyboard layout for this visit. To choose a different round or fighter, return to **Game selection** and reopen the game. A failed replacement keeps the working presentation. A Deluxe graphics failure pauses play and recovers to Arcade; an Arcade failure offers Retry artwork or navigation.
 
-The table lists the presentations currently implemented; their artwork and renderers will evolve through dedicated game passes.
+The table lists completed presentations; their artwork and renderers will evolve through dedicated game passes. The Thirteenth Guest is currently playable in temporary **Prototype**, with no theme selector.
 
 |  Game  |  Arcade  |  Deluxe  |
 |  ---  |  ---  |  ---  |
@@ -142,6 +142,16 @@ Take the sunward route on a tiny flying scooter. Hold to rise, release to fall, 
 | Release | Fall |
 
 Pressing Play, Continue or Restart applies thrust immediately while held. Cloud banks cushion the upper and lower boundaries; crystal structures and storm mines cost a life. Restart begins a fresh three-life flight. See [gameplay and source ownership](docs/games/cloudwake/README.md) and the [artwork guide](src/games/cloudwake/art/README.md).
+
+## The Thirteenth Guest
+
+![The Thirteenth Guest · Prototype: a screaming portrait and a headless knight at Blackthorn Castle](docs/games/point-and-click-adventure/preview.webp)
+
+Investigate an old castle as **Percival Wren**, a Victorian detective of unnatural affairs. Follow physical clues, question the ghost household, improvise with everyday objects and support your conclusions in the casebook. Two investigation paths lead to a confrontation, a supernatural reversal and a spirit-containment finale across five rooms.
+
+Click or tap a scene target, or select it in **Room**, then Look, Interact or Use a selected inventory item. Click the floor to walk. With the scene focused, **L / E / U** perform those actions, **H** shows hotspots and **X** cancels an approach. Tab and Enter operate the room list, inventory, conversations and evidence. Optional hints, a conversation journal, scene skipping and local saves support an unhurried investigation.
+
+The complete playable **Prototype** uses temporary Canvas scenery and characters. **Continue saved adventure** and **Restore previous save** appear on the title screen when available. Play and Restart begin a fresh case; autosave keeps the latest and one previous distinct snapshot. See [gameplay, source owners and adaptation](docs/games/point-and-click-adventure/README.md) and the spoiler-filled [story and puzzles](docs/games/point-and-click-adventure/story.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

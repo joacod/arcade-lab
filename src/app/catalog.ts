@@ -2,6 +2,7 @@ import { gameInfo, type GameId } from './catalog-data.ts';
 export type { GameId } from './catalog-data.ts';
 
 const loaders = {
+  guest: async () => (await import('../games/point-and-click-adventure/app.ts')).mountAdventure,
   clearing: async () => (await import('../games/last-light-clearing/app.ts')).mountClearing,
   skybreak: async () => (await import('../games/skybreak/app.ts')).mountSkybreak,
   hollow: async () => (await import('../games/clockwork-hollow/app.ts')).mountHollow,

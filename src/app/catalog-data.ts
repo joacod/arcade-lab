@@ -14,5 +14,7 @@ export const gameInfo = [
     genre: 'RUN & GUN', controls: 'Run · shoot · rescue', description: 'Rescue an operator, destroy defenses and reach extraction.' },
   { id: 'cloudwake', title: 'Cloudwake', cover: new URL('../../docs/games/cloudwake/preview.webp', import.meta.url).href,
     genre: 'ENDLESS FLIGHT', controls: 'Rise · slide', description: 'Thread the sky ruins, gather lost light and fly as far as you can.' },
+  { id: 'guest', title: 'The Thirteenth Guest', cover: new URL('../../docs/games/point-and-click-adventure/preview.webp', import.meta.url).href,
+    genre: 'GHOST MYSTERY · PROTOTYPE', controls: 'Investigate · deduce · contain', description: 'Uncover a Victorian castle’s secret with an occult detective and a troublesome ghost household.' },
 ] as const;
 export type GameId = typeof gameInfo[number]['id'];
