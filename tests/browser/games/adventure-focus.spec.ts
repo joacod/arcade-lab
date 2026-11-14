@@ -14,14 +14,16 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: SAVE_KEY, value: encode(snapshot(run), null) });
   await page.getByRole('button', { name: 'Open game: The Thirteenth Guest', exact: true }).click();
   await page.getByRole('button', { name: 'Continue saved adventure', exact: true }).click();
-  await page.getByRole('button', { name: 'Inventory', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Inventory', exact: true })).toHaveText('Inventory (I)');
+  await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).focus();
+  await page.keyboard.press('KeyI');
   await page.getByRole('button', { name: 'Spirit lantern', exact: true }).click();
   await page.getByRole('button', { name: 'Use Spirit lantern on Screaming portrait', exact: true }).tap();
   await expect(page.locator('.adventure-narration')).toContainText('No spectral outline');
   // Using an item returns to ordinary interaction without another mode switch.
   await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).tap();
   await expect(page.locator('.adventure-narration')).toContainText('Evidence recorded');
-  await page.getByRole('button', { name: 'Casebook', exact: true }).click();
+  await page.keyboard.press('KeyB');
   await page.getByRole('checkbox', { name: /A draft behind the scream/ }).check();
   await page.getByRole('checkbox', { name: /A manufactured scream/ }).check();
   const conclusion = page.getByRole('button', { name: 'Propose: The portrait scare is manufactured', exact: true });

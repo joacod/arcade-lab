@@ -75,8 +75,8 @@ test('containment mistakes release a recoverable spirit and the ending needs a s
   assert.equal(run.status, 'complete'); assert.ok(restore(snapshot(run)));
 });
 test('save validation rejects inconsistent progress and restores only stable durable state', () => {
-  const run = investigated(); const saved = snapshot(run); const restored = restore({ ...saved, pending: { path: [] }, dialogue: { lines: [] }, events: ['bad-cue'] });
-  assert.ok(restored); assert.deepEqual(restored.events, []); assert.equal(restored.dialogue, undefined); assert.deepEqual(restored.facts, run.facts); assert.equal(restored.pending, undefined);
+  const run = investigated(); const saved = snapshot(run); const restored = restore({ ...saved, pending: { path: [] }, dialogue: { lines: [] }, events: ['bad-cue'], hintLevels: { whisper: 2 } });
+  assert.ok(restored); assert.deepEqual(restored.events, []); assert.equal(restored.dialogue, undefined); assert.deepEqual(restored.facts, run.facts); assert.equal(restored.pending, undefined); assert.equal('hintLevels' in restored, false);
   restored.facts.push('voice'); assert.equal(saved.facts.includes('voice'), false);
   for (const mutate of [s => { s.actor.x = NaN; }, s => { s.facts.push('finished'); }, s => { s.inventory.lantern = 'consumed'; }, s => { s.lantern.phase = 'sealed'; }, s => { s.room = 'bell'; }, s => { s.facts = ['guardians']; }]) {
     const bad = structuredClone(saved); mutate(bad); assert.equal(restore(bad), undefined);
@@ -89,7 +89,7 @@ test('atomic save envelope recovers its backup and refuses cross-tab or failed o
   const store = createSaveStore(storage, text => reports.push(text)); const run = createRun();
   assert.equal(store.write(run), true); run.facts.push('introduced'); assert.equal(store.write(run), true);
   assert.equal(store.available(true), true); assert.deepEqual(store.load(true).facts, []);
-  const once = raw; assert.equal(store.write(run), true); assert.equal(raw, once); // Manual Save must not replace the distinct backup with a duplicate.
+  const once = raw; assert.equal(store.write(run), true); assert.equal(raw, once); // Repeated autosaves must retain the distinct backup.
   const damaged = JSON.parse(raw); damaged.current.actor.x = 'broken'; raw = JSON.stringify(damaged);
   assert.equal(readEnvelope(raw).current, undefined); assert.ok(readEnvelope(raw).previous);
   assert.equal(store.write(run), false); assert.match(reports.at(-1), /different tab/); assert.equal(raw, JSON.stringify(damaged));
@@ -105,10 +105,19 @@ test('content diagnostics name an unreachable authored target before play', () =
 });
 
 // Contextual defaults must advance the puzzle, not merely describe an inert target.
-test('scene defaults discover clues and change action when a mechanism opens', () => {
+test('examination waits for arrival, respects cancellation and contextual actions progress mechanisms', () => {
   const run = createRun(); run.room = 'gallery';
+  const destination = getTarget('portrait').at;
+  run.actor = { x: destination.x - 50, y: destination.y };
   dispatch(run, interaction(run, 'portrait').command);
+  stepRun(run, .1);
+  assert.equal(has(run, 'vent'), false); assert.ok(run.pending);
+  assert.equal(run.message, '');
+  dispatch(run, { kind: 'cancel' }); stepRun(run, .1);
+  assert.equal(has(run, 'vent'), false);
+  dispatch(run, interaction(run, 'portrait').command); stepRun(run, .1);
   assert.equal(has(run, 'vent'), true); assert.equal(run.pending, undefined);
+  assert.deepEqual(run.actor, destination);
   run.room = 'kitchen'; run.actor = { ...getTarget('tube').at };
   run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
   dispatch(run, interaction(run, 'tube', 'longBrush').command); stepRun(run, 1 / 60);

@@ -8,16 +8,16 @@ Blackthorn Castle, 1889. Percival Wren, Consulting Detective of Unnatural Affair
 
 ## Playing the case
 
-Click a person to talk, an object to investigate or collect it, or a doorway to enter. Hover or keyboard focus names the action before activation. Small gold markers identify interactive objects; **Show labels** reveals all their actions. Clicking the floor walks there. Wren approaches objects before operating them; observation is immediate. Another command or Cancel replaces an approach.
+Click a person to talk, an object to investigate or collect it, or a doorway to enter. Hover or keyboard focus names the action before activation. Clicking the floor walks there. Examine, talk, pickup, item use and exits all wait for Wren to reach the authored approach point. Tools used on themselves and inventory combinations operate where Wren is standing. Another command or Cancel replaces an approach.
 
-The scene stays visible across the viewport. **Inventory**, **Casebook**, **Show labels** and **Help** form a compact toolbar. Inventory and notes open as dismissible panels; dialogue and conversation choices share one place over the scene. The opening objective teaches equipment one action at a time, without requiring that optional practice before exploring.
+The scene stays visible across the viewport. **Inventory (I)** and **Casebook (B)** form the toolbar. Inventory and notes open as dismissible panels; dialogue and conversation choices share one place over the scene. How to play lives in the shared Settings screen. Buttons display their assigned keys, including Cancel (X) and Close (Esc).
 
 | Control | Action |
 | --- | --- |
-| Click or tap a scene target | Perform its named action immediately |
+| Click or tap a scene target | Walk to it, then perform its named action |
 | Inventory → item → scene target | Use an item once, then return to ordinary interaction |
-| I / B while the scene is focused | Open Inventory / Casebook |
-| H / X while the scene is focused | Toggle labels / put away an item and cancel an approach |
+| I / B during play | Open Inventory / Casebook |
+| X during play | Put away an item and cancel an approach |
 | Tab, Shift+Tab, Enter or Space | Navigate and activate native scene targets, inventory and conversation controls |
 | Escape | Close an open panel or put away an item before the shared pause action |
 | Next / Continue | Advance a spoken line |
@@ -25,13 +25,19 @@ The scene stays visible across the viewport. **Inventory**, **Casebook**, **Show
 
 Inventory shows each item’s description. Choose an item, then **Combine…** to select a second item; unsuccessful combinations consume neither. The spirit lantern has one occupant and explicit open, drawn, closed and sealed states. Reveal a loose spirit or weaken a strong one, then use the bellows. **Close lantern shutter** and **Sound tuning fork** appear beside the feedback when those actions become relevant. A premature note still releases the spirit nearby so you can retry.
 
-The **Casebook** records discovered evidence. Select two supporting clues and propose a conclusion. Both independent investigation threads must support their conclusions before the confrontation becomes available. Its **Journal** section retains the most recent 80 spoken lines actually displayed; skipping does not fill it with unread dialogue. **Help → Give me a hint** gives progressively clearer clues for an outstanding objective. Settings offers larger reading text and reduced decorative motion.
+The **Casebook** records discovered evidence. Select two supporting clues and propose a conclusion. Both independent investigation threads must support their conclusions before the confrontation becomes available. Its **Journal** section retains the most recent 80 spoken lines actually displayed; skipping does not fill it with unread dialogue.
 
 See the [shared controls and menus](../../../CATALOG.md) for pause, fullscreen, sound, restart and collection navigation. Focus can move between every investigation panel without pausing; leaving the game suspends the session.
 
+## Interaction and feedback policy
+
+Keep exploration in the scene. This case has no hint service, objective HUD, global instruction banner, reveal-all control, decorative room-entry captions, separate Help view or manual save button. Hover/focus labels describe the targeted action. Observations, dialogue and meaningful results supply clues; walking, approaching and cancelling do not narrate themselves. Clear old feedback when a new world action starts. Keep controls documentation in Settings and equipment properties with the inventory items, without appending the next puzzle solution to each result.
+
+The existing renderer respects the system reduced-motion preference without an extra settings checkbox. Future presentation work should communicate walking, reaching and object changes visually, following the local art brief. See the [point-and-click genre guidance](../../../.agents/skills/arcade-lab/references/genre-guidance.md#point-and-click-adventure) for reusable design considerations.
+
 ## Progress and saves
 
-Autosave runs after completed interactions, movement, conversations and scene endpoints. **Help → Save adventure** requests the next stable boundary if an interaction is in progress. An in-flight approach or partially read scene is never written as a partial puzzle result. Skipping and normally completing a scene commit the same story effects.
+Autosave runs after completed interactions, movement, conversations and scene endpoints. An in-flight approach or partially read scene is never written as a partial puzzle result. Skipping and normally completing a scene commit the same story effects.
 
 This game is the collection’s local-persistence exception. A browser mount is still fresh; continuation is an explicit title-screen action. **Resume** continues the currently paused session. **Play** and **Restart** begin a new case. The save envelope holds the latest snapshot and one previous distinct snapshot, which subsequent progress replaces. **Restore previous save** is available on the title screen when that snapshot is valid. It is a rolling recovery point, not a permanent archive of the previous playthrough.
 
@@ -44,7 +50,7 @@ All adventure-specific code lives in [`src/games/point-and-click-adventure/`](..
 | Owner | Responsibility |
 | --- | --- |
 | [`content.ts`](../../../src/games/point-and-click-adventure/content.ts) | Typed room geometry, targets, inventory definitions, evidence, conclusions, facts and scene text |
-| [`game.ts`](../../../src/games/point-and-click-adventure/game.ts) | Pure command dispatch, pending approaches, inventory transformations, conditional topics, story effects, hints and victory |
+| [`game.ts`](../../../src/games/point-and-click-adventure/game.ts) | Pure command dispatch, pending approaches, inventory transformations, conditional topics, story effects and victory |
 | [`navigation.ts`](../../../src/games/point-and-click-adventure/navigation.ts) | Routes through connected rectangular floor cells and projects floor clicks |
 | [`content-validation.ts`](../../../src/games/point-and-click-adventure/content-validation.ts) | Named room/target diagnostics for invalid geometry and unreachable approaches |
 | [`save.ts`](../../../src/games/point-and-click-adventure/save.ts) | Stable snapshots, validation and reconstruction of durable state |
@@ -56,7 +62,7 @@ All adventure-specific code lives in [`src/games/point-and-click-adventure/`](..
 | [`sound.ts`](../../../src/games/point-and-click-adventure/sound.ts) | AudioBits recipes, cue admission and shared audio lifecycle composition |
 | [`app.ts`](../../../src/games/point-and-click-adventure/app.ts) | Synchronous mounting, shared host/menu/focus owners, fixed stepping, saves and disposal |
 
-To adapt the foundation, replace the typed room/cast/item/evidence definitions and authored scene text together with their story rules in `game.ts`. Update the validation dependencies and give a different adventure its own story identity and save namespace. Presentation palettes and drawing stay in `presentation.ts`; logical geometry stays in content. The current case uses clear rectangular floors, while the router also handles connected floor cells. In development, `?adventureDebug` draws the walkable cells; H reveals target bounds.
+To adapt the foundation, replace the typed room/cast/item/evidence definitions and authored scene text together with their story rules in `game.ts`. Update the validation dependencies and give a different adventure its own story identity and save namespace. Presentation palettes and drawing stay in `presentation.ts`; logical geometry stays in content. The current case uses clear rectangular floors, while the router also handles connected floor cells. In development, `?adventureDebug` draws the walkable cells.
 
 The pure rules accept semantic commands and emit semantic audio cues. No rule depends on DOM focus, animation completion, sound completion or frame rate. The browser session owns scheduling and storage, while decorative time belongs to presentation. Selecting a tool, a journal view or evidence checkboxes is UI state, not story progression.
 

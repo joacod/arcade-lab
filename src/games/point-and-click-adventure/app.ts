@@ -17,7 +17,7 @@ import './style.css';
 type Screen = 'title' | 'playing' | 'paused' | 'victory';
 export function mountAdventure(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, screen: Screen = 'title', run = createRun(), savedRevision = -1, presentationTime = 0;
-  let reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clock = createClock();
   let host: ReturnType<typeof createHost>, ui: ReturnType<typeof createUI>, input: ReturnType<typeof bindInput>;
   let presentation: ReturnType<typeof createPresentation>, sound: ReturnType<typeof createSound>;
@@ -35,16 +35,16 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       if (screen === 'playing') { sound.pause(); show('paused', false); }
     }
     host = createHost(container, { fullscreen, className: 'adventure-game', label: 'The Thirteenth Guest',
-      surfaceLabel: 'Blackthorn Castle. Click people to talk, objects to investigate and doorways to enter. Tab and Enter also activate scene targets. I opens inventory, B opens the casebook, H shows labels, X cancels, P pauses.',
+      surfaceLabel: 'Blackthorn Castle. Click people to talk, objects to investigate and doorways to enter. Tab and Enter also activate scene targets. I opens inventory, B opens the casebook, X cancels, P pauses.',
       onDisplayChange: suspend, onFullscreenChange: () => menu?.fullscreen(host.fullscreenAvailable, host.fullscreen) });
-    ui = createUI(host.root, host.surface, host.signal, send, () => { saves.write(run); refreshSaves(); });
+    ui = createUI(host.root, host.surface, host.signal, send);
     sound = createSound(message => { if (!disposed) menu?.soundStatus(message); });
     presentation = createPresentation(host.surface);
     input = bindInput(host.surface, ui.controls, () => screen === 'playing' && !run.dialogue, send, host.signal);
     let storage: Pick<Storage, 'getItem' | 'setItem'>;
     try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('Storage unavailable'); }, setItem() { throw new Error('Storage unavailable'); } }; }
     const saveInfo = document.createElement('p');
-    saves = createSaveStore(storage, message => { ui.status(message); saveInfo.textContent = message; });
+    saves = createSaveStore(storage, message => { saveInfo.textContent = message; });
     const savedButtons = document.createElement('div'); savedButtons.className = 'adventure-saves';
     const current = document.createElement('button'); current.type = 'button'; current.textContent = 'Continue saved adventure';
     const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = 'Restore previous save';
@@ -54,18 +54,11 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     const newRunNotice = document.createElement('p'); newRunNotice.textContent = 'Play and Restart begin a new case. Autosave keeps the latest state and one previous state, replacing them as you progress.';
     const premise = document.createElement('p'); premise.textContent = 'Blackthorn Castle, 1889. A skeptical detective, a stubborn ghost household, and one client who has forgotten to mention something. No deaths, no unwinnable choices. Local autosave after completed interactions.';
     details.append(premise, savedButtons, newRunNotice, saveInfo);
-    const preferences = document.createElement('div'); preferences.className = 'adventure-preferences';
-    function preference(label: string, checked: boolean, change: (value: boolean) => void) {
-      const row = document.createElement('label'), box = document.createElement('input'); box.type = 'checkbox'; box.checked = checked;
-      box.addEventListener('change', () => change(box.checked), { signal: host.signal }); row.append(box, document.createTextNode(label)); preferences.append(row);
-    }
-    preference('Reduce decorative motion', reduced, value => { reduced = value; });
-    preference('Larger reading text', false, value => { host.root.dataset.largeText = String(value); });
     const themes = createThemeChoices({ modes: { prototype: {} }, value: 'prototype', signal: host.signal, onChange() {} }); themes.setValue('prototype');
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
-      gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details, preferences,
-      controls: '<p>Click a person to talk, an object to investigate, or a doorway to enter. Click the floor to walk. <b>Show labels (H)</b> reveals scene actions. Tab and Enter also reach every target.</p><p>Open <b>Inventory (I)</b>, choose an item, then click a scene object to use it. <b>Cancel (X)</b> puts it away. Choose <b>Combine…</b> to combine it with another inventory item.</p><p>The <b>Casebook (B)</b> holds evidence and conversations. Choose two clues to support a conclusion. <b>Help</b> offers optional hints. Escape closes an open panel or puts away an item before pausing.</p>',
+      gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
+      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Choose an item from <b>Inventory (I)</b>, then click its destination. <b>Combine…</b> lets you choose a second inventory item. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Select two clues, then propose a conclusion.</p><p>Escape closes a panel or cancels a selected item or approach before pausing. Progress saves automatically after completed interactions.</p>',
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });

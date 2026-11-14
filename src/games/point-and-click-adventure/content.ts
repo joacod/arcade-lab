@@ -2,14 +2,14 @@
 export type RoomId = 'hall' | 'gallery' | 'library' | 'kitchen' | 'bell';
 export interface Point { x: number; y: number }
 export interface Floor { x: number; y: number; w: number; h: number }
-export interface RoomDefinition { name: string; subtitle: string; floor: readonly Floor[]; entry: Point }
+export interface RoomDefinition { name: string; floor: readonly Floor[]; entry: Point }
 const floor = [{ x: 45, y: 365, w: 870, h: 140 }];
 export const rooms: Record<RoomId, RoomDefinition> = {
-  hall: { name: 'Great Hall', subtitle: 'Blackthorn Castle · a most improper welcome', floor, entry: { x: 475, y: 460 } },
-  gallery: { name: 'Portrait Gallery', subtitle: 'The ancestors have something to say', floor, entry: { x: 110, y: 460 } },
-  library: { name: 'Library', subtitle: 'Every family keeps a few unfinished stories', floor, entry: { x: 110, y: 460 } },
-  kitchen: { name: 'Servants’ Kitchen', subtitle: 'Secrets travel below stairs', floor, entry: { x: 110, y: 460 } },
-  bell: { name: 'Bell Chamber', subtitle: 'Twelve strokes. Never thirteen.', floor, entry: { x: 110, y: 460 } },
+  hall: { name: 'Great Hall', floor, entry: { x: 475, y: 460 } },
+  gallery: { name: 'Portrait Gallery', floor, entry: { x: 110, y: 460 } },
+  library: { name: 'Library', floor, entry: { x: 110, y: 460 } },
+  kitchen: { name: 'Servants’ Kitchen', floor, entry: { x: 110, y: 460 } },
+  bell: { name: 'Bell Chamber', floor, entry: { x: 110, y: 460 } },
 };
 export const itemIds = ['lens', 'lantern', 'bellows', 'fork', 'chalk', 'brush', 'poker', 'longBrush', 'cabinetKey', 'windingKey'] as const;
 export type ItemId = typeof itemIds[number];
@@ -37,8 +37,8 @@ export const evidence = {
 } as const;
 export type EvidenceId = keyof typeof evidence;
 export const deductions = {
-  fraud: { name: 'The portrait scare is manufactured', requires: ['vent', 'mechanism'] as readonly EvidenceId[], missing: 'Connect a physical trace at the portrait with a mechanism that reproduces its scream.' },
-  guardians: { name: 'The household ghosts guard a prison', requires: ['record', 'testimony'] as readonly EvidenceId[], missing: 'A written account and a witness must agree about what the household was protecting.' },
+  fraud: { name: 'The portrait scare is manufactured', requires: ['vent', 'mechanism'] as readonly EvidenceId[] },
+  guardians: { name: 'The household ghosts guard a prison', requires: ['record', 'testimony'] as readonly EvidenceId[] },
 } as const;
 export type DeductionId = keyof typeof deductions;
 export interface TargetDefinition { room: RoomId; name: string; x: number; y: number; w: number; h: number; at: Point; kind: 'person' | 'ghost' | 'prop' | 'exit'; action: string; verb: 'inspect' | 'interact'; description: string; destination?: RoomId }
@@ -86,7 +86,7 @@ export const scenes = {
     { speaker: 'Vale', text: 'Mr. Wren. Clear this house of its violent spirits. Particularly the knight at the bell door. Before thirteen.' },
     { speaker: 'Wren', text: 'That groan is merely wind in a loose pipe.' },
     { speaker: 'A voice at the window', text: 'Then kindly close it. Some of us are trying to be dead.' },
-    { speaker: 'Wren', text: 'First, the loose whisper. My lantern reveals its outline. Bellows to draw it in, shutter closed, then the tuning fork to seal it. After that, investigate the castle.' },
+    { speaker: 'Wren', text: 'A loose whisper. Hardly the violent haunting I was promised.' },
   ],
   testimony: [
     { speaker: 'Brindle', text: 'That melody. Evelyn used to hide here when the storms came. Keep your light on the photograph, please. It helps me remember myself.' },

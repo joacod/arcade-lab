@@ -2,8 +2,9 @@ import { bindButtons } from '../../engine/browser/buttons.ts';
 import { worldPoint } from './presentation.ts';
 import type { Command } from './game.ts';
 import type { Action } from './ui.ts';
+export const bindings = { inventory: ['KeyI'], casebook: ['KeyB'], cancel: ['KeyX'] } as const;
 export function bindInput(surface: HTMLElement, controls: Record<Action, HTMLButtonElement>, active: () => boolean, send: (command: Command) => void, signal: AbortSignal) {
-  const buttons = bindButtons({ surface, controls, active, signal, bindings: { inventory: ['KeyI'], casebook: ['KeyB'], reveal: ['KeyH'], cancel: ['KeyX'] } });
+  const buttons = bindButtons({ surface, controls, active, signal, bindings });
   let press: { id: number; x: number; y: number } | undefined;
   function point(event: PointerEvent) { const box = surface.getBoundingClientRect(); return worldPoint(event.clientX - box.left, event.clientY - box.top, box.width, box.height); }
   surface.addEventListener('pointerdown', event => {
