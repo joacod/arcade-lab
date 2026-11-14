@@ -3,12 +3,12 @@ import { createRun, has, wardReady, type Run } from './game.ts';
 import { inside } from './navigation.ts';
 export interface Snapshot {
   room: RoomId; actor: { x: number; y: number }; facts: Fact[]; inventory: Run['inventory']; lantern: Run['lantern'];
-  status: Run['status']; transcript: Line[]; hintLevels: Record<string, number>;
+  status: Run['status']; transcript: Line[];
 }
 export function snapshot(run: Run): Snapshot {
   if (run.pending || run.dialogue) throw new Error('Save waits for a stable interaction boundary.');
   return structuredClone({ room: run.room, actor: run.actor, facts: run.facts, inventory: run.inventory, lantern: run.lantern,
-    status: run.status, transcript: run.transcript, hintLevels: run.hintLevels });
+    status: run.status, transcript: run.transcript });
 }
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 function oneOf(value: unknown, options: readonly string[]): boolean { return typeof value === 'string' && options.includes(value); }
@@ -19,14 +19,13 @@ export function restore(value: unknown): Run | undefined {
     || !record(value.inventory) || Object.keys(value.inventory).length !== itemIds.length || !itemIds.every(id => oneOf((value.inventory as Record<string, unknown>)[id], ['inventory', 'world', 'consumed']))
     || !record(value.lantern) || !oneOf(value.lantern.occupant, ['empty', 'whisper', 'guest']) || !oneOf(value.lantern.phase, ['open', 'drawn', 'closed', 'sealed'])
     || !oneOf(value.status, ['active', 'complete']) || !Array.isArray(value.transcript) || value.transcript.length > 80
-    || !value.transcript.every(l => record(l) && typeof l.speaker === 'string' && l.speaker.length < 120 && typeof l.text === 'string' && l.text.length < 2000)
-    || !record(value.hintLevels) || Object.keys(value.hintLevels).length > 12 || !Object.entries(value.hintLevels).every(([key, n]) => ['whisper', 'fraud', 'guardians', 'confront', 'ward', 'release', 'capture'].includes(key) && Number.isInteger(n) && Number(n) >= 0 && Number(n) < 5)) return;
+    || !value.transcript.every(l => record(l) && typeof l.speaker === 'string' && l.speaker.length < 120 && typeof l.text === 'string' && l.text.length < 2000)) return;
   const s = value as unknown as Snapshot;
   if (!rooms[s.room].floor.some(floor => inside(s.actor, floor))) return;
   const run = createRun();
   // Only durable fields cross this boundary, even if a save includes runtime-shaped extras.
   Object.assign(run, structuredClone({ room: s.room, actor: s.actor, facts: s.facts, inventory: s.inventory,
-    lantern: s.lantern, status: s.status, transcript: s.transcript, hintLevels: s.hintLevels }));
+    lantern: s.lantern, status: s.status, transcript: s.transcript }));
   if ((run.lantern.occupant === 'empty') !== (run.lantern.phase === 'open') || has(run, 'released') && run.lantern.occupant === 'whisper') return;
   if (['lens', 'lantern', 'bellows', 'fork', 'chalk'].some(id => run.inventory[id as keyof Run['inventory']] !== 'inventory')) return;
   const combined = run.inventory.longBrush === 'inventory';
@@ -39,7 +38,7 @@ export function restore(value: unknown): Run | undefined {
   if (['chain', 'ward', 'mirror'].some(f => has(run, f as Fact)) && !has(run, 'confronted')) return;
   if (run.lantern.occupant === 'guest' && !wardReady(run) || (run.status === 'complete') !== has(run, 'finished')) return;
   if (has(run, 'finished') && (run.lantern.occupant !== 'guest' || run.lantern.phase !== 'sealed')) return;
-  run.message = 'Adventure restored. Your casebook remembers the evidence.'; return run;
+  return run;
 }
 export const SAVE_KEY = 'arcade-lab:thirteenth-guest:v1';
 interface Envelope { schema: 1; story: 'thirteenth-guest'; content: 1; current: Snapshot; previous: Snapshot | null }

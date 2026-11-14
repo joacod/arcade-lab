@@ -5,7 +5,7 @@ export type TargetCommand = { kind: 'target'; target: TargetId; verb: 'inspect' 
   | { kind: 'target'; target: TargetId; verb: 'use'; item: ItemId };
 export type Command = TargetCommand | { kind: 'walk'; point: Point } | { kind: 'combine'; first: ItemId; second: ItemId }
   | { kind: 'tool'; item: ItemId } | { kind: 'deduce'; conclusion: DeductionId; evidence: EvidenceId[] }
-  | { kind: 'topic'; id: string } | { kind: 'next' | 'skip' | 'cancel' | 'leave' | 'hint' };
+  | { kind: 'topic'; id: string } | { kind: 'next' | 'skip' | 'cancel' | 'leave' };
 export interface Dialogue { lines: Line[]; index: number; scene: SceneId | undefined }
 export interface Run {
   room: RoomId; actor: Point; facing: number; status: 'active' | 'complete';
@@ -13,7 +13,7 @@ export interface Run {
   lantern: { occupant: 'empty' | 'whisper' | 'guest'; phase: 'open' | 'drawn' | 'closed' | 'sealed' };
   pending: { path: Point[]; command: TargetCommand | undefined } | undefined;
   dialogue: Dialogue | undefined; conversation: TargetId | undefined;
-  message: string; transcript: Line[]; hintLevels: Record<string, number>; revision: number; saveRevision: number; events: Cue[];
+  message: string; transcript: Line[]; revision: number; saveRevision: number; events: Cue[];
 }
 export const has = (run: Run, fact: Fact) => run.facts.includes(fact);
 export const owns = (run: Run, item: ItemId) => run.inventory[item] === 'inventory';
@@ -21,7 +21,7 @@ export function createRun(): Run {
   return { room: 'hall', actor: { ...rooms.hall.entry }, facing: 1, status: 'active', facts: [],
     inventory: Object.fromEntries(itemIds.map(id => [id, ['lens', 'lantern', 'bellows', 'fork', 'chalk'].includes(id) ? 'inventory' : 'world'])) as Run['inventory'],
     lantern: { occupant: 'empty', phase: 'open' }, pending: undefined, dialogue: undefined, conversation: undefined,
-    message: 'Welcome to Blackthorn Castle. Select a person or object, then choose an action.', transcript: [], hintLevels: {}, revision: 0, saveRevision: 0, events: [] };
+    message: '', transcript: [], revision: 0, saveRevision: 0, events: [] };
 }
 function changed(run: Run) { run.saveRevision++; }
 function flag(run: Run, fact: Fact) { if (!has(run, fact)) { run.facts.push(fact); changed(run); if (fact in evidence) run.events.push('discovery'); } }
@@ -29,17 +29,17 @@ function take(run: Run, item: ItemId) { if (!owns(run, item)) { run.inventory[it
 function message(run: Run, text: string) { run.message = text; }
 function remember(run: Run, line: Line) { run.transcript.push({ ...line }); if (run.transcript.length > 80) run.transcript.shift(); }
 function speak(run: Run, speaker: string, text: string) {
-  run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; remember(run, { speaker, text });
+  run.message = ''; run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; remember(run, { speaker, text });
 }
 export function startScene(run: Run, id: SceneId) {
-  run.pending = undefined; run.conversation = undefined;
+  run.message = ''; run.pending = undefined; run.conversation = undefined;
   const lines: Line[] = scenes[id].filter((_, i) => id !== 'ending' || i !== 4 || has(run, 'released')).map(l => ({ ...l }));
   run.dialogue = { lines, index: 0, scene: id }; remember(run, lines[0]!); run.revision++;
 }
 function finishScene(run: Run, id: SceneId | undefined) {
-  if (id === 'intro') { flag(run, 'introduced'); message(run, 'Select the loose whisper. Use your lantern to reveal it, then the bellows.'); }
-  if (id === 'testimony') { flag(run, 'testimony'); message(run, 'Testimony recorded. Compare it with the keeper’s account in your casebook.'); }
-  if (id === 'confrontation') { flag(run, 'confronted'); flag(run, 'voice'); run.events.push('bell'); message(run, 'The guards are your allies. Enter the bell chamber and restore the ward.'); }
+  if (id === 'intro') { flag(run, 'introduced'); }
+  if (id === 'testimony') { flag(run, 'testimony'); }
+  if (id === 'confrontation') { flag(run, 'confronted'); flag(run, 'voice'); run.events.push('bell'); }
   if (id === 'ending') { flag(run, 'finished'); run.status = 'complete'; run.events.push('bell'); }
 }
 function advance(run: Run, skip = false) {
@@ -57,13 +57,6 @@ export function visible(run: Run, id: TargetId) {
 }
 export const roomTargets = (run: Run) => targetIds.filter(id => visible(run, id));
 export const wardReady = (run: Run) => has(run, 'chain') && has(run, 'ward') && has(run, 'mirror');
-export function objective(run: Run) {
-  if (run.status === 'complete') return 'Case closed · one haunting preserved';
-  if (run.lantern.occupant === 'guest' && run.lantern.phase === 'sealed') return 'Secure the captured Guest inside the bell housing';
-  if (has(run, 'confronted')) return wardReady(run) ? 'Contain the weakened Guest · bellows, shutter, fork' : 'Restore the chain, chalk boundary and inward mirror';
-  if (has(run, 'fraud') && has(run, 'guardians')) return 'Confront Professor Vale with your conclusions';
-  return 'Investigate the screams and learn what the household is guarding';
-}
 export interface Topic { id: string; label: string }
 export function topics(run: Run, id: TargetId): Topic[] {
   if (id === 'evelyn') return [{ id: 'evelyn-case', label: 'What changed when the restoration began?' }, { id: 'evelyn-key', label: 'May I borrow the household cabinet key?' }, { id: 'evelyn-family', label: 'Tell me about the housekeeper and her music box.' }];
@@ -106,9 +99,9 @@ function inspect(run: Run, id: TargetId) {
 function interact(run: Run, id: TargetId) {
   const target = getTarget(id);
   if (target.destination) {
-    if (target.destination === 'bell' && !has(run, 'confronted')) { message(run, 'Oswald bars the door. Establish what the household protects, and confront Vale with both conclusions.'); return; }
+    if (target.destination === 'bell' && !has(run, 'confronted')) { message(run, 'Oswald bars the door.'); return; }
     run.room = target.destination; run.actor = { ...rooms[run.room].entry }; run.conversation = undefined; changed(run);
-    message(run, rooms[run.room].subtitle); run.events.push('mechanism'); return;
+    message(run, ''); run.events.push('mechanism'); return;
   }
   if (['evelyn', 'vale', 'oswald', 'brindle'].includes(id)) {
     run.conversation = id;
@@ -128,8 +121,8 @@ function interact(run: Run, id: TargetId) {
     case 'chain': flag(run, 'chain'); run.events.push('mechanism'); message(run, 'The chain is secured to the marked anchor. A restraint, never a weapon.'); break;
     case 'mirror': flag(run, 'mirror'); run.events.push('ghost'); message(run, 'The mirror faces inward. The Guest suddenly looks less like a man and more like an excuse.'); break;
     case 'housing': secure(run); break;
-    case 'whisper': message(run, '“A perfectly rational explanation!” it squeaks. Reveal it with lantern light, then use the bellows.'); break;
-    case 'guest': message(run, '“I assure you… I assure you…” It cannot answer a fresh question. Repair the ward before trying to draw it in.'); break;
+    case 'whisper': message(run, '“A perfectly rational explanation!” it squeaks.'); break;
+    case 'guest': message(run, '“I assure you… I assure you…” It cannot answer a fresh question.'); break;
     default: inspect(run, id);
   }
 }
@@ -138,62 +131,47 @@ function secure(run: Run) {
   else message(run, 'This housing will secure the Guest’s vessel once it is captured and sealed.');
 }
 function drawSpirit(run: Run, occupant: 'whisper' | 'guest') {
-  if (run.lantern.occupant !== 'empty') { message(run, 'The lantern already holds a presence. A sealed whisper can be released into the gallery’s empty portrait.'); return; }
-  if (occupant === 'whisper' && !has(run, 'whisperLit')) { message(run, 'First use lantern light to locate the whisper’s outline.'); return; }
-  if (occupant === 'guest' && !wardReady(run)) { message(run, 'A gust knocks the bellows back. Too strongly anchored. Restore the chain, chalk boundary and inward mirror.'); run.events.push('ghost'); return; }
+  if (run.lantern.occupant !== 'empty') { message(run, 'The lantern already holds a presence.'); return; }
+  if (occupant === 'whisper' && !has(run, 'whisperLit')) { message(run, 'I cannot make out its outline.'); return; }
+  if (occupant === 'guest' && !wardReady(run)) { message(run, 'A gust knocks the bellows back. Too strongly anchored.'); run.events.push('ghost'); return; }
   run.lantern = { occupant, phase: 'drawn' }; changed(run); run.events.push('ghost');
-  message(run, 'The presence swirls inside the lantern. Select the lantern and CLOSE SHUTTER, then select the fork and SOUND FORK.');
+  message(run, 'The presence swirls inside the lantern.');
 }
 function use(run: Run, id: TargetId, item: ItemId) {
   if (!owns(run, item)) return;
   if (item === 'lens') { inspect(run, id); return; }
   if (item === 'lantern') {
-    if (id === 'whisper') { flag(run, 'whisperLit'); message(run, 'Raking light outlines a tiny, loose spirit. Use the hand bellows on it.'); run.events.push('ghost'); return; }
-    if (id === 'photo') { flag(run, 'photoLit'); message(run, 'Warm impressions gather around the photograph. With her music playing, Brindle can hold a conversation.'); return; }
+    if (id === 'whisper') { flag(run, 'whisperLit'); message(run, 'Raking light outlines a tiny, loose spirit.'); run.events.push('ghost'); return; }
+    if (id === 'photo') { flag(run, 'photoLit'); message(run, 'Warm impressions gather around the photograph.'); return; }
     if (id === 'emptyFrame' && run.lantern.occupant === 'whisper' && run.lantern.phase === 'sealed') {
-      run.lantern = { occupant: 'empty', phase: 'open' }; flag(run, 'released'); changed(run); run.events.push('seal'); message(run, '“Finally, somewhere with a view.” The whisper settles into its portrait. Your lantern is empty.'); return;
+      run.lantern = { occupant: 'empty', phase: 'open' }; flag(run, 'released'); changed(run); run.events.push('seal'); message(run, '“Finally, somewhere with a view.” The whisper settles into its portrait.'); return;
     }
     if (id === 'housing') { secure(run); return; }
-    message(run, id === 'portrait' ? 'No spectral outline in this painting. The scream may have a more ordinary explanation.' : 'The lantern reveals no new impression here. Try observation, conversation or another tool.'); return;
+    message(run, id === 'portrait' ? 'No spectral outline in this painting. The scream may have a more ordinary explanation.' : 'The lantern reveals no new impression here.'); return;
   }
   if (item === 'bellows') {
     if (id === 'whisper' || id === 'guest') drawSpirit(run, id);
-    else message(run, id === 'oswald' ? '“I am a knight, sir. Not a draft.” Anchored spirits cannot simply be drawn in.' : 'Ordinary air. The bellows are useful for a loose or weakened spirit.');
+    else message(run, id === 'oswald' ? '“I am a knight, sir. Not a draft.” Anchored spirits cannot simply be drawn in.' : 'Ordinary air.');
     return;
   }
-  if (item === 'longBrush' && id === 'tube') { flag(run, 'tubeOpen'); message(run, 'You sweep the blocked access clear and open its cover. A new bellows mechanism is inside. Test it.'); return; }
+  if (item === 'longBrush' && id === 'tube') { flag(run, 'tubeOpen'); message(run, 'You sweep the blocked access clear and open its cover. A new bellows mechanism is inside.'); return; }
   if ((item === 'brush' || item === 'poker') && id === 'tube') { message(run, item === 'brush' ? 'Too short to reach. Its threaded head could fit something longer.' : 'Long enough, but no brush to clear the soot. Its threaded end might help.'); return; }
   if (item === 'cabinetKey' && id === 'cabinet') { flag(run, 'cabinetOpen'); take(run, 'windingKey'); message(run, 'The cabinet opens. You take the music-box winding key.'); return; }
-  if (item === 'windingKey' && id === 'musicBox') { flag(run, 'music'); run.events.push('music'); message(run, 'The familiar tune plays. Brindle steadies. Illuminate the family photograph, then ask about the bell.'); return; }
+  if (item === 'windingKey' && id === 'musicBox') { flag(run, 'music'); run.events.push('music'); message(run, 'The familiar tune plays. Brindle steadies.'); return; }
   if (item === 'chalk' && id === 'ward') { flag(run, 'ward'); message(run, 'You complete the chalk boundary. The circle holds.'); run.events.push('seal'); return; }
   if (item === 'fork') { tool(run, item); return; }
-  message(run, `${items[item].name} does not help with ${getTarget(id).name.toLowerCase()}. Nothing is consumed.`);
+  message(run, `${items[item].name} does not help with ${getTarget(id).name.toLowerCase()}.`);
 }
 function tool(run: Run, item: ItemId) {
   if (!owns(run, item)) return;
   if (item === 'lantern') {
-    if (run.lantern.phase === 'drawn') { run.lantern.phase = 'closed'; changed(run); message(run, 'Shutter closed. Sound the tuning fork to seal the presence.'); }
-    else message(run, run.lantern.phase === 'closed' ? 'The shutter is closed. Sound the fork.' : run.lantern.phase === 'sealed' ? 'Already sealed. Release a whisper into the empty portrait, or secure the Guest in the bell housing.' : 'The lantern is empty. Reveal and draw in a spirit first.');
+    if (run.lantern.phase === 'drawn') { run.lantern.phase = 'closed'; changed(run); message(run, 'Shutter closed.'); }
+    else message(run, run.lantern.phase === 'closed' ? 'The shutter is closed.' : run.lantern.phase === 'sealed' ? 'Already sealed.' : 'The lantern is empty.');
   } else if (item === 'fork') {
-    if (run.lantern.phase === 'closed') { run.lantern.phase = 'sealed'; changed(run); if (run.lantern.occupant === 'whisper') flag(run, 'tutorial'); run.events.push('seal'); message(run, run.lantern.occupant === 'guest' ? 'The Guest is sealed. Secure the lantern inside the bell housing.' : 'The whisper is sealed. The empty portrait in the gallery could give it a better home.'); }
-    else if (run.lantern.phase === 'drawn') { run.lantern = { occupant: 'empty', phase: 'open' }; changed(run); message(run, 'The presence escapes through the open shutter. It remains nearby. Draw it in again, close the shutter, THEN sound the fork.'); }
+    if (run.lantern.phase === 'closed') { run.lantern.phase = 'sealed'; changed(run); if (run.lantern.occupant === 'whisper') flag(run, 'tutorial'); run.events.push('seal'); message(run, run.lantern.occupant === 'guest' ? 'The Guest is sealed.' : 'The whisper is sealed.'); }
+    else if (run.lantern.phase === 'drawn') { run.lantern = { occupant: 'empty', phase: 'open' }; changed(run); message(run, 'The presence escapes through the open shutter.'); }
     else message(run, 'A clear note. There is no unsealed presence behind a closed shutter.');
   } else message(run, items[item].description);
-}
-const hintTracks = {
-  whisper: ['A loose whisper is a chance to practice your equipment.', 'Lantern light reveals its shape. The bellows draw it in.', 'After drawing it in, close the lantern shutter and sound the tuning fork.'],
-  fraud: ['The portrait’s scream disturbs things that are not ghosts.', 'Inspect its vent. The kitchen service tube connects to it.', 'Combine the kitchen brush and poker, use the extended brush on the tube, then test the mechanism.', 'In the casebook, select the draft and manufactured-scream evidence and propose the manufactured-scare conclusion.'],
-  guardians: ['Brindle remembers the castle before the restoration.', 'Her familiar music and the photograph help her hold herself together.', 'Ask Evelyn for the household key. Open the kitchen cabinet, use the winding key on the music box, and lantern light on the photograph.', 'Ask Brindle what happened, read the keeper’s journal, then support the guardians conclusion with both pieces of evidence.'],
-  confront: ['You have two supported conclusions. It is time to question your client.', 'Talk to Vale in the Great Hall and choose the accusation about staged screams and ghost guards.'],
-  ward: ['The keeper used three restraints.', 'In the bell chamber attach the chain, use chalk on the broken line and turn the mirror inward.'],
-  release: ['Your lantern needs room for the Guest.', 'Use the sealed whisper’s lantern on the empty portrait in the gallery. If it is not sealed yet, close the shutter and sound the fork first.'],
-  capture: ['The repaired ward has made the Guest vulnerable.', 'Use bellows on the Guest. Close the lantern shutter, sound the fork, then use the sealed lantern on the bell housing.'],
-};
-export function requestHint(run: Run) {
-  const key = !has(run, 'tutorial') && !has(run, 'confronted') && !['vent', 'record', 'mechanism', 'testimony'].some(f => has(run, f as Fact)) ? 'whisper' : !has(run, 'fraud') ? 'fraud' : !has(run, 'guardians') ? 'guardians' : !has(run, 'confronted') ? 'confront' : !wardReady(run) ? 'ward' : run.lantern.occupant === 'whisper' ? 'release' : 'capture';
-  const track = hintTracks[key], level = Math.min(run.hintLevels[key] ?? 0, track.length - 1);
-  run.hintLevels[key] = Math.min(level + 1, track.length - 1); changed(run);
-  message(run, `Hint ${level + 1}/${track.length}: ${track[level]}`);
 }
 function execute(run: Run, command: TargetCommand) {
   if (!visible(run, command.target)) return;
@@ -206,16 +184,15 @@ export function dispatch(run: Run, command: Command) {
   run.revision++;
   if (command.kind === 'next' || command.kind === 'skip') { advance(run, command.kind === 'skip'); return; }
   if (run.dialogue) return;
-  if (command.kind === 'leave') { run.conversation = undefined; return; }
+  if (command.kind === 'leave') { run.conversation = undefined; run.message = ''; return; }
   if (command.kind === 'topic') { topic(run, command.id); return; }
-  if (command.kind === 'cancel') { run.pending = undefined; run.conversation = undefined; message(run, 'Action cancelled.'); return; }
-  if (command.kind === 'hint') { requestHint(run); return; }
+  if (command.kind === 'cancel') { run.pending = undefined; run.conversation = undefined; message(run, ''); return; }
   if (command.kind === 'deduce') {
     run.pending = undefined;
     const definition = deductions[command.conclusion];
     const valid = command.evidence.length === definition.requires.length && definition.requires.every(id => command.evidence.includes(id) && has(run, id));
     if (valid) { flag(run, command.conclusion); run.events.push('discovery'); message(run, `Conclusion supported: ${definition.name}.`); }
-    else message(run, definition.missing + ' Select the evidence you have actually discovered.');
+    else message(run, 'These clues do not support that conclusion.');
     return;
   }
   if (command.kind === 'combine') {
@@ -223,21 +200,21 @@ export function dispatch(run: Run, command: Command) {
     if (!owns(run, command.first) || !owns(run, command.second)) return;
     if ([command.first, command.second].includes('brush') && [command.first, command.second].includes('poker')) {
       run.inventory.brush = 'consumed'; run.inventory.poker = 'consumed'; take(run, 'longBrush'); message(run, 'You fit the brush to the poker. Considerable reach, absolutely no prestige.');
-    } else message(run, 'Those items have no useful connection. Neither is consumed.');
+    } else message(run, 'Those items have no useful connection.');
     return;
   }
   if (command.kind === 'tool') { run.pending = undefined; tool(run, command.item); return; }
   run.conversation = undefined;
   if (command.kind === 'target') {
     if (!visible(run, command.target)) return;
-    if (command.verb === 'inspect') { run.pending = undefined; execute(run, command); return; }
+    run.pending = undefined;
     const path = route(run.actor, getTarget(command.target).at, rooms[run.room].floor);
     if (!path) { message(run, 'There is no clear approach to that target.'); return; }
-    run.pending = { path, command }; message(run, `Approaching ${getTarget(command.target).name.toLowerCase()}…`);
+    run.pending = { path, command }; message(run, '');
   } else if (command.kind === 'walk') {
     const destination = project(command.point, rooms[run.room].floor), path = route(run.actor, destination, rooms[run.room].floor);
     run.pending = path ? { path, command: undefined } : undefined;
-    message(run, path ? 'Walking…' : 'That part of the floor is not reachable.');
+    message(run, path ? '' : 'That part of the floor is not reachable.');
   }
 }
 export function stepRun(run: Run, dt: number) {
@@ -250,7 +227,7 @@ export function stepRun(run: Run, dt: number) {
   if (dx) run.facing = Math.sign(dx);
   if (distance <= travel) {
     run.actor = { ...point }; pending.path.shift();
-    if (!pending.path.length) { run.pending = undefined; run.revision++; if (pending.command) execute(run, pending.command); else message(run, 'Select an object or person to investigate.'); changed(run); }
+    if (!pending.path.length) { run.pending = undefined; run.revision++; if (pending.command) execute(run, pending.command); else message(run, ''); changed(run); }
   } else { run.actor.x += dx / distance * travel; run.actor.y += dy / distance * travel; }
 }
 export function takeEvents(run: Run) { return run.events.splice(0); }

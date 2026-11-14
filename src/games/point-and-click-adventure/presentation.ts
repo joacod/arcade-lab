@@ -10,10 +10,6 @@ export function worldPoint(x: number, y: number, width: number, height: number):
   const view = transform(width, height), point = { x: (x - view.x) / view.scale, y: (y - view.y) / view.scale };
   return point.x >= 0 && point.x <= 960 && point.y >= 0 && point.y <= 540 ? point : undefined;
 }
-export function hitTarget(run: Run, point: Point): TargetId | undefined {
-  return roomTargets(run).filter(id => { const t = getTarget(id); return point.x >= t.x && point.x <= t.x + t.w && point.y >= t.y && point.y <= t.y + t.h; })
-    .sort((a, b) => getTarget(a).w * getTarget(a).h - getTarget(b).w * getTarget(b).h)[0];
-}
 export function createPresentation(surface: HTMLElement) {
   const canvas = document.createElement('canvas'); canvas.setAttribute('aria-label', 'Blackthorn Castle scene'); surface.append(canvas);
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable.');
@@ -89,7 +85,7 @@ export function createPresentation(surface: HTMLElement) {
     }
   }
   return { canvas,
-    draw(run: Run, size: { width: number; height: number; ratio: number }, selected: TargetId | undefined, hover: TargetId | undefined, reveal: boolean, debug: boolean, reduced: boolean, animationTime: number) {
+    draw(run: Run, size: { width: number; height: number; ratio: number }, debug: boolean, reduced: boolean, animationTime: number) {
       const width = Math.round(size.width * size.ratio), height = Math.round(size.height * size.ratio);
       if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
       c.setTransform(size.ratio, 0, 0, size.ratio, 0, 0); rect(0, 0, size.width, size.height, '#101c23');
@@ -109,16 +105,8 @@ export function createPresentation(surface: HTMLElement) {
       candle(135, 302, time); candle(830, 302, time);
       person(run.actor.x, run.actor.y, '#60737b', false, time, false, !!run.pending);
       if (run.pending) { const p = run.pending.path.at(-1)!; c.strokeStyle = '#c5b07a88'; c.beginPath(); c.ellipse(p.x, p.y, 12, 4, 0, 0, Math.PI * 2); c.stroke(); }
-      for (const id of visible) {
-        if (!reveal && id !== selected && id !== hover) continue;
-        const t = getTarget(id); c.strokeStyle = id === selected ? '#f3ce87' : '#b7c8be99'; c.lineWidth = id === selected ? 2 : 1; c.strokeRect(t.x - 3, t.y - 3, t.w + 6, t.h + 6);
-        const nameWidth = Math.max(72, t.name.length * 7 + 16), lx = Math.max(nameWidth / 2, Math.min(960 - nameWidth / 2, t.x + t.w / 2));
-        rect(lx - nameWidth / 2, t.y - 27, nameWidth, 20, '#101d27ed'); label(t.name, lx, t.y - 13, 12, '#f2dfb1');
-      }
-      c.lineWidth = 1;
       if (debug) for (const f of room.floor) { c.strokeStyle = '#59ffb4'; c.strokeRect(f.x, f.y, f.w, f.h); }
-      label('BLACKTHORN CASTLE', 480, 32, 11, '#bba77c'); label(room.name, 480, 60, 24, '#eee0bf');
-      label('PERCIVAL WREN  /  CONSULTING DETECTIVE OF UNNATURAL AFFAIRS', 480, 527, 10, '#acb7ad');
+
     },
     dispose() { canvas.remove(); canvas.width = canvas.height = 0; },
   };
