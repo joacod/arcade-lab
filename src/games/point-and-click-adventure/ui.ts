@@ -10,7 +10,7 @@ type View = 'inventory' | 'casebook' | 'journal' | 'letter';
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = '') {
   const element = document.createElement(tag); element.textContent = text; element.className = className; return element;
 }
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, send: (command: Command) => void) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, send: (command: Command) => void, itemIcon: (id: ItemId) => HTMLCanvasElement | undefined) {
   let run: Run, item: ItemId | undefined, view: View | undefined;
   let inventoryItem: ItemId | undefined, inventoryResult = '';
   let combining = false, lastRevision = -1, selection = new Set<EvidenceId>(), connecting = false, deductionResult = '';
@@ -113,6 +113,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     narration.textContent = run.message; narration.hidden = !run.message || run.messageContext !== 'scene';
     close.textContent = view === 'letter' ? 'Begin investigation' : 'Close';
     overlay.hidden = !view; tabs.hidden = view !== 'casebook' && view !== 'journal'; searchRow.hidden = view !== 'journal';
+    sheet.dataset.view = view ?? '';
     scene.inert = !!view; header.inert = !!view; surface.inert = talking;
     hotspots.inert = talking; hotspots.hidden = talking;
     feedback.hidden = talking || !!view;
@@ -147,7 +148,9 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       const grid = node('div', '', 'adventure-items');
       for (const id of itemIds.filter(id => owns(run, id))) {
         const b = button('', `item-${id}`, () => chooseItem(id)); b.setAttribute('aria-label', items[id].name);
-        b.append(node('strong', items[id].name), node('small', items[id].description)); b.disabled = combining && id === inventoryItem; b.setAttribute('aria-pressed', String(id === inventoryItem)); grid.append(b);
+        const copy = node('div'); copy.append(node('strong', items[id].name), node('small', items[id].description));
+        const icon = itemIcon(id); if (icon) b.append(icon);
+        b.append(copy); b.disabled = combining && id === inventoryItem; b.setAttribute('aria-pressed', String(id === inventoryItem)); grid.append(b);
       }
       panel.append(grid);
       if (inventoryItem) {

@@ -1,6 +1,7 @@
-import { rooms, getTarget, type Point, type TargetId, type RoomId } from './content.ts';
-import { has, roomTargets, wardReady, type Run } from './game.ts';
-const roomColors: Record<RoomId, string> = { hall: '#283c43', gallery: '#343040', library: '#3d342d', kitchen: '#303e36', bell: '#252c45' };
+import { createImageResource } from '../../engine/browser/images.ts';
+import { rooms, getTarget, type Point, type TargetId, type ItemId } from './content.ts';
+import { has, roomTargets, wardReady, type Run, type Command, type TargetCommand } from './game.ts';
+import { artwork, castFrames, propFrames, equipmentFrames, itemFrames, validateArtwork, walkClip, type CastRole, type PropRole } from './art.ts';
 export const WORLD = { width: 960, height: 540 };
 export function transform(width: number, height: number) {
   const scale = Math.min(width / WORLD.width, height / WORLD.height);
@@ -8,106 +9,184 @@ export function transform(width: number, height: number) {
 }
 export function worldPoint(x: number, y: number, width: number, height: number): Point | undefined {
   const view = transform(width, height), point = { x: (x - view.x) / view.scale, y: (y - view.y) / view.scale };
-  return point.x >= 0 && point.x <= 960 && point.y >= 0 && point.y <= 540 ? point : undefined;
+  return point.x >= 0 && point.x <= WORLD.width && point.y >= 0 && point.y <= WORLD.height ? point : undefined;
 }
 export function createPresentation(surface: HTMLElement) {
-  const canvas = document.createElement('canvas'); canvas.setAttribute('aria-label', 'Blackthorn Castle scene'); surface.append(canvas);
-  const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable.');
-  const c = ctx;
-  function rect(x: number, y: number, w: number, h: number, fill: string, stroke?: string) { c.fillStyle = fill; c.fillRect(x, y, w, h); if (stroke) { c.strokeStyle = stroke; c.strokeRect(x, y, w, h); } }
-  function ellipse(x: number, y: number, rx: number, ry: number, fill: string) { c.fillStyle = fill; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fill(); }
-  function line(x: number, y: number, ex: number, ey: number, color: string, width = 2) { c.strokeStyle = color; c.lineWidth = width; c.beginPath(); c.moveTo(x, y); c.lineTo(ex, ey); c.stroke(); c.lineWidth = 1; }
-  function label(text: string, x: number, y: number, size = 13, color = '#e1d6b8', align: CanvasTextAlign = 'center') { c.font = `${size}px Georgia, serif`; c.fillStyle = color; c.textAlign = align; c.fillText(text, x, y); }
-  function arch(x: number, y: number, w: number, h: number, color: string) {
-    c.fillStyle = color; c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + w / 2); c.quadraticCurveTo(x, y, x + w / 2, y - 12); c.quadraticCurveTo(x + w, y, x + w, y + w / 2); c.lineTo(x + w, y + h); c.closePath(); c.fill();
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-label', 'Blackthorn Castle · Arcade artwork');
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas 2D is unavailable.');
+  const c = context, resource = createImageResource(artwork, validateArtwork);
+  surface.append(canvas);
+  let last: { run: Run; room: Run['room']; x: number; y: number; time: number } | undefined;
+  let phase = 0, approach: TargetCommand | undefined, pose: CastRole = 'idle', poseUntil = 0;
+  function react(command: Command, time: number) {
+    if (command.kind === 'target' || command.kind === 'tool') {
+      if (command.kind === 'target' && command.verb !== 'use'
+        && (['person', 'exit'].includes(getTarget(command.target).kind)
+          || ['oswald', 'brindle', 'guest', 'whisper'].includes(command.target))) return;
+      pose = 'item' in command && ['lantern', 'bellows', 'fork'].includes(command.item) ? 'lantern' : 'reach';
+      poseUntil = time + .65;
+    }
   }
-  function candle(x: number, y: number, time: number) {
-    rect(x - 2, y, 4, 22, '#c9ba8b'); ellipse(x, y - 4, 3 + Math.sin(time * 2 + x) * .5, 7, '#f4c679');
-    const glow = c.createRadialGradient(x, y, 0, x, y, 72); glow.addColorStop(0, '#f5c87d22'); glow.addColorStop(1, '#f5c87d00'); c.fillStyle = glow; c.fillRect(x - 72, y - 72, 144, 144);
+  function glow(x: number, y: number, radius: number, color: string, strength = 1) {
+    c.save(); c.globalAlpha = strength;
+    const g = c.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, color); g.addColorStop(1, '#00000000');
+    c.fillStyle = g; c.fillRect(x - radius, y - radius, radius * 2, radius * 2); c.restore();
   }
-  function person(x: number, foot: number, color: string, ghost: boolean, time: number, headless = false, moving = false) {
-    const bob = ghost ? Math.sin(time * 1.5 + x) * 4 : moving ? Math.sin(time * 15) * 2 : 0;
-    c.save(); c.translate(x, foot + bob); if (ghost) c.globalAlpha = .8;
-    ellipse(0, 0, 24, 6, '#00000044');
-    c.fillStyle = color; c.beginPath(); c.moveTo(-17, -70); c.lineTo(14, -70); c.lineTo(27, -13); c.lineTo(ghost ? 8 : 20, ghost ? 4 : -5); c.lineTo(-26, -9); c.closePath(); c.fill();
-    if (!ghost) { line(-10, -10, -11 + (moving ? Math.sin(time * 15) * 8 : 0), 0, '#171c20', 7); line(10, -10, 10 - (moving ? Math.sin(time * 15) * 8 : 0), 0, '#171c20', 7); }
-    const hx = headless ? 30 : 0, hy = headless ? -38 : -84;
-    ellipse(hx, hy, 13, 17, ghost ? '#b6ded0' : '#cbb99b');
-    rect(hx - 14, hy - 18, 28, 7, ghost ? '#536c6b' : '#202b30');
-    if (!ghost) rect(hx - 9, hy - 29, 19, 13, '#202b30');
-    ellipse(hx + 5, hy - 1, 2, 2, '#1b3134'); line(-15, -59, -28, -35, color, 7); line(13, -59, 26, -35, color, 7);
-    if (!ghost) { rect(23, -34, 12, 17, '#967144', '#d9b26b'); rect(26, -31, 6, 10, '#f2c66b'); }
-    c.restore();
+  function line(points: readonly Point[], color: string, width = 2) {
+    c.beginPath(); c.strokeStyle = color; c.lineWidth = width;
+    points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke();
+  }
+  function sprite(role: PropRole, x: number, y: number, w: number, h: number, angle = 0) {
+    const f = propFrames[role], scale = Math.min(w / f.w, h / f.h);
+    c.save(); c.translate(x + w / 2, y + h / 2); c.rotate(angle);
+    c.drawImage(resource.images.props!, f.x, f.y, f.w, f.h, -f.w * scale / 2, -f.h * scale / 2, f.w * scale, f.h * scale); c.restore();
+  }
+  function character(role: CastRole, x: number, foot: number, scale: number, facing = 1, opacity = 1) {
+    const f = castFrames[role];
+    c.save(); c.globalAlpha = opacity; c.translate(x, foot); c.scale(facing * scale, scale);
+    c.drawImage(resource.images.cast!, f.x, f.y, f.w, f.h, -f.anchorX, -f.foot, f.w, f.h); c.restore();
+  }
+  function shadow(x: number, y: number, width: number) {
+    c.fillStyle = '#03080bad'; c.beginPath(); c.ellipse(x, y, width, 5, 0, 0, Math.PI * 2); c.fill();
+  }
+  function table(x: number, y: number, w: number, h: number) {
+    const f = equipmentFrames.table;
+    c.drawImage(resource.images.equipment!, f.x, f.y, f.w, f.h, x, y, w, h);
+  }
+  function itemIcon(id: ItemId) {
+    const icon = document.createElement('canvas'), { sheet, frame: f } = itemFrames[id];
+    icon.width = icon.height = 112; icon.className = 'adventure-item-art'; icon.setAttribute('aria-hidden', 'true');
+    const ctx = icon.getContext('2d');
+    if (ctx) {
+      const scale = 100 / Math.max(f.w, f.h);
+      ctx.drawImage(resource.images[sheet]!, f.x, f.y, f.w, f.h, (112 - f.w * scale) / 2, (112 - f.h * scale) / 2, f.w * scale, f.h * scale);
+    }
+    return icon;
   }
   function object(run: Run, id: TargetId, time: number) {
     const t = getTarget(id), { x, y, w, h } = t;
     if (t.kind === 'exit') {
-      arch(x - 6, y - 8, w + 12, h + 8, '#59605b'); arch(x, y, w, h, '#111e27');
-      for (let i = 1; i < 5; i++) line(x + i * w / 5, y + 35, x + i * w / 5, y + h, '#3b423e');
-      if (id === 'bellDoor' && !has(run, 'confronted')) line(x + 5, y + 85, x + w - 5, y + 75, '#a88a52', 5);
-      label(id === 'bellDoor' ? 'BELL TOWER' : t.name.toUpperCase(), x + w / 2, y - 20, 10); return;
+      const f = propFrames.door;
+      // Narrow, tall architectural registration, with its threshold on the
+      // authored target's floor rather than vertically centering the arch.
+      c.drawImage(resource.images.props!, f.x, f.y, f.w, f.h, x - 18, y - 55, w + 36, h + 55);
+      if (id === 'bellDoor' && !has(run, 'confronted')) sprite('chainAttached', x - 5, y + 60, w + 10, 70);
+      return;
     }
-    if (t.kind === 'person' || ['oswald', 'brindle'].includes(id)) {
-      person(x + w / 2, y + h, id === 'evelyn' ? '#755655' : id === 'vale' ? '#454d56' : '#658779', t.kind === 'ghost', time, id === 'oswald'); return;
+    if (['evelyn', 'vale', 'oswald', 'brindle'].includes(id)) {
+      const ghost = t.kind === 'ghost', bob = ghost ? Math.sin(time * 1.4 + x) * 2 : 0;
+      shadow(x + w / 2, y + h, w * .34);
+      if (ghost) glow(x + w / 2, y + h * .5, 90, '#65bfa51a');
+      character(id as CastRole, x + w / 2, y + h + bob, h / 317, 1, ghost ? .88 : 1); return;
     }
+    let role: PropRole | undefined;
     switch (id) {
-      case 'whisper': case 'guest': {
-        const lit = id === 'guest' || has(run, 'whisperLit');
-        c.save(); c.globalAlpha = lit ? .8 : .35;
-        const cx = x + w / 2, cy = y + h / 2 + Math.sin(time * 2) * 8;
-        const glow = c.createRadialGradient(cx, cy, 3, cx, cy, w); glow.addColorStop(0, '#98e4ce55'); glow.addColorStop(1, '#98e4ce00'); c.fillStyle = glow; c.fillRect(cx - w, cy - w, w * 2, w * 2);
-        ellipse(cx, cy, w * .32, h * .34, id === 'guest' && !wardReady(run) ? '#8f82af' : '#a9decd');
-        ellipse(cx - 10, cy - 10, 4, 7, '#263b47'); ellipse(cx + 10, cy - 10, 4, 7, '#263b47'); ellipse(cx, cy + 13, 6, 9, '#44626b');
-        c.restore(); break;
+      case 'whisper':
+        c.save(); c.globalAlpha = has(run, 'whisperLit') ? .94 : .38;
+        glow(x + w / 2, y + h / 2, 90, '#84dfbb2b');
+        sprite('whisper', x, y + Math.sin(time * 1.7) * 5, w, h); c.restore(); return;
+      case 'guest':
+        glow(x + w / 2, y + h / 2, 130, wardReady(run) ? '#6ddfbb38' : '#8a83e533');
+        character('guest', x + w / 2, y + h + Math.sin(time * 1.4) * 4, h / 320, 1, wardReady(run) ? .62 : .94); return;
+      case 'portrait': role = has(run, 'disabled') ? 'portraitQuiet' : 'portraitScream'; break;
+      case 'emptyFrame': role = has(run, 'released') ? 'inhabitedFrame' : 'emptyFrame'; break;
+      case 'crate': role = 'crate'; break;
+      case 'journal': role = 'journal'; break;
+      case 'photo': role = 'photo'; break;
+      case 'musicBox': role = 'musicBox'; break;
+      case 'poker': role = 'poker'; break;
+      case 'brush': sprite('brush', x + 12, y - 7, 45, 60, -Math.PI / 2.5); return;
+      case 'tube': role = has(run, 'tubeOpen') ? 'tubeOpen' : 'tubeClosed'; break;
+      case 'cabinet': role = has(run, 'cabinetOpen') ? 'cabinetOpen' : 'cabinetClosed'; break;
+      case 'chain': role = has(run, 'chain') ? 'chainAttached' : 'chainLoose'; break;
+      case 'mirror': role = has(run, 'mirror') ? 'mirrorIn' : 'mirrorOut'; break;
+      case 'housing':
+        line([{ x: x + w / 2, y: 0 }, { x: x + w / 2, y: y + 35 }], '#74654b', 5);
+        role = 'housing'; break;
+      case 'ward': {
+        const color = has(run, 'ward') ? '#c7e3d5' : '#b7aea0';
+        line([{ x, y: y + 17 }, { x: x + 38, y: y + 3 }], color, 3);
+        line([{ x: x + 94, y: y + 3 }, { x: x + w, y: y + 17 }], color, 3);
+        if (has(run, 'ward')) line([{ x: x + 38, y: y + 3 }, { x: x + 94, y: y + 3 }], color, 3);
+        return;
       }
-      case 'portrait': case 'emptyFrame': case 'photo':
-        rect(x - 7, y - 7, w + 14, h + 14, '#917d55', '#c1a779'); rect(x, y, w, h, '#182a30');
-        if (id !== 'emptyFrame' || has(run, 'released')) {
-          ellipse(x + w / 2, y + h * .38, w * .2, h * .18, id === 'emptyFrame' ? '#9ed5c2' : '#a99e88');
-          rect(x + w * .2, y + h * .58, w * .6, h * .36, '#525e57');
-          if (id === 'portrait') { ellipse(x + w / 2, y + h * .48, 9, has(run, 'disabled') ? 2 : 12, '#243137'); for (let i = 0; i < 4; i++) line(x + 15 + i * 7, y + h - 4, x + 15 + i * 7, y + h + 9, '#1a2026'); }
-        }
-        if (id === 'photo' && has(run, 'photoLit')) rect(x, y + h - 3, w, 3, '#a2dfc3');
-        break;
-      case 'crate': rect(x, y, w, h, '#6b5140', '#a98658'); line(x, y + h, x + w, y, '#b19261', 3); label('◇ V ◇', x + w / 2, y + 35, 20); break;
-      case 'journal': rect(x, y, w, h, '#bdac85', '#73674d'); line(x + w / 2, y, x + w / 2, y + h, '#615940'); for (let i = 0; i < 4; i++) line(x + 8, y + 10 + i * 9, x + 47, y + 10 + i * 9, '#726b55', 1); break;
-      case 'musicBox': rect(x, y, w, h, '#7b573d', '#b99b65'); rect(x + 8, y - 12, w - 16, 16, '#b99b65'); ellipse(x + w / 2, y + 18, 12, 5, '#d1b87e'); if (has(run, 'music')) label('♪', x + w / 2, y - 24 + Math.sin(time * 2) * 3, 23, '#adcabc'); break;
-      case 'brush': rect(x + 8, y + 13, 45, 8, '#a68857'); rect(x + 42, y + 5, 25, 24, '#bdb29a'); break;
-      case 'poker': line(x + 18, y + 5, x + 18, y + h, '#b0aaa0', 5); line(x + 18, y + 8, x + 30, y + 8, '#b0aaa0', 5); break;
-      case 'cabinet': rect(x, y, w, h, '#655944', '#b2a17b'); rect(x + 9, y + 12, w - 18, h - 35, has(run, 'cabinetOpen') ? '#1e2b2c' : '#425250', '#a1936e'); if (!has(run, 'cabinetOpen')) label('⚿', x + w / 2, y + 65, 28); break;
-      case 'tube': rect(x + 38, 85, 30, y + h - 85, '#a2855b', '#d0ae77'); rect(x, y, w, h, has(run, 'tubeOpen') ? '#182b2c' : '#4e4940', '#a38c65');
-        if (has(run, 'tubeOpen')) { ellipse(x + 48, y + 55, 26, 32, '#855342'); label('◇ V', x + 55, y + 105, 16); line(x + 85, y + 70, x + 100, y + 35, '#d0b582', 5); }
-        else label('SOOT', x + w / 2, y + 70, 15); break;
-      case 'chain': for (let i = 0; i < 9; i++) { c.strokeStyle = has(run, 'chain') ? '#d2c392' : '#7e8888'; c.beginPath(); c.ellipse(x + 30 + (has(run, 'chain') ? i * 10 : Math.sin(i) * 5), y + i * 13, 6, 10, -.4, 0, Math.PI * 2); c.stroke(); } break;
-      case 'ward': line(x, y + 15, x + 43, y, '#c1cfb9', 4); line(x + 88, y, x + w, y + 15, '#c1cfb9', 4); if (has(run, 'ward')) line(x + 43, y, x + 88, y, '#bfe7c4', 4); break;
-      case 'mirror': rect(x, y, w, h, '#8c825f', '#c3b384'); rect(x + 7, y + 7, w - 14, h - 14, has(run, 'mirror') ? '#a1c3bd' : '#657e92'); line(x + 15, y + h - 25, x + w - 15, y + 20, '#c9dbcf', 4); break;
-      case 'housing': line(x + w / 2, 0, x + w / 2, y + 30, '#8e826d', 9); c.fillStyle = '#8d8266'; c.beginPath(); c.moveTo(x + 35, y + 30); c.quadraticCurveTo(x + w / 2, y - 5, x + w - 35, y + 30); c.lineTo(x + w, y + h - 20); c.lineTo(x, y + h - 20); c.closePath(); c.fill(); rect(x - 5, y + h - 25, w + 10, 20, '#b0a37b'); rect(x + 57, y + h - 65, 56, 48, '#1b2c30', '#c1b085'); break;
+    }
+    if (role) sprite(role, x, y, w, h);
+    if (id === 'housing' && has(run, 'finished')) sprite('lantern', x + 65, y + h - 65, 40, 50);
+    if (id === 'photo' && has(run, 'photoLit')) glow(x + w / 2, y + h / 2, 85, '#b6e5bf33');
+    if (id === 'musicBox' && has(run, 'music')) {
+      glow(x + w / 2, y + 20, 50, '#edcb7933');
+      for (let i = 0; i < 3; i++) {
+        const drift = (time * .3 + i / 3) % 1;
+        c.fillStyle = `rgba(227,201,142,${(1 - drift) * .65})`;
+        c.beginPath(); c.ellipse(x + 25 + i * 17, y - drift * 26, 2, 2, 0, 0, Math.PI * 2); c.fill();
+      }
     }
   }
-  return { canvas,
+  return {
+    canvas, prepare: resource.prepare, react, itemIcon,
+    reset() { last = undefined; phase = 0; approach = undefined; pose = 'idle'; poseUntil = 0; },
     draw(run: Run, size: { width: number; height: number; ratio: number }, debug: boolean, reduced: boolean, animationTime: number) {
+      if (!resource.images.cast) return;
+      const sameRoom = last?.run === run && last.room === run.room;
+      const distance = sameRoom ? Math.hypot(run.actor.x - last!.x, run.actor.y - last!.y) : 0;
+      if (!sameRoom) { phase = 0; approach = undefined; poseUntil = 0; }
+      if (distance > 0) phase += distance / 72;
+      if (approach && !run.pending && sameRoom && animationTime > last!.time) {
+        const at = getTarget(approach.target).at;
+        if (Math.hypot(run.actor.x - at.x, run.actor.y - at.y) < 3) react(approach, animationTime);
+      }
+      approach = run.pending?.command;
+      last = { run, room: run.room, x: run.actor.x, y: run.actor.y, time: animationTime };
       const width = Math.round(size.width * size.ratio), height = Math.round(size.height * size.ratio);
       if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
-      c.setTransform(size.ratio, 0, 0, size.ratio, 0, 0); rect(0, 0, size.width, size.height, '#101c23');
-      const view = transform(size.width, size.height); c.translate(view.x, view.y); c.scale(view.scale, view.scale);
-      const time = reduced ? 0 : animationTime, room = rooms[run.room];
-      const bg = c.createLinearGradient(0, 0, 0, 540); bg.addColorStop(0, '#0e1b24'); bg.addColorStop(.65, roomColors[run.room]); bg.addColorStop(1, '#141d24'); c.fillStyle = bg; c.fillRect(0, 0, 960, 540);
-      for (let y = 80; y < 355; y += 46) for (let x = (y % 92 ? -70 : 0); x < 960; x += 140) rect(x, y, 139, 45, '#ffffff02', '#ffffff06');
-      for (const x of [150, 770]) { arch(x, 66, 75, 190, '#324657'); arch(x + 8, 80, 59, 163, '#668891'); line(x + 37, 77, x + 37, 243, '#202f37', 7); line(x + 7, 155, x + 68, 155, '#202f37', 6); }
-      if (run.room === 'library') for (const x of [180, 340, 510, 690]) { rect(x, 90, 105, 225, '#493a30', '#8d7956'); for (let row = 0; row < 4; row++) for (let i = 0; i < 10; i++) rect(x + 5 + i * 9, 100 + row * 53, 6, 38, ['#566f65', '#876a55', '#8c805f'][i % 3]!); }
-      if (run.room === 'kitchen') { rect(190, 115, 240, 200, '#252b29', '#736d5c'); arch(240, 160, 140, 145, '#102127'); for (let i = 0; i < 3; i++) candle(278 + i * 25, 283, time); }
-      rect(0, 380, 960, 160, '#242b2c'); line(0, 380, 960, 380, '#7d7560', 4);
-      for (let x = -700; x <= 1600; x += 160) line(480 + (x - 480) * .4, 380, x, 540, '#4c514947');
-      for (const y of [407, 447, 503]) line(0, y, 960, y, '#55594e44');
-      if (run.room === 'hall' || run.room === 'library') { rect(340, 420, 280, 115, '#783f3d66'); line(355, 420, 355, 535, '#b9946255'); line(605, 420, 605, 535, '#b9946255'); }
-      const visible = roomTargets(run).sort((a, b) => getTarget(a).y - getTarget(b).y);
+      c.setTransform(size.ratio, 0, 0, size.ratio, 0, 0);
+      c.fillStyle = '#080f16'; c.fillRect(0, 0, size.width, size.height);
+      const view = transform(size.width, size.height);
+      c.translate(view.x, view.y); c.scale(view.scale, view.scale);
+      c.save(); c.beginPath(); c.rect(0, 0, WORLD.width, WORLD.height); c.clip();
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+      c.drawImage(resource.images[run.room]!, 0, 0, WORLD.width, WORLD.height);
+      if (run.room === 'library') table(230, 375, 325, 80);
+      if (run.room === 'kitchen') table(230, 368, 115, 48);
+      const time = reduced ? 0 : animationTime;
+      // The housing sits behind its inhabitant; the detective's floor geometry
+      // remains independent of all cosmetic asset sizes.
+      const visible = roomTargets(run).sort((a, b) => a === 'housing' ? -1 : b === 'housing' ? 1 : getTarget(a).y + getTarget(a).h - getTarget(b).y - getTarget(b).h);
       for (const id of visible) object(run, id, time);
-      candle(135, 302, time); candle(830, 302, time);
-      person(run.actor.x, run.actor.y, '#60737b', false, time, false, !!run.pending);
-      if (run.pending) { const p = run.pending.path.at(-1)!; c.strokeStyle = '#c5b07a88'; c.beginPath(); c.ellipse(p.x, p.y, 12, 4, 0, 0, Math.PI * 2); c.stroke(); }
-      if (debug) for (const f of room.floor) { c.strokeStyle = '#59ffb4'; c.strokeRect(f.x, f.y, f.w, f.h); }
-
+      const moving = !!run.pending?.path.length;
+      const role = moving ? walkClip[Math.floor(phase * walkClip.length) % walkClip.length]! : animationTime < poseUntil ? pose : 'idle';
+      shadow(run.actor.x, run.actor.y, 24);
+      const lanternX = run.actor.x + run.facing * (role === 'lantern' ? 34 : 27);
+      const lanternY = run.actor.y - (role === 'lantern' ? 119 : 48);
+      glow(lanternX, lanternY, 82, run.lantern.occupant === 'empty' ? '#e4b35725' : '#6dddbb3b', 1 + Math.sin(time * 3.2) * .06);
+      character(role, run.actor.x, run.actor.y, .48, run.facing);
+      if (run.lantern.occupant !== 'empty') {
+        glow(lanternX, lanternY, 20, '#80e7c077');
+        if (run.lantern.phase === 'sealed') {
+          c.strokeStyle = '#e1c580'; c.lineWidth = 1;
+          c.beginPath(); c.ellipse(lanternX, lanternY, 8, 12, 0, 0, Math.PI * 2); c.stroke();
+        }
+      }
+      if (run.pending) {
+        const p = run.pending.path.at(-1)!;
+        c.strokeStyle = '#dcc49177'; c.lineWidth = 1;
+        c.beginPath(); c.ellipse(p.x, p.y, 10, 3, 0, 0, Math.PI * 2); c.stroke();
+      }
+      if (!reduced) for (let i = 0; i < 12; i++) {
+        const x = (i * 83 + Math.sin(time * .18 + i) * 9) % WORLD.width;
+        const y = 80 + (i * 37 - time * (2 + i % 3) % 330 + 330) % 330;
+        c.fillStyle = '#ddcaa22b'; c.fillRect(x, y, 1.4, 1.4);
+      }
+      const edge = c.createRadialGradient(480, 280, 230, 480, 280, 610);
+      edge.addColorStop(0, '#00000000'); edge.addColorStop(1, '#02091077');
+      c.fillStyle = edge; c.fillRect(0, 0, WORLD.width, WORLD.height);
+      if (debug) for (const f of rooms[run.room].floor) { c.strokeStyle = '#59ffb4'; c.strokeRect(f.x, f.y, f.w, f.h); }
+      c.restore();
     },
-    dispose() { canvas.remove(); canvas.width = canvas.height = 0; },
+    dispose() { resource.dispose(); canvas.remove(); canvas.width = canvas.height = 0; },
   };
 }
