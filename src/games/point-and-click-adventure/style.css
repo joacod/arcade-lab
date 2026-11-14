@@ -74,6 +74,12 @@
 .adventure-journal-entry p { padding:0 16px; }
 .adventure-journal-entry p strong { color:var(--gold); font-weight:normal; }
 .adventure-saves { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.adventure-game[data-theme=deluxe] { --ink:#f2e9d8; --dim:#c0bbae; --gold:#e0bd7b; --menu-accent:#e0bd7b; background:#0d151e; }
+.adventure-game[data-theme=deluxe] .adventure-header { background:linear-gradient(110deg,#111923,#20282a); border-color:#9a7c464f; box-shadow:inset 0 1px #e8c99214; }
+.adventure-game[data-theme=deluxe] .adventure-toolbar { background:linear-gradient(#202a2e,#121b22); border-color:#9a7c4666; }
+.adventure-game[data-theme=deluxe] .adventure-sheet:not([data-view=letter]) { background:linear-gradient(130deg,#283136,#151f28); border-color:#a78a58; box-shadow:0 20px 80px #000a,inset 0 0 0 4px #d6b9760b; }
+.adventure-game[data-theme=deluxe] .adventure-dialogue { background:linear-gradient(120deg,#202b32fa,#111c27fa); border-color:#b99b65; box-shadow:0 12px 44px #0009,inset 0 1px #ead3a525; }
+.adventure-game[data-theme=deluxe] .adventure-narration { background:#14202aef; border-color:#dabc7c; }
 @media(max-width:600px) {
  .adventure-header { padding:9px 12px; gap:8px; }
  .adventure-header strong { font-size:17px; }

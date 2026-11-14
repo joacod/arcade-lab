@@ -1,7 +1,7 @@
 import { createImageResource } from '../../engine/browser/images.ts';
 import { rooms, getTarget, type Point, type TargetId, type ItemId } from './content.ts';
 import { has, roomTargets, wardReady, type Run, type Command, type TargetCommand } from './game.ts';
-import { artwork, castFrames, propFrames, equipmentFrames, itemFrames, validateArtwork, walkClip, strideDistance, type CastRole, type PropRole } from './art.ts';
+import { arcadeArt, appearances, validateArtwork, walkClip, strideDistance, type AdventureArt, type CastRole, type PropRole } from './art.ts';
 export const WORLD = { width: 960, height: 540 };
 export function transform(width: number, height: number) {
   const scale = Math.min(width / WORLD.width, height / WORLD.height);
@@ -11,12 +11,14 @@ export function worldPoint(x: number, y: number, width: number, height: number):
   const view = transform(width, height), point = { x: (x - view.x) / view.scale, y: (y - view.y) / view.scale };
   return point.x >= 0 && point.x <= WORLD.width && point.y >= 0 && point.y <= WORLD.height ? point : undefined;
 }
-export function createPresentation(surface: HTMLElement) {
+export function createPresentation(surface: HTMLElement, art: AdventureArt = arcadeArt) {
+  const { artwork, castFrames, propFrames, equipmentFrames, itemFrames } = art;
+  const deluxe = art.mode === 'deluxe';
   const canvas = document.createElement('canvas');
-  canvas.setAttribute('aria-label', 'Blackthorn Castle · Arcade artwork');
+  canvas.setAttribute('aria-label', `Blackthorn Castle · ${art.mode === 'deluxe' ? 'Deluxe' : 'Arcade'} · ${appearances[art.mode]} artwork`);
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Canvas 2D is unavailable.');
-  const c = context, resource = createImageResource(artwork, validateArtwork);
+  const c = context;
   const scenery = document.createElement('canvas'), backdrop = scenery.getContext('2d', { alpha: false });
   if (!backdrop) throw new Error('Canvas 2D is unavailable.');
   const lights = new Map<string, HTMLCanvasElement>();
@@ -25,7 +27,8 @@ export function createPresentation(surface: HTMLElement) {
   const edge = edgeContext.createRadialGradient(480, 280, 230, 480, 280, 610);
   edge.addColorStop(0, '#00000000'); edge.addColorStop(1, '#02091077');
   edgeContext.fillStyle = edge; edgeContext.fillRect(0, 0, WORLD.width, WORLD.height);
-  let sceneryKey = '';
+  const resource = createImageResource(artwork, dimensions => validateArtwork(art, dimensions));
+  let disposed = false, sceneryKey = '';
   surface.append(canvas);
   let last: { run: Run; room: Run['room']; x: number; y: number; time: number } | undefined;
   let phase = 0, approach: TargetCommand | undefined, pose: CastRole = 'idle', poseUntil = 0;
@@ -140,11 +143,30 @@ export function createPresentation(surface: HTMLElement) {
       }
     }
   }
+  function atmosphere(run: Run, time: number, reduced: boolean) {
+    // Window light stays behind interaction labels and never shifts the world.
+    c.save(); c.globalCompositeOperation = 'screen';
+    c.fillStyle = '#b5d7ef08';
+    const origin = run.room === 'bell' ? 480 : run.room === 'hall' ? 360 : 140;
+    c.beginPath(); c.moveTo(origin, 25); c.lineTo(origin + 55, 25);
+    c.lineTo(origin + 320, 530); c.lineTo(origin + 130, 530); c.closePath(); c.fill();
+    if (!reduced) for (let i = 0; i < 8; i++) {
+      const x = origin + 60 + i * 24 + Math.sin(time * .23 + i) * 5;
+      const y = 90 + (i * 53 + time * (1 + i % 3)) % 380;
+      c.fillStyle = '#d9eaf536'; c.fillRect(x, y, 1, 1);
+    }
+    if (run.room === 'bell' && wardReady(run)) {
+      glow(500, 385, 145, '#77c9c91c');
+    }
+    c.restore();
+  }
   return {
     canvas, prepare: resource.prepare, react, itemIcon,
     reset() { last = undefined; phase = 0; approach = undefined; pose = 'idle'; poseUntil = 0; sceneryKey = ''; },
     draw(run: Run, size: { width: number; height: number; ratio: number }, debug: boolean, reduced: boolean, animationTime: number) {
-      if (!resource.images.cast) return;
+      if (disposed || !resource.images.cast) return;
+      // Cap both buffer axes independently of the display's DPR.
+      size = { ...size, ratio: Math.min(size.ratio, 2560 / size.width, 1440 / size.height) };
       const sameRoom = last?.run === run && last.room === run.room;
       const distance = sameRoom ? Math.hypot(run.actor.x - last!.x, run.actor.y - last!.y) : 0;
       if (!sameRoom) { phase = 0; approach = undefined; poseUntil = 0; }
@@ -208,11 +230,13 @@ export function createPresentation(surface: HTMLElement) {
         const y = 80 + (i * 37 - time * (2 + i % 3) % 330 + 330) % 330;
         c.fillStyle = '#ddcaa22b'; c.fillRect(x, y, 1.4, 1.4);
       }
+      if (deluxe) atmosphere(run, time, reduced);
       c.drawImage(vignette, 0, 0, WORLD.width, WORLD.height);
       if (debug) for (const f of rooms[run.room].floor) { c.strokeStyle = '#59ffb4'; c.strokeRect(f.x, f.y, f.w, f.h); }
       c.restore();
     },
     dispose() {
+      if (disposed) return; disposed = true;
       resource.dispose(); canvas.remove();
       for (const buffer of [canvas, scenery, vignette, ...lights.values()]) buffer.width = buffer.height = 0;
       lights.clear();

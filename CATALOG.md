@@ -18,7 +18,7 @@ The table lists completed presentations; their artwork and renderers will evolve
 |  Midnight Circuit  |  Signal / Rain, inked arcade shops and industrial bays  |  Afterglow, detailed modern fighters and painted city with wet-road reflections  |
 |  Obsidian Duel  |  Eclipse Foundry, painted arcade fighters and forge-lit arena  |  Moonfall Sanctum, detailed fighters and jade-and-gold combat artwork  |
 |  Blastline  |  Ember Coast, detailed arcade commandos and rusted harbor defenses  |  Ember Reforged, dimensional painted commandos and industrial coast  |
-|  The Thirteenth Guest  |  Blackthorn by Candlelight, painted Gothic rooms, complete character cels and illustrated investigative tools  |  —  |
+|  The Thirteenth Guest  |  Blackthorn by Candlelight, painted Gothic rooms, complete character cels and illustrated investigative tools  |  Blackthorn Nocturne, sculptural cast, engraved tools and moonlit Gothic dioramas  |
 |  Cloudwake  |  The Sunward Route, painted sky courier and crystal ruins  |  Sunward Radiance, dimensional ceramic-and-brass courier, crystal ruins and luminous cloud terraces  |
 
 All current games start in **Arcade** and optionally switch to **Deluxe**. Arcade is the complete finished presentation. Deluxe enhances its artwork and effects through the same Canvas 2D gameplay presentation. Prototype is a temporary stage for new games and is removed once Arcade is complete. See the [mode contract](docs/architecture.md#mode-contract).
@@ -146,13 +146,13 @@ Pressing Play, Continue or Restart applies thrust immediately while held. Cloud 
 
 ## The Thirteenth Guest
 
-![The Thirteenth Guest · Arcade: a screaming portrait and a headless knight at Blackthorn Castle](docs/games/point-and-click-adventure/preview.webp)
+![The Thirteenth Guest · Deluxe: a screaming portrait and a headless knight at Blackthorn Castle](docs/games/point-and-click-adventure/preview.webp)
 
 Investigate an old castle as **Percival Wren**, a Victorian detective of unnatural affairs. Follow physical clues, question the ghost household, improvise with everyday objects and support your conclusions in the casebook. Two investigation paths lead to a confrontation, a supernatural reversal and a spirit-containment finale across five rooms.
 
 Click or tap a person, object or doorway; Wren walks there before acting. **Inventory (I)** opens your tools: select one, then choose **Use in scene** or **Combine with…**. Click the floor to walk. Hover or focus names a target’s action, and Tab / Enter operates the same targets. **Casebook (B)** holds evidence and the conversation journal. **Cancel (X)** stops an approach or puts away an item. **Close** dismisses an investigation panel. How to play is in Settings, and progress saves automatically.
 
-**Arcade: Blackthorn by Candlelight** brings painted Gothic rooms, expressive character cels and illustrated tools to the complete case. **Continue saved adventure** resumes the latest local save. **Recover backup adventure** appears when the latest save is unreadable and a valid backup exists. Play and Restart begin a fresh case; autosave keeps the latest and one previous distinct snapshot. See [gameplay, source owners and adaptation](docs/games/point-and-click-adventure/README.md), the [artwork guide](src/games/point-and-click-adventure/art/README.md), and the spoiler-filled [story and puzzles](docs/games/point-and-click-adventure/story.md).
+**Arcade: Blackthorn by Candlelight** brings painted Gothic rooms, expressive character cels and illustrated tools to the complete case. **Deluxe: Blackthorn Nocturne** adds a cinematic diorama treatment with new sculptural characters, richly detailed objects and moonlit rooms. Choose either in the title or pause menu while keeping the same case. **Continue saved adventure** resumes the latest local save. **Recover backup adventure** appears when the latest save is unreadable and a valid backup exists. Play and Restart begin a fresh case; autosave keeps the latest and one previous distinct snapshot. See [gameplay, source owners and adaptation](docs/games/point-and-click-adventure/README.md), the [artwork guide](src/games/point-and-click-adventure/art/README.md), and the spoiler-filled [story and puzzles](docs/games/point-and-click-adventure/story.md).
 
 See the [shared architecture](docs/architecture.md) for repository layout and common ownership.
 

@@ -1,8 +1,8 @@
 # The Thirteenth Guest
 
-**Arcade: Blackthorn by Candlelight · collection ID `guest`.** A complete short point-and-click case with painted Gothic rooms, complete character cels and illustrated investigative tools. Select **The Thirteenth Guest** in the collection and press **Play**, or **Continue saved adventure** to resume this browser’s saved case.
+**Arcade: Blackthorn by Candlelight · Deluxe: Blackthorn Nocturne · collection ID `guest`.** A complete short point-and-click case with painted Gothic rooms, complete character cels and illustrated investigative tools. Select **The Thirteenth Guest** in the collection and press **Play**, or **Continue saved adventure** to resume this browser’s saved case.
 
-![The Thirteenth Guest · Arcade: Wren examines a screaming portrait while Sir Oswald guards the bell tower](preview.webp)
+![The Thirteenth Guest · Deluxe: Wren investigates the portrait gallery while Sir Oswald guards the bell passage](preview.webp)
 
 Blackthorn Castle, 1889. Percival Wren, Consulting Detective of Unnatural Affairs, has been hired to clear a troublesome haunting. Investigate physical clues, question an eccentric household, and work out why the ghosts seem more worried about your client than about you. The kit is brass, leather, glass and candlelight. No deaths, timed conversation choices or irretrievable essential items interrupt the investigation.
 
@@ -38,7 +38,7 @@ See the [shared controls and menus](../../../CATALOG.md) for pause, fullscreen, 
 
 Keep exploration in the scene. This case has no hint service, objective HUD, global instruction banner, reveal-all control, decorative room-entry captions, separate Help view or manual save button. Hover/focus labels describe the targeted action. Observations, dialogue and meaningful results supply clues; walking, approaching and cancelling do not narrate themselves or open a Cancel panel. Clear old feedback when a new world action starts. Evidence is stored in the Casebook without appending system acknowledgements to observations. Keep inventory results in Inventory and deduction results in the Casebook, next to the action that caused them. Keep controls documentation in Settings and equipment properties with the inventory items, without appending the next puzzle solution to each result.
 
-The existing renderer respects the system reduced-motion preference without an extra settings checkbox. Arcade communicates walking, reaching, lantern operation and puzzle-object changes through authored images. Cosmetic motion freezes while paused, and reduced motion suppresses decorative drift, dust and light flicker. See the [artwork contract](../../../src/games/point-and-click-adventure/art/README.md). See the [point-and-click genre guidance](../../../.agents/skills/arcade-lab/references/genre-guidance.md#point-and-click-adventure) for reusable design considerations.
+The existing renderer respects the system reduced-motion preference without an extra settings checkbox. Both presentations communicate walking, reaching, lantern operation and puzzle-object changes through authored images. Cosmetic motion freezes while paused, and reduced motion suppresses decorative drift, dust and light flicker. See the [artwork contract](../../../src/games/point-and-click-adventure/art/README.md). See the [point-and-click genre guidance](../../../.agents/skills/arcade-lab/references/genre-guidance.md#point-and-click-adventure) for reusable design considerations.
 
 ## Progress and saves
 
@@ -65,11 +65,11 @@ All adventure-specific code lives in [`src/games/point-and-click-adventure/`](..
 | [`interaction.ts`](../../../src/games/point-and-click-adventure/interaction.ts) | Contextual action labels and their semantic commands, shared by mouse, touch and keyboard targets |
 | [`ui.ts`](../../../src/games/point-and-click-adventure/ui.ts), [`style.css`](../../../src/games/point-and-click-adventure/style.css) | Native scene targets through the uniform world transform, contextual controls, dismissible panels and focus preservation |
 | [`input.ts`](../../../src/games/point-and-click-adventure/input.ts) | Shared action-button bindings and floor-click translation through the uniform world transform |
-| [`presentation.ts`](../../../src/games/point-and-click-adventure/presentation.ts) | Arcade Canvas composition, complete character cels, stateful props, cosmetic motion and the uniform world transform |
+| [`presentation.ts`](../../../src/games/point-and-click-adventure/presentation.ts) | Shared Canvas composition for Arcade and Deluxe, complete character cels, stateful props, cosmetic motion and the uniform world transform |
 | [`sound.ts`](../../../src/games/point-and-click-adventure/sound.ts) | AudioBits recipes, cue admission and shared audio lifecycle composition |
 | [`app.ts`](../../../src/games/point-and-click-adventure/app.ts) | Synchronous mounting, shared host/menu/focus owners, fixed stepping, saves and disposal |
 
-To adapt the foundation, replace the typed room/cast/item/evidence definitions and authored scene text together with their story rules in `game.ts`. Update the validation dependencies and give a different adventure its own story identity and save namespace. Presentation roles, crops, anchors and validation live in `art.ts`, with drawing in `presentation.ts`; logical geometry stays in content. The current case uses clear rectangular floors, while the router also handles connected floor cells. In development, `?adventureDebug` draws the walkable cells.
+To adapt the foundation, replace the typed room/cast/item/evidence definitions and authored scene text together with their story rules in `game.ts`. Update the validation dependencies and give a different adventure its own story identity and save namespace. Presentation roles, crops, anchors and validation live in `art.ts`, with drawing in `presentation.ts`; logical geometry stays in content. Deluxe's lazy artwork definition lives in `deluxe.ts`, with its local [brief and export contract](../../../src/games/point-and-click-adventure/art/DELUXE.md). The current case uses clear rectangular floors, while the router also handles connected floor cells. In development, `?adventureDebug` draws the walkable cells.
 
 The pure rules accept semantic commands and emit semantic audio cues. No rule depends on DOM focus, animation completion, sound completion or frame rate. The browser session owns scheduling and storage, while decorative time belongs to presentation. Selecting a tool, a journal view or evidence cards is UI state, not story progression.
 
@@ -80,6 +80,22 @@ The pure rules accept semantic commands and emit semantic audio cues. No rule de
 
 The case includes five connected rooms, four speaking NPCs, two investigation threads, evidence-backed deductions, an improvised inventory puzzle, ghost containment, a confrontation and a complete ending. It uses explicit story handlers rather than a scripting language.
 
-Arcade replaces the temporary Prototype. The single implemented presentation has no theme selector. Its required artwork gates Play and saved-case continuation, with retry and collection navigation available on failure. A runtime graphics failure pauses the retained case and offers a fresh Arcade preparation through Retry artwork. See the [artwork guide](../../../src/games/point-and-click-adventure/art/README.md) for the brief, source illustrations, exports and role contracts.
+Arcade replaces the temporary Prototype and remains the fresh-launch default.
+**Deluxe: Blackthorn Nocturne** reinterprets the same cast and castle as a cinematic
+Gothic diorama, with sculptural faces, tailored wool, polished wood, engraved
+bronze and sea-glass spirits. All five rooms, character/action cels, the eight-cel
+walk, puzzle objects and inventory equipment have their own Deluxe artwork.
+See the [Deluxe brief and asset contract](../../../src/games/point-and-click-adventure/art/DELUXE.md).
+
+The title and pause menus expose both themes. Switching retains the case,
+inventory, conversation and approach state; the selection survives a restart
+within the mounted session. The active theme remains available while a candidate
+loads and trial-draws. Play, continuation and Resume cancel a pending replacement.
+Required initial artwork gates Play and saved-case continuation, with retry and
+collection navigation available on failure. A failed optional selection retains
+the working artwork. A Deluxe draw failure pauses the case and prepares fresh
+Arcade artwork; Arcade failures offer Retry artwork. See the
+[shared presentation contract](../../architecture.md#appearance-changes) and the
+[Arcade artwork guide](../../../src/games/point-and-click-adventure/art/README.md).
 
 Follow the [shared verification policy](../../architecture.md#local-verification). Focused deterministic checks in `tests/unit/games/point-and-click-adventure/` protect navigation, cancellation, item conservation, deduction gates, skip equivalence, containment recovery, save validation, durable question exhaustion, unfinished branches, changed answers, retained introductions and storage failures. The catalog supplies one startup smoke; `tests/browser/games/adventure-focus.spec.ts` protects direct touch activation, return from item use to ordinary interaction, reading-panel focus, disabled deduction controls, replaced choices, journal text input, panel dismissal and inventory-local combination feedback.
