@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun, dispatch, startScene, stepRun, has, visible } from '../../../../src/games/point-and-click-adventure/game.ts';
-import { getTarget, rooms, targets } from '../../../../src/games/point-and-click-adventure/content.ts';
+import { createRun, introduce, topics, dispatch, startScene, stepRun, has, visible } from '../../../../src/games/point-and-click-adventure/game.ts';
+import { getTarget, rooms, targets, invitation } from '../../../../src/games/point-and-click-adventure/content.ts';
 import { route, inside } from '../../../../src/games/point-and-click-adventure/navigation.ts';
 import { snapshot, restore, encode, readEnvelope } from '../../../../src/games/point-and-click-adventure/save.ts';
 import { createSaveStore } from '../../../../src/games/point-and-click-adventure/storage.ts';
 import { interaction } from '../../../../src/games/point-and-click-adventure/interaction.ts';
+import { earlierAnswers } from '../../../../src/games/point-and-click-adventure/conversation.ts';
 import { matchesEntry } from '../../../../src/games/point-and-click-adventure/journal.ts';
 import { contentErrors } from '../../../../src/games/point-and-click-adventure/content-validation.ts';
 function at(run, target, verb = 'interact', item) {
@@ -39,8 +40,10 @@ test('replacing and cancelling an approach cannot execute its stale pickup', () 
 test('inventory recipes are atomic and wrong uses preserve essential tools', () => {
   const run = createRun(); run.inventory.brush = run.inventory.poker = 'inventory';
   dispatch(run, { kind: 'combine', first: 'brush', second: 'lens' }); assert.equal(run.inventory.brush, 'inventory');
+  assert.equal(run.messageContext, 'inventory');
   dispatch(run, { kind: 'combine', first: 'poker', second: 'brush' });
   assert.deepEqual([run.inventory.brush, run.inventory.poker, run.inventory.longBrush], ['consumed', 'consumed', 'inventory']);
+  assert.equal(run.messageContext, 'inventory');
   at(run, 'tube', 'use', 'longBrush'); assert.equal(has(run, 'tubeOpen'), true);
   at(run, 'tube'); assert.equal(has(run, 'mechanism'), true); assert.ok(restore(snapshot(run)));
 });
@@ -55,7 +58,7 @@ test('deductions require discovered supporting evidence and both threads gate co
   at(run, 'bellDoor'); assert.equal(run.room, 'gallery');
 });
 test('skipping a story scene commits the same durable result as reading it', () => {
-  for (const scene of ['intro', 'testimony', 'confrontation', 'ending']) {
+  for (const scene of ['testimony', 'confrontation', 'ending']) {
     const read = investigated(), skip = investigated();
     for (const run of [read, skip]) { run.facts.push('confronted', 'chain', 'ward', 'mirror'); run.lantern = { occupant: 'guest', phase: 'sealed' }; startScene(run, scene); }
     const lines = structuredClone(read.dialogue.lines);
@@ -87,14 +90,14 @@ test('save validation rejects inconsistent progress and restores only stable dur
   }
   startScene(run, 'confrontation'); assert.throws(() => snapshot(run), /stable/);
   const legacy = { ...saved, transcript: [{ speaker: 'Wren', text: 'An earlier observation.' }] }; delete legacy.journal;
-  assert.deepEqual(restore(legacy).journal, [{ title: 'Earlier conversations', lines: legacy.transcript }]);
+  assert.deepEqual(restore(legacy).journal.find(entry => entry.title === 'Earlier conversations'), { title: 'Earlier conversations', lines: legacy.transcript });
   assert.equal(restore({ ...saved, journal: [{ title: 'Broken', lines: [] }] }), undefined);
   assert.equal(readEnvelope('{'), undefined); assert.equal(readEnvelope(JSON.stringify({ schema: 2 })), undefined);
 });
 test('atomic save envelope recovers its backup and refuses cross-tab or failed overwrites', () => {
   let raw = null; const reports = [], storage = { getItem: () => raw, setItem: (_, value) => { raw = value; } };
   const store = createSaveStore(storage, text => reports.push(text)); const run = createRun();
-  assert.equal(store.write(run), true); run.facts.push('introduced'); assert.equal(store.write(run), true);
+  assert.equal(store.write(run), true); introduce(run); assert.equal(store.write(run), true);
   assert.equal(store.available(true), true); assert.deepEqual(store.load(true).facts, []);
   const once = raw; assert.equal(store.write(run), true); assert.equal(raw, once); // Repeated autosaves must retain the distinct backup.
   const damaged = JSON.parse(raw); damaged.current.actor.x = 'broken'; raw = JSON.stringify(damaged);
@@ -148,4 +151,48 @@ test('journal groups topics, keeps changed answers and searches their context', 
   assert.match(run.journal[0].title, /What exactly did you hire me/);
   assert.equal(matchesEntry(run.journal[0], 'VALE hall knight'), true);
   assert.equal(matchesEntry(run.journal[1], 'knight'), false);
+  assert.deepEqual(earlierAnswers(original), ['vale-case']);
+  assert.deepEqual(earlierAnswers(run.journal), ['vale-case', 'vale-case:confronted']);
+});
+
+// Exhaustion is durable, while a branch remains reachable until every answer is read.
+test('conversation branches survive leaving and saving, then retire without repeating their parent', () => {
+  let run = createRun(); run.conversation = 'evelyn';
+  dispatch(run, { kind: 'topic', id: 'evelyn-family' }); dispatch(run, { kind: 'next' });
+  assert.deepEqual(topics(run, 'evelyn').map(t => t.id), ['evelyn-photo', 'evelyn-key']);
+  dispatch(run, { kind: 'topic', id: 'evelyn-photo' }); dispatch(run, { kind: 'next' });
+  dispatch(run, { kind: 'back' });
+  assert.ok(topics(run, 'evelyn').some(t => t.id === 'evelyn-family'));
+  dispatch(run, { kind: 'leave' });
+  run = restore(snapshot(run)); run.conversation = 'evelyn';
+  const count = run.journal.length;
+  dispatch(run, { kind: 'topic', id: 'evelyn-family' });
+  assert.equal(run.dialogue, undefined); assert.equal(run.journal.length, count);
+  assert.deepEqual(topics(run, 'evelyn').map(t => t.id), ['evelyn-key']);
+  dispatch(run, { kind: 'topic', id: 'evelyn-key' }); dispatch(run, { kind: 'next' });
+  assert.equal(run.inventory.cabinetKey, 'inventory'); assert.deepEqual(run.topicPath, []);
+  assert.deepEqual(topics(run, 'evelyn').map(t => t.id), ['evelyn-case']);
+  const saved = snapshot(run); assert.deepEqual(restore(saved).asked, run.asked);
+  assert.equal(restore({ ...saved, asked: ['nonexistent-topic'] }), undefined);
+  delete saved.asked; assert.deepEqual(new Set(restore(saved).asked), new Set(run.asked));
+});
+test('a changed answer reopens a completed question without blocking Brindle’s testimony', () => {
+  const run = createRun(); run.conversation = 'brindle';
+  dispatch(run, { kind: 'topic', id: 'brindle-memory' }); dispatch(run, { kind: 'next' });
+  assert.equal(topics(run, 'brindle').some(t => t.id === 'brindle-memory'), false);
+  run.facts.push('music', 'photoLit');
+  assert.equal(topics(run, 'brindle').some(t => t.id === 'brindle-memory'), true);
+  dispatch(run, { kind: 'topic', id: 'brindle-memory' });
+  while (run.dialogue) dispatch(run, { kind: 'next' });
+  assert.equal(has(run, 'testimony'), true); assert.equal(run.conversation, 'brindle');
+  assert.equal(topics(run, 'brindle').some(t => t.id === 'brindle-memory'), false);
+});
+test('the complete invitation is retained before dismissing it and repairs older partial introductions', () => {
+  const run = createRun(); introduce(run);
+  assert.equal(run.dialogue, undefined); assert.equal(has(run, 'introduced'), true);
+  assert.deepEqual(restore(snapshot(run)).journal[0].lines, invitation.lines);
+  introduce(run); assert.equal(run.journal.length, 1);
+  const old = snapshot(run); old.journal = [{ title: 'Arrival at Blackthorn Castle', room: 'hall', lines: [{ speaker: 'Castle', text: 'The carriage leaves.' }] }];
+  assert.deepEqual(restore(old).journal[0].lines, invitation.lines);
+  assert.equal(restore(old).journal[1].title, 'Arrival at Blackthorn Castle');
 });

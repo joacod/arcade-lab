@@ -32,6 +32,20 @@ Evidence reading and deduction are separate interactions: browse collected facts
 
 The [Beyond Divinity manual](https://cdn.akamai.steamstatic.com/steam/apps/219760/manuals/Beyond_manual_english_UK.pdf?t=1568735797) describes a journal with named conversation entries that expand into the dialogue. That is a useful precedent for retrieval rather than a single growing transcript, not a requirement to copy its quest system. Here conversations have topic titles and locations, expand in spoken order, and can be searched by content. Exact repeated answers do not create more entries. Changed responses remain available. Evidence and established conclusions retain their own section so conversation history does not become a substitute objective list.
 
+## Conversation exhaustion and recoverable introductions
+
+Adventure Creator’s [Conversations 1](https://adventurecreator.org/tutorials/conversations-1) demonstrates nested conversations with a return to their parent; [Conversations 2](https://adventurecreator.org/tutorials/conversations-2) demonstrates conditionally enabled questions and changing responses. These are useful implementation examples, not proof of a single universal dialogue convention.
+
+This case treats each meaningful answer as consumable information. Completing it retires that answer, not its entire subtree. An already-read parent remains a navigation entry while any eligible descendant is unexplored. Re-entering it does not repeat the parent speech. A branch provides an explicit return, and exhausting its last answer automatically returns to the nearest parent with choices. New story conditions can expose a different answer under the same question. Persist answer identities separately from the bounded transcript so journal trimming cannot revive exhausted questions. Brindle’s memory question must reopen when music and light make her testimony possible.
+
+The introduction is a received letter rather than an interruptible conversation. Its full contents are recorded before dismissing the reading panel, and the journal retains it. This applies Gilbert’s concern for intelligible initial goals to this particular opening without forcing the player through a sequence of speeches. Later spoken scenes retain their displayed-lines-only journal policy.
+
+## Inventory and feedback locality
+
+Adventure Creator’s [Inventory interaction menus](https://adventurecreator.org/tutorials/inventory-interaction-menus) demonstrates choosing an item’s action inside Inventory and selecting another item for combination. Our UI uses explicit **Use in scene** and **Combine with…** actions after selecting an item. Combination partners, cancellation, resulting objects and failure text remain in the same panel. Selection is visible, the source cannot be selected as its own partner, and cancelling or failing preserves both items. Only a deliberate scene-use action closes the panel with an equipped item.
+
+Keep feedback beside its cause. An observation describes the fictional clue, while the Casebook holds the evidence. This case omits an additional “Evidence recorded” acknowledgement rather than mixing system messages into narration or creating another notification layer.
+
 ## Inspiration boundaries
 
 **Maniac Mansion** suggests an inhabited house with responsive characters and objects; its dead ends are not a goal. **Monkey Island** suggests a distinctive protagonist and comprehensible puzzle goals, rather than a required setting or verb count. **Day of the Tentacle** suggests making puzzles and presentation share a coherent fictional logic; multiple protagonists and time travel are separate mechanics that this case does not implement.

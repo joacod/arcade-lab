@@ -60,7 +60,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
         <div class="game-menu-content"></div>
         <div class="game-menu-utilities"><button type="button" class="game-menu-mute" aria-label="Mute sound" aria-keyshortcuts="S" aria-pressed="false">Mute sound (S)</button><button type="button" class="game-menu-fullscreen" hidden aria-keyshortcuts="F">Fullscreen (F)</button></div>
       </div>
-      <div class="game-menu-preferences" hidden><div class="game-menu-preference-fields"></div><section class="game-menu-controls" aria-labelledby="${config.id}-help"><h2 id="${config.id}-help">How to play</h2><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound<br>Escape goes back, pauses play, or exits fullscreen.</p></section></div>
+      <div class="game-menu-preferences" hidden><div class="game-menu-preference-fields"></div><section class="game-menu-controls" aria-labelledby="${config.id}-help"><h2 id="${config.id}-help">How to play</h2><div class="game-menu-instructions"></div><p class="game-menu-key-guide"><b>P</b> Pause / Resume · <b>F</b> Fullscreen<br>In menus: <b>S</b> Sound<br>Escape exits browser fullscreen.</p></section></div>
     </div>
     <div class="game-menu-notices" aria-live="polite"><p class="game-menu-art-status" hidden></p><button type="button" class="game-menu-retry-art" hidden>Retry artwork</button><p class="game-menu-sound-status" hidden></p><p class="game-menu-display-status" hidden></p></div>
     <footer class="game-menu-actions">${config.actions.map(action => `<button type="button" data-menu-action="${action.id}" class="${action.primary ? 'game-menu-primary' : ''}" hidden>${action.label}</button>`).join('')}<button type="button" class="game-menu-open-settings" hidden>Settings</button><button type="button" class="game-menu-back" hidden><span aria-hidden="true">← </span><span class="game-menu-back-label"></span></button></footer>
@@ -71,7 +71,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   config.pause.classList.add('game-pause');
   config.pause.textContent = 'Pause (P)';
   config.pause.setAttribute('aria-label', 'Pause');
-  config.pause.setAttribute('aria-keyshortcuts', 'P Escape');
+  config.pause.setAttribute('aria-keyshortcuts', 'P');
   config.pause.title = 'Pause (P)';
   const name = layer.querySelector<HTMLElement>('.game-menu-name')!;
   const notices = layer.querySelector<HTMLElement>('.game-menu-notices')!;
@@ -138,16 +138,13 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
   let muted = false, screen = '';
   root.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey
-      || !['KeyP', 'KeyF', 'KeyS', 'Escape'].includes(event.code)) return;
+      || !['KeyP', 'KeyF', 'KeyS'].includes(event.code)) return;
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable
       || target.closest('input:not([type="radio"]):not([type="checkbox"]), textarea, select, [role="textbox"], [role="combobox"], [role="listbox"]'))) return;
     if (event.code === 'KeyF') {
       if (!fullscreen.hidden && !fullscreen.disabled) { event.preventDefault(); fullscreen.click(); }
       return;
-    }
-    if (event.code === 'Escape' && settingsOpen && !document.fullscreenElement) {
-      event.preventDefault(); showSettings(false); return;
     }
     if (event.code === 'KeyS') {
       if (screen !== 'title' && screen !== 'paused') return;
@@ -157,8 +154,7 @@ export function createGameMenu<Action extends string, Screen extends string>(roo
     const button = screen === 'playing' ? config.pause : screen === 'paused' && event.code === 'KeyP'
       ? actions.find(button => button.dataset.menuAction === 'resume') : undefined;
     if (!button || button.disabled || button.hidden && !settingsOpen) return;
-    // Fullscreen Escape belongs to the browser, even when it also reaches us.
-    if (event.code !== 'Escape' || !document.fullscreenElement) event.preventDefault();
+    event.preventDefault();
     button.click();
   }, { signal: config.signal });
   actions.forEach((button, i) => button.addEventListener('click', () => config.onAction(config.actions[i]!.id), { signal: config.signal }));
