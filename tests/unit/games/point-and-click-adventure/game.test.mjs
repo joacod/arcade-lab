@@ -37,6 +37,28 @@ test('replacing and cancelling an approach cannot execute its stale pickup', () 
   assert.equal(run.inventory.poker, 'world');
   at(run, 'brush'); assert.equal(run.inventory.brush, 'inventory'); assert.equal(visible(run, 'brush'), false);
 });
+test('nearby actions execute immediately and room travel arrives beside the reciprocal doorway', () => {
+  const run = createRun(); run.room = 'gallery'; run.actor = { ...getTarget('portrait').at };
+  dispatch(run, interaction(run, 'portrait').command);
+  assert.equal(has(run, 'vent'), true); assert.equal(run.pending, undefined);
+  for (const [exit, entrance, facing] of [['galleryHall', 'hallGallery', -1], ['hallLibrary', 'libraryHall', 1], ['libraryKitchen', 'kitchenLibrary', 1]]) {
+    at(run, exit);
+    const door = getTarget(entrance);
+    assert.equal(run.room, door.room); assert.equal(run.facing, facing);
+    assert.equal(run.actor.y, door.at.y);
+    assert.ok((run.actor.x - door.at.x) * facing > 0);
+    assert.ok(rooms[run.room].floor.some(floor => inside(run.actor, floor)));
+  }
+});
+test('walking retains its travel budget across route waypoints', () => {
+  const run = createRun();
+  run.actor = { x: 100, y: 405 };
+  run.pending = { path: [{ x: 101, y: 405 }, { x: 200, y: 405 }], command: undefined };
+  const split = structuredClone(run);
+  stepRun(run, 1 / 30); stepRun(split, 1 / 60); stepRun(split, 1 / 60);
+  assert.ok(Math.hypot(run.actor.x - split.actor.x, run.actor.y - split.actor.y) < 1e-9);
+  assert.ok(run.actor.x > 101);
+});
 test('inventory recipes are atomic and wrong uses preserve essential tools', () => {
   const run = createRun(); run.inventory.brush = run.inventory.poker = 'inventory';
   dispatch(run, { kind: 'combine', first: 'brush', second: 'lens' }); assert.equal(run.inventory.brush, 'inventory');

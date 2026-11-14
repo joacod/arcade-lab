@@ -21,13 +21,16 @@ Edit complete cels or room plates in the source PNGs, then export again.
 | Source | Layout and runtime contract |
 | --- | --- |
 | `rooms.png` | 1366 × 1151, two columns and three rows: hall/gallery, library/kitchen, bell/spare hall. Inspected seams and floor-edge registration live in `pack.mjs`. The five runtime plates are 960 × 540, with the wall/floor edge registered to y=365. |
-| `cast.png` | 1536 × 1024, four columns and three rows. Seven complete Wren cels followed by Evelyn, Vale, Oswald, Brindle and Guest. Explicit crop rectangles, hip/boot anchors and clip order live in `../art.ts`. |
+| `cast.png` | 1536 × 1024, four columns and three rows. Wren's standing, reach and lantern poses and the five household characters. The original walk studies remain in the source but are superseded by `walk.png`. Explicit crop rectangles and hip/boot anchors live in `../art.ts`. |
+| `walk.png` | 1536 × 1024, four columns and two rows. Eight complete Wren cels in chronological stride order, registered to a common hip column and boot baseline. The runtime uses `walk.webp`; frame roles, source-scale adjustment and stride distance live in `../art.ts`. |
 | `props.png` | 1254 × 1254, five columns and rows of complete doors, clues, equipment and object states. `prop-frames.ts` records alpha bounds. |
 | `equipment.png` | 1254 × 1254, three columns and rows of inventory tools, casebook, console table, brush and satchel. `equipment-frames.ts` records alpha bounds. |
 
-All artwork uses smooth sampling. Wren's cels use a common .48 world-unit source
-scale and individually registered hips/feet, including the shorter bent reach
-drawing. His four-cel stride covers 72 world units and follows observed travel;
+All artwork uses smooth sampling. Wren's standing and action cels use a common
+.48 world-unit source scale and individually registered hips/feet, including the
+shorter bent reach drawing. The larger walk drawings use a two-thirds adjustment
+to retain the same apparent height. His eight-cel stride follows observed travel, with its distance defined in
+`../art.ts` to keep the steps readable at the game's walking speed;
 standing is separate. Facing mirrors complete cels around their anchor.
 NPCs use their authored target height, while the Guest occupies its separate
 hovering target inside the bell. Prop drawings fit the target's visual footprint
@@ -43,6 +46,11 @@ Canvas effects. The bell is drawn before its independent inhabitant.
 
 Walking, reaching and lantern operation observe commands, displacement and
 completed approaches. They never delay an action or alter a puzzle result.
+Examination keeps the standing pose; brief reach and lantern poses mark physical
+interactions. Static scenery is cached at display resolution and rebuilt for
+room, prop-state or display changes. Animated actors remain separate. Light
+stamps and the vignette are rasterized once instead of painting gradients every
+frame, and live sprites use smooth low-cost sampling.
 Active-run time freezes cosmetic motion while paused. Reduced motion removes
 dust, ghost drift and light flicker while retaining locomotion and object states.
 Room changes and new runs reset cosmetic registration. Required artwork is

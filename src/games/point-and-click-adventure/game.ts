@@ -115,7 +115,12 @@ function interact(run: Run, id: TargetId) {
   const target = getTarget(id);
   if (target.destination) {
     if (target.destination === 'bell' && !has(run, 'confronted')) { message(run, 'Oswald bars the door.'); return; }
-    run.room = target.destination; run.actor = { ...rooms[run.room].entry }; run.conversation = undefined; changed(run);
+    const from = run.room;
+    run.room = target.destination;
+    const entrance = targetIds.map(getTarget).find(t => t.room === run.room && t.destination === from);
+    run.facing = entrance && entrance.at.x > 480 ? -1 : 1;
+    run.actor = entrance ? project({ x: entrance.at.x + run.facing * 60, y: entrance.at.y }, rooms[run.room].floor) : { ...rooms[run.room].entry };
+    run.conversation = undefined; changed(run);
     message(run, ''); run.events.push('mechanism'); return;
   }
   if (['evelyn', 'vale', 'oswald', 'brindle'].includes(id)) {
@@ -228,7 +233,9 @@ export function dispatch(run: Run, command: Command) {
     run.pending = undefined;
     const path = route(run.actor, getTarget(command.target).at, rooms[run.room].floor);
     if (!path) { message(run, 'There is no clear approach to that target.'); return; }
-    run.pending = { path, command }; message(run, '');
+    message(run, '');
+    if (Math.hypot(run.actor.x - getTarget(command.target).at.x, run.actor.y - getTarget(command.target).at.y) < 1) execute(run, command);
+    else run.pending = { path, command };
   } else if (command.kind === 'walk') {
     const destination = project(command.point, rooms[run.room].floor), path = route(run.actor, destination, rooms[run.room].floor);
     run.pending = path ? { path, command: undefined } : undefined;
@@ -239,13 +246,19 @@ export function stepRun(run: Run, dt: number) {
   if (run.status !== 'active' || !Number.isFinite(dt) || dt <= 0) return;
   const pending = run.pending;
   if (!pending || run.dialogue) return;
-  const point = pending.path[0];
-  if (!point) return;
-  const dx = point.x - run.actor.x, dy = point.y - run.actor.y, distance = Math.hypot(dx, dy), travel = 290 * Math.min(dt, .1);
-  if (dx) run.facing = Math.sign(dx);
-  if (distance <= travel) {
-    run.actor = { ...point }; pending.path.shift();
-    if (!pending.path.length) { run.pending = undefined; run.revision++; if (pending.command) execute(run, pending.command); else message(run, ''); changed(run); }
-  } else { run.actor.x += dx / distance * travel; run.actor.y += dy / distance * travel; }
+  let travel = 320 * Math.min(dt, .1);
+  while (pending.path.length) {
+    const point = pending.path[0]!;
+    const dx = point.x - run.actor.x, dy = point.y - run.actor.y, distance = Math.hypot(dx, dy);
+    if (dx) run.facing = Math.sign(dx);
+    if (distance > travel) {
+      run.actor.x += dx / distance * travel; run.actor.y += dy / distance * travel;
+      return;
+    }
+    run.actor = { ...point }; pending.path.shift(); travel -= distance;
+  }
+  run.pending = undefined; run.revision++;
+  if (pending.command) execute(run, pending.command); else message(run, '');
+  changed(run);
 }
 export function takeEvents(run: Run) { return run.events.splice(0); }

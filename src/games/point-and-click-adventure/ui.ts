@@ -5,6 +5,7 @@ import { interaction } from './interaction.ts';
 import { transform } from './presentation.ts';
 import { bindingLabel, createKeyMap } from '../../engine/bindings.ts';
 import { bindings } from './input.ts';
+import { setAttribute, setText } from '../../common/ui/dom.ts';
 export type Action = 'inventory' | 'casebook' | 'cancel';
 type View = 'inventory' | 'casebook' | 'journal' | 'letter';
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = '') {
@@ -26,6 +27,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const heading = node('div'); heading.append(location); header.append(heading, pause);
   const stage = node('div', '', 'adventure-stage'), scene = node('div', '', 'adventure-scene'); scene.append(surface); stage.append(scene);
   const hotspots = node('div', '', 'adventure-hotspots'); hotspots.setAttribute('aria-label', 'Scene actions'); hotspots.setAttribute('role', 'group'); scene.append(hotspots);
+  const targetButtons = new Map<TargetId, HTMLButtonElement>();
   const dialogue = node('section', '', 'adventure-dialogue'); dialogue.setAttribute('aria-label', 'Conversation'); dialogue.hidden = true;
   const feedback = node('div', '', 'adventure-feedback');
   const narration = node('p', '', 'adventure-narration'); narration.setAttribute('role', 'status');
@@ -73,6 +75,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   function focus(element: HTMLElement | null | undefined) { element?.focus({ preventScroll: true }); }
   function open(next: View) {
     if (run.dialogue || run.conversation) return;
+    if (run.pending) send({ kind: 'cancel' });
     const opening = !view;
     if (opening) opener = document.activeElement instanceof HTMLElement ? document.activeElement : surface;
     if (next !== 'inventory') { inventoryItem = undefined; combining = false; }
@@ -88,7 +91,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     const command = interaction(run, id, item).command;
     // Item use is a single explicit action, never a sticky cursor mode.
     item = undefined; combining = false;
-    send(command); refresh(true);
+    send(command);
   }
   function chooseItem(id: ItemId) {
     if (combining && inventoryItem) {
@@ -120,16 +123,20 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     toolbar.inert = talking || !!view;
     controls.inventory.setAttribute('aria-expanded', String(view === 'inventory'));
     controls.casebook.setAttribute('aria-expanded', String(view === 'casebook' || view === 'journal'));
-    hotspots.replaceChildren();
     // Smaller overlapping targets (e.g. the Guest inside the bell) stay on top.
     const targets = roomTargets(run).sort((a, b) => getTarget(b).w * getTarget(b).h - getTarget(a).w * getTarget(a).h);
+    for (const [id, b] of targetButtons) if (!targets.includes(id)) { b.remove(); targetButtons.delete(id); }
     for (const id of targets) {
       const t = getTarget(id), action = interaction(run, id, item);
-      const b = button('', `target-${id}`, () => activateTarget(id)); b.className = 'adventure-hotspot'; b.dataset.edge = t.x < 160 ? 'left' : t.x + t.w > 800 ? 'right' : ''; b.setAttribute('aria-label', action.label);
-      const label = node('span', action.label); b.append(label);
-      b.style.left = `${(t.x + t.w / 2) / 960 * 100}%`; b.style.top = `${(t.y + t.h / 2) / 540 * 100}%`;
-      b.style.width = `${t.w / 960 * 100}%`; b.style.height = `${t.h / 540 * 100}%`;
-      hotspots.append(b);
+      let b = targetButtons.get(id);
+      if (!b) {
+        b = button('', `target-${id}`, () => activateTarget(id)); b.className = 'adventure-hotspot'; b.dataset.edge = t.x < 160 ? 'left' : t.x + t.w > 800 ? 'right' : '';
+        b.append(node('span'));
+        b.style.left = `${(t.x + t.w / 2) / 960 * 100}%`; b.style.top = `${(t.y + t.h / 2) / 540 * 100}%`;
+        b.style.width = `${t.w / 960 * 100}%`; b.style.height = `${t.h / 540 * 100}%`;
+        targetButtons.set(id, b); hotspots.append(b);
+      }
+      setAttribute(b, 'aria-label', action.label); setText(b.firstElementChild!, action.label);
     }
     selected.replaceChildren(); selected.hidden = !item && !['drawn', 'closed'].includes(run.lantern.phase);
     if (item) {
