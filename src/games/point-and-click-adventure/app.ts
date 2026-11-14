@@ -7,7 +7,7 @@ import { disposeAll } from '../../engine/disposal.ts';
 import { createGameMenu, menuActions, type CommonMenuIntent } from '../../common/ui/menu.ts';
 import { createThemeChoices } from '../../common/ui/theme-choices.ts';
 import { contentErrors } from './content-validation.ts';
-import { createRun, dispatch, startScene, stepRun, takeEvents, type Command } from './game.ts';
+import { createRun, dispatch, introduce, stepRun, takeEvents, type Command } from './game.ts';
 import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
@@ -59,7 +59,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
       gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
-      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Choose an item from <b>Inventory (I)</b>, then click its destination. <b>Combine…</b> lets you choose a second inventory item. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Read your evidence or choose <b>Connect clues</b> to select a pair and make a deduction. Search the journal by person, place or words and expand an entry to reread it.</p><p>Escape closes a panel or cancels a selected item or approach before pausing. Progress saves automatically after completed interactions.</p>',
+      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Select an item in <b>Inventory (I)</b>, then choose <b>Use in scene</b> or <b>Combine with…</b>. Combinations and their results stay inside Inventory. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Read your evidence or choose <b>Connect clues</b> to select a pair and make a deduction. Search the journal by person, place or words and expand an entry to reread it.</p><p>Use Close or the panel’s I / B shortcut to return to the scene. Escape belongs to browser fullscreen. Progress saves automatically after completed interactions.</p>',
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });
@@ -88,7 +88,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       if (intent === 'quit') { dispose(); onExit(); return; }
       if (intent === 'pause') { suspend(); return; }
       if (intent === 'start' || intent === 'restart') {
-        run = createRun(); savedRevision = -1; presentationTime = 0; ui.reset(); sound.reset(); sound.activate(); startScene(run, 'intro'); show('playing');
+        run = createRun(); savedRevision = -1; presentationTime = 0; ui.reset(); sound.reset(); sound.activate(); introduce(run); show('playing'); ui.showLetter();
       } else if (intent === 'resume') { sound.activate(); show('playing'); }
     }
     function send(command: Command) {

@@ -19,11 +19,19 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).focus();
   await page.keyboard.press('KeyI');
   await page.getByRole('button', { name: 'Spirit lantern', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Combine with…', exact: true }).click();
+  await page.getByRole('button', { name: 'Magnifying glass', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('status')).toHaveText('Those items have no useful connection.');
+  await expect(page.getByRole('button', { name: 'Spirit lantern', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Spirit lantern', exact: true }).click();
+  await page.getByRole('button', { name: 'Use in scene', exact: true }).click();
+  await expect(page.locator('.adventure-narration')).toBeHidden();
   await page.getByRole('button', { name: 'Use Spirit lantern on Screaming portrait', exact: true }).tap();
   await expect(page.locator('.adventure-narration')).toContainText('No spectral outline');
   // Using an item returns to ordinary interaction without another mode switch.
   await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).tap();
-  await expect(page.locator('.adventure-narration')).toContainText('Evidence recorded');
+  await expect(page.locator('.adventure-narration')).toContainText('A physical draft.');
   await page.keyboard.press('KeyB');
   // Reading text and pressing disabled controls must not focus the inert scene.
   await page.getByRole('heading', { name: 'Casebook', exact: true }).tap();
@@ -41,7 +49,7 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   await expect(page.getByRole('button', { name: 'Connect clues', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Journal', exact: true }).click();
   const search = page.getByRole('searchbox', { name: 'Search journal' });
-  await search.pressSequentially('portrait');
+  await search.pressSequentially('physical draft');
   await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
   await expect(page.locator('.adventure-journal-entry')).toHaveCount(1);
   await page.locator('.adventure-journal-entry summary').tap();
@@ -50,6 +58,9 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
   await search.focus();
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page.locator('.play-surface')).toBeFocused();
 });

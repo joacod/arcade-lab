@@ -6,7 +6,7 @@ Author-facing spoilers for the playable Prototype. [`content.ts`](../../../src/g
 
 ## Mystery and cast
 
-Blackthorn Castle, 1889. Professor Lucien Vale hires **Percival Wren, Consulting Detective of Unnatural Affairs**, to remove the household ghosts before the great bell strikes thirteen. Wren investigates with ordinary observation and improvised brass, leather and glass apparatus. The supernatural rules are invented historical fantasy.
+Blackthorn Castle, 1889. A letter from Professor Lucien Vale hires **Percival Wren, Consulting Detective of Unnatural Affairs**, to remove the household ghosts before the great bell strikes thirteen. Wren investigates with ordinary observation and improvised brass, leather and glass apparatus. The supernatural rules are invented historical fantasy.
 
 The household ghosts are the guards of a prison. Vale damaged the ward around the bell, then staged screaming portraits with a service-tube mechanism to persuade the owner that the ghosts must go. He believes the imprisoned **Thirteenth Guest** will give him command of the dead. It is actually rehearsing his voice so it can leave wearing his identity.
 
@@ -69,7 +69,7 @@ The Casebook requires exactly the draft and manufactured-scream evidence to supp
 
 ### The household guards
 
-Evelyn’s conversation supplies the household key. Using it on the kitchen cabinet retrieves the winding key. Wind the music box and illuminate the photograph with the lantern, in either order, then ask Brindle what happened at the bell. Completing her scene records testimony. The keeper’s journal can be read independently.
+Evelyn’s housekeeper topic opens follow-ups about the photograph and the household key. The key answer supplies the key; each follow-up retires separately, and the parent remains until both are explored. Using it on the kitchen cabinet retrieves the winding key. Wind the music box and illuminate the photograph with the lantern, in either order, then ask Brindle what happened at the bell. Completing her scene records testimony. The keeper’s journal can be read independently.
 
 The Casebook requires exactly the keeper’s account and Brindle’s testimony to support the guardians conclusion. The tune and illuminated photograph remain effective; there is no timed conversation window or repeated winding requirement.
 

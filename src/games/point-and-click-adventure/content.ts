@@ -80,14 +80,14 @@ export type TargetId = keyof typeof targets;
 export const targetIds = Object.keys(targets) as TargetId[];
 export const getTarget = (id: TargetId): TargetDefinition => targets[id];
 export interface Line { speaker: string; text: string }
-export const scenes = {
-  intro: [
-    { speaker: 'Blackthorn Castle · 1889', text: 'The carriage leaves. The castle bell strikes twelve… and draws breath for one more.' },
-    { speaker: 'Vale', text: 'Mr. Wren. Clear this house of its violent spirits. Particularly the knight at the bell door. Before thirteen.' },
-    { speaker: 'Wren', text: 'That groan is merely wind in a loose pipe.' },
-    { speaker: 'A voice at the window', text: 'Then kindly close it. Some of us are trying to be dead.' },
-    { speaker: 'Wren', text: 'A loose whisper. Hardly the violent haunting I was promised.' },
+export const invitation = {
+  title: 'Letter from Professor Vale',
+  lines: [
+    { speaker: 'Professor Lucien Vale', text: 'Mr. Percival Wren, Consulting Detective of Unnatural Affairs — Your presence is requested at Blackthorn Castle. The household spirits have become violent. The portraits scream, and a ghostly knight bars the bell door.' },
+    { speaker: 'Professor Lucien Vale', text: 'Remove these troublesome presences, particularly the knight, before the great bell strikes thirteen. Lady Evelyn Blackthorn will receive you. Your customary fee will be paid. — Professor Lucien Vale, Blackthorn Castle, 1889.' },
   ],
+} satisfies { title: string; lines: Line[] };
+export const scenes = {
   testimony: [
     { speaker: 'Brindle', text: 'That melody. Evelyn used to hide here when the storms came. Keep your light on the photograph, please. It helps me remember myself.' },
     { speaker: 'Wren', text: 'What happened at the bell?' },

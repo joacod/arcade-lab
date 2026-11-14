@@ -1,4 +1,4 @@
-import { rooms, type Line, type RoomId } from './content.ts';
+import { rooms, invitation, type Line, type RoomId } from './content.ts';
 
 export interface JournalEntry { title: string; room?: RoomId; lines: Line[] }
 const ENTRY_LIMIT = 128;
@@ -8,7 +8,14 @@ export function beginEntry(journal: JournalEntry[], title: string, room: RoomId,
 export function finishEntry(journal: JournalEntry[]) {
   const latest = journal.at(-1);
   if (latest && journal.slice(0, -1).some(entry => JSON.stringify(entry) === JSON.stringify(latest))) journal.pop();
-  if (journal.length > ENTRY_LIMIT) journal.shift();
+  if (journal.length > ENTRY_LIMIT) journal.splice(journal.findIndex(entry => entry.title !== invitation.title), 1);
+}
+/** Received documents remain complete even when their reading panel is dismissed. */
+export function retainInvitation(journal: JournalEntry[]) {
+  if (journal.some(entry => entry.title === invitation.title)) return false;
+  journal.unshift({ title: invitation.title, room: 'hall', lines: invitation.lines.map(line => ({ ...line })) });
+  if (journal.length > ENTRY_LIMIT) journal.splice(1, 1);
+  return true;
 }
 export function matchesEntry(entry: JournalEntry, query: string) {
   const text = [entry.title, entry.room ? rooms[entry.room].name : '', ...entry.lines.map(line => `${line.speaker} ${line.text}`)].join(' ').toLocaleLowerCase();

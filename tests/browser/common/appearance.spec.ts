@@ -18,6 +18,8 @@ test('switching presentation preserves the paused run and Resume advances it', a
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);
   await page.keyboard.press('Escape');
+  await expect(page.locator('.skybreak-app')).toHaveAttribute('data-screen', 'playing');
+  await page.keyboard.press('p');
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
   const frozen = await page.evaluate(() => {
     (window as any).retainedRun = (window as any).presentationRun;
@@ -40,8 +42,7 @@ test('switching presentation preserves the paused run and Resume advances it', a
   expect(await page.evaluate(() => (window as any).presentationRun === (window as any).retainedRun)).toBe(true);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   await page.keyboard.press('p');
   await page.clock.runFor(50);
   expect(await page.evaluate(() => (window as any).presentationRun.elapsed)).toBeGreaterThan(JSON.parse(frozen).elapsed);

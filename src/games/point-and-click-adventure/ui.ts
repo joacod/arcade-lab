@@ -1,4 +1,4 @@
-import { rooms, items, itemIds, getTarget, evidence, deductions, type TargetId, type ItemId, type EvidenceId, type DeductionId } from './content.ts';
+import { rooms, items, itemIds, invitation, getTarget, evidence, deductions, type TargetId, type ItemId, type EvidenceId, type DeductionId } from './content.ts';
 import { has, owns, roomTargets, topics, type Run, type Command } from './game.ts';
 import { matchesEntry } from './journal.ts';
 import { interaction } from './interaction.ts';
@@ -6,12 +6,13 @@ import { transform } from './presentation.ts';
 import { bindingLabel, createKeyMap } from '../../engine/bindings.ts';
 import { bindings } from './input.ts';
 export type Action = 'inventory' | 'casebook' | 'cancel';
-type View = 'inventory' | 'casebook' | 'journal';
+type View = 'inventory' | 'casebook' | 'journal' | 'letter';
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = '') {
   const element = document.createElement(tag); element.textContent = text; element.className = className; return element;
 }
 export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, send: (command: Command) => void) {
   let run: Run, item: ItemId | undefined, view: View | undefined;
+  let inventoryItem: ItemId | undefined, inventoryResult = '';
   let combining = false, lastRevision = -1, selection = new Set<EvidenceId>(), connecting = false, deductionResult = '';
   let journalQuery = ''; const expandedEntries = new Set<number>();
   let opener: HTMLElement | undefined, hadDialogue = false, hadConversation = false;
@@ -45,7 +46,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const overlay = node('div', '', 'adventure-overlay'); overlay.hidden = true;
   const sheet = node('section', '', 'adventure-sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-labelledby', 'adventure-sheet-title');
   const sheetHeader = node('header'), sheetTitle = node('h2'); sheetTitle.id = 'adventure-sheet-title';
-  const close = button('Close (Esc)', 'close', () => closeView()); close.setAttribute('aria-label', 'Close'); close.setAttribute('aria-keyshortcuts', 'Escape');
+  const close = button('Close', 'close', () => closeView());
   const tabs = node('nav', '', 'adventure-tabs'); tabs.setAttribute('aria-label', 'Casebook sections');
   const evidenceTab = button('Evidence', 'evidence-tab', () => open('casebook'));
   const journalTab = button('Journal', 'journal-tab', () => open('journal')); tabs.append(evidenceTab, journalTab);
@@ -74,10 +75,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     if (run.dialogue || run.conversation) return;
     const opening = !view;
     if (opening) opener = document.activeElement instanceof HTMLElement ? document.activeElement : surface;
+    if (next !== 'inventory') { inventoryItem = undefined; combining = false; }
+    else if (view !== 'inventory') { item = undefined; inventoryItem = undefined; combining = false; inventoryResult = ''; }
     view = next; refresh(true); if (opening) focus(close);
   }
   function closeView(restore = true) {
-    view = undefined; combining = false; refresh(true);
+    view = undefined; inventoryItem = undefined; combining = false; refresh(true);
     if (restore) focus(opener?.isConnected && !opener.closest('[hidden]') ? opener : surface);
   }
   function activateTarget(id: TargetId) {
@@ -88,12 +91,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     send(command); refresh(true);
   }
   function chooseItem(id: ItemId) {
-    if (combining && item) {
-      const first = item; item = undefined; combining = false;
-      send({ kind: 'combine', first, second: id }); refresh(true);
+    if (combining && inventoryItem) {
+      const first = inventoryItem; inventoryItem = undefined; combining = false;
+      send({ kind: 'combine', first, second: id }); inventoryResult = run.message;
     } else {
-      item = id; view = undefined; combining = false; refresh(true); focus(surface);
+      inventoryItem = id; inventoryResult = '';
     }
+    refresh(true);
   }
   function refresh(force = false) {
     if (!run || !force && lastRevision === run.revision) return;
@@ -101,11 +105,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusKey = focused?.dataset.focus;
     const ownedFocus = !!focused && [panel, caseActions, hotspots, selected, dialogue].some(container => container.contains(focused));
+    if (inventoryItem && !owns(run, inventoryItem)) { inventoryItem = undefined; combining = false; }
     if (item && !owns(run, item)) { item = undefined; combining = false; }
     const talking = !!run.dialogue || !!run.conversation;
     if (talking) { view = undefined; item = undefined; combining = false; }
     location.textContent = rooms[run.room].name;
-    narration.textContent = run.message; narration.hidden = !run.message || run.message === deductionResult;
+    narration.textContent = run.message; narration.hidden = !run.message || run.messageContext !== 'scene';
+    close.textContent = view === 'letter' ? 'Begin investigation' : 'Close';
     overlay.hidden = !view; tabs.hidden = view !== 'casebook' && view !== 'journal'; searchRow.hidden = view !== 'journal';
     scene.inert = !!view; header.inert = !!view; surface.inert = talking;
     hotspots.inert = talking; hotspots.hidden = talking;
@@ -128,23 +134,35 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     if (item) {
       const current = item;
       selected.append(node('strong', items[current].name));
-      selected.append(button('Combine…', 'combine', () => { combining = true; open('inventory'); }));
       if (current === 'fork' && run.lantern.phase !== 'closed') selected.append(button('Sound fork', 'tool-fork', () => { item = undefined; send({ kind: 'tool', item: 'fork' }); }));
     }
     // Surface the equipment's next physical action at the moment it matters.
     if (run.lantern.phase === 'drawn') selected.append(button('Close lantern shutter', 'tool-lantern', () => { item = undefined; send({ kind: 'tool', item: 'lantern' }); }));
     if (run.lantern.phase === 'closed') selected.append(button('Sound tuning fork', 'tool-fork', () => { item = undefined; send({ kind: 'tool', item: 'fork' }); }));
     if (item) selected.append(controls.cancel);
-    panel.replaceChildren(); caseActions.replaceChildren(); caseActions.hidden = view !== 'casebook';
+    panel.replaceChildren(); caseActions.replaceChildren(); caseActions.hidden = view !== 'casebook' && view !== 'inventory';
     if (view === 'inventory') {
-      sheetTitle.textContent = combining && item ? `Combine ${items[item].name} with…` : 'Inventory';
+      sheetTitle.textContent = combining && inventoryItem ? `Combine ${items[inventoryItem].name} with…` : 'Inventory';
       panel.append(node('p', `Spirit lantern: ${run.lantern.occupant === 'empty' ? 'empty' : `${run.lantern.occupant} · ${run.lantern.phase}`}`, 'adventure-lantern'));
       const grid = node('div', '', 'adventure-items');
       for (const id of itemIds.filter(id => owns(run, id))) {
         const b = button('', `item-${id}`, () => chooseItem(id)); b.setAttribute('aria-label', items[id].name);
-        b.append(node('strong', items[id].name), node('small', items[id].description)); b.disabled = combining && id === item; grid.append(b);
+        b.append(node('strong', items[id].name), node('small', items[id].description)); b.disabled = combining && id === inventoryItem; b.setAttribute('aria-pressed', String(id === inventoryItem)); grid.append(b);
       }
       panel.append(grid);
+      if (inventoryItem) {
+        const current = inventoryItem;
+        caseActions.append(node('p', combining ? `Choose an item to combine with ${items[current].name}.` : items[current].name, 'adventure-selection-count'));
+        if (combining) caseActions.append(button('Cancel combination', 'stop-combining', () => { combining = false; refresh(true); }));
+        else {
+          caseActions.append(button('Use in scene', 'use-item', () => { item = current; closeView(false); focus(surface); }));
+          caseActions.append(button('Combine with…', 'combine', () => { combining = true; inventoryResult = ''; refresh(true); focus(panel.querySelector('button:not(:disabled)')); }));
+        }
+      }
+      if (inventoryResult) { const result = node('p', inventoryResult, 'adventure-case-result'); result.setAttribute('role', 'status'); caseActions.append(result); }
+    } else if (view === 'letter') {
+      sheetTitle.textContent = invitation.title;
+      for (const line of invitation.lines) panel.append(node('p', line.text));
     } else if (view === 'casebook') {
       sheetTitle.textContent = 'Casebook'; evidenceTab.setAttribute('aria-pressed', 'true'); journalTab.setAttribute('aria-pressed', 'false');
       const found = (Object.keys(evidence) as EvidenceId[]).filter(id => has(run, id));
@@ -210,6 +228,8 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       dialogue.append(node('strong', getTarget(run.conversation).name));
       const choices = node('div', '', 'adventure-topics');
       for (const t of topics(run, run.conversation)) choices.append(button(t.label, t.id, () => send({ kind: 'topic', id: t.id })));
+      if (run.topicPath.length) choices.append(button('Back to other questions', 'back-topics', () => send({ kind: 'back' })));
+      if (!choices.childElementCount) choices.append(node('p', 'No more questions for now.'));
       dialogue.append(choices, button('End conversation', 'leave', () => send({ kind: 'leave' })));
     }
     const startedDialogue = !!run.dialogue && !hadDialogue, startedTopics = !!run.conversation && !run.dialogue && hadDialogue;
@@ -231,28 +251,27 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   const shortcuts = createKeyMap(bindings);
   root.addEventListener('keydown', event => {
     if (root.dataset.screen !== 'playing' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.code !== 'Escape' && event.target instanceof HTMLElement && event.target.closest('input:not([type=checkbox]), textarea, select, [contenteditable]')) return;
+    if (event.target instanceof HTMLElement && event.target.closest('input:not([type=checkbox]), textarea, select, [contenteditable]')) return;
     const shortcut = shortcuts.get(event.code);
     if (shortcut) {
       event.preventDefault();
       if (!event.repeat) controls[shortcut].click();
       return;
     }
-    if (event.repeat || event.code !== 'Escape') return;
-    if (view) { event.preventDefault(); closeView(); }
-    else if (item || run.pending) { event.preventDefault(); action('cancel'); }
-    else if (run.conversation && !run.dialogue) { event.preventDefault(); send({ kind: 'leave' }); }
   }, { signal });
   function action(action: Action) {
-    if (action === 'cancel') { item = undefined; combining = false; send({ kind: 'cancel' }); refresh(true); focus(surface); }
+    if (action === 'cancel') {
+      if (view) { inventoryItem = undefined; combining = false; refresh(true); return; }
+      item = undefined; combining = false; send({ kind: 'cancel' }); refresh(true); focus(surface); }
     else if (view === action || action === 'casebook' && view === 'journal') closeView();
     else open(action);
   }
   signal.addEventListener('abort', () => { observer.disconnect(); root.replaceChildren(); }, { once: true });
   return { header, stage, scene, overlay, feedback, dialogue, toolbar, pause, controls,
+    showLetter() { open('letter'); },
     focusPlay() { focus(view ? close : run.dialogue || run.conversation ? dialogue.querySelector('button') : surface); },
     update(next: Run, force = false) { run = next; refresh(force); },
-    reset() { item = undefined; combining = false; selection = new Set(); connecting = false; deductionResult = ''; journalQuery = ''; search.value = ''; expandedEntries.clear(); view = undefined; lastRevision = -1; hadDialogue = false; hadConversation = false; },
+    reset() { item = undefined; inventoryItem = undefined; inventoryResult = ''; combining = false; selection = new Set(); connecting = false; deductionResult = ''; journalQuery = ''; search.value = ''; expandedEntries.clear(); view = undefined; lastRevision = -1; hadDialogue = false; hadConversation = false; },
     action,
   };
 }
