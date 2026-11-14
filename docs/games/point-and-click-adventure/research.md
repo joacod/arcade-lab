@@ -26,6 +26,12 @@ Clear story stakes and clues give the player something to investigate. They do n
 
 The [Adventure Game Studio hotspot tutorial](https://adventuregamestudio.github.io/ags-manual/acintro3.html) describes walk-to points before hotspot interactions. Its [general settings](https://adventuregamestudio.github.io/ags-manual/GeneralSettings.html) make walking before Look configurable, so this is a design choice rather than a universal genre rule. Here all world-targeted actions, including examining and reading, share the same approach/arrival requirement. A replacement or cancelled command cannot execute the old action or disclose its evidence. Inventory-only operations require no world approach.
 
+## Casebook and journal
+
+Evidence reading and deduction are separate interactions: browse collected facts, then explicitly connect a pair. The interface does not present undiscovered conclusions as disabled answers. This preserves the local deduction puzzle while making the selection controls meaningful at the moment they appear.
+
+The [Beyond Divinity manual](https://cdn.akamai.steamstatic.com/steam/apps/219760/manuals/Beyond_manual_english_UK.pdf?t=1568735797) describes a journal with named conversation entries that expand into the dialogue. That is a useful precedent for retrieval rather than a single growing transcript, not a requirement to copy its quest system. Here conversations have topic titles and locations, expand in spoken order, and can be searched by content. Exact repeated answers do not create more entries. Changed responses remain available. Evidence and established conclusions retain their own section so conversation history does not become a substitute objective list.
+
 ## Inspiration boundaries
 
 **Maniac Mansion** suggests an inhabited house with responsive characters and objects; its dead ends are not a goal. **Monkey Island** suggests a distinctive protagonist and comprehensible puzzle goals, rather than a required setting or verb count. **Day of the Tentacle** suggests making puzzles and presentation share a coherent fictional logic; multiple protagonists and time travel are separate mechanics that this case does not implement.

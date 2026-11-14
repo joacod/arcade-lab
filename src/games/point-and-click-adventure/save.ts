@@ -1,31 +1,32 @@
-import { rooms, itemIds, factIds, deductions, type Fact, type RoomId, type Line } from './content.ts';
+import { rooms, itemIds, factIds, deductions, type Fact, type RoomId } from './content.ts';
 import { createRun, has, wardReady, type Run } from './game.ts';
+import { restoreJournal, type JournalEntry } from './journal.ts';
 import { inside } from './navigation.ts';
 export interface Snapshot {
   room: RoomId; actor: { x: number; y: number }; facts: Fact[]; inventory: Run['inventory']; lantern: Run['lantern'];
-  status: Run['status']; transcript: Line[];
+  status: Run['status']; journal: JournalEntry[];
 }
 export function snapshot(run: Run): Snapshot {
   if (run.pending || run.dialogue) throw new Error('Save waits for a stable interaction boundary.');
   return structuredClone({ room: run.room, actor: run.actor, facts: run.facts, inventory: run.inventory, lantern: run.lantern,
-    status: run.status, transcript: run.transcript });
+    status: run.status, journal: run.journal });
 }
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value); }
 function oneOf(value: unknown, options: readonly string[]): boolean { return typeof value === 'string' && options.includes(value); }
-/** Validate before replacing the active run. No defaults or compatibility aliases. */
+/** Validate durable state before replacing the run; journal migration lives with its owner. */
 export function restore(value: unknown): Run | undefined {
   if (!record(value) || !oneOf(value.room, Object.keys(rooms)) || !record(value.actor) || !Number.isFinite(value.actor.x) || !Number.isFinite(value.actor.y)
     || !Array.isArray(value.facts) || value.facts.length > factIds.length || !value.facts.every(f => oneOf(f, factIds)) || new Set(value.facts).size !== value.facts.length
     || !record(value.inventory) || Object.keys(value.inventory).length !== itemIds.length || !itemIds.every(id => oneOf((value.inventory as Record<string, unknown>)[id], ['inventory', 'world', 'consumed']))
     || !record(value.lantern) || !oneOf(value.lantern.occupant, ['empty', 'whisper', 'guest']) || !oneOf(value.lantern.phase, ['open', 'drawn', 'closed', 'sealed'])
-    || !oneOf(value.status, ['active', 'complete']) || !Array.isArray(value.transcript) || value.transcript.length > 80
-    || !value.transcript.every(l => record(l) && typeof l.speaker === 'string' && l.speaker.length < 120 && typeof l.text === 'string' && l.text.length < 2000)) return;
+    || !oneOf(value.status, ['active', 'complete'])) return;
+  const journal = restoreJournal(value); if (!journal) return;
   const s = value as unknown as Snapshot;
   if (!rooms[s.room].floor.some(floor => inside(s.actor, floor))) return;
   const run = createRun();
   // Only durable fields cross this boundary, even if a save includes runtime-shaped extras.
   Object.assign(run, structuredClone({ room: s.room, actor: s.actor, facts: s.facts, inventory: s.inventory,
-    lantern: s.lantern, status: s.status, transcript: s.transcript }));
+    lantern: s.lantern, status: s.status, journal }));
   if ((run.lantern.occupant === 'empty') !== (run.lantern.phase === 'open') || has(run, 'released') && run.lantern.occupant === 'whisper') return;
   if (['lens', 'lantern', 'bellows', 'fork', 'chalk'].some(id => run.inventory[id as keyof Run['inventory']] !== 'inventory')) return;
   const combined = run.inventory.longBrush === 'inventory';
@@ -43,7 +44,7 @@ export function restore(value: unknown): Run | undefined {
 export const SAVE_KEY = 'arcade-lab:thirteenth-guest:v1';
 interface Envelope { schema: 1; story: 'thirteenth-guest'; content: 1; current: Snapshot; previous: Snapshot | null }
 export function readEnvelope(raw: string | null): { current: Run | undefined; previous: Run | undefined } | undefined {
-  if (!raw || raw.length > 250000) return;
+  if (!raw || raw.length > 1000000) return;
   try {
     const value: unknown = JSON.parse(raw);
     if (!record(value) || value.schema !== 1 || value.story !== 'thirteenth-guest' || value.content !== 1) return;

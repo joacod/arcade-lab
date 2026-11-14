@@ -75,7 +75,7 @@ The Casebook requires exactly the keeper’s account and Brindle’s testimony t
 
 ### Confrontation
 
-Both supported conclusions expose Vale’s accusation topic. Completing or skipping that scene records the confrontation and the borrowed voice, and opens the bell chamber. There is no separate requirement to submit evidence to Oswald. Unsupported deductions explain the missing relationship and can be retried.
+Both supported conclusions expose Vale’s accusation topic. Completing or skipping that scene records the confrontation and the borrowed voice, and opens the bell chamber. There is no separate requirement to submit evidence to Oswald. Connect clues asks the player to choose a pair and submit it. A valid pair records its conclusion; unsupported pairs report no established connection and can be retried. Undiscovered conclusions are not displayed as proposals.
 
 ### Containment and recovery
 

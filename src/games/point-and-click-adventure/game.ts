@@ -1,10 +1,11 @@
 import { rooms, targetIds, getTarget, items, itemIds, deductions, evidence, scenes, type RoomId, type TargetId, type ItemId, type Fact, type Point, type Line, type SceneId, type DeductionId, type EvidenceId } from './content.ts';
+import { beginEntry, finishEntry, type JournalEntry } from './journal.ts';
 import { project, route } from './navigation.ts';
 export type Cue = 'discovery' | 'ghost' | 'mechanism' | 'seal' | 'music' | 'bell';
 export type TargetCommand = { kind: 'target'; target: TargetId; verb: 'inspect' | 'interact' }
   | { kind: 'target'; target: TargetId; verb: 'use'; item: ItemId };
 export type Command = TargetCommand | { kind: 'walk'; point: Point } | { kind: 'combine'; first: ItemId; second: ItemId }
-  | { kind: 'tool'; item: ItemId } | { kind: 'deduce'; conclusion: DeductionId; evidence: EvidenceId[] }
+  | { kind: 'tool'; item: ItemId } | { kind: 'deduce'; evidence: EvidenceId[] }
   | { kind: 'topic'; id: string } | { kind: 'next' | 'skip' | 'cancel' | 'leave' };
 export interface Dialogue { lines: Line[]; index: number; scene: SceneId | undefined }
 export interface Run {
@@ -13,7 +14,7 @@ export interface Run {
   lantern: { occupant: 'empty' | 'whisper' | 'guest'; phase: 'open' | 'drawn' | 'closed' | 'sealed' };
   pending: { path: Point[]; command: TargetCommand | undefined } | undefined;
   dialogue: Dialogue | undefined; conversation: TargetId | undefined;
-  message: string; transcript: Line[]; revision: number; saveRevision: number; events: Cue[];
+  message: string; journal: JournalEntry[]; revision: number; saveRevision: number; events: Cue[];
 }
 export const has = (run: Run, fact: Fact) => run.facts.includes(fact);
 export const owns = (run: Run, item: ItemId) => run.inventory[item] === 'inventory';
@@ -21,20 +22,21 @@ export function createRun(): Run {
   return { room: 'hall', actor: { ...rooms.hall.entry }, facing: 1, status: 'active', facts: [],
     inventory: Object.fromEntries(itemIds.map(id => [id, ['lens', 'lantern', 'bellows', 'fork', 'chalk'].includes(id) ? 'inventory' : 'world'])) as Run['inventory'],
     lantern: { occupant: 'empty', phase: 'open' }, pending: undefined, dialogue: undefined, conversation: undefined,
-    message: '', transcript: [], revision: 0, saveRevision: 0, events: [] };
+    message: '', journal: [], revision: 0, saveRevision: 0, events: [] };
 }
 function changed(run: Run) { run.saveRevision++; }
 function flag(run: Run, fact: Fact) { if (!has(run, fact)) { run.facts.push(fact); changed(run); if (fact in evidence) run.events.push('discovery'); } }
 function take(run: Run, item: ItemId) { if (!owns(run, item)) { run.inventory[item] = 'inventory'; changed(run); run.events.push('mechanism'); } }
 function message(run: Run, text: string) { run.message = text; }
-function remember(run: Run, line: Line) { run.transcript.push({ ...line }); if (run.transcript.length > 80) run.transcript.shift(); }
+function remember(run: Run, line: Line) { run.journal.at(-1)!.lines.push({ ...line }); }
 function speak(run: Run, speaker: string, text: string) {
-  run.message = ''; run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; remember(run, { speaker, text });
+  run.message = ''; run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; beginEntry(run.journal, speaker, run.room, { speaker, text });
 }
 export function startScene(run: Run, id: SceneId) {
   run.message = ''; run.pending = undefined; run.conversation = undefined;
   const lines: Line[] = scenes[id].filter((_, i) => id !== 'ending' || i !== 4 || has(run, 'released')).map(l => ({ ...l }));
-  run.dialogue = { lines, index: 0, scene: id }; remember(run, lines[0]!); run.revision++;
+  const title = { intro: 'Arrival at Blackthorn Castle', testimony: 'Brindle’s account of the bell', confrontation: 'Confronting Professor Vale', ending: 'Case closed' }[id];
+  run.dialogue = { lines, index: 0, scene: id }; beginEntry(run.journal, title, run.room, lines[0]!); run.revision++;
 }
 function finishScene(run: Run, id: SceneId | undefined) {
   if (id === 'intro') { flag(run, 'introduced'); }
@@ -46,7 +48,7 @@ function advance(run: Run, skip = false) {
   const dialog = run.dialogue;
   if (!dialog) return;
   if (!skip && dialog.index + 1 < dialog.lines.length) { dialog.index++; remember(run, dialog.lines[dialog.index]!); }
-  else { run.dialogue = undefined; finishScene(run, dialog.scene); changed(run); }
+  else { finishEntry(run.journal); run.dialogue = undefined; finishScene(run, dialog.scene); changed(run); }
 }
 export function visible(run: Run, id: TargetId) {
   if (getTarget(id).room !== run.room) return false;
@@ -66,7 +68,10 @@ export function topics(run: Run, id: TargetId): Topic[] {
   return [];
 }
 function topic(run: Run, id: string) {
-  if (!run.conversation || !topics(run, run.conversation).some(t => t.id === id)) return;
+  if (!run.conversation) return;
+  const choice = topics(run, run.conversation).find(t => t.id === id);
+  if (!choice) return;
+  const speaker = getTarget(run.conversation).name;
   switch (id) {
     case 'evelyn-case': speak(run, 'Evelyn', 'The portraits only began screaming after Vale repaired the service tubes. Oswald has been restless ever since. I should have listened to him.'); break;
     case 'evelyn-key': take(run, 'cabinetKey'); speak(run, 'Evelyn', 'Of course. The winding key is in the kitchen cabinet. If that old music box comforts Mrs. Brindle, please wind it.'); break;
@@ -86,6 +91,7 @@ function topic(run: Run, id: string) {
       break;
     case 'brindle-family': speak(run, 'Brindle', 'I have been dead for sixty-three years, Mr. Wren. The dust is considerably older.'); break;
   }
+  if (run.dialogue && !run.dialogue.scene) run.journal.at(-1)!.title = `${speaker} · ${choice.label}`;
 }
 function inspect(run: Run, id: TargetId) {
   if (id === 'portrait') { flag(run, 'vent'); message(run, 'The scream bends the candle flame away from the grille and shifts soot. A physical draft. Evidence recorded.'); }
@@ -189,10 +195,12 @@ export function dispatch(run: Run, command: Command) {
   if (command.kind === 'cancel') { run.pending = undefined; run.conversation = undefined; message(run, ''); return; }
   if (command.kind === 'deduce') {
     run.pending = undefined;
-    const definition = deductions[command.conclusion];
-    const valid = command.evidence.length === definition.requires.length && definition.requires.every(id => command.evidence.includes(id) && has(run, id));
-    if (valid) { flag(run, command.conclusion); run.events.push('discovery'); message(run, `Conclusion supported: ${definition.name}.`); }
-    else message(run, 'These clues do not support that conclusion.');
+    const conclusion = (Object.keys(deductions) as DeductionId[]).find(id => {
+      const required = deductions[id].requires;
+      return command.evidence.length === required.length && required.every(clue => command.evidence.includes(clue) && has(run, clue));
+    });
+    if (conclusion) { flag(run, conclusion); run.events.push('discovery'); message(run, `Conclusion supported: ${deductions[conclusion].name}.`); }
+    else message(run, 'These clues do not establish a connection.');
     return;
   }
   if (command.kind === 'combine') {

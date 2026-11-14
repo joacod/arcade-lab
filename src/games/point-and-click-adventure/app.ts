@@ -12,6 +12,7 @@ import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
 import { createSound } from './sound.ts';
 import { createSaveStore } from './storage.ts';
+import { rooms } from './content.ts';
 import { createUI } from './ui.ts';
 import './style.css';
 type Screen = 'title' | 'playing' | 'paused' | 'victory';
@@ -43,22 +44,22 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     input = bindInput(host.surface, ui.controls, () => screen === 'playing' && !run.dialogue, send, host.signal);
     let storage: Pick<Storage, 'getItem' | 'setItem'>;
     try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('Storage unavailable'); }, setItem() { throw new Error('Storage unavailable'); } }; }
-    const saveInfo = document.createElement('p');
-    saves = createSaveStore(storage, message => { saveInfo.textContent = message; });
+    const saveInfo = document.createElement('p'); saveInfo.hidden = true;
+    saves = createSaveStore(storage, message => { saveInfo.textContent = message; saveInfo.hidden = !message; });
     const savedButtons = document.createElement('div'); savedButtons.className = 'adventure-saves';
     const current = document.createElement('button'); current.type = 'button'; current.textContent = 'Continue saved adventure';
-    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = 'Restore previous save';
+    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = 'Recover backup adventure';
     current.addEventListener('click', () => load(false), { signal: host.signal }); previous.addEventListener('click', () => load(true), { signal: host.signal });
     savedButtons.append(current, previous);
     const details = document.createElement('div');
-    const newRunNotice = document.createElement('p'); newRunNotice.textContent = 'Play and Restart begin a new case. Autosave keeps the latest state and one previous state, replacing them as you progress.';
-    const premise = document.createElement('p'); premise.textContent = 'Blackthorn Castle, 1889. A skeptical detective, a stubborn ghost household, and one client who has forgotten to mention something. No deaths, no unwinnable choices. Local autosave after completed interactions.';
+    const newRunNotice = document.createElement('p'); newRunNotice.textContent = 'Play starts a new case.';
+    const premise = document.createElement('p'); premise.textContent = 'Blackthorn Castle, 1889. A skeptical detective, a stubborn ghost household, and one client who has forgotten to mention something.';
     details.append(premise, savedButtons, newRunNotice, saveInfo);
     const themes = createThemeChoices({ modes: { prototype: {} }, value: 'prototype', signal: host.signal, onChange() {} }); themes.setValue('prototype');
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
       gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
-      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Choose an item from <b>Inventory (I)</b>, then click its destination. <b>Combine…</b> lets you choose a second inventory item. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Select two clues, then propose a conclusion.</p><p>Escape closes a panel or cancels a selected item or approach before pausing. Progress saves automatically after completed interactions.</p>',
+      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Choose an item from <b>Inventory (I)</b>, then click its destination. <b>Combine…</b> lets you choose a second inventory item. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Read your evidence or choose <b>Connect clues</b> to select a pair and make a deduction. Search the journal by person, place or words and expand an entry to reread it.</p><p>Escape closes a panel or cancels a selected item or approach before pausing. Progress saves automatically after completed interactions.</p>',
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });
@@ -68,11 +69,11 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     bindPageLifetime({ signal: host.signal, suspend, resetTiming: () => clock.reset(), dispose });
     bindSessionFocus(host.root, { signal: host.signal, surface: host.surface, playing: () => screen === 'playing', clearInput: input.clear,
       shouldSuspend: () => screen === 'playing' && !host.root.contains(document.activeElement), suspend });
-    function refreshSaves() { newRunNotice.hidden = !saves.available() && !saves.available(true); current.hidden = !saves.available(); previous.hidden = !saves.available(true); }
+    function refreshSaves() { newRunNotice.hidden = !saves.available() && !saves.available(true); current.hidden = !saves.available(); previous.hidden = saves.available() || !saves.available(true); }
     function show(next: Screen, focus = true) {
       screen = next; clock.reset(); input.clear(); refreshSaves();
-      menu.description.textContent = next === 'title' ? 'A comic ghost mystery · playable Prototype' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : 'Your investigation is waiting.';
-      savedButtons.hidden = next !== 'title'; premise.hidden = next === 'victory';
+      menu.description.textContent = next === 'title' ? 'A comic ghost mystery · playable Prototype' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
+      savedButtons.hidden = next !== 'title'; premise.hidden = next !== 'title'; newRunNotice.hidden ||= next !== 'title';
       menu.show(next, focus);
       if (next === 'victory') menu.heading.textContent = 'Case closed';
       ui.update(run, true);

@@ -95,6 +95,9 @@
   .game-menu-layer .game-menu-utilities { grid-column: 1 / -1; margin-top: 10px; }
   [data-menu-owner][data-screen='choosing'] .game-menu-main { display: block; }
 }
+/* A hidden presentation field must not reserve a column beside the run details. */
+.game-menu-layer .game-menu:has(.game-menu-main > .game-menu-settings[hidden]):not(:has(.game-menu-setup:not([hidden]), .game-menu-preferences:not([hidden]) .game-menu-preference-fields:not(:empty))) { width: min(680px, 100%); }
+.game-menu-layer .game-menu-main:has(> .game-menu-settings[hidden]):not(:has(.game-menu-setup:not([hidden]))) { display: block; }
 /* Narrow pause menus use complete rows, never a trailing right-aligned fragment. */
 @media (max-width: 799px) {
   [data-menu-owner][data-screen='paused'] .game-menu-actions > :is(.game-menu-run-actions, .game-menu-navigation) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; flex-basis: 100%; }

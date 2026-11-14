@@ -58,6 +58,8 @@ For an embodied character, define when each action requires proximity. Apply the
 
 Let movement and object changes communicate routine actions. Reserve text for observations, dialogue, meaningful results and otherwise unclear failures. Clear stale feedback on the next action. Readable clues and recoverable experimentation support discovery; do not add objective banners, reveal-all controls, escalating hints or solution instructions merely because the genre has puzzles. Those are product choices, not mandatory accessibility or usability features. Keep the chosen assistance policy in the owning game guide.
 
+Keep evidence reading separate from an explicit deduction interaction. If conclusions are a puzzle, do not reveal their answers through disabled proposal buttons. A growing journal needs retrieval: use titled conversations or scenes, readable chronology within each entry, and search when the volume warrants it. Avoid filling it with duplicate conversations or skipped dialogue. Keep the owning game's research and retention choices local.
+
 **Local example:** [The Thirteenth Guest](../../../../docs/games/point-and-click-adventure/README.md#interaction-and-feedback-policy) owns its restrained UI policy and arrival-based interactions. Its [research notes](../../../../docs/games/point-and-click-adventure/research.md) distinguish source conventions from the game's decisions. Follow [menu/UI guidance](menu-ui.md) for shared navigation and focus rather than adding another help or settings system.
 
 For future genres, add guidance only when a concrete task exposes a useful decision or failure mode. Keep implementation constants, renderer details and game-specific decisions in their current owners.

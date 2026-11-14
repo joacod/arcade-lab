@@ -19,9 +19,9 @@ export function createSaveStore(storage: Pick<Storage, 'getItem' | 'setItem'>, r
         if (storage.getItem(SAVE_KEY) !== expected) { writable = false; report('A different tab changed this save. Reopen the game to load it; this visit has not overwritten it.'); return false; }
         const old = saved?.current ? snapshot(saved.current) : null;
         const current = snapshot(run);
-        if (old && JSON.stringify(current) === JSON.stringify(old)) { report('Adventure saved on this browser.'); return true; }
+        if (old && JSON.stringify(current) === JSON.stringify(old)) { report(''); return true; }
         const raw = encode(current, old); storage.setItem(SAVE_KEY, raw); expected = raw; saved = readEnvelope(raw);
-        report('Adventure saved on this browser.'); return true;
+        report(''); return true;
       } catch { report('Could not save locally. Your current adventure is still playable.'); return false; }
     },
   };

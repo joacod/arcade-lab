@@ -8,6 +8,7 @@ test.use({ hasTouch: true });
 test('direct scene actions and casebook choices retain usable focus', async ({ page }) => {
   const run = createRun();
   run.room = 'gallery';
+  run.journal = [{ title: 'A conversation about the portrait', room: 'gallery', lines: [{ speaker: 'Wren', text: 'A physical draft behind the portrait.' }] }];
   run.facts = ['introduced', 'tubeOpen', 'mechanism'];
   run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
   await page.goto('/');
@@ -24,16 +25,30 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).tap();
   await expect(page.locator('.adventure-narration')).toContainText('Evidence recorded');
   await page.keyboard.press('KeyB');
-  await page.getByRole('checkbox', { name: /A draft behind the scream/ }).check();
-  await page.getByRole('checkbox', { name: /A manufactured scream/ }).check();
-  const conclusion = page.getByRole('button', { name: 'Propose: The portrait scare is manufactured', exact: true });
-  await conclusion.focus(); await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: '✓ The portrait scare is manufactured', exact: true })).toBeDisabled();
-  await expect(page.getByRole('checkbox', { name: /A draft behind the scream/ })).toBeFocused();
-  // A browser event turn lets the real deferred focus policy settle without a timer guess.
-  await page.getByRole('button', { name: 'Journal', exact: true }).click();
+  // Reading text and pressing disabled controls must not focus the inert scene.
+  await page.getByRole('heading', { name: 'Casebook', exact: true }).tap();
   await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
-  await expect(page.getByRole('button', { name: 'Journal', exact: true })).toBeFocused();
+  await page.locator('.adventure-evidence p').first().tap();
+  await page.getByRole('button', { name: 'Connect clues', exact: true }).click();
+  const submit = page.getByRole('button', { name: 'Make deduction', exact: true });
+  const bounds = await submit.boundingBox();
+  await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+  await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
+  await page.getByRole('button', { name: 'A draft behind the scream', exact: true }).click();
+  await page.getByRole('button', { name: 'A manufactured scream', exact: true }).click();
+  await submit.focus(); await page.keyboard.press('Enter');
+  await expect(page.locator('.adventure-conclusion')).toContainText('The portrait scare is manufactured');
+  await expect(page.getByRole('button', { name: 'Connect clues', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Journal', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Search journal' });
+  await search.pressSequentially('portrait');
+  await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
+  await expect(page.locator('.adventure-journal-entry')).toHaveCount(1);
+  await page.locator('.adventure-journal-entry summary').tap();
+  await expect(page.locator('.adventure-journal-entry p')).toContainText('A physical draft');
+  await page.locator('.adventure-journal-entry p').tap();
+  await expect(page.locator('.adventure-game')).toHaveAttribute('data-screen', 'playing');
+  await search.focus();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page.locator('.play-surface')).toBeFocused();
