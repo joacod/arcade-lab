@@ -35,12 +35,12 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       if (screen === 'playing') { sound.pause(); show('paused', false); }
     }
     host = createHost(container, { fullscreen, className: 'adventure-game', label: 'The Thirteenth Guest',
-      surfaceLabel: 'Blackthorn Castle. Select a scene object, then Look, Interact or Use. The Room list offers the same targets. L looks, E interacts, U uses the selected item, H shows hotspots, X cancels, P pauses.',
+      surfaceLabel: 'Blackthorn Castle. Click people to talk, objects to investigate and doorways to enter. Tab and Enter also activate scene targets. I opens inventory, B opens the casebook, H shows labels, X cancels, P pauses.',
       onDisplayChange: suspend, onFullscreenChange: () => menu?.fullscreen(host.fullscreenAvailable, host.fullscreen) });
     ui = createUI(host.root, host.surface, host.signal, send, () => { saves.write(run); refreshSaves(); });
     sound = createSound(message => { if (!disposed) menu?.soundStatus(message); });
     presentation = createPresentation(host.surface);
-    input = bindInput(host.surface, ui.controls, () => screen === 'playing' && !run.dialogue, () => run, ui.selectTarget, send, host.signal);
+    input = bindInput(host.surface, ui.controls, () => screen === 'playing' && !run.dialogue, send, host.signal);
     let storage: Pick<Storage, 'getItem' | 'setItem'>;
     try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('Storage unavailable'); }, setItem() { throw new Error('Storage unavailable'); } }; }
     const saveInfo = document.createElement('p');
@@ -64,8 +64,8 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     const themes = createThemeChoices({ modes: { prototype: {} }, value: 'prototype', signal: host.signal, onChange() {} }); themes.setValue('prototype');
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
-      gameplayUI: [ui.header, ui.sidebar, ui.narration, ui.inventory, ui.tools], theme: themes.element, game: details, preferences,
-      controls: '<p>Select a person or object in the scene or Room list. Choose <b>Look (L)</b>, <b>Interact (E)</b>, or select an inventory item and <b>Use (U)</b>. Click the floor to walk. <b>H</b> toggles hotspots, <b>X</b> cancels an approach.</p><p>Use Tab and Enter for every panel, conversation and inventory action. Scene shortcuts work while the playfield is focused. In the Casebook, select evidence and propose a conclusion. A little help gives progressively clearer hints.</p><p>To contain a spirit: reveal or weaken it, use bellows, select the lantern and close its shutter, then select and sound the tuning fork. Inventory has explicit Combine and tool actions.</p>',
+      gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details, preferences,
+      controls: '<p>Click a person to talk, an object to investigate, or a doorway to enter. Click the floor to walk. <b>Show labels (H)</b> reveals scene actions. Tab and Enter also reach every target.</p><p>Open <b>Inventory (I)</b>, choose an item, then click a scene object to use it. <b>Cancel (X)</b> puts it away. Choose <b>Combine…</b> to combine it with another inventory item.</p><p>The <b>Casebook (B)</b> holds evidence and conversations. Choose two clues to support a conclusion. <b>Help</b> offers optional hints. Escape closes an open panel or puts away an item before pausing.</p>',
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });
@@ -83,6 +83,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       menu.show(next, focus);
       if (next === 'victory') menu.heading.textContent = 'Case closed';
       ui.update(run, true);
+      if (next === 'playing' && focus) ui.focusPlay();
     }
     function load(backup: boolean) {
       const loaded = saves.load(backup); if (!loaded) return;
@@ -109,7 +110,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
         if (!run.pending && !run.dialogue && run.saveRevision !== savedRevision) { savedRevision = run.saveRevision; saves.write(run); }
         if (run.status === 'complete') show('victory');
       }
-      presentation.draw(run, host, ui.target, input.hover, ui.reveal, debug, reduced, presentationTime);
+      presentation.draw(run, host, debug, reduced, presentationTime);
     });
     return { dispose };
   } catch (error) { dispose(); throw error; }

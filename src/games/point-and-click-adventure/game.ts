@@ -21,7 +21,7 @@ export function createRun(): Run {
   return { room: 'hall', actor: { ...rooms.hall.entry }, facing: 1, status: 'active', facts: [],
     inventory: Object.fromEntries(itemIds.map(id => [id, ['lens', 'lantern', 'bellows', 'fork', 'chalk'].includes(id) ? 'inventory' : 'world'])) as Run['inventory'],
     lantern: { occupant: 'empty', phase: 'open' }, pending: undefined, dialogue: undefined, conversation: undefined,
-    message: 'Welcome to Blackthorn Castle. Select a person or object, then choose an action.', transcript: [], hintLevels: {}, revision: 0, saveRevision: 0, events: [] };
+    message: 'Welcome to Blackthorn Castle. Click a person to talk or an object to investigate.', transcript: [], hintLevels: {}, revision: 0, saveRevision: 0, events: [] };
 }
 function changed(run: Run) { run.saveRevision++; }
 function flag(run: Run, fact: Fact) { if (!has(run, fact)) { run.facts.push(fact); changed(run); if (fact in evidence) run.events.push('discovery'); } }
@@ -29,7 +29,7 @@ function take(run: Run, item: ItemId) { if (!owns(run, item)) { run.inventory[it
 function message(run: Run, text: string) { run.message = text; }
 function remember(run: Run, line: Line) { run.transcript.push({ ...line }); if (run.transcript.length > 80) run.transcript.shift(); }
 function speak(run: Run, speaker: string, text: string) {
-  run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; remember(run, { speaker, text });
+  run.message = ''; run.pending = undefined; run.dialogue = { lines: [{ speaker, text }], index: 0, scene: undefined }; remember(run, { speaker, text });
 }
 export function startScene(run: Run, id: SceneId) {
   run.pending = undefined; run.conversation = undefined;
@@ -37,7 +37,7 @@ export function startScene(run: Run, id: SceneId) {
   run.dialogue = { lines, index: 0, scene: id }; remember(run, lines[0]!); run.revision++;
 }
 function finishScene(run: Run, id: SceneId | undefined) {
-  if (id === 'intro') { flag(run, 'introduced'); message(run, 'Select the loose whisper. Use your lantern to reveal it, then the bellows.'); }
+  if (id === 'intro') { flag(run, 'introduced'); message(run, 'Try your equipment: open Inventory, choose Spirit lantern, then click the loose whisper.'); }
   if (id === 'testimony') { flag(run, 'testimony'); message(run, 'Testimony recorded. Compare it with the keeper’s account in your casebook.'); }
   if (id === 'confrontation') { flag(run, 'confronted'); flag(run, 'voice'); run.events.push('bell'); message(run, 'The guards are your allies. Enter the bell chamber and restore the ward.'); }
   if (id === 'ending') { flag(run, 'finished'); run.status = 'complete'; run.events.push('bell'); }
@@ -62,6 +62,11 @@ export function objective(run: Run) {
   if (run.lantern.occupant === 'guest' && run.lantern.phase === 'sealed') return 'Secure the captured Guest inside the bell housing';
   if (has(run, 'confronted')) return wardReady(run) ? 'Contain the weakened Guest · bellows, shutter, fork' : 'Restore the chain, chalk boundary and inward mirror';
   if (has(run, 'fraud') && has(run, 'guardians')) return 'Confront Professor Vale with your conclusions';
+  if (!has(run, 'tutorial') && !has(run, 'vent') && !has(run, 'record') && !has(run, 'mechanism') && !has(run, 'testimony')) {
+    if (run.lantern.phase === 'drawn') return 'Close the lantern shutter to keep the whisper inside';
+    if (run.lantern.phase === 'closed') return 'Sound the tuning fork to seal the whisper';
+    return has(run, 'whisperLit') ? 'Use the hand bellows on the loose whisper' : 'Try your spirit lantern on the loose whisper';
+  }
   return 'Investigate the screams and learn what the household is guarding';
 }
 export interface Topic { id: string; label: string }
@@ -142,7 +147,7 @@ function drawSpirit(run: Run, occupant: 'whisper' | 'guest') {
   if (occupant === 'whisper' && !has(run, 'whisperLit')) { message(run, 'First use lantern light to locate the whisper’s outline.'); return; }
   if (occupant === 'guest' && !wardReady(run)) { message(run, 'A gust knocks the bellows back. Too strongly anchored. Restore the chain, chalk boundary and inward mirror.'); run.events.push('ghost'); return; }
   run.lantern = { occupant, phase: 'drawn' }; changed(run); run.events.push('ghost');
-  message(run, 'The presence swirls inside the lantern. Select the lantern and CLOSE SHUTTER, then select the fork and SOUND FORK.');
+  message(run, 'The presence swirls inside the lantern. Close the lantern shutter, then sound the tuning fork.');
 }
 function use(run: Run, id: TargetId, item: ItemId) {
   if (!owns(run, item)) return;
@@ -206,7 +211,7 @@ export function dispatch(run: Run, command: Command) {
   run.revision++;
   if (command.kind === 'next' || command.kind === 'skip') { advance(run, command.kind === 'skip'); return; }
   if (run.dialogue) return;
-  if (command.kind === 'leave') { run.conversation = undefined; return; }
+  if (command.kind === 'leave') { run.conversation = undefined; run.message = ''; return; }
   if (command.kind === 'topic') { topic(run, command.id); return; }
   if (command.kind === 'cancel') { run.pending = undefined; run.conversation = undefined; message(run, 'Action cancelled.'); return; }
   if (command.kind === 'hint') { requestHint(run); return; }
@@ -250,7 +255,7 @@ export function stepRun(run: Run, dt: number) {
   if (dx) run.facing = Math.sign(dx);
   if (distance <= travel) {
     run.actor = { ...point }; pending.path.shift();
-    if (!pending.path.length) { run.pending = undefined; run.revision++; if (pending.command) execute(run, pending.command); else message(run, 'Select an object or person to investigate.'); changed(run); }
+    if (!pending.path.length) { run.pending = undefined; run.revision++; if (pending.command) execute(run, pending.command); else message(run, 'Click an object or person to investigate.'); changed(run); }
   } else { run.actor.x += dx / distance * travel; run.actor.y += dy / distance * travel; }
 }
 export function takeEvents(run: Run) { return run.events.splice(0); }

@@ -5,6 +5,7 @@ import { getTarget, rooms, targets } from '../../../../src/games/point-and-click
 import { route, inside } from '../../../../src/games/point-and-click-adventure/navigation.ts';
 import { snapshot, restore, encode, readEnvelope } from '../../../../src/games/point-and-click-adventure/save.ts';
 import { createSaveStore } from '../../../../src/games/point-and-click-adventure/storage.ts';
+import { interaction } from '../../../../src/games/point-and-click-adventure/interaction.ts';
 import { contentErrors } from '../../../../src/games/point-and-click-adventure/content-validation.ts';
 function at(run, target, verb = 'interact', item) {
   const t = getTarget(target); run.room = t.room; run.actor = { ...t.at };
@@ -101,4 +102,19 @@ test('content diagnostics name an unreachable authored target before play', () =
   assert.deepEqual(contentErrors(), []);
   const bad = structuredClone(targets); bad.brush.at = { x: -100, y: -100 };
   assert.ok(contentErrors(rooms, bad).some(message => message.includes('brush: approach is unreachable')));
+});
+
+// Contextual defaults must advance the puzzle, not merely describe an inert target.
+test('scene defaults discover clues and change action when a mechanism opens', () => {
+  const run = createRun(); run.room = 'gallery';
+  dispatch(run, interaction(run, 'portrait').command);
+  assert.equal(has(run, 'vent'), true); assert.equal(run.pending, undefined);
+  run.room = 'kitchen'; run.actor = { ...getTarget('tube').at };
+  run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
+  dispatch(run, interaction(run, 'tube', 'longBrush').command); stepRun(run, 1 / 60);
+  assert.equal(has(run, 'tubeOpen'), true);
+  assert.match(interaction(run, 'tube').label, /Test mechanism/);
+  dispatch(run, interaction(run, 'tube').command); stepRun(run, 1 / 60);
+  assert.equal(has(run, 'mechanism'), true);
+  assert.match(interaction(run, 'tube').label, /Disconnect clock/);
 });

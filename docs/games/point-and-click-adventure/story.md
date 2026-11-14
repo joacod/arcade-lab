@@ -79,7 +79,7 @@ Both supported conclusions expose Vale’s accusation topic. Completing or skipp
 
 ### Containment and recovery
 
-The loose whisper offers optional equipment practice: reveal it with lantern light, use bellows, close the lantern shutter through its inventory action, then sound the fork. Use the sealed lantern on the gallery’s empty portrait to release it and free the vessel. Practice and release are not required if the lantern is already empty.
+The loose whisper offers optional equipment practice: reveal it with lantern light, use bellows, close the lantern shutter using its contextual button, then sound the fork. Use the sealed lantern on the gallery’s empty portrait to release it and free the vessel. Practice and release are not required if the lantern is already empty.
 
 In the bell chamber, attach the chain, repair the boundary with chalk and turn the mirror inward. These discrete actions work in any order. All three are required before the bellows can draw in the Guest. The lantern holds one presence, so an occupied whisper must first be sealed and released into its portrait.
 

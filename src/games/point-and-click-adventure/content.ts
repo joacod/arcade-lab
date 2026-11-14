@@ -41,9 +41,9 @@ export const deductions = {
   guardians: { name: 'The household ghosts guard a prison', requires: ['record', 'testimony'] as readonly EvidenceId[], missing: 'A written account and a witness must agree about what the household was protecting.' },
 } as const;
 export type DeductionId = keyof typeof deductions;
-export interface TargetDefinition { room: RoomId; name: string; x: number; y: number; w: number; h: number; at: Point; kind: 'person' | 'ghost' | 'prop' | 'exit'; action: string; description: string; destination?: RoomId }
-function prop(room: RoomId, name: string, x: number, y: number, w: number, h: number, action: string, description: string, kind: TargetDefinition['kind'] = 'prop'): TargetDefinition {
-  return { room, name, x, y, w, h, at: { x: x + w / 2, y: 405 }, kind, action, description };
+export interface TargetDefinition { room: RoomId; name: string; x: number; y: number; w: number; h: number; at: Point; kind: 'person' | 'ghost' | 'prop' | 'exit'; action: string; verb: 'inspect' | 'interact'; description: string; destination?: RoomId }
+function prop(room: RoomId, name: string, x: number, y: number, w: number, h: number, action: string, description: string, kind: TargetDefinition['kind'] = 'prop', verb: TargetDefinition['verb'] = 'interact'): TargetDefinition {
+  return { room, name, x, y, w, h, at: { x: x + w / 2, y: 405 }, kind, action, verb, description };
 }
 function exit(room: RoomId, destination: RoomId, x: number): TargetDefinition {
   return { ...prop(room, rooms[destination].name, x, 245, 64, 145, 'Enter', `A passage to the ${rooms[destination].name.toLowerCase()}.`, 'exit'), destination };
@@ -51,17 +51,17 @@ function exit(room: RoomId, destination: RoomId, x: number): TargetDefinition {
 export const targets = {
   evelyn: prop('hall', 'Lady Evelyn', 205, 245, 65, 145, 'Talk', 'A practical woman regarding a very impractical inheritance.', 'person'),
   vale: prop('hall', 'Professor Vale', 610, 240, 65, 150, 'Talk', 'An antiquarian with polished boots and remarkably unpolished explanations.', 'person'),
-  crate: prop('hall', 'Restoration crate', 700, 320, 110, 70, 'Examine', 'New brass fittings. Each bears Vale’s distinctive V inside a diamond.'),
+  crate: prop('hall', 'Restoration crate', 700, 320, 110, 70, 'Examine', 'New brass fittings. Each bears Vale’s distinctive V inside a diamond.', 'prop', 'inspect'),
   whisper: prop('hall', 'Loose whisper', 390, 205, 85, 110, 'Listen', 'Something small and ill-mannered circles the chandelier.', 'ghost'),
   hallGallery: exit('hall', 'gallery', 855), hallLibrary: exit('hall', 'library', 55),
-  portrait: prop('gallery', 'Screaming portrait', 210, 135, 120, 155, 'Inspect vent', 'An ancestor with excellent lungs. Soot shifts at the grille whenever he screams.'),
+  portrait: prop('gallery', 'Screaming portrait', 210, 135, 120, 155, 'Inspect vent', 'An ancestor with excellent lungs. Soot shifts at the grille whenever he screams.', 'prop', 'inspect'),
   oswald: prop('gallery', 'Sir Oswald', 600, 230, 90, 165, 'Talk', 'A headless knight holding his head. The heavy chain runs toward the bell door.', 'ghost'),
-  emptyFrame: prop('gallery', 'Empty portrait', 420, 170, 100, 125, 'Examine', 'An empty silver-lined frame. A small household echo could make itself at home.'),
+  emptyFrame: prop('gallery', 'Empty portrait', 420, 170, 100, 125, 'Examine', 'An empty silver-lined frame. A small household echo could make itself at home.', 'prop', 'inspect'),
   bellDoor: exit('gallery', 'bell', 850), galleryHall: exit('gallery', 'hall', 55),
   galleryKitchen: { ...exit('gallery', 'kitchen', 740), name: 'Kitchen passage' },
-  journal: prop('library', 'Keeper’s journal', 250, 330, 120, 55, 'Read', 'Beside a ward engraving: spirits face inward around a chained bell. Its caption says CONTAINMENT, not summoning.'),
-  musicBox: prop('library', 'Music box', 440, 330, 85, 60, 'Examine', 'A few notes, then silence. Its square winding socket is empty. Brindle fades with the tune.'),
-  photo: prop('library', 'Family photograph', 650, 195, 95, 105, 'Examine', 'The household in happier days. Brindle’s gloved hand rests beside the familiar music box.'),
+  journal: prop('library', 'Keeper’s journal', 250, 330, 120, 55, 'Read', 'Beside a ward engraving: spirits face inward around a chained bell. Its caption says CONTAINMENT, not summoning.', 'prop', 'inspect'),
+  musicBox: prop('library', 'Music box', 440, 330, 85, 60, 'Examine', 'A few notes, then silence. Its square winding socket is empty. Brindle fades with the tune.', 'prop', 'inspect'),
+  photo: prop('library', 'Family photograph', 650, 195, 95, 105, 'Examine', 'The household in happier days. Brindle’s gloved hand rests beside the familiar music box.', 'prop', 'inspect'),
   brindle: prop('library', 'Mrs. Brindle', 560, 240, 70, 155, 'Talk', 'The housekeeper’s silhouette flickers whenever the music stops.', 'ghost'),
   libraryHall: exit('library', 'hall', 55), libraryKitchen: exit('library', 'kitchen', 855),
   brush: prop('kitchen', 'Cleaning brush', 250, 330, 70, 45, 'Take', items.brush.description),
@@ -70,7 +70,7 @@ export const targets = {
   cabinet: prop('kitchen', 'Household cabinet', 690, 235, 115, 150, 'Open', 'A winding key hangs behind the locked glass. Evelyn may have the household key.'),
   kitchenLibrary: exit('kitchen', 'library', 55), kitchenGallery: exit('kitchen', 'gallery', 855),
   chain: prop('bell', 'Loose chain', 240, 270, 65, 125, 'Attach chain', 'The chain has slipped free of its marked anchor. Oswald was trying to put it back.'),
-  ward: prop('bell', 'Broken ward line', 350, 370, 135, 25, 'Examine', 'A clean gap interrupts the chalk boundary. The keeper’s diagram shows a continuous line.'),
+  ward: prop('bell', 'Broken ward line', 350, 370, 135, 25, 'Examine', 'A clean gap interrupts the chalk boundary. The keeper’s diagram shows a continuous line.', 'prop', 'inspect'),
   mirror: prop('bell', 'Ward mirror', 680, 195, 90, 155, 'Turn inward', 'The mirror faces the window. The engraving places its reflection toward the bell.'),
   guest: prop('bell', 'Thirteenth Guest', 470, 155, 120, 175, 'Address', 'A borrowed face shifts inside the bell’s broken silver housing.', 'ghost'),
   housing: prop('bell', 'Bell housing', 445, 90, 170, 260, 'Secure lantern', 'A silver-lined recess and latch, made to secure a spirit vessel inside the repaired ward.'),
