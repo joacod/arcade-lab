@@ -50,4 +50,16 @@ Preserve roles in speed, reach and exposure rather than shortening every move. S
 
 **Local example:** [Blastline](../../../../docs/games/blastline/README.md) separates mutable cover from structural routes. `terrain.ts`, `movement.ts`, `combat.ts` and `game.ts` own contact and mission consequences; `themes.ts` and `presentation.ts` own the existing material treatment and effects. Read [art direction](player-experience.md#visual-hierarchy-and-art-direction) and [feedback](player-experience.md#layered-feedback-and-game-feel) for the specific creative problem. An appearance must preserve the meanings of the existing materials.
 
+## Point-and-click adventure
+
+**Design question:** Is the player working out a fictional problem, or searching through interface instructions? Prefer direct contextual actions when a target has an obvious default. Keep alternate item use and combinations deliberate. Hover/focus labels can identify an action without a permanent verb panel or a second list of the room. Keep inventory, notes and controls documentation available on demand through the existing menu conventions.
+
+For an embodied character, define when each action requires proximity. Apply the chosen rule consistently to examining, reading, talking, collecting and using items. Route to an authored approach point and commit the action only on arrival; replacing or cancelling an approach must not disclose its clue or apply its effect. Inventory-only operations need no walk. Any intentional remote observation should be explicit in the game's design, not an accidental shortcut in dispatch.
+
+Let movement and object changes communicate routine actions. Reserve text for observations, dialogue, meaningful results and otherwise unclear failures. Clear stale feedback on the next action. Readable clues and recoverable experimentation support discovery; do not add objective banners, reveal-all controls, escalating hints or solution instructions merely because the genre has puzzles. Those are product choices, not mandatory accessibility or usability features. Keep the chosen assistance policy in the owning game guide.
+
+Keep evidence reading separate from an explicit deduction interaction. If conclusions are a puzzle, do not reveal their answers through disabled proposal buttons. A growing journal needs retrieval: use titled conversations or scenes, readable chronology within each entry, and search when the volume warrants it. Avoid filling it with duplicate conversations or skipped dialogue. Keep the owning game's research and retention choices local.
+
+**Local example:** [The Thirteenth Guest](../../../../docs/games/point-and-click-adventure/README.md#interaction-and-feedback-policy) owns its restrained UI policy and arrival-based interactions. Its [research notes](../../../../docs/games/point-and-click-adventure/research.md) distinguish source conventions from the game's decisions. Follow [menu/UI guidance](menu-ui.md) for shared navigation and focus rather than adding another help or settings system.
+
 For future genres, add guidance only when a concrete task exposes a useful decision or failure mode. Keep implementation constants, renderer details and game-specific decisions in their current owners.

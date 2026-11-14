@@ -5,6 +5,8 @@ import { getTarget, rooms, targets } from '../../../../src/games/point-and-click
 import { route, inside } from '../../../../src/games/point-and-click-adventure/navigation.ts';
 import { snapshot, restore, encode, readEnvelope } from '../../../../src/games/point-and-click-adventure/save.ts';
 import { createSaveStore } from '../../../../src/games/point-and-click-adventure/storage.ts';
+import { interaction } from '../../../../src/games/point-and-click-adventure/interaction.ts';
+import { matchesEntry } from '../../../../src/games/point-and-click-adventure/journal.ts';
 import { contentErrors } from '../../../../src/games/point-and-click-adventure/content-validation.ts';
 function at(run, target, verb = 'interact', item) {
   const t = getTarget(target); run.room = t.room; run.actor = { ...t.at };
@@ -44,11 +46,11 @@ test('inventory recipes are atomic and wrong uses preserve essential tools', () 
 });
 test('deductions require discovered supporting evidence and both threads gate confrontation', () => {
   const run = createRun();
-  dispatch(run, { kind: 'deduce', conclusion: 'fraud', evidence: ['vent', 'mechanism'] }); assert.equal(has(run, 'fraud'), false);
+  dispatch(run, { kind: 'deduce', evidence: ['vent', 'mechanism'] }); assert.equal(has(run, 'fraud'), false);
   run.facts.push('vent', 'mechanism', 'mark');
-  dispatch(run, { kind: 'deduce', conclusion: 'fraud', evidence: ['vent', 'mechanism', 'mark'] }); assert.equal(has(run, 'fraud'), false);
-  dispatch(run, { kind: 'deduce', conclusion: 'fraud', evidence: ['vent'] }); assert.equal(has(run, 'fraud'), false);
-  dispatch(run, { kind: 'deduce', conclusion: 'fraud', evidence: ['vent', 'mechanism'] }); assert.equal(has(run, 'fraud'), true);
+  dispatch(run, { kind: 'deduce', evidence: ['vent', 'mechanism', 'mark'] }); assert.equal(has(run, 'fraud'), false);
+  dispatch(run, { kind: 'deduce', evidence: ['vent'] }); assert.equal(has(run, 'fraud'), false);
+  dispatch(run, { kind: 'deduce', evidence: ['vent', 'mechanism'] }); assert.equal(has(run, 'fraud'), true);
   run.conversation = 'vale'; dispatch(run, { kind: 'topic', id: 'confront' }); assert.equal(run.dialogue, undefined);
   at(run, 'bellDoor'); assert.equal(run.room, 'gallery');
 });
@@ -56,8 +58,11 @@ test('skipping a story scene commits the same durable result as reading it', () 
   for (const scene of ['intro', 'testimony', 'confrontation', 'ending']) {
     const read = investigated(), skip = investigated();
     for (const run of [read, skip]) { run.facts.push('confronted', 'chain', 'ward', 'mirror'); run.lantern = { occupant: 'guest', phase: 'sealed' }; startScene(run, scene); }
+    const lines = structuredClone(read.dialogue.lines);
     dispatch(skip, { kind: 'skip' });
     while (read.dialogue) dispatch(read, { kind: 'next' });
+    assert.deepEqual(skip.journal[0].lines, [lines[0]]);
+    assert.deepEqual(read.journal[0].lines, lines);
     assert.deepEqual(skip.facts, read.facts); assert.equal(skip.status, read.status);
     assert.ok(restore(snapshot(skip))); assert.ok(restore(snapshot(read)));
   }
@@ -74,13 +79,16 @@ test('containment mistakes release a recoverable spirit and the ending needs a s
   assert.equal(run.status, 'complete'); assert.ok(restore(snapshot(run)));
 });
 test('save validation rejects inconsistent progress and restores only stable durable state', () => {
-  const run = investigated(); const saved = snapshot(run); const restored = restore({ ...saved, pending: { path: [] }, dialogue: { lines: [] }, events: ['bad-cue'] });
-  assert.ok(restored); assert.deepEqual(restored.events, []); assert.equal(restored.dialogue, undefined); assert.deepEqual(restored.facts, run.facts); assert.equal(restored.pending, undefined);
+  const run = investigated(); const saved = snapshot(run); const restored = restore({ ...saved, pending: { path: [] }, dialogue: { lines: [] }, events: ['bad-cue'], hintLevels: { whisper: 2 } });
+  assert.ok(restored); assert.deepEqual(restored.events, []); assert.equal(restored.dialogue, undefined); assert.deepEqual(restored.facts, run.facts); assert.equal(restored.pending, undefined); assert.equal('hintLevels' in restored, false);
   restored.facts.push('voice'); assert.equal(saved.facts.includes('voice'), false);
   for (const mutate of [s => { s.actor.x = NaN; }, s => { s.facts.push('finished'); }, s => { s.inventory.lantern = 'consumed'; }, s => { s.lantern.phase = 'sealed'; }, s => { s.room = 'bell'; }, s => { s.facts = ['guardians']; }]) {
     const bad = structuredClone(saved); mutate(bad); assert.equal(restore(bad), undefined);
   }
   startScene(run, 'confrontation'); assert.throws(() => snapshot(run), /stable/);
+  const legacy = { ...saved, transcript: [{ speaker: 'Wren', text: 'An earlier observation.' }] }; delete legacy.journal;
+  assert.deepEqual(restore(legacy).journal, [{ title: 'Earlier conversations', lines: legacy.transcript }]);
+  assert.equal(restore({ ...saved, journal: [{ title: 'Broken', lines: [] }] }), undefined);
   assert.equal(readEnvelope('{'), undefined); assert.equal(readEnvelope(JSON.stringify({ schema: 2 })), undefined);
 });
 test('atomic save envelope recovers its backup and refuses cross-tab or failed overwrites', () => {
@@ -88,7 +96,7 @@ test('atomic save envelope recovers its backup and refuses cross-tab or failed o
   const store = createSaveStore(storage, text => reports.push(text)); const run = createRun();
   assert.equal(store.write(run), true); run.facts.push('introduced'); assert.equal(store.write(run), true);
   assert.equal(store.available(true), true); assert.deepEqual(store.load(true).facts, []);
-  const once = raw; assert.equal(store.write(run), true); assert.equal(raw, once); // Manual Save must not replace the distinct backup with a duplicate.
+  const once = raw; assert.equal(store.write(run), true); assert.equal(raw, once); // Repeated autosaves must retain the distinct backup.
   const damaged = JSON.parse(raw); damaged.current.actor.x = 'broken'; raw = JSON.stringify(damaged);
   assert.equal(readEnvelope(raw).current, undefined); assert.ok(readEnvelope(raw).previous);
   assert.equal(store.write(run), false); assert.match(reports.at(-1), /different tab/); assert.equal(raw, JSON.stringify(damaged));
@@ -101,4 +109,43 @@ test('content diagnostics name an unreachable authored target before play', () =
   assert.deepEqual(contentErrors(), []);
   const bad = structuredClone(targets); bad.brush.at = { x: -100, y: -100 };
   assert.ok(contentErrors(rooms, bad).some(message => message.includes('brush: approach is unreachable')));
+});
+
+// Contextual defaults must advance the puzzle, not merely describe an inert target.
+test('examination waits for arrival, respects cancellation and contextual actions progress mechanisms', () => {
+  const run = createRun(); run.room = 'gallery';
+  const destination = getTarget('portrait').at;
+  run.actor = { x: destination.x - 50, y: destination.y };
+  dispatch(run, interaction(run, 'portrait').command);
+  stepRun(run, .1);
+  assert.equal(has(run, 'vent'), false); assert.ok(run.pending);
+  assert.equal(run.message, '');
+  dispatch(run, { kind: 'cancel' }); stepRun(run, .1);
+  assert.equal(has(run, 'vent'), false);
+  dispatch(run, interaction(run, 'portrait').command); stepRun(run, .1);
+  assert.equal(has(run, 'vent'), true); assert.equal(run.pending, undefined);
+  assert.deepEqual(run.actor, destination);
+  run.room = 'kitchen'; run.actor = { ...getTarget('tube').at };
+  run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
+  dispatch(run, interaction(run, 'tube', 'longBrush').command); stepRun(run, 1 / 60);
+  assert.equal(has(run, 'tubeOpen'), true);
+  assert.match(interaction(run, 'tube').label, /Test mechanism/);
+  dispatch(run, interaction(run, 'tube').command); stepRun(run, 1 / 60);
+  assert.equal(has(run, 'mechanism'), true);
+  assert.match(interaction(run, 'tube').label, /Disconnect clock/);
+});
+
+// Repeated dialogue must not crowd out useful notes; changed answers remain distinct.
+test('journal groups topics, keeps changed answers and searches their context', () => {
+  const run = createRun(); run.conversation = 'vale';
+  dispatch(run, { kind: 'topic', id: 'vale-case' }); dispatch(run, { kind: 'next' });
+  const original = structuredClone(run.journal);
+  dispatch(run, { kind: 'topic', id: 'vale-case' }); dispatch(run, { kind: 'next' });
+  assert.deepEqual(run.journal, original);
+  run.facts.push('confronted');
+  dispatch(run, { kind: 'topic', id: 'vale-case' }); dispatch(run, { kind: 'next' });
+  assert.equal(run.journal.length, 2);
+  assert.match(run.journal[0].title, /What exactly did you hire me/);
+  assert.equal(matchesEntry(run.journal[0], 'VALE hall knight'), true);
+  assert.equal(matchesEntry(run.journal[1], 'knight'), false);
 });
