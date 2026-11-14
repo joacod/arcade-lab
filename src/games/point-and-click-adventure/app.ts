@@ -103,7 +103,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     function refreshSaves() { newRunNotice.hidden = !saves.available() && !saves.available(true); current.hidden = !saves.available(); previous.hidden = saves.available() || !saves.available(true); }
     function show(next: Screen, focus = true) {
       screen = next; clock.reset(); input.clear(); refreshSaves();
-      menu.description.textContent = next === 'title' ? 'A comic ghost mystery · Blackthorn by Candlelight' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
+      menu.description.textContent = next === 'title' ? 'Point & click adventure · Blackthorn by Candlelight' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
       savedButtons.hidden = next !== 'title'; premise.hidden = next !== 'title'; newRunNotice.hidden ||= next !== 'title';
       menu.show(next, focus);
       if (next === 'victory') menu.heading.textContent = 'Case closed';

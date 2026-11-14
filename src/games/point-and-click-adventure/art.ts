@@ -12,6 +12,7 @@ export const artwork = {
   kitchen: new URL('./art/kitchen.webp', import.meta.url).href,
   bell: new URL('./art/bell.webp', import.meta.url).href,
   cast: new URL('./art/cast.webp', import.meta.url).href,
+  walk: new URL('./art/walk.webp', import.meta.url).href,
   props: new URL('./art/props.webp', import.meta.url).href,
   equipment: new URL('./art/equipment.webp', import.meta.url).href,
 };
@@ -31,29 +32,34 @@ export const itemFrames: Record<ItemId, ItemFrame> = {
 // Whole cels, with independently inspected hip/boot registration. The reach
 // drawing is shorter because Wren bends; it keeps the standing drawing's scale.
 export const castFrames = {
-  idle: { x: 112, y: 0, w: 174, h: 330, anchorX: 87, foot: 315 },
-  walkA: { x: 460, y: 0, w: 225, h: 330, anchorX: 109, foot: 313 },
-  walkB: { x: 867, y: 0, w: 174, h: 330, anchorX: 94, foot: 314 },
-  walkC: { x: 1224, y: 0, w: 247, h: 330, anchorX: 108, foot: 312 },
-  walkD: { x: 101, y: 341, w: 182, h: 330, anchorX: 94, foot: 317 },
-  reach: { x: 451, y: 341, w: 273, h: 330, anchorX: 109, foot: 321 },
-  lantern: { x: 845, y: 341, w: 235, h: 330, anchorX: 95, foot: 321 },
-  evelyn: { x: 1264, y: 341, w: 191, h: 330, anchorX: 97, foot: 324 },
-  vale: { x: 124, y: 683, w: 144, h: 341, anchorX: 76, foot: 324 },
-  oswald: { x: 461, y: 683, w: 223, h: 341, anchorX: 115, foot: 324 },
-  brindle: { x: 852, y: 683, w: 211, h: 341, anchorX: 105, foot: 324 },
-  guest: { x: 1212, y: 683, w: 286, h: 341, anchorX: 143, foot: 326 },
+  walkA: { sheet: 'walk', scale: 2 / 3, x: 0, y: 0, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkB: { sheet: 'walk', scale: 2 / 3, x: 384, y: 0, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkC: { sheet: 'walk', scale: 2 / 3, x: 768, y: 0, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkD: { sheet: 'walk', scale: 2 / 3, x: 1152, y: 0, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkE: { sheet: 'walk', scale: 2 / 3, x: 0, y: 512, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkF: { sheet: 'walk', scale: 2 / 3, x: 384, y: 512, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkG: { sheet: 'walk', scale: 2 / 3, x: 768, y: 512, w: 384, h: 512, anchorX: 198, foot: 474 },
+  walkH: { sheet: 'walk', scale: 2 / 3, x: 1152, y: 512, w: 384, h: 512, anchorX: 198, foot: 474 },
+  idle: { sheet: 'cast', scale: 1, x: 112, y: 0, w: 174, h: 330, anchorX: 87, foot: 315 },
+  reach: { sheet: 'cast', scale: 1, x: 451, y: 341, w: 273, h: 330, anchorX: 109, foot: 321 },
+  lantern: { sheet: 'cast', scale: 1, x: 845, y: 341, w: 235, h: 330, anchorX: 95, foot: 321 },
+  evelyn: { sheet: 'cast', scale: 1, x: 1264, y: 341, w: 191, h: 330, anchorX: 97, foot: 324 },
+  vale: { sheet: 'cast', scale: 1, x: 124, y: 683, w: 144, h: 341, anchorX: 76, foot: 324 },
+  oswald: { sheet: 'cast', scale: 1, x: 461, y: 683, w: 223, h: 341, anchorX: 115, foot: 324 },
+  brindle: { sheet: 'cast', scale: 1, x: 852, y: 683, w: 211, h: 341, anchorX: 105, foot: 324 },
+  guest: { sheet: 'cast', scale: 1, x: 1212, y: 683, w: 286, h: 341, anchorX: 143, foot: 326 },
 } as const;
 export type CastRole = keyof typeof castFrames;
-export const walkClip: readonly CastRole[] = ['walkA', 'walkB', 'walkC', 'walkD'];
+export const walkClip: readonly CastRole[] = ['walkA', 'walkB', 'walkC', 'walkD', 'walkE', 'walkF', 'walkG', 'walkH'];
+export const strideDistance = 184;
 export function validateArtwork(dimensions: ImageDimensions): string[] {
   const errors = validateImageDimensions(dimensions, {
     hall: [960, 540], gallery: [960, 540], library: [960, 540],
-    kitchen: [960, 540], bell: [960, 540], cast: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254],
+    kitchen: [960, 540], bell: [960, 540], cast: [1536, 1024], walk: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254],
   });
   for (const [sheet, frames] of [['cast', castFrames], ['props', propFrames], ['equipment', equipmentFrames]] as const) {
-    const size = dimensions[sheet];
     for (const [role, frame] of Object.entries(frames)) {
+      const size = dimensions['sheet' in frame ? frame.sheet : sheet];
       if (!size || frame.x < 0 || frame.y < 0 || frame.w <= 0 || frame.h <= 0
         || frame.x + frame.w > size.width || frame.y + frame.h > size.height) errors.push(`Invalid ${sheet} frame: ${role}`);
     }

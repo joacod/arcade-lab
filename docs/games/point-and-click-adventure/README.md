@@ -8,7 +8,7 @@ Blackthorn Castle, 1889. Percival Wren, Consulting Detective of Unnatural Affair
 
 ## Playing the case
 
-Click a person to talk, an object to investigate or collect it, or a doorway to enter. Hover or keyboard focus names the action before activation. Clicking the floor walks there. Examine, talk, pickup, item use and exits all wait for Wren to reach the authored approach point. Tools used on themselves and inventory combinations operate where Wren is standing. Clicking elsewhere replaces an approach; X cancels it without a status panel.
+Click a person to talk, an object to investigate or collect it, or a doorway to enter. Hover or keyboard focus names the action before activation. Clicking the floor walks there. Examine, talk, pickup, item use and exits wait for Wren to reach the authored approach point; actions at his current position respond immediately. Doorways place him just inside the corresponding entrance in the next room, facing inward. Tools used on themselves and inventory combinations operate where Wren is standing. Clicking elsewhere replaces an approach; X cancels it without a status panel. Opening a reading panel cancels the approach so its result cannot interrupt your reading.
 
 The scene stays visible across the viewport. **Inventory (I)** and **Casebook (B)** form the toolbar. Inventory and notes open as dismissible panels; dialogue and conversation choices share one place over the scene. How to play lives in the shared Settings screen. Close dismisses a panel; I / B also toggle their panels. Cancel (X) appears only while an inventory item is selected.
 
