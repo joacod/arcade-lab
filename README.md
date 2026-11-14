@@ -17,6 +17,7 @@ Built with TypeScript, Canvas 2D, original and bundled artwork, and procedural s
   </tr>
   <tr>
     <td align="center" width="33%"><a href="CATALOG.md#cloudwake"><img src="docs/games/cloudwake/preview.webp" alt="Cloudwake · Arcade: a sky courier threads crystal ruins above a sunlit cloud sea" width="240"><br>Cloudwake</a></td>
+    <td align="center" width="33%"><a href="CATALOG.md#the-thirteenth-guest"><img src="docs/games/point-and-click-adventure/preview.webp" alt="The Thirteenth Guest · Deluxe: a screaming portrait and a headless knight at Blackthorn Castle" width="240"><br>The Thirteenth Guest</a></td>
   </tr>
 </table>
 
