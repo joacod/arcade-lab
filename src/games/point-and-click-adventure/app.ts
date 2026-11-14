@@ -11,6 +11,7 @@ import { contentErrors } from './content-validation.ts';
 import { createRun, dispatch, introduce, stepRun, takeEvents, type Command } from './game.ts';
 import { bindInput } from './input.ts';
 import { createPresentation } from './presentation.ts';
+import { arcadeArt, appearances, type Appearance } from './art.ts';
 import { createSound } from './sound.ts';
 import { createSaveStore } from './storage.ts';
 import { rooms } from './content.ts';
@@ -19,6 +20,7 @@ import './style.css';
 type Screen = 'title' | 'playing' | 'paused' | 'victory';
 export function mountAdventure(container: HTMLElement, onExit: () => void, fullscreen: FullscreenControl): GameSession {
   let disposed = false, screen: Screen = 'title', run = createRun(), savedRevision = -1, presentationTime = 0;
+  let appearance: Appearance = 'arcade';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clock = createClock();
   const preparation = createPreparationScope();
@@ -56,8 +58,14 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     const details = document.createElement('div');
     const newRunNotice = document.createElement('p'); newRunNotice.textContent = 'Play starts a new case.';
     const premise = document.createElement('p'); premise.textContent = 'Blackthorn Castle, 1889. A skeptical detective, a stubborn ghost household, and one client who has forgotten to mention something.';
-    details.append(premise, savedButtons, newRunNotice, saveInfo);
-    const themes = createThemeChoices({ modes: { arcade: {} }, value: 'arcade', names: { arcade: 'Blackthorn by Candlelight' }, signal: host.signal, onChange() {} });
+    const artStatus = document.createElement('p'); artStatus.setAttribute('role', 'status'); artStatus.hidden = true;
+    function artworkStatus(message: string) { artStatus.textContent = message; artStatus.hidden = !message; }
+    details.append(premise, savedButtons, newRunNotice, saveInfo, artStatus);
+    const themes = createThemeChoices<Appearance>({ modes: appearances, value: 'arcade', names: appearances, signal: host.signal, onChange(value) {
+      if (disposed || screen === 'playing') return;
+      if (!readiness.ready) readiness.watch(() => prepareArtwork(value));
+      else void prepareArtwork(value);
+    } });
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
       gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
@@ -69,11 +77,16 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       menu.readiness(state, retry); current.disabled = previous.disabled = state !== 'ready';
     });
     menu.fullscreen(host.fullscreenAvailable, host.fullscreen);
-    async function prepareArtwork() {
+    async function prepareArtwork(value: Appearance) {
+      if (disposed || screen === 'playing') return false;
       const request = preparation.begin();
+      if (value === appearance && presentation) { themes.setValue(appearance); artworkStatus(''); return true; }
+      themes.prepare(value); artworkStatus(`Preparing ${appearances[value]}…`);
       let candidate: ReturnType<typeof createPresentation> | undefined;
       try {
-        candidate = createPresentation(document.createElement('div'));
+        const art = value === 'arcade' ? arcadeArt : (await import('./deluxe.ts')).deluxeArt;
+        if (!request.current()) return false;
+        candidate = createPresentation(document.createElement('div'), art);
         const display = candidate, cancel = () => display.dispose();
         request.signal.addEventListener('abort', cancel, { once: true });
         await candidate.prepare();
@@ -82,18 +95,29 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
         const previous = presentation;
         host.surface.append(candidate.canvas); presentation = candidate; candidate = undefined;
         request.signal.removeEventListener('abort', cancel);
-        host.root.dataset.theme = 'arcade'; themes.setValue('arcade'); previous?.dispose();
+        appearance = value; host.root.dataset.theme = value; themes.setValue(value); artworkStatus('');
+        if (screen === 'title') menu.description.textContent = `Point & click adventure · ${appearances[value]}`;
+        ui.update(run, true); previous?.dispose();
         return true;
+      } catch {
+        if (request.current()) {
+          themes.setValue(appearance);
+          artworkStatus(`Could not load ${appearances[value]}. ${presentation ? `Keeping ${appearances[appearance]}.` : 'Retry artwork or choose another theme.'}`);
+        }
+        return false;
       } finally { candidate?.dispose(); }
     }
-    readiness.watch(prepareArtwork);
+    function cancelArtwork() { preparation.cancel(); themes.setValue(appearance); artworkStatus(''); }
+    readiness.watch(() => prepareArtwork('arcade'));
     function recoverArtwork() {
-      suspend(); presentation?.dispose(); presentation = undefined;
+      const failed = appearance;
+      suspend(); preparation.cancel(); presentation?.dispose(); presentation = undefined;
       delete host.root.dataset.theme;
-      let reportFailure = true;
+      let reportFailure = failed === 'arcade';
+      artworkStatus(`Graphics interrupted. Your case is preserved. ${reportFailure ? 'Retry artwork to continue.' : 'Recovering Arcade; resume when ready.'}`);
       readiness.watch(() => {
         if (reportFailure) { reportFailure = false; return Promise.resolve(false); }
-        return prepareArtwork();
+        return prepareArtwork('arcade');
       });
     }
     ui.pause.addEventListener('click', () => act('pause'), { signal: host.signal });
@@ -103,7 +127,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     function refreshSaves() { newRunNotice.hidden = !saves.available() && !saves.available(true); current.hidden = !saves.available(); previous.hidden = saves.available() || !saves.available(true); }
     function show(next: Screen, focus = true) {
       screen = next; clock.reset(); input.clear(); refreshSaves();
-      menu.description.textContent = next === 'title' ? 'Point & click adventure · Blackthorn by Candlelight' : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
+      menu.description.textContent = next === 'title' ? `Point & click adventure · ${appearances[appearance]}` : next === 'victory' ? 'The castle was haunted. The ghosts were never the problem.' : rooms[run.room].name;
       savedButtons.hidden = next !== 'title'; premise.hidden = next !== 'title'; newRunNotice.hidden ||= next !== 'title';
       menu.show(next, focus);
       if (next === 'victory') menu.heading.textContent = 'Case closed';
@@ -113,6 +137,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     function load(backup: boolean) {
       if (!readiness.ready) return;
       const loaded = saves.load(backup); if (!loaded) return;
+      cancelArtwork();
       run = loaded; savedRevision = run.saveRevision; presentationTime = 0; presentation?.reset(); ui.reset(); sound.reset(); sound.activate(); show(run.status === 'complete' ? 'victory' : 'playing');
     }
     function act(intent: CommonMenuIntent) {
@@ -120,6 +145,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
       if (intent === 'quit') { dispose(); onExit(); return; }
       if (intent === 'pause') { suspend(); return; }
       if (!readiness.ready) return;
+      cancelArtwork();
       if (intent === 'start' || intent === 'restart') {
         run = createRun(); savedRevision = -1; presentationTime = 0; presentation?.reset(); ui.reset(); sound.reset(); sound.activate(); introduce(run); show('playing'); ui.showLetter();
       } else if (intent === 'resume') { sound.activate(); show('playing'); }

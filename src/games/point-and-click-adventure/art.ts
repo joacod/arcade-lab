@@ -52,14 +52,32 @@ export const castFrames = {
 export type CastRole = keyof typeof castFrames;
 export const walkClip: readonly CastRole[] = ['walkA', 'walkB', 'walkC', 'walkD', 'walkE', 'walkF', 'walkG', 'walkH'];
 export const strideDistance = 184;
-export function validateArtwork(dimensions: ImageDimensions): string[] {
-  const errors = validateImageDimensions(dimensions, {
-    hall: [960, 540], gallery: [960, 540], library: [960, 540],
-    kitchen: [960, 540], bell: [960, 540], cast: [1536, 1024], walk: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254],
-  });
-  for (const [sheet, frames] of [['cast', castFrames], ['props', propFrames], ['equipment', equipmentFrames]] as const) {
+export interface Frame { x: number; y: number; w: number; h: number }
+export interface CastFrame extends Frame { sheet: 'cast' | 'walk'; scale: number; anchorX: number; foot: number }
+export type Appearance = 'arcade' | 'deluxe';
+export const appearances = { arcade: 'Blackthorn by Candlelight', deluxe: 'Blackthorn Nocturne' } as const;
+export interface AdventureArt {
+  mode: Appearance;
+  artwork: Record<keyof typeof artwork, string>;
+  castFrames: Record<CastRole, CastFrame>;
+  propFrames: Record<PropRole, Frame>;
+  equipmentFrames: Record<keyof typeof equipmentFrames, Frame>;
+  itemFrames: Record<ItemId, ItemFrame>;
+  dimensions: Record<keyof typeof artwork, readonly [number, number]>;
+}
+export const arcadeArt: AdventureArt = {
+  mode: 'arcade', artwork, castFrames, propFrames, equipmentFrames, itemFrames,
+  dimensions: {
+    hall: [960, 540], gallery: [960, 540], library: [960, 540], kitchen: [960, 540], bell: [960, 540],
+    cast: [1536, 1024], walk: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254],
+  },
+};
+export function validateArtwork(art: AdventureArt, dimensions: ImageDimensions): string[] {
+  const errors = validateImageDimensions(dimensions, art.dimensions);
+  for (const [sheet, frames] of [['cast', art.castFrames], ['props', art.propFrames], ['equipment', art.equipmentFrames]] as const) {
     for (const [role, frame] of Object.entries(frames)) {
-      const size = dimensions['sheet' in frame ? frame.sheet : sheet];
+      const source = 'sheet' in frame && (frame.sheet === 'cast' || frame.sheet === 'walk') ? frame.sheet : sheet;
+      const size = dimensions[source];
       if (!size || frame.x < 0 || frame.y < 0 || frame.w <= 0 || frame.h <= 0
         || frame.x + frame.w > size.width || frame.y + frame.h > size.height) errors.push(`Invalid ${sheet} frame: ${role}`);
     }

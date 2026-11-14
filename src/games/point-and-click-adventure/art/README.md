@@ -1,4 +1,10 @@
-# Blackthorn by Candlelight · Arcade artwork
+# The Thirteenth Guest artwork
+
+[Blackthorn Nocturne · Deluxe](DELUXE.md) owns the enhanced art direction,
+source sheets and export contract. Both presentations share the game-owned
+Canvas compositor and preserve the same room geometry.
+
+## Blackthorn by Candlelight · Arcade
 
 The visual direction is an illustrated Gothic comedy: theatrical frontal rooms,
 fine ink contours, textured gouache, midnight blue, bottle green, tarnished brass
