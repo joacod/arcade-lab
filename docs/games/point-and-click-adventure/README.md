@@ -69,6 +69,7 @@ All adventure-specific code lives in [`src/games/point-and-click-adventure/`](..
 | [`ui.ts`](../../../src/games/point-and-click-adventure/ui.ts), [`style.css`](../../../src/games/point-and-click-adventure/style.css) | Native scene targets through the uniform world transform, contextual controls, dismissible panels and focus preservation |
 | [`input.ts`](../../../src/games/point-and-click-adventure/input.ts) | Shared action-button bindings and floor-click translation through the uniform world transform |
 | [`presentation.ts`](../../../src/games/point-and-click-adventure/presentation.ts) | Shared Canvas composition for Arcade and Deluxe, complete character cels, stateful props, cosmetic motion and the uniform world transform |
+| [`scene-art.ts`](../../../src/games/point-and-click-adventure/scene-art.ts) | Room-specific sprite lighting and native-resolution graded sheets, prepared on room entry without pixel readbacks |
 | [`sound.ts`](../../../src/games/point-and-click-adventure/sound.ts) | AudioBits recipes, cue admission and shared audio lifecycle composition |
 | [`app.ts`](../../../src/games/point-and-click-adventure/app.ts) | Synchronous mounting, shared host/menu/focus owners, fixed stepping, saves and disposal |
 

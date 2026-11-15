@@ -46,6 +46,30 @@ Adventure Creator’s [Inventory interaction menus](https://adventurecreator.org
 
 Keep feedback beside its cause. An observation describes the fictional clue, while the Casebook holds the evidence. This case omits an additional “Evidence recorded” acknowledgement rather than mixing system messages into narration or creating another notification layer.
 
+## Visual integration
+
+The [Adventure Game Studio ambient-light documentation](https://adventuregamestudio.github.io/ags-manual/Globalfunctions_General.html#setambienttint)
+describes applying room tint and luminance to objects and characters. It is a
+practical adventure-game precedent for making separate sprites inhabit the
+background's lighting, rather than lighting every object like an inventory icon.
+The local compositor applies authored room-specific reflected color and exposure
+to complete cels, with separate neutral inventory illustrations and spectral
+emission. Soft surface contacts support placement without highlighting every
+interactive boundary.
+
+Mitchell, Francke and Eng's [Illustrative Rendering in Team Fortress 2](https://steamcdn-a.akamaihd.net/apps/valve/2007/NPAR07_IllustrativeRenderingInTeamFortress2.pdf)
+connects art direction and rendering through related materials, warm/cool value
+shifts, restrained fine detail and readable silhouettes. Its 3D shaders are not
+used here. The applicable principle is to evaluate the room, actor and props as
+one composition at gameplay size, keeping clue accents within that shared
+language. Preserving source detail while matching reflected color and reducing
+isolated specular contrast addresses the cutout appearance without making
+interaction depend on bright outlines. Equalizing layers by shrinking the
+actors discards detail, while expensive resampling on every frame harms motion;
+prepare the lighting and static resampling separately from animation.
+The local [artwork guide](../../../src/games/point-and-click-adventure/art/README.md#scene-cohesion)
+owns the actual rendering and replacement contract.
+
 ## Inspiration boundaries
 
 **Maniac Mansion** suggests an inhabited house with responsive characters and objects; its dead ends are not a goal. **Monkey Island** suggests a distinctive protagonist and comprehensible puzzle goals, rather than a required setting or verb count. **Day of the Tentacle** suggests making puzzles and presentation share a coherent fictional logic; multiple protagonists and time travel are separate mechanics that this case does not implement.

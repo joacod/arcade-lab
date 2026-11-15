@@ -17,6 +17,30 @@ imagegen tool. There are no third-party asset packs or required credits.
 The complete source PNG drawings are in `source/`; the production prompts and
 targeted edit instructions are in [prompts.md](prompts.md).
 
+## Scene cohesion
+
+`../scene-art.ts` owns room-specific reflected color, exposure and saturation for
+both artwork families. Match these to the light painted into each room plate:
+warm library and kitchen materials, cooler moonlit stone. Preserve dark folds
+and silhouettes instead of lifting blacks with a flat tint. Spectral cels keep
+their authored emission color; inventory illustrations use neutral light.
+
+On room entry, native-resolution sheets receive the room's color treatment
+through Canvas compositing, retaining source detail and alpha without pixel
+readbacks. Changing poses or walking never creates new lighting variants.
+Static scenery is sampled once into a display-resolution cache and copied
+without rescaling each frame. Use inexpensive smooth sampling for moving cels;
+high-quality resampling belongs in the static cache rebuild. Soft floor contacts anchor furniture, doors
+and feet; mounted objects cast restrained silhouette shadows. Visible moonbeams
+belong only in rooms with painted windows. Judge replacement art together with
+these treatments at gameplay size, including open/closed object states. Replace
+the room's light profile when its painted lighting changes.
+
+The graded sheets are released on room changes and presentation disposal.
+Do not downsample actors to hide stylistic differences, process image pixels
+in the animation loop or use CSS
+filters to correct the entire interface. See the [design references](../../../../docs/games/point-and-click-adventure/research.md#visual-integration).
+
 ## Exporting and replacing artwork
 
 Run `node src/games/point-and-click-adventure/art/pack.mjs` from the repository root.
@@ -78,12 +102,12 @@ Canvas effects. The bell is drawn before its independent inhabitant.
 Walking, reaching and lantern operation observe commands, displacement and
 completed approaches. They never delay an action or alter a puzzle result.
 Examination keeps the standing pose; brief reach and lantern poses mark physical
-interactions. Walls and mounted objects are cached at display resolution and rebuilt for
-room, prop-state or display changes. Floor objects, tables, their contents and
+interactions. Walls and mounted objects use the [static scenery cache](#scene-cohesion),
+rebuilt for room, prop-state and display changes. Floor objects, tables, their contents and
 characters share a depth pass using foot contact or authored support depth, so
 nearer objects occlude Wren. Physical table clearances remain in content. Light
 stamps and the vignette are rasterized once instead of painting gradients every
-frame, and live sprites use smooth low-cost sampling.
+frame, and live sprites draw complete cels from the room's native-resolution sheets.
 Active-run time freezes cosmetic motion while paused. Reduced motion removes
 dust, ghost drift and light flicker while retaining locomotion and object states.
 Room changes and new runs reset cosmetic registration. Required artwork is
