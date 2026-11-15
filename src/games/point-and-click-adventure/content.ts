@@ -83,7 +83,7 @@ export const targets = {
   chain: prop('bell', 'Loose chain', 240, 270, 65, 125, 'Attach chain', 'The chain has slipped free of its marked anchor. Oswald was trying to put it back.'),
   ward: prop('bell', 'Broken ward line', 350, 370, 135, 25, 'Examine', 'A clean gap interrupts the chalk boundary. The keeper’s diagram shows a continuous line.', 'prop', 'inspect'),
   mirror: prop('bell', 'Ward mirror', 680, 195, 90, 155, 'Turn inward', 'The mirror faces the window. The engraving places its reflection toward the bell.'),
-  guest: prop('bell', 'Thirteenth Guest', 470, 155, 120, 175, 'Address', 'A borrowed face shifts inside the bell’s broken silver housing.', 'ghost'),
+  guest: prop('bell', 'Thirteenth Guest', 788, 155, 160, 175, 'Address', 'A borrowed face hovers beside the bell, clear of its broken silver housing.', 'ghost'),
   housing: prop('bell', 'Bell housing', 445, 90, 170, 260, 'Secure lantern', 'A silver-lined recess and latch, made to secure a spirit vessel inside the repaired ward.'),
   bellGallery: exit('bell', 'gallery', 55),
 } satisfies Record<string, TargetDefinition>;

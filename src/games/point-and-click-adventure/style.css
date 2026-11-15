@@ -12,7 +12,7 @@
 .adventure-scene { position:absolute; inset:0; background:#0c141b; }
 .adventure-scene .play-surface { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
 .adventure-scene canvas { display:block; width:100%; height:100%; }
-.adventure-hotspots { position:absolute; pointer-events:none; }
+.adventure-hotspots { position:absolute; z-index:1; pointer-events:none; }
 .adventure-game button.adventure-hotspot { position:absolute; transform:translate(-50%,-50%); min-width:44px; min-height:44px; padding:0; border:0; background:transparent; pointer-events:auto; touch-action:manipulation; }
 .adventure-game button.adventure-hotspot:hover,.adventure-game button.adventure-hotspot:focus-visible { border:0; background:transparent; outline:none; }
 .adventure-hotspot span { display:none; position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); padding:6px 9px; width:max-content; max-width:210px; border-radius:4px; background:#11212be8; font:12px/1.4 system-ui,sans-serif; box-shadow:0 3px 12px #0006; pointer-events:none; }
@@ -20,8 +20,7 @@
 .adventure-hotspot[data-edge=left] span { left:0; transform:none; }
 .adventure-hotspot[data-edge=right] span { left:auto; right:0; transform:none; }
 .adventure-hotspot:hover span,.adventure-hotspot:focus-visible span { display:block; }
-.adventure-hotspot:hover,.adventure-hotspot:focus-visible { z-index:2; }
-.adventure-feedback { position:absolute; bottom:12px; left:16px; right:16px; max-width:850px; margin:auto; pointer-events:none; }
+.adventure-feedback { position:absolute; z-index:2; bottom:12px; left:16px; right:16px; max-width:850px; margin:auto; pointer-events:none; }
 .adventure-narration { margin:0; padding:12px 18px; border-left:2px solid var(--gold); border-radius:4px; background:#10212aee; box-shadow:0 3px 18px #0004; line-height:1.5; max-height:24vh; overflow:auto; pointer-events:auto; }
 .adventure-selected { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 12px; margin-top:6px; background:#152832f5; border:1px solid #867b59; border-radius:6px; pointer-events:auto; font:13px/1.4 system-ui,sans-serif; }
 .adventure-selected strong { flex:1; }
