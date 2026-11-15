@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun, introduce, topics, dispatch, startScene, stepRun, has, visible } from '../../../../src/games/point-and-click-adventure/game.ts';
 import { getTarget, rooms, targets, invitation } from '../../../../src/games/point-and-click-adventure/content.ts';
-import { route, inside } from '../../../../src/games/point-and-click-adventure/navigation.ts';
+import { route, inside, project } from '../../../../src/games/point-and-click-adventure/navigation.ts';
 import { snapshot, restore, encode, readEnvelope } from '../../../../src/games/point-and-click-adventure/save.ts';
 import { createSaveStore } from '../../../../src/games/point-and-click-adventure/storage.ts';
 import { interaction } from '../../../../src/games/point-and-click-adventure/interaction.ts';
@@ -27,6 +27,25 @@ test('navigation uses connected floor portals and rejects unreachable regions', 
     previous = next;
   }
   assert.equal(route(start, { x: 250, y: 20 }, [...floors, { x: 200, y: 0, w: 100, h: 100 }]), undefined);
+});
+test('furniture blocks floor clicks and travel while older saved cases recover a clear position', () => {
+  for (const [room, tabletop] of [['library', { x: 400, y: 415 }], ['kitchen', { x: 285, y: 405 }]]) {
+    const floor = rooms[room].floor;
+    assert.equal(floor.some(cell => inside(tabletop, cell)), false);
+    const end = project(tabletop, floor);
+    assert.ok(floor.some(cell => inside(end, cell)));
+    assert.equal(floor.some(cell => inside({ x: tabletop.x, y: 370 }, cell)), false);
+    let previous = { x: 110, y: 405 };
+    const path = route(previous, { x: 650, y: 405 }, floor);
+    assert.ok(path.length > 1);
+    for (const next of path) {
+      for (const t of [0, .25, .5, .75, 1]) assert.ok(floor.some(cell => inside({ x: previous.x + (next.x - previous.x) * t, y: previous.y + (next.y - previous.y) * t }, cell)));
+      previous = next;
+    }
+    const run = createRun(); run.room = room; run.actor = tabletop;
+    const loaded = restore(snapshot(run));
+    assert.deepEqual(loaded.actor, end); assert.deepEqual(loaded.inventory, run.inventory);
+  }
 });
 test('replacing and cancelling an approach cannot execute its stale pickup', () => {
   const run = createRun(); run.room = 'kitchen'; run.actor = { x: 50, y: 500 };
@@ -61,13 +80,19 @@ test('walking retains its travel budget across route waypoints', () => {
 });
 test('inventory recipes are atomic and wrong uses preserve essential tools', () => {
   const run = createRun(); run.inventory.brush = run.inventory.poker = 'inventory';
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), false); assert.equal(has(run, 'disabled'), false);
+  at(run, 'tube', 'use', 'brush'); assert.equal(has(run, 'tubeOpen'), false);
+  at(run, 'tube', 'use', 'poker'); assert.equal(has(run, 'tubeOpen'), false);
   dispatch(run, { kind: 'combine', first: 'brush', second: 'lens' }); assert.equal(run.inventory.brush, 'inventory');
   assert.equal(run.messageContext, 'inventory');
   dispatch(run, { kind: 'combine', first: 'poker', second: 'brush' });
   assert.deepEqual([run.inventory.brush, run.inventory.poker, run.inventory.longBrush], ['consumed', 'consumed', 'inventory']);
   assert.equal(run.messageContext, 'inventory');
   at(run, 'tube', 'use', 'longBrush'); assert.equal(has(run, 'tubeOpen'), true);
-  at(run, 'tube'); assert.equal(has(run, 'mechanism'), true); assert.ok(restore(snapshot(run)));
+  at(run, 'tube'); assert.equal(has(run, 'mechanism'), false);
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), true); assert.equal(run.facing, -1); assert.ok(restore(snapshot(run)));
+  at(run, 'clock'); assert.equal(has(run, 'disabled'), true);
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), true); assert.equal(has(run, 'disabled'), true);
 });
 test('deductions require discovered supporting evidence and both threads gate confrontation', () => {
   const run = createRun();
@@ -154,10 +179,14 @@ test('examination waits for arrival, respects cancellation and contextual action
   run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
   dispatch(run, interaction(run, 'tube', 'longBrush').command); stepRun(run, 1 / 60);
   assert.equal(has(run, 'tubeOpen'), true);
-  assert.match(interaction(run, 'tube').label, /Test mechanism/);
-  dispatch(run, interaction(run, 'tube').command); stepRun(run, 1 / 60);
+  assert.match(interaction(run, 'tube').label, /Inspect/);
+  assert.match(interaction(run, 'clock').label, /Test mechanism/);
+  run.actor = { ...getTarget('clock').at };
+  dispatch(run, interaction(run, 'clock').command); stepRun(run, 1 / 60);
   assert.equal(has(run, 'mechanism'), true);
-  assert.match(interaction(run, 'tube').label, /Disconnect clock/);
+  assert.match(interaction(run, 'clock').label, /Disconnect clock/);
+  dispatch(run, interaction(run, 'clock').command);
+  assert.match(interaction(run, 'clock').label, /Examine stopped clock/);
 });
 
 // Repeated dialogue must not crowd out useful notes; changed answers remain distinct.
@@ -197,6 +226,22 @@ test('conversation branches survive leaving and saving, then retire without repe
   const saved = snapshot(run); assert.deepEqual(restore(saved).asked, run.asked);
   assert.equal(restore({ ...saved, asked: ['nonexistent-topic'] }), undefined);
   delete saved.asked; assert.deepEqual(new Set(restore(saved).asked), new Set(run.asked));
+});
+test('each character introduces themselves once, then opens questions directly across saves', () => {
+  for (const person of ['evelyn', 'vale', 'oswald', 'brindle']) {
+    let run = createRun(); at(run, person);
+    assert.ok(run.dialogue); dispatch(run, { kind: 'next' });
+    assert.equal(run.dialogue, undefined); assert.ok(topics(run, person).length);
+    dispatch(run, { kind: 'leave' });
+    const saved = snapshot(run);
+    run = restore({ ...saved, journal: [] }); at(run, person);
+    assert.equal(run.conversation, person); assert.equal(run.dialogue, undefined);
+    assert.equal(run.journal.length, 0); // Journal retention cannot make a greeting repeat.
+    // Existing saves already recorded the greeting, before it had a response key.
+    saved.asked = [];
+    run = restore(saved); at(run, person);
+    assert.equal(run.dialogue, undefined);
+  }
 });
 test('a changed answer reopens a completed question without blocking Brindle’s testimony', () => {
   const run = createRun(); run.conversation = 'brindle';

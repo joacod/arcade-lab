@@ -13,9 +13,10 @@
 .adventure-scene .play-surface { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
 .adventure-scene canvas { display:block; width:100%; height:100%; }
 .adventure-hotspots { position:absolute; pointer-events:none; }
-.adventure-game button.adventure-hotspot { position:absolute; transform:translate(-50%,-50%); min-width:44px; min-height:44px; padding:0; border:1px solid transparent; background:transparent; border-radius:10px; pointer-events:auto; touch-action:manipulation; }
-.adventure-game button.adventure-hotspot:hover,.adventure-game button.adventure-hotspot:focus-visible { border-color:#e2c581b0; background:#f2dfb10b; }
-.adventure-hotspot span { display:none; position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); padding:6px 9px; width:max-content; max-width:210px; border:1px solid #9c8f69; border-radius:4px; background:#11212bf5; font:12px/1.4 system-ui,sans-serif; box-shadow:0 3px 12px #0006; pointer-events:none; }
+.adventure-game button.adventure-hotspot { position:absolute; transform:translate(-50%,-50%); min-width:44px; min-height:44px; padding:0; border:0; background:transparent; pointer-events:auto; touch-action:manipulation; }
+.adventure-game button.adventure-hotspot:hover,.adventure-game button.adventure-hotspot:focus-visible { border:0; background:transparent; outline:none; }
+.adventure-hotspot span { display:none; position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); padding:6px 9px; width:max-content; max-width:210px; border-radius:4px; background:#11212be8; font:12px/1.4 system-ui,sans-serif; box-shadow:0 3px 12px #0006; pointer-events:none; }
+.adventure-hotspot:focus-visible span { outline:2px solid var(--gold); outline-offset:3px; }
 .adventure-hotspot[data-edge=left] span { left:0; transform:none; }
 .adventure-hotspot[data-edge=right] span { left:auto; right:0; transform:none; }
 .adventure-hotspot:hover span,.adventure-hotspot:focus-visible span { display:block; }
@@ -25,7 +26,10 @@
 .adventure-selected { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 12px; margin-top:6px; background:#152832f5; border:1px solid #867b59; border-radius:6px; pointer-events:auto; font:13px/1.4 system-ui,sans-serif; }
 .adventure-selected strong { flex:1; }
 .adventure-selected button { font-size:13px; }
-.adventure-toolbar { display:flex; justify-content:center; align-items:center; flex:none; gap:12px; padding:9px 16px; border-top:1px solid #34474b; background:#14232a; font:14px system-ui,sans-serif; }
+.adventure-toolbar { position:absolute; top:12px; right:12px; display:flex; gap:8px; z-index:2; font:11px/1.3 system-ui,sans-serif; }
+.adventure-game button.adventure-tool { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; width:72px; min-height:78px; padding:6px; border:1px solid #ad8c574f; border-radius:9px; background:radial-gradient(ellipse,#233038df,#101b22b8); box-shadow:0 3px 12px #0005; font:inherit; }
+.adventure-tool .adventure-item-art { width:50px; height:50px; transition:transform .15s ease; }
+.adventure-tool:hover .adventure-item-art,.adventure-tool:focus-visible .adventure-item-art { transform:translateY(-2px); }
 .adventure-overlay { position:absolute; inset:0; padding:18px; display:grid; place-items:center; background:#071117b8; z-index:4; }
 .adventure-sheet { width:min(680px,100%); max-height:100%; min-height:0; display:flex; flex-direction:column; border:1px solid #9a8963; border-radius:10px; background:#172930; box-shadow:0 16px 70px #0008; }
 .adventure-sheet>header { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid #405257; }
@@ -76,15 +80,15 @@
 .adventure-saves { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .adventure-game[data-theme=deluxe] { --ink:#f2e9d8; --dim:#c0bbae; --gold:#e0bd7b; --menu-accent:#e0bd7b; background:#0d151e; }
 .adventure-game[data-theme=deluxe] .adventure-header { background:linear-gradient(110deg,#111923,#20282a); border-color:#9a7c464f; box-shadow:inset 0 1px #e8c99214; }
-.adventure-game[data-theme=deluxe] .adventure-toolbar { background:linear-gradient(#202a2e,#121b22); border-color:#9a7c4666; }
 .adventure-game[data-theme=deluxe] .adventure-sheet:not([data-view=letter]) { background:linear-gradient(130deg,#283136,#151f28); border-color:#a78a58; box-shadow:0 20px 80px #000a,inset 0 0 0 4px #d6b9760b; }
 .adventure-game[data-theme=deluxe] .adventure-dialogue { background:linear-gradient(120deg,#202b32fa,#111c27fa); border-color:#b99b65; box-shadow:0 12px 44px #0009,inset 0 1px #ead3a525; }
 .adventure-game[data-theme=deluxe] .adventure-narration { background:#14202aef; border-color:#dabc7c; }
 @media(max-width:600px) {
  .adventure-header { padding:9px 12px; gap:8px; }
  .adventure-header strong { font-size:17px; }
- .adventure-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; padding:7px 8px; }
- .adventure-toolbar button { min-width:0; padding:9px 4px!important; font-size:12px!important; }
+ .adventure-toolbar { top:8px; right:8px; gap:5px; }
+ .adventure-game button.adventure-tool { width:58px; min-height:64px; padding:4px; }
+ .adventure-tool .adventure-item-art { width:40px; height:40px; }
  .adventure-feedback { left:9px; right:9px; bottom:10px; }
  .adventure-narration { padding:10px 12px; font-size:14px; }
  .adventure-selected { padding:6px; gap:5px; }
@@ -102,11 +106,16 @@
  .adventure-header { padding:6px 14px; }
  .adventure-header>div { display:flex; gap:16px; align-items:center; }
  .adventure-header strong { font-size:16px; flex:none; }
- .adventure-toolbar { padding:4px 10px; }
+ .adventure-toolbar { top:6px; right:8px; }
+ .adventure-game button.adventure-tool { width:58px; min-height:58px; padding:3px; }
+ .adventure-tool .adventure-item-art { width:36px; height:36px; }
  .adventure-feedback { bottom:6px; }
  .adventure-narration { font-size:13px; padding:7px 12px; max-height:20vh; }
  .adventure-selected { padding:4px 8px; margin-top:4px; }
  .adventure-overlay { padding:6px; }
  .adventure-sheet>header { padding:6px 14px; }
  .adventure-dialogue { bottom:8px; max-height:calc(100% - 16px); padding:12px 16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .adventure-tool .adventure-item-art { transition:none; transform:none!important; }
 }

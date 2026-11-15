@@ -1,9 +1,9 @@
-import type { AdventureArt } from './art.ts';
+import { serviceFrames, type AdventureArt } from './art.ts';
 import { dimensions, propFrames, equipmentFrames, castFrames } from './art/deluxe/frames.ts';
 
 /** Imported only when Deluxe is requested. Both modes use the same compositor. */
 export const deluxeArt: AdventureArt = {
-  mode: 'deluxe', dimensions, propFrames, equipmentFrames, castFrames,
+  mode: 'deluxe', dimensions, propFrames, equipmentFrames, castFrames, serviceFrames,
   artwork: {
     hall: new URL('./art/deluxe/hall.webp', import.meta.url).href,
     gallery: new URL('./art/deluxe/gallery.webp', import.meta.url).href,
@@ -14,6 +14,7 @@ export const deluxeArt: AdventureArt = {
     walk: new URL('./art/deluxe/walk.webp', import.meta.url).href,
     props: new URL('./art/deluxe/props.webp', import.meta.url).href,
     equipment: new URL('./art/deluxe/equipment.webp', import.meta.url).href,
+    service: new URL('./art/deluxe/service.webp', import.meta.url).href,
   },
   itemFrames: {
     lens: { sheet: 'equipment', frame: equipmentFrames.lens },

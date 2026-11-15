@@ -56,6 +56,7 @@ that script, role mappings in `../deluxe.ts`, and gameplay geometry in content.
 | `source/walk.png` | 1774 × 887, four columns and two rows, eight chronological full-body walking cels. Hip columns and common row baselines retain the stride's vertical response. |
 | `source/props.png` | 1254 × 1254, five columns and rows, matching the Arcade semantic object roles and paired puzzle states. |
 | `source/equipment.png` | 1254 × 1254, three columns and rows: lens/chalk/extended brush, household key/winding key/casebook, table/brush/satchel. |
+| `source/service.png` | 1536 × 1024, three full-height columns: closed, open and disconnected service assembly. High cleanout, continuous pipe/drive shaft and hand-height clock control share registered positions. See the [assembly brief](README.md#kitchen-service-assembly). |
 
 Exports retain transparent alpha and use smooth Canvas sampling. The compositor
 caches static scenery at the bounded backing-buffer resolution, with both axes

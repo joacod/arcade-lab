@@ -69,7 +69,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
     menu = createGameMenu<CommonMenuIntent, Screen>(host.root, host.surface, ui.scene, {
       id: 'guest', title: 'The Thirteenth Guest', signal: host.signal, pause: ui.pause,
       gameplayUI: [ui.header, ui.toolbar, ui.overlay, ui.feedback, ui.dialogue], theme: themes.element, game: details,
-      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>Select an item in <b>Inventory (I)</b>, then choose <b>Use in scene</b> or <b>Combine with…</b>. Combinations and their results stay inside Inventory. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The <b>Casebook (B)</b> holds evidence and the conversation journal. Read your evidence or choose <b>Connect clues</b> to select a pair and make a deduction. Search the journal by person, place or words and expand an entry to reread it.</p><p>Use Close or the panel’s I / B shortcut to return to the scene. Escape belongs to browser fullscreen. Progress saves automatically after completed interactions.</p>',
+      controls: '<p>Click a person, object or doorway to interact. Wren walks there before acting. Click the floor to walk. Tab and Enter also reach scene targets.</p><p>The satchel in the upper-right corner opens <b>Inventory (I)</b>. Click an item to select it and return to the scene, then click its target. To combine, choose <b>Combine items</b> first, then two items. Combinations and their results stay inside Inventory. <b>Cancel (X)</b> puts away the item or stops an approach.</p><p>The book beside the satchel opens the <b>Casebook (B)</b>, with evidence and the conversation journal. Read your evidence or choose <b>Connect clues</b> to select a pair and make a deduction. Search the journal by person, place or words and expand an entry to reread it.</p><p>Use Close or the panel’s I / B shortcut to return to the scene. Escape belongs to browser fullscreen. Progress saves automatically after completed interactions.</p>',
       actions: [menuActions.start, menuActions.resume, { ...menuActions.restart, screens: ['paused', 'victory'] }, { ...menuActions.quit, screens: ['title', 'paused', 'victory'] }],
       onAction: act, onMute: value => sound.setMuted(value), onFullscreen: () => { void host.toggleFullscreen().then(message => { if (!disposed) menu.displayStatus(message); }); },
     });
@@ -97,7 +97,7 @@ export function mountAdventure(container: HTMLElement, onExit: () => void, fulls
         request.signal.removeEventListener('abort', cancel);
         appearance = value; host.root.dataset.theme = value; themes.setValue(value); artworkStatus('');
         if (screen === 'title') menu.description.textContent = `Point & click adventure · ${appearances[value]}`;
-        ui.update(run, true); previous?.dispose();
+        ui.artworkChanged(); ui.update(run, true); previous?.dispose();
         return true;
       } catch {
         if (request.current()) {

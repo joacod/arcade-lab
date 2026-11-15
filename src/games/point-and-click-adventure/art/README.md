@@ -26,11 +26,36 @@ Edit complete cels or room plates in the source PNGs, then export again.
 
 | Source | Layout and runtime contract |
 | --- | --- |
-| `rooms.png` | 1366 × 1151, two columns and three rows: hall/gallery, library/kitchen, bell/spare hall. Inspected seams and floor-edge registration live in `pack.mjs`. The five runtime plates are 960 × 540, with the wall/floor edge registered to y=365. |
+| `rooms.png` | 1366 × 1151, two columns and three rows: hall/gallery, library/kitchen, bell/spare hall. Inspected seams and floor-edge registration live in `pack.mjs`. The runtime plates are 960 × 540, with the wall/floor edge registered to y=365. The kitchen now uses the dedicated cleaned plate below instead of its atlas tile. |
+| `kitchen.png` | 1672 × 941 dedicated kitchen painting with the decorative vertical pipe removed. Preserve the same room framing and world y=365 floor seam. |
 | `cast.png` | 1536 × 1024, four columns and three rows. Wren's standing, reach and lantern poses and the five household characters. The original walk studies remain in the source but are superseded by `walk.png`. Explicit crop rectangles and hip/boot anchors live in `../art.ts`. |
 | `walk.png` | 1536 × 1024, four columns and two rows. Eight complete Wren cels in chronological stride order, registered to a common hip column and boot baseline. The runtime uses `walk.webp`; frame roles, source-scale adjustment and stride distance live in `../art.ts`. |
 | `props.png` | 1254 × 1254, five columns and rows of complete doors, clues, equipment and object states. `prop-frames.ts` records alpha bounds. |
 | `equipment.png` | 1254 × 1254, three columns and rows of inventory tools, casebook, console table, brush and satchel. `equipment-frames.ts` records alpha bounds. |
+| `service.png` | 1536 × 1024, three equal full-height columns: closed cleanout, open cleanout, open cleanout with clock disconnected. Full cells preserve the shared pipe, hatch, shaft and control registration. |
+
+## Kitchen service assembly
+
+The service cleanout sits visibly above Wren's unaided reach. The extended brush
+can clear its high grille and lift its latch, while a separate hand-height clock
+control tests the bellows and disconnects their drive. A short upper elbow
+turns into a bolted wall flange, independently of decorative room pipework; a
+visible drive shaft connects the high hatch to the low clock. Keep a clear band
+of masonry beneath the clock, and keep the lower lever unobstructed at Wren's
+authored side approach. Arcade's dedicated kitchen plate removes the conflicting
+vertical background pipe; Deluxe keeps its separate overhead pipe as scenery.
+
+Both presentations use complete three-state assembly drawings from their own
+`source/service.png`, exported as `service.webp`. The renderer places each full
+cell in the same world footprint; the high cleanout and low control retain
+separate action targets in content. Closed and open hatches change with
+`tubeOpen`; the disengaged clutch and lowered red lever communicate `disabled`.
+Arcade uses soot-dark iron and textured copper, while Deluxe adds sculptural
+brass engraving and restrained blue rim light. The original atlas hatch studies
+are superseded by this connected assembly. Production prompts live with each
+art family's other prompts.
+
+## Runtime composition
 
 All artwork uses smooth sampling. Wren's standing and action cels use a common
 .48 world-unit source scale and individually registered hips/feet, including the
@@ -43,7 +68,7 @@ hovering target inside the bell. Prop drawings fit the target's visual footprint
 without stretching their aspect ratio. Door arches use a tall architectural
 registration above their hotspot, with thresholds on the authored floor, so
 the opening fits a person. Inventory uses the same prop drawings and separate
-equipment roles. Geometry and approach points remain in `../content.ts`.
+equipment roles. The satchel and casebook drawings also provide the labeled corner controls. Geometry and approach points remain in `../content.ts`.
 
 Closed/open service tube and cabinet, screaming/quiet portrait, empty/inhabited
 frame, loose/attached chain and outward/inward mirror have separate authored
@@ -53,8 +78,10 @@ Canvas effects. The bell is drawn before its independent inhabitant.
 Walking, reaching and lantern operation observe commands, displacement and
 completed approaches. They never delay an action or alter a puzzle result.
 Examination keeps the standing pose; brief reach and lantern poses mark physical
-interactions. Static scenery is cached at display resolution and rebuilt for
-room, prop-state or display changes. Animated actors remain separate. Light
+interactions. Walls and mounted objects are cached at display resolution and rebuilt for
+room, prop-state or display changes. Floor objects, tables, their contents and
+characters share a depth pass using foot contact or authored support depth, so
+nearer objects occlude Wren. Physical table clearances remain in content. Light
 stamps and the vignette are rasterized once instead of painting gradients every
 frame, and live sprites use smooth low-cost sampling.
 Active-run time freezes cosmetic motion while paused. Reduced motion removes

@@ -11,7 +11,7 @@ type View = 'inventory' | 'casebook' | 'journal' | 'letter';
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = '') {
   const element = document.createElement(tag); element.textContent = text; element.className = className; return element;
 }
-export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, send: (command: Command) => void, itemIcon: (id: ItemId) => HTMLCanvasElement | undefined) {
+export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortSignal, send: (command: Command) => void, itemIcon: (id: ItemId | 'satchel' | 'casebook') => HTMLCanvasElement | undefined) {
   let run: Run, item: ItemId | undefined, view: View | undefined;
   let inventoryItem: ItemId | undefined, inventoryResult = '';
   let combining = false, lastRevision = -1, selection = new Set<EvidenceId>(), connecting = false, deductionResult = '';
@@ -45,6 +45,15 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     b.textContent = `${name} (${bindingLabel(bindings[action])})`;
   }
   toolbar.append(controls.inventory, controls.casebook);
+  scene.append(toolbar);
+  function artworkChanged() {
+    for (const [action, role] of [['inventory', 'satchel'], ['casebook', 'casebook']] as const) {
+      const b = controls[action], icon = itemIcon(role);
+      b.className = 'adventure-tool'; b.title = `${b.getAttribute('aria-label')} (${bindingLabel(bindings[action])})`;
+      b.replaceChildren(); if (icon) b.append(icon);
+      b.append(node('span', b.getAttribute('aria-label')!));
+    }
+  }
   const overlay = node('div', '', 'adventure-overlay'); overlay.hidden = true;
   const sheet = node('section', '', 'adventure-sheet'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-labelledby', 'adventure-sheet-title');
   const sheetHeader = node('header'), sheetTitle = node('h2'); sheetTitle.id = 'adventure-sheet-title';
@@ -71,7 +80,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       event.preventDefault(); destination!.focus({ preventScroll: true });
     });
   }
-  root.append(header, stage, toolbar, overlay);
+  root.append(header, stage, overlay);
   function focus(element: HTMLElement | null | undefined) { element?.focus({ preventScroll: true }); }
   function open(next: View) {
     if (run.dialogue || run.conversation) return;
@@ -95,10 +104,13 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
   }
   function chooseItem(id: ItemId) {
     if (combining && inventoryItem) {
-      const first = inventoryItem; inventoryItem = undefined; combining = false;
+      const first = inventoryItem; inventoryItem = undefined;
       send({ kind: 'combine', first, second: id }); inventoryResult = run.message;
-    } else {
+      if (!owns(run, first) || !owns(run, id)) combining = false;
+    } else if (combining) {
       inventoryItem = id; inventoryResult = '';
+    } else {
+      item = id; closeView(false); focus(surface); return;
     }
     refresh(true);
   }
@@ -160,15 +172,12 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
         b.append(copy); b.disabled = combining && id === inventoryItem; b.setAttribute('aria-pressed', String(id === inventoryItem)); grid.append(b);
       }
       panel.append(grid);
-      if (inventoryItem) {
-        const current = inventoryItem;
-        caseActions.append(node('p', combining ? `Choose an item to combine with ${items[current].name}.` : items[current].name, 'adventure-selection-count'));
-        if (combining) caseActions.append(button('Cancel combination', 'stop-combining', () => { combining = false; refresh(true); }));
-        else {
-          caseActions.append(button('Use in scene', 'use-item', () => { item = current; closeView(false); focus(surface); }));
-          caseActions.append(button('Combine with…', 'combine', () => { combining = true; inventoryResult = ''; refresh(true); focus(panel.querySelector('button:not(:disabled)')); }));
-        }
-      }
+      caseActions.append(node('p', combining ? inventoryItem ? `Choose an item to combine with ${items[inventoryItem].name}.` : 'Choose the first item to combine.' : 'Select an item to use in the scene.', 'adventure-selection-count'));
+      const combine = button(combining ? 'Cancel combination' : 'Combine items', 'combine', () => {
+        combining = !combining; inventoryItem = undefined; inventoryResult = ''; refresh(true);
+        if (combining) focus(panel.querySelector('button:not(:disabled)'));
+      });
+      combine.setAttribute('aria-pressed', String(combining)); caseActions.append(combine);
       if (inventoryResult) { const result = node('p', inventoryResult, 'adventure-case-result'); result.setAttribute('role', 'status'); caseActions.append(result); }
     } else if (view === 'letter') {
       sheetTitle.textContent = invitation.title;
@@ -242,7 +251,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
       if (!choices.childElementCount) choices.append(node('p', 'No more questions for now.'));
       dialogue.append(choices, button('End conversation', 'leave', () => send({ kind: 'leave' })));
     }
-    const startedDialogue = !!run.dialogue && !hadDialogue, startedTopics = !!run.conversation && !run.dialogue && hadDialogue;
+    const startedDialogue = !!run.dialogue && !hadDialogue, startedTopics = !!run.conversation && !run.dialogue && (hadDialogue || !hadConversation);
     const endedConversation = !talking && (hadDialogue || hadConversation);
     hadDialogue = !!run.dialogue; hadConversation = !!run.conversation;
     if (root.dataset.screen === 'playing') {
@@ -277,7 +286,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     else open(action);
   }
   signal.addEventListener('abort', () => { observer.disconnect(); root.replaceChildren(); }, { once: true });
-  return { header, stage, scene, overlay, feedback, dialogue, toolbar, pause, controls,
+  return { header, stage, scene, overlay, feedback, dialogue, toolbar, pause, controls, artworkChanged,
     showLetter() { open('letter'); },
     focusPlay() { focus(view ? close : run.dialogue || run.conversation ? dialogue.querySelector('button') : surface); },
     update(next: Run, force = false) { run = next; refresh(force); },

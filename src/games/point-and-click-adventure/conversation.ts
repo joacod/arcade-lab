@@ -31,8 +31,17 @@ function flatten(list: readonly TopicDefinition[]): TopicDefinition[] {
   return list.flatMap(topic => [topic, ...flatten(topic.children ?? [])]);
 }
 const definitions = Object.values(trees).flatMap(list => flatten(list));
-export const responseKeys = definitions.flatMap(({ id }) => id === 'vale-case' || id === 'oswald-ward'
-  ? [id, `${id}:confronted`] : id === 'brindle-memory' ? [id, `${id}:ready`] : [id]);
+export const greetingKey = (person: TargetId) => `greeting:${person}`;
+export const responseKeys = [
+  ...Object.keys(trees).map(person => greetingKey(person as TargetId)),
+  ...definitions.flatMap(({ id }) => id === 'vale-case' || id === 'oswald-ward'
+    ? [id, `${id}:confronted`] : id === 'brindle-memory' ? [id, `${id}:ready`] : [id]),
+];
+
+/** Recognize the named introductions retained by saves from before one-time greetings. */
+export function earlierGreetings(journal: readonly JournalEntry[]): string[] {
+  return (Object.keys(trees) as TargetId[]).filter(person => journal.some(entry => entry.title === getTarget(person).name)).map(greetingKey);
+}
 
 /** Older saves identified answers by topic titles and prose, before stable response keys existed. */
 export function earlierAnswers(journal: readonly JournalEntry[]): string[] {

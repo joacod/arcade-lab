@@ -12,7 +12,7 @@ export function worldPoint(x: number, y: number, width: number, height: number):
   return point.x >= 0 && point.x <= WORLD.width && point.y >= 0 && point.y <= WORLD.height ? point : undefined;
 }
 export function createPresentation(surface: HTMLElement, art: AdventureArt = arcadeArt) {
-  const { artwork, castFrames, propFrames, equipmentFrames, itemFrames } = art;
+  const { artwork, castFrames, propFrames, equipmentFrames, serviceFrames, itemFrames } = art;
   const deluxe = art.mode === 'deluxe';
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-label', `Blackthorn Castle · ${art.mode === 'deluxe' ? 'Deluxe' : 'Arcade'} · ${appearances[art.mode]} artwork`);
@@ -73,8 +73,9 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
     const f = equipmentFrames.table;
     c.drawImage(resource.images.equipment!, f.x, f.y, f.w, f.h, x, y, w, h);
   }
-  function itemIcon(id: ItemId) {
-    const icon = document.createElement('canvas'), { sheet, frame: f } = itemFrames[id];
+  function itemIcon(id: ItemId | 'satchel' | 'casebook') {
+    const icon = document.createElement('canvas'), { sheet, frame: f } = id === 'satchel' || id === 'casebook'
+      ? { sheet: 'equipment', frame: equipmentFrames[id] } : itemFrames[id];
     icon.width = icon.height = 112; icon.className = 'adventure-item-art'; icon.setAttribute('aria-hidden', 'true');
     const ctx = icon.getContext('2d');
     if (ctx) {
@@ -116,7 +117,14 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       case 'musicBox': role = 'musicBox'; break;
       case 'poker': role = 'poker'; break;
       case 'brush': sprite(c, 'brush', x + 12, y - 7, 45, 60, -Math.PI / 2.5); return;
-      case 'tube': role = has(run, 'tubeOpen') ? 'tubeOpen' : 'tubeClosed'; break;
+      case 'tube': {
+        const f = serviceFrames[has(run, 'disabled') ? 'stopped' : has(run, 'tubeOpen') ? 'open' : 'closed'];
+        // The upper elbow terminates inside the wall. Keep this fitting clear
+        // of decorative pipework and leave masonry visible beneath the clock.
+        c.drawImage(resource.images.service!, f.x, f.y, f.w, f.h, 510, 40, 150, 300);
+        return;
+      }
+      case 'clock': return; // Drawn with the connected service assembly above.
       case 'cabinet': role = has(run, 'cabinetOpen') ? 'cabinetOpen' : 'cabinetClosed'; break;
       case 'chain': role = has(run, 'chain') ? 'chainAttached' : 'chainLoose'; break;
       case 'mirror': role = has(run, 'mirror') ? 'mirrorIn' : 'mirrorOut'; break;
@@ -186,12 +194,13 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       c.save(); c.beginPath(); c.rect(0, 0, WORLD.width, WORLD.height); c.clip();
       c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'low';
       const time = reduced ? 0 : animationTime;
-      // The housing sits behind its inhabitant; the detective's floor geometry
-      // remains independent of all cosmetic asset sizes.
-      const visible = roomTargets(run).sort((a, b) => a === 'housing' ? -1 : b === 'housing' ? 1 : getTarget(a).y + getTarget(a).h - getTarget(b).y - getTarget(b).h);
+      const visible = roomTargets(run);
       const animated = (id: TargetId) => ['person', 'ghost'].includes(getTarget(id).kind) || id === 'musicBox' || id === 'photo';
-      // Paint unchanging scenery once at display resolution, retaining crisp props
-      // without resampling every atlas crop on every animation frame.
+      const tableDepth = run.room === 'library' ? 430 : run.room === 'kitchen' ? 402 : undefined;
+      const onTable = (id: TargetId) => ['journal', 'musicBox', 'brush'].includes(id);
+      const layered = (id: TargetId) => animated(id) || onTable(id) || getTarget(id).kind !== 'exit' && getTarget(id).y + getTarget(id).h > 365;
+      // Walls and mounted objects stay cached. Floor objects and their tabletop
+      // contents share a depth pass with Wren, so nearer silhouettes occlude him.
       const key = `${run.room}:${run.facts.join(',')}:${visible.join(',')}:${width}:${height}`;
       if (key !== sceneryKey) {
         scenery.width = width; scenery.height = height;
@@ -199,13 +208,15 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
         backdrop.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, size.ratio * view.x, size.ratio * view.y);
         backdrop.imageSmoothingQuality = 'high';
         backdrop.drawImage(resource.images[run.room]!, 0, 0, WORLD.width, WORLD.height);
-        if (run.room === 'library') table(backdrop, 230, 375, 325, 80);
-        if (run.room === 'kitchen') table(backdrop, 230, 368, 115, 48);
-        for (const id of visible) if (!animated(id)) object(backdrop, run, id, time);
+        for (const id of visible) if (!layered(id)) object(backdrop, run, id, time);
         sceneryKey = key;
       }
       c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(scenery, 0, 0); c.restore();
-      for (const id of visible) if (animated(id)) object(c, run, id, time);
+      const layers: { depth: number; paint: () => void }[] = [];
+      if (tableDepth !== undefined) layers.push({ depth: tableDepth, paint: () => run.room === 'library' ? table(c, 230, 375, 325, 80) : table(c, 230, 368, 115, 48) });
+      for (const id of visible) if (layered(id)) layers.push({ depth: onTable(id) ? tableDepth! : getTarget(id).y + getTarget(id).h, paint: () => object(c, run, id, time) });
+      layers.sort((a, b) => a.depth - b.depth);
+      for (const layer of layers) if (layer.depth <= run.actor.y) layer.paint();
       const moving = !!run.pending?.path.length;
       const role = moving ? walkClip[Math.floor(phase * walkClip.length) % walkClip.length]! : animationTime < poseUntil ? pose : 'idle';
       shadow(run.actor.x, run.actor.y, 24);
@@ -220,6 +231,7 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
           c.beginPath(); c.ellipse(lanternX, lanternY, 8, 12, 0, 0, Math.PI * 2); c.stroke();
         }
       }
+      for (const layer of layers) if (layer.depth > run.actor.y) layer.paint();
       if (run.pending) {
         const p = run.pending.path.at(-1)!;
         c.strokeStyle = '#dcc49177'; c.lineWidth = 1;
