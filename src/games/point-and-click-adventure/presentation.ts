@@ -2,6 +2,7 @@ import { createImageResource } from '../../engine/browser/images.ts';
 import { rooms, getTarget, type Point, type TargetId, type ItemId } from './content.ts';
 import { has, roomTargets, wardReady, type Run, type Command, type TargetCommand } from './game.ts';
 import { arcadeArt, appearances, validateArtwork, walkClip, strideDistance, type AdventureArt, type CastRole, type PropRole } from './art.ts';
+import { createSceneArt } from './scene-art.ts';
 export const WORLD = { width: 960, height: 540 };
 export function transform(width: number, height: number) {
   const scale = Math.min(width / WORLD.width, height / WORLD.height);
@@ -28,6 +29,7 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
   edge.addColorStop(0, '#00000000'); edge.addColorStop(1, '#02091077');
   edgeContext.fillStyle = edge; edgeContext.fillRect(0, 0, WORLD.width, WORLD.height);
   const resource = createImageResource(artwork, dimensions => validateArtwork(art, dimensions));
+  const sceneArt = createSceneArt(art.mode, () => resource.images);
   let disposed = false, sceneryKey = '';
   surface.append(canvas);
   let last: { run: Run; room: Run['room']; x: number; y: number; time: number } | undefined;
@@ -58,20 +60,35 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
   }
   function sprite(c: CanvasRenderingContext2D, role: PropRole, x: number, y: number, w: number, h: number, angle = 0) {
     const f = propFrames[role], scale = Math.min(w / f.w, h / f.h);
+    if (['crate', 'cabinetOpen', 'cabinetClosed'].includes(role)) shadow(c, x + w / 2, y + h / 2 + f.h * scale / 2, f.w * scale * .48);
+    if (['journal', 'musicBox', 'brush'].includes(role)) shadow(c, x + w / 2, y + h / 2 + f.h * scale / 2, f.w * scale * .42, 2);
     c.save(); c.translate(x + w / 2, y + h / 2); c.rotate(angle);
-    c.drawImage(resource.images.props!, f.x, f.y, f.w, f.h, -f.w * scale / 2, -f.h * scale / 2, f.w * scale, f.h * scale); c.restore();
+    sceneArt.draw(c, 'props', f, -f.w * scale / 2, -f.h * scale / 2, f.w * scale, f.h * scale, role === 'whisper'); c.restore();
   }
   function character(role: CastRole, x: number, foot: number, scale: number, facing = 1, opacity = 1) {
     const f = castFrames[role];
-    c.save(); c.globalAlpha = opacity; c.translate(x, foot); c.scale(facing * scale * f.scale, scale * f.scale);
-    c.drawImage(resource.images[f.sheet]!, f.x, f.y, f.w, f.h, -f.anchorX, -f.foot, f.w, f.h); c.restore();
+    const size = scale * f.scale;
+    c.save(); c.globalAlpha = opacity; c.translate(x, foot); c.scale(facing, 1);
+    sceneArt.draw(c, f.sheet, f, -f.anchorX * size, -f.foot * size, f.w * size, f.h * size,
+      ['oswald', 'brindle', 'guest'].includes(role)); c.restore();
   }
-  function shadow(x: number, y: number, width: number) {
-    c.fillStyle = '#03080bad'; c.beginPath(); c.ellipse(x, y, width, 5, 0, 0, Math.PI * 2); c.fill();
+  function shadow(c: CanvasRenderingContext2D, x: number, y: number, width: number, height = 7, strength = 1) {
+    let stamp = lights.get('contact');
+    if (!stamp) {
+      stamp = document.createElement('canvas'); stamp.width = stamp.height = 128;
+      const ink = stamp.getContext('2d')!, shade = ink.createRadialGradient(64, 64, 0, 64, 64, 64);
+      shade.addColorStop(0, '#091019a6'); shade.addColorStop(.35, '#09101970'); shade.addColorStop(1, '#09101900');
+      ink.fillStyle = shade; ink.fillRect(0, 0, 128, 128); lights.set('contact', stamp);
+    }
+    c.save(); c.globalAlpha *= strength;
+    c.drawImage(stamp, x - width, y - height, width * 2, height * 2); c.restore();
   }
   function table(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
     const f = equipmentFrames.table;
-    c.drawImage(resource.images.equipment!, f.x, f.y, f.w, f.h, x, y, w, h);
+    shadow(c, x + w / 2, y + h - 1, w * .57, 9, .8);
+    shadow(c, x + w * .10, y + h - 1, w * .10, 4);
+    shadow(c, x + w * .90, y + h - 1, w * .10, 4);
+    sceneArt.draw(c, 'equipment', f, x, y, w, h);
   }
   function itemIcon(id: ItemId | 'satchel' | 'casebook') {
     const icon = document.createElement('canvas'), { sheet, frame: f } = id === 'satchel' || id === 'casebook'
@@ -90,13 +107,14 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       const f = propFrames.door;
       // Narrow, tall architectural registration, with its threshold on the
       // authored target's floor rather than vertically centering the arch.
-      c.drawImage(resource.images.props!, f.x, f.y, f.w, f.h, x - 18, y - 55, w + 36, h + 55);
+      shadow(c, x + w / 2, y + h, w * .8, 8, .8);
+      sceneArt.draw(c, 'props', f, x - 18, y - 55, w + 36, h + 55);
       if (id === 'bellDoor' && !has(run, 'confronted')) sprite(c, 'chainAttached', x - 5, y + 60, w + 10, 70);
       return;
     }
     if (['evelyn', 'vale', 'oswald', 'brindle'].includes(id)) {
       const ghost = t.kind === 'ghost', bob = ghost ? Math.sin(time * 1.4 + x) * 2 : 0;
-      shadow(x + w / 2, y + h, w * .34);
+      shadow(c, x + w / 2, y + h, w * .44, ghost ? 10 : 6, ghost ? .35 : .85);
       if (ghost) glow(x + w / 2, y + h * .5, 90, '#65bfa51a');
       character(id as CastRole, x + w / 2, y + h + bob, h / 317, 1, ghost ? .88 : 1); return;
     }
@@ -121,7 +139,7 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
         const f = serviceFrames[has(run, 'disabled') ? 'stopped' : has(run, 'tubeOpen') ? 'open' : 'closed'];
         // The upper elbow terminates inside the wall. Keep this fitting clear
         // of decorative pipework and leave masonry visible beneath the clock.
-        c.drawImage(resource.images.service!, f.x, f.y, f.w, f.h, 510, 40, 150, 300);
+        sceneArt.draw(c, 'service', f, 510, 40, 150, 300);
         return;
       }
       case 'clock': return; // Drawn with the connected service assembly above.
@@ -156,8 +174,10 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
     c.save(); c.globalCompositeOperation = 'screen';
     c.fillStyle = '#b5d7ef08';
     const origin = run.room === 'bell' ? 480 : run.room === 'hall' ? 360 : 140;
-    c.beginPath(); c.moveTo(origin, 25); c.lineTo(origin + 55, 25);
-    c.lineTo(origin + 320, 530); c.lineTo(origin + 130, 530); c.closePath(); c.fill();
+    if (run.room === 'hall' || run.room === 'bell') {
+      c.beginPath(); c.moveTo(origin, 25); c.lineTo(origin + 55, 25);
+      c.lineTo(origin + 320, 530); c.lineTo(origin + 130, 530); c.closePath(); c.fill();
+    }
     if (!reduced) for (let i = 0; i < 8; i++) {
       const x = origin + 60 + i * 24 + Math.sin(time * .23 + i) * 5;
       const y = 90 + (i * 53 + time * (1 + i % 3)) % 380;
@@ -192,8 +212,10 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       const view = transform(size.width, size.height);
       c.translate(view.x, view.y); c.scale(view.scale, view.scale);
       c.save(); c.beginPath(); c.rect(0, 0, WORLD.width, WORLD.height); c.clip();
+      // Expensive resampling belongs in the static cache, never the frame loop.
       c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'low';
       const time = reduced ? 0 : animationTime;
+      sceneArt.enter(run.room);
       const visible = roomTargets(run);
       const animated = (id: TargetId) => ['person', 'ghost'].includes(getTarget(id).kind) || id === 'musicBox' || id === 'photo';
       const tableDepth = run.room === 'library' ? 430 : run.room === 'kitchen' ? 402 : undefined;
@@ -208,7 +230,13 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
         backdrop.setTransform(size.ratio * view.scale, 0, 0, size.ratio * view.scale, size.ratio * view.x, size.ratio * view.y);
         backdrop.imageSmoothingQuality = 'high';
         backdrop.drawImage(resource.images[run.room]!, 0, 0, WORLD.width, WORLD.height);
-        for (const id of visible) if (!layered(id)) object(backdrop, run, id, time);
+        // Mounted objects receive a soft silhouette shadow against the wall.
+        for (const id of visible) if (!layered(id)) {
+          const density = size.ratio * view.scale;
+          backdrop.save(); backdrop.shadowColor = '#080e1766'; backdrop.shadowBlur = 5 * density;
+          backdrop.shadowOffsetX = 2 * density; backdrop.shadowOffsetY = 3 * density;
+          object(backdrop, run, id, time); backdrop.restore();
+        }
         sceneryKey = key;
       }
       c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(scenery, 0, 0); c.restore();
@@ -219,7 +247,8 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       for (const layer of layers) if (layer.depth <= run.actor.y) layer.paint();
       const moving = !!run.pending?.path.length;
       const role = moving ? walkClip[Math.floor(phase * walkClip.length) % walkClip.length]! : animationTime < poseUntil ? pose : 'idle';
-      shadow(run.actor.x, run.actor.y, 24);
+      shadow(c, run.actor.x, run.actor.y, 31, 8, .65);
+      shadow(c, run.actor.x, run.actor.y, 16, 3);
       const lanternX = run.actor.x + run.facing * (role === 'lantern' ? 34 : 27);
       const lanternY = run.actor.y - (role === 'lantern' ? 119 : 48);
       glow(lanternX, lanternY, 82, run.lantern.occupant === 'empty' ? '#e4b35725' : '#6dddbb3b', 1 + Math.sin(time * 3.2) * .06);
@@ -249,7 +278,7 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
     },
     dispose() {
       if (disposed) return; disposed = true;
-      resource.dispose(); canvas.remove();
+      resource.dispose(); sceneArt.dispose(); canvas.remove();
       for (const buffer of [canvas, scenery, vignette, ...lights.values()]) buffer.width = buffer.height = 0;
       lights.clear();
     },

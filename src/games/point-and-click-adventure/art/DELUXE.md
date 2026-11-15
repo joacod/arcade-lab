@@ -59,7 +59,14 @@ that script, role mappings in `../deluxe.ts`, and gameplay geometry in content.
 | `source/service.png` | 1536 × 1024, three full-height columns: closed, open and disconnected service assembly. High cleanout, continuous pipe/drive shaft and hand-height clock control share registered positions. See the [assembly brief](README.md#kitchen-service-assembly). |
 
 Exports retain transparent alpha and use smooth Canvas sampling. The compositor
-caches static scenery at the bounded backing-buffer resolution, with both axes
-capped at 2560 × 1440 independently of display DPR. Selected artwork supplies
+caches static scenery at display resolution and preserves native sprite-sheet
+detail. The display buffer remains capped at 2560 × 1440 independently of display DPR.
+High-quality scenery resampling runs only on cache rebuild; moving cels use
+inexpensive smooth sampling. Room grading uses Canvas compositing on entry,
+without pixel readbacks or new variants as Wren walks.
+Room-matched reflected color, restrained highlights and soft contact shadows
+integrate the detailed objects into their painted setting. The shared local
+[scene-cohesion contract](README.md#scene-cohesion) owns this treatment.
+Selected artwork supplies
 inventory icons as well as scene objects. Only the selected candidate requests
 Deluxe images; a fresh clone needs no generation service.
