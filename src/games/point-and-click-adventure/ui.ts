@@ -135,10 +135,11 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
     toolbar.inert = talking || !!view;
     controls.inventory.setAttribute('aria-expanded', String(view === 'inventory'));
     controls.casebook.setAttribute('aria-expanded', String(view === 'casebook' || view === 'journal'));
-    // Smaller overlapping targets (e.g. the Guest inside the bell) stay on top.
+    // Larger targets are painted first. A higher z-index keeps a smaller neighbor
+    // selectable; hover must not lift the larger target back over it.
     const targets = roomTargets(run).sort((a, b) => getTarget(b).w * getTarget(b).h - getTarget(a).w * getTarget(a).h);
     for (const [id, b] of targetButtons) if (!targets.includes(id)) { b.remove(); targetButtons.delete(id); }
-    for (const id of targets) {
+    for (const [index, id] of targets.entries()) {
       const t = getTarget(id), action = interaction(run, id, item);
       let b = targetButtons.get(id);
       if (!b) {
@@ -149,6 +150,7 @@ export function createUI(root: HTMLElement, surface: HTMLElement, signal: AbortS
         targetButtons.set(id, b); hotspots.append(b);
       }
       setAttribute(b, 'aria-label', action.label); setText(b.firstElementChild!, action.label);
+      b.style.zIndex = String(index + 1);
     }
     selected.replaceChildren(); selected.hidden = !item && !['drawn', 'closed'].includes(run.lantern.phase);
     if (item) {

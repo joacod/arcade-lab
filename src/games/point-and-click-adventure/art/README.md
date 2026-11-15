@@ -88,7 +88,7 @@ to retain the same apparent height. His eight-cel stride follows observed travel
 `../art.ts` to keep the steps readable at the game's walking speed;
 standing is separate. Facing mirrors complete cels around their anchor.
 NPCs use their authored target height, while the Guest occupies its separate
-hovering target inside the bell. Prop drawings fit the target's visual footprint
+hovering target beside the bell. Prop drawings fit the target's visual footprint
 without stretching their aspect ratio. Door arches use a tall architectural
 registration above their hotspot, with thresholds on the authored floor, so
 the opening fits a person. Inventory uses the same prop drawings and separate

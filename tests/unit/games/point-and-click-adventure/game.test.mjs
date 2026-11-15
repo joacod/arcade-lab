@@ -155,10 +155,16 @@ test('atomic save envelope recovers its backup and refuses cross-tab or failed o
   assert.ok(readEnvelope(encode(snapshot(run), null)).current);
 });
 
+function overlaps(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
 test('content diagnostics name an unreachable authored target before play', () => {
   assert.deepEqual(contentErrors(), []);
   const bad = structuredClone(targets); bad.brush.at = { x: -100, y: -100 };
   assert.ok(contentErrors(rooms, bad).some(message => message.includes('brush: approach is unreachable')));
+  // The bell housing used to contain the Guest, so the larger target took every click.
+  assert.equal(overlaps(targets.guest, targets.housing), false);
+  assert.equal(overlaps(targets.guest, targets.mirror), false);
 });
 
 // Contextual defaults must advance the puzzle, not merely describe an inert target.
