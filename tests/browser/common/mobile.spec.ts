@@ -14,7 +14,7 @@ test('touch steering survives control focus and pickup HUD wrapping without paus
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).tap();
+  await page.getByRole('link', { name: 'Open game: Skybreak', exact: true }).tap();
   await page.getByRole('button', { name: 'Play', exact: true }).tap();
   await page.clock.runFor(32);
   const root = page.locator('.skybreak-app'), surface = root.locator('.play-surface');

@@ -42,6 +42,7 @@ Engine code supplies game-independent execution and resource mechanisms. `engine
 | Lazy game imports | `src/app/catalog.ts` |
 | Site identity, metadata and generated share assets | `src/app/site.ts`, `public/icon.svg`, `scripts/site-assets.mjs` |
 | Entrypoint and selection screen | `src/app/main.ts`, `src/app/selection.ts` |
+| Game URLs and direct-visit loading content | `src/app/routes.ts`, `src/app/game-loading-markup.ts` |
 | Synchronous mount/dispose contracts | `src/engine/session.ts` |
 | Cleanup that attempts every owner and aggregates failures | `src/engine/disposal.ts` |
 | Active session and mount point | `src/app/application.ts` |
@@ -133,11 +134,13 @@ Capture gameplay on demand with browser tooling, outside the permanent test suit
 pnpm screenshot clearing /tmp/preview-capture.png
 ```
 
-The first argument is the collection ID from `src/app/catalog-data.ts`. The command encodes WebP at quality 82, caps width at 1440 without enlargement and replaces the canonical file. It also refreshes the generated social card. At the current screenshot sizes, one shared image is small enough for cards and detailed enough for documentation; separate thumbnail files add no useful maintenance benefit.
+The first argument is the collection ID from `src/app/catalog-data.ts`. The command encodes WebP at quality 82, caps width at 1440 without enlargement and replaces the canonical file. It also refreshes the generated social cards. At the current screenshot sizes, one shared image is small enough for cards and detailed enough for documentation; separate thumbnail files add no useful maintenance benefit.
 
-`public/icon.svg` owns the arcade cabinet mark. `src/app/site.ts` owns the public URL, repository link and search/share copy. Vite generates the PNG favicon, Apple touch icon, 1200×630 social card, robots.txt and sitemap.xml at startup and on every build. Those files stay ignored; the fixed-size social card composes a bounded sample of canonical screenshots in collection order. Only the icon SVG and the canonical game screenshots need to be maintained. Restart development or rebuild after changing branding or site metadata.
+`public/icon.svg` owns the arcade cabinet mark. `src/app/site.ts` owns the public URL, repository link and search/share copy. Vite generates the PNG favicon, Apple touch icon, 1200×630 social cards, robots.txt and sitemap.xml at startup and on every build. Those files stay ignored; the landing's `social.png` composes a bounded sample of canonical screenshots in collection order, while `social/<slug>.png` presents one game's screenshot, title and genre. Only the icon SVG and the canonical game screenshots need to be maintained. Restart development or rebuild after changing branding or site metadata.
 
-The Vite HTML transform emits canonical, Open Graph, Twitter and WebSite structured data plus the complete static collection landing, using `src/app/selection-markup.ts` for both initial HTML and later collection visits. Stylesheets load from the document head before the first paint, and startup binds the existing landing DOM so previews and layout survive JavaScript initialization. Search and link-preview clients receive this content before JavaScript runs. Only the collection URL belongs in the sitemap: games currently mount within it rather than exposing individual routes. A production build remains a static `dist/` directory.
+Each catalog entry declares a public slug, served at `/<slug>/`. `src/app/routes.ts` owns path creation and lookup. Catalog cards are native links that also support opening in a new tab. Ordinary clicks use browser history within the persistent application shell; Back, Forward and returning to selection dispose the previous session and invalidate pending game imports. Direct visits load the requested game. The entrypoint updates document metadata when navigating within the page.
+
+The Vite HTML transform emits canonical, Open Graph, Twitter and structured data for the requested route. In development, directory visits fall back to `index.html`; the transform uses the original browser path so that response still matches the route. The collection uses WebSite data and the complete static landing, sharing `src/app/selection-markup.ts` with later collection visits. Game pages use VideoGame data and game-specific loading content with a link to the collection. Stylesheets load from the document head before the first paint, and startup binds the existing DOM so landing previews and layout survive JavaScript initialization. Search and link-preview clients receive the correct metadata before JavaScript runs. The production build emits a static `dist/<slug>/index.html` for every game, sharing Vite's hashed assets with the landing; hosting needs directory index support, without a routing service. The sitemap includes the landing and all game URLs.
 
 ## Local verification
 

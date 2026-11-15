@@ -3,9 +3,10 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
-# Derived from icon.svg, collection metadata and canonical Quality screenshots.
+# Derived from icon.svg, collection metadata and canonical screenshots.
 public/icon-32.png
 public/apple-touch-icon.png
 public/social.png
+public/social/
 public/robots.txt
 public/sitemap.xml

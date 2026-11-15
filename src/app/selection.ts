@@ -42,25 +42,27 @@ export function mountSelection(container: HTMLElement, { select, cancel, state, 
     if (fullscreen.available) { event.preventDefault(); displayButton.click(); }
   }, { signal: lifetime.signal });
   syncDisplay();
-  const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-game]')];
+  const links = [...root.querySelectorAll<HTMLAnchorElement>('[data-game]')];
   const status = root.querySelector('.arcade-selection-status')!; status.textContent = message;
   const loading = root.querySelector<HTMLElement>('.arcade-loading')!;
   const cancelButton = root.querySelector<HTMLButtonElement>('.arcade-cancel')!;
   cancelButton.addEventListener('click', cancel, { signal: lifetime.signal });
-  for (const button of buttons) button.addEventListener('click', () => {
-    const id = button.dataset.game as GameId;
+  for (const link of links) link.addEventListener('click', event => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (link.getAttribute('aria-disabled') === 'true') return;
+    const id = link.dataset.game as GameId;
     state.selected = id; state.scrollTop = root.scrollTop;
-    for (const item of buttons) item.disabled = true;
-    button.dataset.loading = '';
+    for (const item of links) { item.setAttribute('aria-disabled', 'true'); item.tabIndex = -1; }
+    link.dataset.loading = '';
     root.querySelector('.arcade-games')!.setAttribute('aria-busy', 'true');
     loading.hidden = false; cancelButton.hidden = false;
     status.textContent = `Loading ${games.find(game => game.id === id)!.title}…`;
     cancelButton.focus({ preventScroll: true });
     select(id);
   }, { signal: lifetime.signal });
-  for (const button of buttons) button.disabled = false;
   root.scrollTop = state.scrollTop;
   // Restore a deliberate selection, but leave a fresh landing free of automatic focus.
-  buttons.find(button => button.dataset.game === state.selected)?.focus({ preventScroll: true });
+  links.find(link => link.dataset.game === state.selected)?.focus({ preventScroll: true });
   return { dispose() { lifetime.abort(); root.remove(); } };
 }

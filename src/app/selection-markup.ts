@@ -1,6 +1,7 @@
 import { gameInfo, type GameId } from './catalog-data.ts';
 import { githubIcon } from './brand.ts';
 import { site } from './site.ts';
+import { gamePath } from './routes.ts';
 
 /** The initial HTML and later collection visits share one landing layout. */
 export function selectionMarkup({ selected, message = '', coverUrl = (url: string) => url }: {
@@ -19,11 +20,11 @@ export function selectionMarkup({ selected, message = '', coverUrl = (url: strin
     </section>
     <noscript><p>Enable JavaScript to choose and play a game.</p></noscript>
     <div class="arcade-games" aria-labelledby="selection-heading">${gameInfo.map(game => `
-      <button type="button" class="arcade-game" disabled data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
+      <a href="${gamePath(game)}" class="arcade-game" data-game="${game.id}" aria-label="Open game: ${game.title}" aria-describedby="${game.id}-description">
         <span class="arcade-cover" aria-hidden="true">${selected === game.id ? '<span class="arcade-return">Last selected</span>' : ''}<img src="${coverUrl(game.cover)}" alt="" width="1440" height="1000" decoding="async"><span class="arcade-cover-shade"></span><span class="arcade-genre">${game.genre.replaceAll('&', '&amp;')}</span></span>
         <span class="arcade-card-copy"><span class="arcade-game-title">${game.title}</span><span class="arcade-card-action" aria-hidden="true"><span class="arcade-card-action-label">Play</span><svg class="arcade-play-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 1.7 10.4 6 3.2 10.3Z"/></svg></span></span>
         <span id="${game.id}-description" class="arcade-game-description">${game.description} ${game.controls}.</span>
-      </button>`).join('')}</div>
+      </a>`).join('')}</div>
     <footer class="arcade-selection-footer"><span class="arcade-display-hint">A little arcade. A lot to explore.</span><span class="arcade-credit">Built by <a href="https://joacod.com" target="_blank" rel="noopener noreferrer">joacod</a></span></footer>
     <p class="arcade-display-status" role="status" hidden></p>
     <div class="arcade-loading" ${message ? '' : 'hidden'}><p class="arcade-selection-status" role="status"></p><button type="button" class="arcade-cancel" hidden>Cancel loading</button></div>

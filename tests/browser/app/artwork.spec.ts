@@ -6,7 +6,7 @@ test('required artwork failure gates Play and retries in the same session', asyn
   const keeper = '**/art/bellgarden/keeper.svg';
   await page.route(keeper, route => route.abort());
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open game: Clockwork Hollow', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: Clockwork Hollow', exact: true }).click();
   const surface = await page.locator('.play-surface').elementHandle();
   await expect(page.locator('.game-menu-art-status')).toContainText('Artwork could not load');
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
