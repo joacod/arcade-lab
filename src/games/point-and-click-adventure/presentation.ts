@@ -119,9 +119,9 @@ export function createPresentation(surface: HTMLElement, art: AdventureArt = arc
       case 'brush': sprite(c, 'brush', x + 12, y - 7, 45, 60, -Math.PI / 2.5); return;
       case 'tube': {
         const f = serviceFrames[has(run, 'disabled') ? 'stopped' : has(run, 'tubeOpen') ? 'open' : 'closed'];
-        // This complete authored assembly joins the room's upper pipework. The
-        // cleanout and reachable lower clock control have separate action areas.
-        c.drawImage(resource.images.service!, f.x, f.y, f.w, f.h, 480, 30, 170, 340);
+        // The upper elbow terminates inside the wall. Keep this fitting clear
+        // of decorative pipework and leave masonry visible beneath the clock.
+        c.drawImage(resource.images.service!, f.x, f.y, f.w, f.h, 510, 40, 150, 300);
         return;
       }
       case 'clock': return; // Drawn with the connected service assembly above.

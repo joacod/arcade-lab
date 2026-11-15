@@ -26,7 +26,8 @@ Edit complete cels or room plates in the source PNGs, then export again.
 
 | Source | Layout and runtime contract |
 | --- | --- |
-| `rooms.png` | 1366 × 1151, two columns and three rows: hall/gallery, library/kitchen, bell/spare hall. Inspected seams and floor-edge registration live in `pack.mjs`. The five runtime plates are 960 × 540, with the wall/floor edge registered to y=365. |
+| `rooms.png` | 1366 × 1151, two columns and three rows: hall/gallery, library/kitchen, bell/spare hall. Inspected seams and floor-edge registration live in `pack.mjs`. The runtime plates are 960 × 540, with the wall/floor edge registered to y=365. The kitchen now uses the dedicated cleaned plate below instead of its atlas tile. |
+| `kitchen.png` | 1672 × 941 dedicated kitchen painting with the decorative vertical pipe removed. Preserve the same room framing and world y=365 floor seam. |
 | `cast.png` | 1536 × 1024, four columns and three rows. Wren's standing, reach and lantern poses and the five household characters. The original walk studies remain in the source but are superseded by `walk.png`. Explicit crop rectangles and hip/boot anchors live in `../art.ts`. |
 | `walk.png` | 1536 × 1024, four columns and two rows. Eight complete Wren cels in chronological stride order, registered to a common hip column and boot baseline. The runtime uses `walk.webp`; frame roles, source-scale adjustment and stride distance live in `../art.ts`. |
 | `props.png` | 1254 × 1254, five columns and rows of complete doors, clues, equipment and object states. `prop-frames.ts` records alpha bounds. |
@@ -37,11 +38,12 @@ Edit complete cels or room plates in the source PNGs, then export again.
 
 The service cleanout sits visibly above Wren's unaided reach. The extended brush
 can clear its high grille and lift its latch, while a separate hand-height clock
-control tests the bellows and disconnects their drive. A continuous copper pipe
-joins the upper room pipework, and a visible drive shaft connects the high hatch
-to the low clock. Wall brackets, compression collars and flanges give every
-connection a physical termination. Keep the lower lever unobstructed at Wren's
-authored side approach.
+control tests the bellows and disconnects their drive. A short upper elbow
+turns into a bolted wall flange, independently of decorative room pipework; a
+visible drive shaft connects the high hatch to the low clock. Keep a clear band
+of masonry beneath the clock, and keep the lower lever unobstructed at Wren's
+authored side approach. Arcade's dedicated kitchen plate removes the conflicting
+vertical background pipe; Deluxe keeps its separate overhead pipe as scenery.
 
 Both presentations use complete three-state assembly drawings from their own
 `source/service.png`, exported as `service.webp`. The renderer places each full

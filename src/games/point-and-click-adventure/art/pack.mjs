@@ -7,6 +7,12 @@ const rooms = ['hall', 'gallery', 'library', 'kitchen', 'bell'];
 // Inspected seams of the six-plate source. The unused sixth painting is retained
 // in the editable source, not in the runtime bundle.
 for (const [i, name] of rooms.entries()) {
+  // The kitchen has a dedicated cleaned plate: its old vertical pipe would
+  // collide with the service fitting's independent wall termination.
+  if (name === 'kitchen') {
+    await sharp(source('kitchen')).resize(960, 540).webp({ quality: 90 }).toFile(fileURLToPath(new URL('kitchen.webp', root)));
+    continue;
+  }
   const left = i % 2 * 683, top = [0, 383, 767][Math.floor(i / 2)];
   const wall = [296, 310, 298, 302, 311][i], height = i < 4 ? 383 : 384;
   // Register the painted floor edge to the existing 365-unit navigation floor.

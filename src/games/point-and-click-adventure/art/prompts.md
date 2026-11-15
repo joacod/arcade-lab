@@ -78,3 +78,13 @@ Use case: stylized-concept. Create a new production sprite sheet for the Arcade 
 Each complete wall-mounted service tube and clock assembly is tall and narrow: a continuous vertical copper pipe centered in its cell, a brass compression coupling at the top for connecting to room pipework, a large bolted cleanout hatch in the upper third, and a slender mechanical drive shaft descending to a small brass clockwork controller with visible cogwheel and red engagement lever in the bottom fifth. Hatch about 300 pixels wide, pipe about 55 pixels, controller about 180 pixels. Frontal camera with subtle depth, compact wall brackets and visible physical pipe terminations. Preserve transparent margins.
 
 Column 1: closed soot-clogged hatch, clock lever engaged. Column 2: identical assembly, hatch door open left exposing red leather bellows and a brass reed, clock lever engaged. Column 3: identical open assembly, lower red lever down and a visible disengaged clutch gap. Stationary parts stay in exactly the same positions, including pipe center, hatch body, controller and shaft. No clock face or numbers. The high hatch requires the extended brush, while the lower control is reachable by hand.
+
+## Wall termination edit
+
+Use case: precise-object-edit. Edit the existing 1536 × 1024 three-column service assembly sheet. In each 512 × 1024 cell replace only the upright open-ended pipe above the large hatch with a short copper 90-degree elbow turning back into the wall and disappearing into the dark central bore of a circular bolted wall flange. Show the flange flat against the wall in three-quarter view, with a closed, unambiguous wall connection. No open top or connection to ceiling pipework. Leave transparent margin above the fitting.
+
+Preserve every hatch, open door, bellows, reed, lower drive pipe, shaft, clock gear and red-lever state, exact cell placement, scale, canvas and registration. Keep the original painterly iron, copper and brass. True transparent alpha around silhouettes and gaps, no background haze, text or new components.
+
+## Kitchen pipe removal
+
+Use case: precise-object-edit. Edit the 960 × 540 kitchen painting. Remove only the copper vertical drain pipe around x=535–580, y=0–145, including elbow and wall flange. Fill its silhouette with matching soot-dark masonry and candlelit wall texture. Preserve the fireplace, hood, all other masonry, floor seam at y=365, floor, perspective, color, lighting and framing. Opaque edge-to-edge background, no new props or actors. Export as the dedicated kitchen source plate.

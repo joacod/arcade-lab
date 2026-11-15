@@ -2,7 +2,7 @@
 
 **Arcade: Blackthorn by Candlelight · Deluxe: Blackthorn Nocturne · collection ID `guest`.** A complete short point-and-click case with painted Gothic rooms, complete character cels and illustrated investigative tools. Select **The Thirteenth Guest** in the collection and press **Play**, or **Continue saved adventure** to resume this browser’s saved case.
 
-![The Thirteenth Guest · Deluxe: Wren beside the reachable clock control beneath the open high service cleanout](preview.webp)
+![The Thirteenth Guest · Deluxe: Wren beside the wall-mounted service assembly, with its high cleanout and reachable clock control](preview.webp)
 
 Blackthorn Castle, 1889. Percival Wren, Consulting Detective of Unnatural Affairs, has been hired to clear a troublesome haunting. Investigate physical clues, question an eccentric household, and work out why the ghosts seem more worried about your client than about you. The kit is brass, leather, glass and candlelight. No deaths, timed conversation choices or irretrievable essential items interrupt the investigation.
 
