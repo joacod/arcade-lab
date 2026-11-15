@@ -21,7 +21,7 @@ test('a game host suspends its single loop and releases it on collection navigat
     };
     window.cancelAnimationFrame = id => { pending.delete(id); cancel(id); };
   });
-  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   await page.clock.runFor(32);
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -50,7 +50,7 @@ test('a game host suspends its single loop and releases it on collection navigat
     window.dispatchEvent(new Event('resize'));
     return { aborted: host.signal.aborted, attached: host.root.isConnected, frames: (window as any).pendingFrames.size };
   })).toEqual({ aborted: true, attached: false, frames: 0 });
-  await expect(page.getByRole('button', { name: 'Open game: Skybreak', exact: true })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Open game: Skybreak', exact: true })).toBeFocused();
   expect(errors).toEqual([]);
 });
 
@@ -71,7 +71,7 @@ test('collection keeps its initial layout and previews, restores navigation and 
   await expect(page.getByRole('heading', { name: 'Press Play', exact: true })).toBeVisible();
   await expect(page.locator('.arcade-games')).toHaveCSS('display', 'grid');
   await expect(page.locator('body')).toHaveCSS('margin', '0px');
-  await expect(page.getByRole('button', { name: 'Open game: Skybreak', exact: true })).toBeDisabled();
+  await expect(page.getByRole('link', { name: 'Open game: Skybreak', exact: true })).toHaveAttribute('href', '/skybreak/');
   const initialCover = await page.locator('.arcade-cover img').first().elementHandle();
   const initialBounds = await initialCover!.boundingBox();
   start();
@@ -90,23 +90,37 @@ test('collection keeps its initial layout and previews, restores navigation and 
   await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('app');
   await page.keyboard.press('f');
   await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
-  const selected = page.getByRole('button', { name: 'Open game: Blastline', exact: true });
+  const selected = page.getByRole('link', { name: 'Open game: Blastline', exact: true });
   await selected.scrollIntoViewIfNeeded();
   const scrollTop = await page.locator('.arcade-selection').evaluate(root => root.scrollTop);
   await selected.click();
+  await expect(page).toHaveURL('/blastline/');
+  await expect(page).toHaveTitle('Blastline | Arcade Lab');
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  await page.goBack();
+  await expect(page).toHaveURL('/');
+  await expect(page).toHaveTitle('Arcade Lab | Small worlds. Press play.');
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.goForward();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Game selection', exact: true }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://arcade.joacod.com/social.png');
   await expect(selected).toBeFocused();
   expect(await page.locator('.arcade-selection').evaluate(root => root.scrollTop)).toBeCloseTo(scrollTop, 0);
-  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Loading Skybreak…');
   await expect(page.getByRole('button', { name: 'Cancel loading', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Cancel loading', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open game: Skybreak', exact: true })).toBeFocused();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('link', { name: 'Open game: Skybreak', exact: true })).toBeFocused();
   release();
   // Await that exact import rather than relying on a timeout for the stale completion.
   await page.evaluate(async () => { const path = '/src/games/skybreak/app.ts'; await import(path); });
   await expect(page.locator('.arcade-selection')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Skybreak', exact: true })).toBeVisible();
+  await expect(page).toHaveURL('/skybreak/');
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://arcade.joacod.com/social/skybreak.png');
 });

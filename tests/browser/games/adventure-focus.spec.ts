@@ -13,7 +13,7 @@ test('direct scene actions and casebook choices retain usable focus', async ({ p
   run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
   await page.goto('/');
   await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: SAVE_KEY, value: encode(snapshot(run), null) });
-  await page.getByRole('button', { name: 'Open game: The Thirteenth Guest', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: The Thirteenth Guest', exact: true }).click();
   await page.getByRole('button', { name: 'Continue saved adventure', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Inventory', exact: true }).locator('canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Inspect vent: Screaming portrait', exact: true }).focus();

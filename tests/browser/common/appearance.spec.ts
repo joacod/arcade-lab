@@ -13,7 +13,7 @@ test('switching presentation preserves the paused run and Resume advances it', a
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000); // Freeze before navigation, while there is no game loop.
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open game: Skybreak', exact: true }).click();
+  await page.getByRole('link', { name: 'Open game: Skybreak', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await page.clock.runFor(50);

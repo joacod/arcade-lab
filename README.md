@@ -34,6 +34,8 @@ pnpm dev
 
 Open the local URL printed in the terminal and choose a game. Keyboard and touch controls are available, with fullscreen where supported. All required artwork is included.
 
+Each game has its own shareable URL, such as `/skybreak/` or `/the-thirteenth-guest/`, with a dedicated game preview image. `pnpm build` generates the landing and each game page as static HTML in `dist/`.
+
 Finished games start in Arcade and offer Arcade / Deluxe choices when both exist. New games use a temporary Prototype until Arcade replaces it. Single-presentation games hide the selector. In title and pause menus, S toggles sound and available themes use the Theme field. P pauses or resumes and F toggles fullscreen, which stays active when returning to game selection.
 
 [Architecture](docs/architecture.md) · [Development guidance](AGENTS.md) · [MIT license](LICENSE)
