@@ -1,6 +1,6 @@
 import { rooms, targetIds, getTarget, items, itemIds, deductions, evidence, scenes, type RoomId, type TargetId, type ItemId, type Fact, type Point, type Line, type SceneId, type DeductionId, type EvidenceId } from './content.ts';
 import { beginEntry, finishEntry, retainInvitation, type JournalEntry } from './journal.ts';
-import { topics, responseKey, returnToAvailableTopics } from './conversation.ts';
+import { topics, responseKey, greetingKey, returnToAvailableTopics } from './conversation.ts';
 export { topics } from './conversation.ts';
 import { project, route } from './navigation.ts';
 export type Cue = 'discovery' | 'ghost' | 'mechanism' | 'seal' | 'music' | 'bell';
@@ -125,7 +125,11 @@ function interact(run: Run, id: TargetId) {
   }
   if (['evelyn', 'vale', 'oswald', 'brindle'].includes(id)) {
     run.conversation = id; run.topicPath = [];
-    speak(run, target.name, id === 'oswald' ? 'You stand before Sir Oswald Blackthorn. Kindly face the head, not the collar.' : id === 'brindle' ? 'Do mind the carpet. Floating is no excuse for bad manners.' : id === 'evelyn' ? 'Please save my home, Mr. Wren. And try to save a little of its dignity.' : has(run, 'confronted') ? 'Please, Wren. Do not let it leave wearing my face.' : 'The knight, Wren. Deal with the knight.'); return;
+    if (!run.asked.includes(greetingKey(id))) {
+      speak(run, target.name, id === 'oswald' ? 'You stand before Sir Oswald Blackthorn. Kindly face the head, not the collar.' : id === 'brindle' ? 'Do mind the carpet. Floating is no excuse for bad manners.' : id === 'evelyn' ? 'Please save my home, Mr. Wren. And try to save a little of its dignity.' : has(run, 'confronted') ? 'Please, Wren. Do not let it leave wearing my face.' : 'The knight, Wren. Deal with the knight.');
+      run.dialogue!.response = greetingKey(id);
+    }
+    return;
   }
   switch (id) {
     case 'brush': case 'poker': take(run, id); message(run, `${items[id].name} added to your case.`); break;

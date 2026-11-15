@@ -1,8 +1,8 @@
-import { rooms, itemIds, factIds, deductions, type Fact, type RoomId } from './content.ts';
+import { rooms, floorBounds, itemIds, factIds, deductions, type Fact, type RoomId } from './content.ts';
 import { createRun, introduce, has, wardReady, type Run } from './game.ts';
 import { restoreJournal, type JournalEntry } from './journal.ts';
-import { earlierAnswers, responseKeys } from './conversation.ts';
-import { inside } from './navigation.ts';
+import { earlierAnswers, earlierGreetings, responseKeys } from './conversation.ts';
+import { inside, project } from './navigation.ts';
 export interface Snapshot {
   room: RoomId; actor: { x: number; y: number }; facts: Fact[]; inventory: Run['inventory']; lantern: Run['lantern'];
   status: Run['status']; asked: string[]; journal: JournalEntry[];
@@ -25,11 +25,15 @@ export function restore(value: unknown): Run | undefined {
   const asked = Object.hasOwn(value, 'asked') ? value.asked : earlierAnswers(journal);
   if (!Array.isArray(asked) || asked.length > responseKeys.length || new Set(asked).size !== asked.length || !asked.every(key => responseKeys.includes(key))) return;
   const s = value as unknown as Snapshot;
-  if (!rooms[s.room].floor.some(floor => inside(s.actor, floor))) return;
+  if (!inside(s.actor, floorBounds)) return;
   const run = createRun();
   // Only durable fields cross this boundary, even if a save includes runtime-shaped extras.
   Object.assign(run, structuredClone({ room: s.room, actor: s.actor, facts: s.facts, inventory: s.inventory,
     lantern: s.lantern, status: s.status, asked, journal }));
+  // Older saves could stand inside today's furniture footprints. Preserve their
+  // case and relocate only the foot contact to the nearest clear floor cell.
+  run.actor = project(run.actor, rooms[run.room].floor);
+  run.asked = [...new Set([...run.asked, ...earlierGreetings(journal)])];
   if ((run.lantern.occupant === 'empty') !== (run.lantern.phase === 'open') || has(run, 'released') && run.lantern.occupant === 'whisper') return;
   if (['lens', 'lantern', 'bellows', 'fork', 'chalk'].some(id => run.inventory[id as keyof Run['inventory']] !== 'inventory')) return;
   const combined = run.inventory.longBrush === 'inventory';

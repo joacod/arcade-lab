@@ -3,12 +3,22 @@ export type RoomId = 'hall' | 'gallery' | 'library' | 'kitchen' | 'bell';
 export interface Point { x: number; y: number }
 export interface Floor { x: number; y: number; w: number; h: number }
 export interface RoomDefinition { name: string; floor: readonly Floor[]; entry: Point }
-const floor = [{ x: 45, y: 365, w: 870, h: 140 }];
+export const floorBounds = { x: 45, y: 365, w: 870, h: 140 };
+const floor = [floorBounds];
+// Wall-side tables have no passage behind them. Foot contact cells leave
+// clearance at their sides and front, independently of their artwork.
+function aroundTable(left: number, right: number, front: number): Floor[] {
+  return [
+    { x: 45, y: 365, w: left - 45, h: 140 },
+    { x: right, y: 365, w: 915 - right, h: 140 },
+    { x: left, y: front, w: right - left, h: 505 - front },
+  ];
+}
 export const rooms: Record<RoomId, RoomDefinition> = {
   hall: { name: 'Great Hall', floor, entry: { x: 475, y: 460 } },
   gallery: { name: 'Portrait Gallery', floor, entry: { x: 110, y: 460 } },
-  library: { name: 'Library', floor, entry: { x: 110, y: 460 } },
-  kitchen: { name: 'Servants’ Kitchen', floor, entry: { x: 110, y: 460 } },
+  library: { name: 'Library', floor: aroundTable(212, 573, 471), entry: { x: 110, y: 460 } },
+  kitchen: { name: 'Servants’ Kitchen', floor: aroundTable(212, 363, 433), entry: { x: 110, y: 460 } },
   bell: { name: 'Bell Chamber', floor, entry: { x: 110, y: 460 } },
 };
 export const itemIds = ['lens', 'lantern', 'bellows', 'fork', 'chalk', 'brush', 'poker', 'longBrush', 'cabinetKey', 'windingKey'] as const;
@@ -59,12 +69,12 @@ export const targets = {
   emptyFrame: prop('gallery', 'Empty portrait', 420, 170, 100, 125, 'Examine', 'An empty silver-lined frame. A small household echo could make itself at home.', 'prop', 'inspect'),
   bellDoor: exit('gallery', 'bell', 850), galleryHall: exit('gallery', 'hall', 55),
   galleryKitchen: { ...exit('gallery', 'kitchen', 740), name: 'Kitchen passage' },
-  journal: prop('library', 'Keeper’s journal', 250, 330, 120, 55, 'Read', 'Beside a ward engraving: spirits face inward around a chained bell. Its caption says CONTAINMENT, not summoning.', 'prop', 'inspect'),
-  musicBox: prop('library', 'Music box', 440, 330, 85, 60, 'Examine', 'A few notes, then silence. Its square winding socket is empty. Brindle fades with the tune.', 'prop', 'inspect'),
+  journal: { ...prop('library', 'Keeper’s journal', 250, 330, 120, 55, 'Read', 'Beside a ward engraving: spirits face inward around a chained bell. Its caption says CONTAINMENT, not summoning.', 'prop', 'inspect'), at: { x: 310, y: 475 } },
+  musicBox: { ...prop('library', 'Music box', 440, 330, 85, 60, 'Examine', 'A few notes, then silence. Its square winding socket is empty. Brindle fades with the tune.', 'prop', 'inspect'), at: { x: 482, y: 475 } },
   photo: prop('library', 'Family photograph', 650, 195, 95, 105, 'Examine', 'The household in happier days. Brindle’s gloved hand rests beside the familiar music box.', 'prop', 'inspect'),
   brindle: prop('library', 'Mrs. Brindle', 560, 240, 70, 155, 'Talk', 'The housekeeper’s silhouette flickers whenever the music stops.', 'ghost'),
   libraryHall: exit('library', 'hall', 55), libraryKitchen: exit('library', 'kitchen', 855),
-  brush: prop('kitchen', 'Cleaning brush', 250, 330, 70, 45, 'Take', items.brush.description),
+  brush: { ...prop('kitchen', 'Cleaning brush', 250, 330, 70, 45, 'Take', items.brush.description), at: { x: 285, y: 442 } },
   poker: prop('kitchen', 'Fireplace poker', 380, 260, 35, 120, 'Take', items.poker.description),
   tube: prop('kitchen', 'Service tube', 505, 160, 110, 135, 'Inspect', 'A maintenance cover sits deep behind a soot-clogged tube. A plan connects it to the portrait grille.'),
   cabinet: prop('kitchen', 'Household cabinet', 690, 235, 115, 150, 'Open', 'A winding key hangs behind the locked glass. Evelyn may have the household key.'),

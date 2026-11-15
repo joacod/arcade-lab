@@ -43,7 +43,7 @@ hovering target inside the bell. Prop drawings fit the target's visual footprint
 without stretching their aspect ratio. Door arches use a tall architectural
 registration above their hotspot, with thresholds on the authored floor, so
 the opening fits a person. Inventory uses the same prop drawings and separate
-equipment roles. Geometry and approach points remain in `../content.ts`.
+equipment roles. The satchel and casebook drawings also provide the labeled corner controls. Geometry and approach points remain in `../content.ts`.
 
 Closed/open service tube and cabinet, screaming/quiet portrait, empty/inhabited
 frame, loose/attached chain and outward/inward mirror have separate authored
@@ -53,8 +53,10 @@ Canvas effects. The bell is drawn before its independent inhabitant.
 Walking, reaching and lantern operation observe commands, displacement and
 completed approaches. They never delay an action or alter a puzzle result.
 Examination keeps the standing pose; brief reach and lantern poses mark physical
-interactions. Static scenery is cached at display resolution and rebuilt for
-room, prop-state or display changes. Animated actors remain separate. Light
+interactions. Walls and mounted objects are cached at display resolution and rebuilt for
+room, prop-state or display changes. Floor objects, tables, their contents and
+characters share a depth pass using foot contact or authored support depth, so
+nearer objects occlude Wren. Physical table clearances remain in content. Light
 stamps and the vignette are rasterized once instead of painting gradients every
 frame, and live sprites use smooth low-cost sampling.
 Active-run time freezes cosmetic motion while paused. Reduced motion removes

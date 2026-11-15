@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun, introduce, topics, dispatch, startScene, stepRun, has, visible } from '../../../../src/games/point-and-click-adventure/game.ts';
 import { getTarget, rooms, targets, invitation } from '../../../../src/games/point-and-click-adventure/content.ts';
-import { route, inside } from '../../../../src/games/point-and-click-adventure/navigation.ts';
+import { route, inside, project } from '../../../../src/games/point-and-click-adventure/navigation.ts';
 import { snapshot, restore, encode, readEnvelope } from '../../../../src/games/point-and-click-adventure/save.ts';
 import { createSaveStore } from '../../../../src/games/point-and-click-adventure/storage.ts';
 import { interaction } from '../../../../src/games/point-and-click-adventure/interaction.ts';
@@ -27,6 +27,25 @@ test('navigation uses connected floor portals and rejects unreachable regions', 
     previous = next;
   }
   assert.equal(route(start, { x: 250, y: 20 }, [...floors, { x: 200, y: 0, w: 100, h: 100 }]), undefined);
+});
+test('furniture blocks floor clicks and travel while older saved cases recover a clear position', () => {
+  for (const [room, tabletop] of [['library', { x: 400, y: 415 }], ['kitchen', { x: 285, y: 405 }]]) {
+    const floor = rooms[room].floor;
+    assert.equal(floor.some(cell => inside(tabletop, cell)), false);
+    const end = project(tabletop, floor);
+    assert.ok(floor.some(cell => inside(end, cell)));
+    assert.equal(floor.some(cell => inside({ x: tabletop.x, y: 370 }, cell)), false);
+    let previous = { x: 110, y: 405 };
+    const path = route(previous, { x: 650, y: 405 }, floor);
+    assert.ok(path.length > 1);
+    for (const next of path) {
+      for (const t of [0, .25, .5, .75, 1]) assert.ok(floor.some(cell => inside({ x: previous.x + (next.x - previous.x) * t, y: previous.y + (next.y - previous.y) * t }, cell)));
+      previous = next;
+    }
+    const run = createRun(); run.room = room; run.actor = tabletop;
+    const loaded = restore(snapshot(run));
+    assert.deepEqual(loaded.actor, end); assert.deepEqual(loaded.inventory, run.inventory);
+  }
 });
 test('replacing and cancelling an approach cannot execute its stale pickup', () => {
   const run = createRun(); run.room = 'kitchen'; run.actor = { x: 50, y: 500 };
@@ -197,6 +216,22 @@ test('conversation branches survive leaving and saving, then retire without repe
   const saved = snapshot(run); assert.deepEqual(restore(saved).asked, run.asked);
   assert.equal(restore({ ...saved, asked: ['nonexistent-topic'] }), undefined);
   delete saved.asked; assert.deepEqual(new Set(restore(saved).asked), new Set(run.asked));
+});
+test('each character introduces themselves once, then opens questions directly across saves', () => {
+  for (const person of ['evelyn', 'vale', 'oswald', 'brindle']) {
+    let run = createRun(); at(run, person);
+    assert.ok(run.dialogue); dispatch(run, { kind: 'next' });
+    assert.equal(run.dialogue, undefined); assert.ok(topics(run, person).length);
+    dispatch(run, { kind: 'leave' });
+    const saved = snapshot(run);
+    run = restore({ ...saved, journal: [] }); at(run, person);
+    assert.equal(run.conversation, person); assert.equal(run.dialogue, undefined);
+    assert.equal(run.journal.length, 0); // Journal retention cannot make a greeting repeat.
+    // Existing saves already recorded the greeting, before it had a response key.
+    saved.asked = [];
+    run = restore(saved); at(run, person);
+    assert.equal(run.dialogue, undefined);
+  }
 });
 test('a changed answer reopens a completed question without blocking Brindle’s testimony', () => {
   const run = createRun(); run.conversation = 'brindle';
