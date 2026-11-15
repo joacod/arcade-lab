@@ -31,6 +31,29 @@ Edit complete cels or room plates in the source PNGs, then export again.
 | `walk.png` | 1536 × 1024, four columns and two rows. Eight complete Wren cels in chronological stride order, registered to a common hip column and boot baseline. The runtime uses `walk.webp`; frame roles, source-scale adjustment and stride distance live in `../art.ts`. |
 | `props.png` | 1254 × 1254, five columns and rows of complete doors, clues, equipment and object states. `prop-frames.ts` records alpha bounds. |
 | `equipment.png` | 1254 × 1254, three columns and rows of inventory tools, casebook, console table, brush and satchel. `equipment-frames.ts` records alpha bounds. |
+| `service.png` | 1536 × 1024, three equal full-height columns: closed cleanout, open cleanout, open cleanout with clock disconnected. Full cells preserve the shared pipe, hatch, shaft and control registration. |
+
+## Kitchen service assembly
+
+The service cleanout sits visibly above Wren's unaided reach. The extended brush
+can clear its high grille and lift its latch, while a separate hand-height clock
+control tests the bellows and disconnects their drive. A continuous copper pipe
+joins the upper room pipework, and a visible drive shaft connects the high hatch
+to the low clock. Wall brackets, compression collars and flanges give every
+connection a physical termination. Keep the lower lever unobstructed at Wren's
+authored side approach.
+
+Both presentations use complete three-state assembly drawings from their own
+`source/service.png`, exported as `service.webp`. The renderer places each full
+cell in the same world footprint; the high cleanout and low control retain
+separate action targets in content. Closed and open hatches change with
+`tubeOpen`; the disengaged clutch and lowered red lever communicate `disabled`.
+Arcade uses soot-dark iron and textured copper, while Deluxe adds sculptural
+brass engraving and restrained blue rim light. The original atlas hatch studies
+are superseded by this connected assembly. Production prompts live with each
+art family's other prompts.
+
+## Runtime composition
 
 All artwork uses smooth sampling. Wren's standing and action cels use a common
 .48 world-unit source scale and individually registered hips/feet, including the

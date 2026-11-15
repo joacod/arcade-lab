@@ -21,7 +21,7 @@ for (const [i, name] of roomNames.entries()) {
     .webp({ quality: 92 }).toFile(target(`${name}.webp`));
   dimensions[name] = [1440, 810];
 }
-for (const name of ['cast', 'walk', 'props', 'equipment']) {
+for (const name of ['cast', 'walk', 'props', 'equipment', 'service']) {
   const info = await sharp(source(name)).metadata();
   dimensions[name] = [info.width, info.height];
   await sharp(source(name)).webp({ quality: 94, alphaQuality: 100 }).toFile(target(`${name}.webp`));

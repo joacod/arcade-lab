@@ -79,3 +79,9 @@ Row3 col1 low wide antique walnut CONSOLE TABLE, front view, thin wide top, carv
 Row3 col2 short-handled wooden cleaning BRUSH with pale bristles, diagonally oriented.
 Row3 col3 worn overstuffed brown leather detective SATCHEL with brass buckles.
 All nine complete illustrations consistent scale per role, readable polished shapes, transparent alpha between and inside shapes.
+
+## Connected service assembly
+
+Use case: style-transfer. Use Arcade's `source/service.png` as the geometry and state reference and Deluxe's prop atlas as the material reference. Preserve the 1536 × 1024 canvas, three equal full-height columns, identical assembly alignment and scale, high cleanout, continuous pipe and drive shaft, and low clock control. Column 1 has the closed hatch and engaged red lever. Column 2 has the hatch open left, exposing red leather bellows and a brass reed, with the lever engaged. Column 3 has the same open hatch with its lever down and clutch disconnected.
+
+Render complete wall-mounted assemblies with dimensional aged copper, subtly engraved bronze, convincing red leather, fine wall flanges and brackets, warm key light and restrained cool blue rim light. Preserve the first image's geometry while improving material depth and sculptural finish. True transparent alpha outside and inside physical silhouettes. No scenery, background haze, glow, ground, cast shadows, gradients, labels, clock numbers, text or grid. Keep complete drawings inside their own 512 × 1024 cells.

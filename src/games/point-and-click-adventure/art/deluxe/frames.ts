@@ -35,6 +35,10 @@ export const dimensions = {
   "equipment": [
     1254,
     1254
+  ],
+  "service": [
+    1536,
+    1024
   ]
 } as const;
 

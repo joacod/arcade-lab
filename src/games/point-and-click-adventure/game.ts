@@ -106,7 +106,8 @@ function inspect(run: Run, id: TargetId) {
   if (id === 'portrait') { flag(run, 'vent'); message(run, 'The scream bends the candle flame away from the grille and shifts soot. A physical draft.'); }
   else if (id === 'crate') { flag(run, 'mark'); message(run, 'Vale’s V-in-a-diamond mark is stamped on the new fittings.'); }
   else if (id === 'journal') { flag(run, 'record'); message(run, evidence.record.text); }
-  else if (id === 'tube' && has(run, 'tubeOpen')) message(run, 'New bellows and a shaped reed, driven by the service clock. The test lever connects to the portrait. Vale’s mark is on the fittings.');
+  else if (id === 'tube' && has(run, 'tubeOpen')) message(run, 'Through the open cleanout: new bellows, a shaped reed and Vale’s mark. Their drive rod leads down to the service clock control, within easy reach.');
+  else if (id === 'clock' && has(run, 'disabled')) message(run, 'The clock clutch is disengaged. Its drive rod is still, and the false screaming has stopped.');
   else if (id === 'musicBox' && has(run, 'music')) message(run, 'The melody now plays steadily. Brindle seems clearer. Lantern light on the family photograph may help her remember.');
   else if (id === 'guest' && wardReady(run)) message(run, 'Its borrowed face is coming apart. The ward has weakened it enough for the lantern.');
   else message(run, getTarget(id).description);
@@ -137,9 +138,10 @@ function interact(run: Run, id: TargetId) {
       if (has(run, 'cabinetOpen')) { take(run, 'windingKey'); message(run, 'The music-box winding key is safely in your case.'); }
       else message(run, 'Locked. Evelyn has the household key; she may be willing to lend it.');
       break;
-    case 'tube':
-      if (!has(run, 'tubeOpen')) message(run, 'The service tube is blocked with soot, beyond the short brush’s reach.');
-      else if (!has(run, 'mechanism')) { flag(run, 'mechanism'); run.events.push('mechanism'); message(run, 'You pull the test lever. The portrait screams upstairs. Its draft is explained: bellows, reed, service tube.'); }
+    case 'clock':
+      if (!has(run, 'tubeOpen')) message(run, 'The lever will not move. Its drive rod is seized inside the soot-choked cleanout high above.');
+      else if (has(run, 'disabled')) inspect(run, id);
+      else if (!has(run, 'mechanism')) { flag(run, 'mechanism'); run.events.push('mechanism'); message(run, 'You pull the lower test lever. The portrait screams upstairs. Its draft is explained: bellows, reed, service tube.'); }
       else { flag(run, 'disabled'); message(run, 'You disconnect the clock linkage. The false screaming stops. The mechanism remains available as evidence.'); }
       break;
     case 'chain': flag(run, 'chain'); run.events.push('mechanism'); message(run, 'The chain is secured to the marked anchor. A restraint, never a weapon.'); break;
@@ -178,8 +180,12 @@ function use(run: Run, id: TargetId, item: ItemId) {
     else message(run, id === 'oswald' ? '“I am a knight, sir. Not a draft.” Anchored spirits cannot simply be drawn in.' : 'Ordinary air.');
     return;
   }
-  if (item === 'longBrush' && id === 'tube') { flag(run, 'tubeOpen'); message(run, 'You sweep the blocked access clear and open its cover. A new bellows mechanism is inside.'); return; }
-  if ((item === 'brush' || item === 'poker') && id === 'tube') { message(run, item === 'brush' ? 'Too short to reach. Its threaded head could fit something longer.' : 'Long enough, but no brush to clear the soot. Its threaded end might help.'); return; }
+  if (id === 'tube' && ['longBrush', 'brush', 'poker'].includes(item)) {
+    if (has(run, 'tubeOpen')) inspect(run, id);
+    else if (item === 'longBrush') { flag(run, 'tubeOpen'); message(run, 'The extended brush reaches the high grille. You sweep out the soot and lift the latch with its hooked shaft. Bellows and a reed are exposed; the clock lever below is free.'); }
+    else message(run, item === 'brush' ? 'The short brush cannot reach the high grille. Its threaded head could fit something longer.' : 'The poker reaches the high latch, but cannot sweep the packed soot from the grille. Its threaded end might help.');
+    return;
+  }
   if (item === 'cabinetKey' && id === 'cabinet') { flag(run, 'cabinetOpen'); take(run, 'windingKey'); message(run, 'The cabinet opens. You take the music-box winding key.'); return; }
   if (item === 'windingKey' && id === 'musicBox') { flag(run, 'music'); run.events.push('music'); message(run, 'The familiar tune plays. Brindle steadies.'); return; }
   if (item === 'chalk' && id === 'ward') { flag(run, 'ward'); message(run, 'You complete the chalk boundary. The circle holds.'); run.events.push('seal'); return; }
@@ -199,6 +205,8 @@ function tool(run: Run, item: ItemId) {
 }
 function execute(run: Run, command: TargetCommand) {
   if (!visible(run, command.target)) return;
+  const target = getTarget(command.target), facing = Math.sign(target.x + target.w / 2 - run.actor.x);
+  if (facing) run.facing = facing;
   if (command.verb === 'inspect') inspect(run, command.target);
   else if (command.verb === 'use') use(run, command.target, command.item);
   else interact(run, command.target);

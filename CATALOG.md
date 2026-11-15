@@ -146,7 +146,7 @@ Pressing Play, Continue or Restart applies thrust immediately while held. Cloud 
 
 ## The Thirteenth Guest
 
-![The Thirteenth Guest · Deluxe: Wren and Mrs. Brindle in the library, with illustrated inventory and casebook controls](docs/games/point-and-click-adventure/preview.webp)
+![The Thirteenth Guest · Deluxe: Wren beside the reachable clock control beneath the open high service cleanout](docs/games/point-and-click-adventure/preview.webp)
 
 Investigate an old castle as **Percival Wren**, a Victorian detective of unnatural affairs. Follow physical clues, question the ghost household, improvise with everyday objects and support your conclusions in the casebook. Two investigation paths lead to a confrontation, a supernatural reversal and a spirit-containment finale across five rooms.
 

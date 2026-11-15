@@ -15,6 +15,7 @@ export const artwork = {
   walk: new URL('./art/walk.webp', import.meta.url).href,
   props: new URL('./art/props.webp', import.meta.url).href,
   equipment: new URL('./art/equipment.webp', import.meta.url).href,
+  service: new URL('./art/service.webp', import.meta.url).href,
 };
 interface ItemFrame { sheet: 'props' | 'equipment'; frame: { x: number; y: number; w: number; h: number } }
 export const itemFrames: Record<ItemId, ItemFrame> = {
@@ -53,6 +54,13 @@ export type CastRole = keyof typeof castFrames;
 export const walkClip: readonly CastRole[] = ['walkA', 'walkB', 'walkC', 'walkD', 'walkE', 'walkF', 'walkG', 'walkH'];
 export const strideDistance = 184;
 export interface Frame { x: number; y: number; w: number; h: number }
+// Full cells keep the high cleanout, drive shaft and low control registered
+// across closed, open and disconnected states in both artwork families.
+export const serviceFrames = {
+  closed: { x: 0, y: 0, w: 512, h: 1024 },
+  open: { x: 512, y: 0, w: 512, h: 1024 },
+  stopped: { x: 1024, y: 0, w: 512, h: 1024 },
+} as const;
 export interface CastFrame extends Frame { sheet: 'cast' | 'walk'; scale: number; anchorX: number; foot: number }
 export type Appearance = 'arcade' | 'deluxe';
 export const appearances = { arcade: 'Blackthorn by Candlelight', deluxe: 'Blackthorn Nocturne' } as const;
@@ -62,19 +70,20 @@ export interface AdventureArt {
   castFrames: Record<CastRole, CastFrame>;
   propFrames: Record<PropRole, Frame>;
   equipmentFrames: Record<keyof typeof equipmentFrames, Frame>;
+  serviceFrames: Record<keyof typeof serviceFrames, Frame>;
   itemFrames: Record<ItemId, ItemFrame>;
   dimensions: Record<keyof typeof artwork, readonly [number, number]>;
 }
 export const arcadeArt: AdventureArt = {
-  mode: 'arcade', artwork, castFrames, propFrames, equipmentFrames, itemFrames,
+  mode: 'arcade', artwork, castFrames, propFrames, equipmentFrames, serviceFrames, itemFrames,
   dimensions: {
     hall: [960, 540], gallery: [960, 540], library: [960, 540], kitchen: [960, 540], bell: [960, 540],
-    cast: [1536, 1024], walk: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254],
+    cast: [1536, 1024], walk: [1536, 1024], props: [1254, 1254], equipment: [1254, 1254], service: [1536, 1024],
   },
 };
 export function validateArtwork(art: AdventureArt, dimensions: ImageDimensions): string[] {
   const errors = validateImageDimensions(dimensions, art.dimensions);
-  for (const [sheet, frames] of [['cast', art.castFrames], ['props', art.propFrames], ['equipment', art.equipmentFrames]] as const) {
+  for (const [sheet, frames] of [['cast', art.castFrames], ['props', art.propFrames], ['equipment', art.equipmentFrames], ['service', art.serviceFrames]] as const) {
     for (const [role, frame] of Object.entries(frames)) {
       const source = 'sheet' in frame && (frame.sheet === 'cast' || frame.sheet === 'walk') ? frame.sheet : sheet;
       const size = dimensions[source];

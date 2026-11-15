@@ -16,7 +16,7 @@ for (const [i, name] of rooms.entries()) {
     .composite([{ input: upper, left: 0, top: 0 }, { input: lower, left: 0, top: 365 }])
     .webp({ quality: 90 }).toFile(fileURLToPath(new URL(`${name}.webp`, root)));
 }
-for (const name of ['cast', 'walk', 'props', 'equipment']) {
+for (const name of ['cast', 'walk', 'props', 'equipment', 'service']) {
   await sharp(source(name)).webp({ quality: 93, alphaQuality: 100 }).toFile(fileURLToPath(new URL(`${name}.webp`, root)));
 }
 await exportFrames('props', 5, 'propFrames', ['door', 'crate', 'portraitScream', 'portraitQuiet', 'emptyFrame',

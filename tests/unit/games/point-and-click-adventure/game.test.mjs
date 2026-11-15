@@ -80,13 +80,19 @@ test('walking retains its travel budget across route waypoints', () => {
 });
 test('inventory recipes are atomic and wrong uses preserve essential tools', () => {
   const run = createRun(); run.inventory.brush = run.inventory.poker = 'inventory';
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), false); assert.equal(has(run, 'disabled'), false);
+  at(run, 'tube', 'use', 'brush'); assert.equal(has(run, 'tubeOpen'), false);
+  at(run, 'tube', 'use', 'poker'); assert.equal(has(run, 'tubeOpen'), false);
   dispatch(run, { kind: 'combine', first: 'brush', second: 'lens' }); assert.equal(run.inventory.brush, 'inventory');
   assert.equal(run.messageContext, 'inventory');
   dispatch(run, { kind: 'combine', first: 'poker', second: 'brush' });
   assert.deepEqual([run.inventory.brush, run.inventory.poker, run.inventory.longBrush], ['consumed', 'consumed', 'inventory']);
   assert.equal(run.messageContext, 'inventory');
   at(run, 'tube', 'use', 'longBrush'); assert.equal(has(run, 'tubeOpen'), true);
-  at(run, 'tube'); assert.equal(has(run, 'mechanism'), true); assert.ok(restore(snapshot(run)));
+  at(run, 'tube'); assert.equal(has(run, 'mechanism'), false);
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), true); assert.equal(run.facing, -1); assert.ok(restore(snapshot(run)));
+  at(run, 'clock'); assert.equal(has(run, 'disabled'), true);
+  at(run, 'clock'); assert.equal(has(run, 'mechanism'), true); assert.equal(has(run, 'disabled'), true);
 });
 test('deductions require discovered supporting evidence and both threads gate confrontation', () => {
   const run = createRun();
@@ -173,10 +179,14 @@ test('examination waits for arrival, respects cancellation and contextual action
   run.inventory.brush = run.inventory.poker = 'consumed'; run.inventory.longBrush = 'inventory';
   dispatch(run, interaction(run, 'tube', 'longBrush').command); stepRun(run, 1 / 60);
   assert.equal(has(run, 'tubeOpen'), true);
-  assert.match(interaction(run, 'tube').label, /Test mechanism/);
-  dispatch(run, interaction(run, 'tube').command); stepRun(run, 1 / 60);
+  assert.match(interaction(run, 'tube').label, /Inspect/);
+  assert.match(interaction(run, 'clock').label, /Test mechanism/);
+  run.actor = { ...getTarget('clock').at };
+  dispatch(run, interaction(run, 'clock').command); stepRun(run, 1 / 60);
   assert.equal(has(run, 'mechanism'), true);
-  assert.match(interaction(run, 'tube').label, /Disconnect clock/);
+  assert.match(interaction(run, 'clock').label, /Disconnect clock/);
+  dispatch(run, interaction(run, 'clock').command);
+  assert.match(interaction(run, 'clock').label, /Examine stopped clock/);
 });
 
 // Repeated dialogue must not crowd out useful notes; changed answers remain distinct.
